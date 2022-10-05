@@ -55,7 +55,7 @@ function SignUp({ history }) {
 						animate={{ opacity: 1, x: 0 }}
 						initial={{ opacity: 0, x: 100 }}
 						transition={{ duration: 1, type: 'tween' }}
-						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-7xl text-3xl mb-6'
+						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-4xl text-2xl mb-6'
 					>
 						No utilice papel con un gestor de gastos automatizado en línea
 					</motion.h1>
