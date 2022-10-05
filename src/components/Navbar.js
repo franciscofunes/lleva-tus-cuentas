@@ -54,16 +54,10 @@ function Navbar() {
 				)}
 				{!user && (
 					<Link
-						to={
-							location.pathname.includes('Ingresar')
-								? '/Registrarse'
-								: '/Ingresar'
-						}
+						to={location.pathname.includes('login') ? '/signup' : '/login'}
 						className='nav-btn'
 					>
-						{location.pathname.includes('Ingresar')
-							? 'Registrarse'
-							: 'Ingresar'}
+						{location.pathname.includes('login') ? 'Registrarse' : 'Ingresar'}
 					</Link>
 				)}
 			</motion.nav>
