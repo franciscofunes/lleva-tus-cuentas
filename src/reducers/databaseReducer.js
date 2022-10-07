@@ -7,7 +7,7 @@ const initState = {
 export const databaseReducer = (state = initState, action) => {
 	switch (action.type) {
 		case 'STORE_DATA':
-			console.log('data stored');
+			// console.log('data stored');
 			break;
 		case 'GOT_DATA':
 			return { ...state, docs: action.data, isDataFetching: false };
@@ -19,7 +19,7 @@ export const databaseReducer = (state = initState, action) => {
 				docs: state.docs.filter((doc) => doc.id !== action.docId),
 			};
 		case 'UPDATE_DATA':
-			console.log('data updated');
+			// console.log('data updated');
 			break;
 		default:
 			return state;

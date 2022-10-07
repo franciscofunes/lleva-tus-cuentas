@@ -41,7 +41,7 @@ function Card({
 			initial={{ opacity: 0 }}
 			transition={{ duration: 0.4, type: 'tween', delay: 0.2 }}
 			id='card'
-			className='flex border-b-2 border-purple-400 w-full mb-2 justify-between items-center py-3 px-4 font-Nunito dark:border-indigo-400'
+			className='lg:flex border-b-2 border-purple-400 w-full mb-2 justify-between items-center py-3 px-4 font-Nunito dark:border-indigo-400'
 		>
 			<div className='flex flex-col justify-evenly items-start'>
 				<p className='font-semibold text-base text-gray-400'>
@@ -60,7 +60,7 @@ function Card({
 					{moment(selectedDate).format('DD/MM/YYYY')}
 				</p>
 			</div>
-			<div className='flex justify-between items-center'>
+			<div className='flex lg:justify-between items-center'>
 				<h1
 					className={`font-Nunito font-medium text-lg ${
 						amount[0] === '-' ? `text-red-500` : `text-green-500`
