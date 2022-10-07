@@ -20,7 +20,7 @@
 }
 #right {
 	overflow-y: scroll;
-	height: 85vh;
+	height: 75vh;
 }
 #right::-webkit-scrollbar {
 	width: 0 !important;

@@ -114,7 +114,10 @@ function Login() {
 							<div>
 								<p className='dark:text-white mb-2 italic text-sm'>
 									No tengo usuario
-									<Link className='ml-1 hover:text-indigo-200' to='/signup'>
+									<Link
+										className='ml-1 hover:text-indigo-200 underline'
+										to='/signup'
+									>
 										Registrarme
 									</Link>
 								</p>

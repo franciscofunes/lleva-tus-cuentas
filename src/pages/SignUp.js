@@ -130,7 +130,10 @@ function SignUp({ history }) {
 							<div>
 								<p className='dark:text-white mb-2 italic text-sm'>
 									Ya tengo usuario
-									<Link className='ml-1 hover:text-indigo-200' to='/login'>
+									<Link
+										className='ml-1 hover:text-indigo-200 underline'
+										to='/login'
+									>
 										Ingresar
 									</Link>
 								</p>
