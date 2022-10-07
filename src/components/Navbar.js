@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
 import { logOutAction } from '../actionCreators/authActions';
-import { auth } from '../config/firebaseConfig';
+import { auth } from '../config/firebase.config';
 import DarkModeToggle from './DarkModeToggle';
 
 function Navbar() {

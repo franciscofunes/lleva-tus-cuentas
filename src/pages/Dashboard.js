@@ -207,7 +207,7 @@ function Dashboard() {
 											autoComplete='on'
 											placeholder='e.g. Compra supermercado'
 											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600'
+											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
 										/>
 									</div>
 								</div>
@@ -274,7 +274,7 @@ function Dashboard() {
 											autoComplete='off'
 											required
 											placeholder='e.g. "5000" (Ingreso) o "-3000" (Gasto)'
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600'
+											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
 										/>
 									</div>
 								</div>
@@ -307,7 +307,7 @@ function Dashboard() {
 										Descripción
 									</label>
 									<div className='mt-1'>
-										<textArea
+										<textarea
 											value={comment}
 											onChange={(e) => setComment(e.target.value)}
 											type='text'
@@ -315,7 +315,7 @@ function Dashboard() {
 											autoComplete='on'
 											placeholder='e.g. Información adicional'
 											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600'
+											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
 										/>
 									</div>
 								</div>
@@ -384,7 +384,7 @@ function Dashboard() {
 			>
 				<button
 					onClick={handleFloatingButtonClick}
-					class='fixed z-90 bottom-10 right-8 lg:right-12 bg-primary w-20 h-20 rounded-full drop-shadow-lg flex justify-center items-center text-white text-4xl hover:bg-primary-200 hover:drop-shadow-2xl hover:animate-none animate-bounce focus:animate-none'
+					className='fixed z-90 bottom-10 right-8 lg:right-12 bg-primary w-20 h-20 rounded-full drop-shadow-lg flex justify-center items-center text-white text-4xl hover:bg-primary-200 hover:drop-shadow-2xl hover:animate-none animate-bounce focus:animate-none'
 				>
 					💰
 				</button>

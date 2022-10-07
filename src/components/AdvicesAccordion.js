@@ -1,6 +1,6 @@
 export default function AdvicesAccordion() {
 	return (
-		<div className='container flex flex-col justify-center md:p-8'>
+		<div className='container flex flex-col justify-center md:p-8 mb-5'>
 			<p className='mt-4 mb-8 text-gray-600 dark:text-gray-400'>
 				Aprende de estos consejos financieros para el día a día 💪
 			</p>
@@ -24,11 +24,11 @@ export default function AdvicesAccordion() {
 						compre más allá de lo necesario.
 					</p>
 				</details>
-				<details className='rounded-lg ring-1 ring-purple-600 dark:text-zinc-300'>
+				<details className='rounded-lg ring-1 ring-purple-600 dark:text-zinc-300 mb-10'>
 					<summary className='px-4 py-6 text-black-800'>
 						Comer antes de ir al supermercado
 					</summary>
-					<p className='px-4 py-6 pt-0 ml-4 -mt-4 text-gray-600 dark:text-gray-400'>
+					<p className='px-4 py-6 pt-0 ml-4 -mt-4 text-gray-600 dark:text-gray-400 '>
 						Al hacer compras con el estómago vacío, es fácil dejarse seducir por
 						los dulces y otros alimentos que no necesita comprar en este
 						momento.

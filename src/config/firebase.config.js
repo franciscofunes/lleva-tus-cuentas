@@ -4,13 +4,13 @@ import 'firebase/compat/firestore';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-	apiKey: 'AIzaSyDKhprZJp4JDrXykBsWr_dT45CK5-g15o0',
-	authDomain: 'lleva-tus-cuentas.firebaseapp.com',
-	projectId: 'lleva-tus-cuentas',
-	storageBucket: 'lleva-tus-cuentas.appspot.com',
-	messagingSenderId: '360305712897',
-	appId: '1:360305712897:web:c8109de7823e8bfd1c8500',
-	measurementId: 'G-WZ89FCV9EW',
+	apiKey: `${process.env.REACT_APP_API_KEY}`,
+	authDomain: `${process.env.REACT_APP_AUTH_DOMAIN}`,
+	projectId: `${process.env.REACT_APP_PROJECT_ID}`,
+	storageBucket: `${process.env.REACT_APP_STORAGE_BUCKET}`,
+	messagingSenderId: `${process.env.REACT_APP_MESSAGING_SENDER_ID}`,
+	appId: `${process.env.REACT_APP_APP_ID}`,
+	measurementId: `${process.env.REACT_APP_MEASUREMENT_ID}`,
 };
 
 // Initialize Firebase

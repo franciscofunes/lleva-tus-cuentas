@@ -1,4 +1,4 @@
-import { firestore } from '../config/firebaseConfig';
+import { firestore } from '../config/firebase.config';
 
 export const storeDataAction = (data) => {
 	return (dispatch) => {
