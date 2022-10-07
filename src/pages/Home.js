@@ -21,7 +21,7 @@ function Home() {
 						}}
 					>
 						<h1 className='uppercase font-bold lg:text-5xl text-4xl mb-2 mt-5 text-primary dark:text-white'>
-							Bienvenidos <span className='animate-waving-hand'>👋</span>
+							Bienvenidos <span className='animate-waving'>👋</span>
 						</h1>
 						<p className='font-normal font-Roboto lg:text-2xl text-gray-500 text-2xl '>
 							Les presentamos un gestor de finanzas personales diseñado para

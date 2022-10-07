@@ -114,8 +114,8 @@ function Login() {
 							<div>
 								<p className='dark:text-white mb-2 italic text-sm'>
 									No tengo usuario
-									<Link to='/signup'>
-										<a className='ml-1 hover:text-indigo-200'>Registrarme</a>
+									<Link className='ml-1 hover:text-indigo-200' to='/signup'>
+										Registrarme
 									</Link>
 								</p>
 								<button
