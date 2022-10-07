@@ -8,10 +8,10 @@ function Home() {
 	const user = useSelector((state) => state.auth.user);
 	return (
 		<>
-			<div className='max-w-screen relative  lg:px-20  flex  justify-center lg:flex-row flex-col items-center  lg:mt-1 mt-12 '>
-				<div className='container lg:block flex justify-center align-middle flex-col z-50 lg:mx-auto w-full lg:text-left text-center'>
+			<div className='max-w-screen relative  lg:px-20  flex  justify-center lg:flex-row flex-col items-center  lg:mt-0 dark:bg-gray-900'>
+				<div className='container lg:block flex justify-center align-middle flex-col z-50 lg:mx-auto w-full lg:text-left text-center '>
 					<motion.div
-						className='w-full'
+						className='w-full '
 						animate={{ x: 0, opacity: 1 }}
 						initial={{ x: -40, opacity: 0 }}
 						transition={{
@@ -20,8 +20,8 @@ function Home() {
 							type: 'tween',
 						}}
 					>
-						<h1 className='uppercase font-bold lg:text-5xl text-4xl mb-2 text-primary'>
-							Bienvenidos 👋
+						<h1 className='uppercase font-bold lg:text-5xl text-4xl mb-2 mt-5 text-primary dark:text-white'>
+							Bienvenidos <span className='animate-waving-hand'>👋</span>
 						</h1>
 						<p className='font-normal font-Roboto lg:text-2xl text-gray-500 text-2xl '>
 							Les presentamos un gestor de finanzas personales diseñado para
@@ -29,7 +29,7 @@ function Home() {
 						</p>
 					</motion.div>
 					<motion.div
-						className='flex justify-center lg:block'
+						className='flex justify-center lg:block dark:bg-gray-900'
 						animate={{ opacity: 1 }}
 						initial={{ opacity: 0 }}
 						transition={{ delay: 0.4, duration: 0.5 }}
@@ -52,13 +52,13 @@ function Home() {
 					}}
 					src={bank}
 					alt='hero'
-					className='lg:h-hero lg:relative z-40 h-96 w-96 top-full lg:w-hero'
+					className='lg:h-hero lg:relative z-40 h-96 w-96 top-full lg:w-hero '
 				/>
 			</div>
 
 			<svg
 				xmlns='http://www.w3.org/2000/svg'
-				className='absolute bottom-0 z-0 h-60 w-100'
+				className='absolute bottom-0 z-0 h-60 w-100 dark:bg-gray-900'
 				viewBox='100 80 2000 200'
 			>
 				<path

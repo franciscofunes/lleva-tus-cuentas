@@ -137,7 +137,7 @@ function Dashboard() {
 				initial={{ opacity: 0 }}
 				transition={{ duration: 1 }}
 				id='dashboard'
-				className='container lg:px-6   max-w-full grid lg:grid-cols-3  overflow-y-auto lg:overflow-hidden'
+				className='container lg:px-6   max-w-full grid lg:grid-cols-3  overflow-y-auto lg:overflow-hidden dark:bg-gray-900'
 			>
 				<div
 					id='left'
@@ -148,27 +148,31 @@ function Dashboard() {
 						initial={{ opacity: 0 }}
 						transition={{ duration: 0.7, type: 'tween' }}
 						id='info'
-						className='container bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 font-Nunito flex flex-col'
+						className='container bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 mt-6 font-Nunito flex flex-col dark:bg-slate-800 dark:border-indigo-500'
 					>
 						<div
 							id='top-info'
 							className='flex justify-between  max-w-full items-center mb-10 '
 						>
-							<div className='flex flex-col justify-center items-center '>
-								<h1 className='font-semibold text-2xl uppercase'>Ingresos</h1>
+							<div className='flex flex-col justify-center items-center  '>
+								<h1 className='font-semibold text-2xl uppercase dark:text-zinc-100'>
+									Ingresos
+								</h1>
 								<p className='text-green-500 font-medium'>{`${currencyFormater(
 									income
 								)}`}</p>
 							</div>
 							<div className='flex flex-col justify-center items-center '>
-								<h1 className='font-semibold text-2xl uppercase'>Gastos</h1>
+								<h1 className='font-semibold text-2xl uppercase dark:text-zinc-100'>
+									Gastos
+								</h1>
 								<p className='text-red-500 font-medium'>{`${currencyFormater(
 									expense
 								)}`}</p>
 							</div>
 						</div>
 						<div>
-							<h2 className='text-2xl font-semibold text-center '>
+							<h2 className='text-2xl font-semibold text-center dark:text-zinc-100 '>
 								{currencyFormater(total)}
 							</h2>
 							<p className='text-gray-400 text-center'>Balance Total</p>
@@ -179,20 +183,20 @@ function Dashboard() {
 						initial={{ opacity: 0 }}
 						transition={{ duration: 0.7, type: 'tween' }}
 						id='add-transaction'
-						className='lg:w-3/4 w-full lg:mb-0 mb-8 bg-white p-8 border rounded-md shadow-md'
+						className='lg:w-3/4 w-full lg:mb-0 mb-8 bg-white p-8 border rounded-md shadow-md dark:bg-slate-800 dark:border-indigo-500'
 					>
 						<form className='mb-0 space-y-6' onSubmit={handleSubmit}>
 							<div>
-								<h1 className='font-Nunito font-semibold text-xl mb-3'>
+								<h1 className='font-Nunito font-semibold text-xl mb-3 dark:text-zinc-100'>
 									Nueva transacción
 								</h1>
 
 								<div className='mb-2'>
 									<label
 										htmlFor='name'
-										className='block text-sm font-medium text-gray-700'
+										className='block text-sm font-medium text-gray-700 dark:text-white'
 									>
-										Nombre
+										Nombre transacción
 									</label>
 									<div className='mt-1'>
 										<input
@@ -201,8 +205,9 @@ function Dashboard() {
 											type='text'
 											id='name'
 											autoComplete='on'
+											placeholder='e.g. Compra supermercado'
 											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
+											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600'
 										/>
 									</div>
 								</div>
@@ -210,7 +215,7 @@ function Dashboard() {
 								<div className='mb-2'>
 									<label
 										htmlFor='category'
-										className='block text-sm font-medium text-gray-700'
+										className='block text-sm font-medium text-gray-700 dark:text-white'
 									>
 										Categoría
 									</label>
@@ -222,10 +227,13 @@ function Dashboard() {
 											id='comment'
 											autoComplete='on'
 											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
+											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-zinc-200'
 										>
-											<option defaultValue={'Selecciona una categoría'}>
-												Selecciona una categoría
+											<option
+												className='dark:text-white'
+												defaultValue={'categoriaDefault'}
+											>
+												Elegí una categoría
 											</option>
 											<optgroup label='Gastos'>
 												<option>Alimentación</option>
@@ -250,7 +258,7 @@ function Dashboard() {
 								<div className='mb-2'>
 									<label
 										htmlFor='amount'
-										className='block text-sm font-medium text-gray-700'
+										className='block text-sm font-medium text-gray-700 dark:text-white'
 									>
 										Monto{' '}
 										<small className='font-bold text-purple-600 text-xs italic '>
@@ -265,7 +273,8 @@ function Dashboard() {
 											id='amount'
 											autoComplete='off'
 											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
+											placeholder='e.g. "5000" (Ingreso) o "-3000" (Gasto)'
+											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600'
 										/>
 									</div>
 								</div>
@@ -273,7 +282,7 @@ function Dashboard() {
 								<div className='mb-2'>
 									<label
 										htmlFor='name'
-										className='block text-sm font-medium text-gray-700'
+										className='block text-sm font-medium text-gray-700 dark:text-white'
 									>
 										Fecha
 									</label>
@@ -285,7 +294,7 @@ function Dashboard() {
 											id='selectedDate'
 											autoComplete='off'
 											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
+											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:text-white dark:bg-slate-800 dark:border-purple-600 dark:text-zinc-200 '
 										/>
 									</div>
 								</div>
@@ -293,19 +302,20 @@ function Dashboard() {
 								<div className='mb-2'>
 									<label
 										htmlFor='name'
-										className='block text-sm font-medium text-gray-700'
+										className='block text-sm font-medium text-gray-700 dark:text-white'
 									>
-										Comentarios
+										Descripción
 									</label>
 									<div className='mt-1'>
-										<input
+										<textArea
 											value={comment}
 											onChange={(e) => setComment(e.target.value)}
 											type='text'
 											id='comment'
 											autoComplete='on'
+											placeholder='e.g. Información adicional'
 											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
+											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600'
 										/>
 									</div>
 								</div>
@@ -334,10 +344,10 @@ function Dashboard() {
 					initial={{ opacity: 0 }}
 					transition={{ duration: 0.7, type: 'tween' }}
 					id='right'
-					className='lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 mt-4  shadow-md mx-auto items-stretch w-full border rounded-md'
+					className='lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500'
 				>
 					<div>
-						<h1 className='font-Nunito font-bold text-3xl mb-2 mt'>
+						<h1 className='font-Nunito font-bold text-3xl mb-2 mt dark:text-zinc-100'>
 							Transacciones 📕
 						</h1>
 						{docs &&
@@ -367,12 +377,18 @@ function Dashboard() {
 					</div>
 				</motion.div>
 			</motion.div>
-			<button
-				onClick={handleFloatingButtonClick}
-				class='fixed z-90 bottom-10 right-8 bg-purple-600 w-20 h-20 rounded-full drop-shadow-lg flex justify-center items-center text-white text-4xl hover:bg-purple-700 hover:drop-shadow-2xl hover:animate-none animate-pulse focus:animate-none'
+			<motion.div
+				animate={{ opacity: 1 }}
+				initial={{ opacity: 0 }}
+				transition={{ duration: 0.7, type: 'tween' }}
 			>
-				💰
-			</button>
+				<button
+					onClick={handleFloatingButtonClick}
+					class='fixed z-90 bottom-10 right-12 bg-primary w-20 h-20 rounded-full drop-shadow-lg flex justify-center items-center text-white text-4xl hover:bg-primary-200 hover:drop-shadow-2xl hover:animate-none animate-bounce focus:animate-none'
+				>
+					💰
+				</button>
+			</motion.div>
 
 			{showModal && (
 				<LitaModal showModal={showModal} setShowModal={setShowModal} />

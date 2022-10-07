@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { auth } from '../config/firebaseConfig';
-import { useNavigate, useLocation } from 'react-router';
-import { useDispatch } from 'react-redux';
-import { logOutAction } from '../actionCreators/authActions';
 import { motion } from 'framer-motion';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useLocation, useNavigate } from 'react-router';
+import { Link } from 'react-router-dom';
+import { logOutAction } from '../actionCreators/authActions';
+import { auth } from '../config/firebaseConfig';
+import DarkModeToggle from './DarkModeToggle';
 
 function Navbar() {
 	const user = useSelector((state) => state.auth.user);
@@ -32,33 +32,45 @@ function Navbar() {
 				animate={{ opacity: 1 }}
 				initial={{ opacity: 0 }}
 				transition={{ delay: 0.1, duration: 0.7 }}
-				className='py-5 lg:px-10 px-3 flex justify-between items-center z-10'
+				className='py-5 lg:px-10 px-3 flex justify-between items-center z-10 dark:bg-slate-800'
 			>
 				<Link
 					to='/'
-					className=' uppercase font-extrabold lg:text-4xl text-3xl tracking-widest font-Montserrat'
+					className=' uppercase font-extrabold lg:text-4xl text-3xl tracking-widest font-Montserrat dark:text-white'
 				>
 					LTC<span className='text-green-600'>$</span>
 				</Link>
+
 				{user && (
 					<div className='flex items-center'>
 						{location.pathname === '/' && (
-							<Link to='/dashboard' className='nav-btn mr-3'>
+							<Link to='/dashboard' className='nav-btn mr-3 dark:text-white'>
 								Dashboard
 							</Link>
 						)}
-						<div onClick={handleLogout} className='nav-btn cursor-pointer'>
+						<div
+							onClick={handleLogout}
+							className='nav-btn cursor-pointer dark:text-white'
+						>
 							Salir
 						</div>
+						<DarkModeToggle />
 					</div>
 				)}
 				{!user && (
-					<Link
-						to={location.pathname.includes('login') ? '/signup' : '/login'}
-						className='nav-btn'
-					>
-						{location.pathname.includes('login') ? 'Registrarse' : 'Ingresar'}
-					</Link>
+					<>
+						<div className='flex items-center'>
+							<Link
+								to={location.pathname.includes('login') ? '/signup' : '/login'}
+								className='nav-btn dark:text-white'
+							>
+								{location.pathname.includes('login')
+									? 'Registrarme'
+									: 'Ingresar'}
+							</Link>
+							<DarkModeToggle />
+						</div>
+					</>
 				)}
 			</motion.nav>
 		</>

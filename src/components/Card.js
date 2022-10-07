@@ -41,7 +41,7 @@ function Card({
 			initial={{ opacity: 0 }}
 			transition={{ duration: 0.4, type: 'tween', delay: 0.2 }}
 			id='card'
-			className='flex border-b-2 border-purple-400 w-full mb-2 justify-between items-center py-3 px-4 font-Nunito'
+			className='flex border-b-2 border-purple-400 w-full mb-2 justify-between items-center py-3 px-4 font-Nunito dark:border-indigo-400'
 		>
 			<div className='flex flex-col justify-evenly items-start'>
 				<p className='font-semibold text-base text-gray-400'>
@@ -70,7 +70,7 @@ function Card({
 				</h1>
 				<svg
 					xmlns='http://www.w3.org/2000/svg'
-					className='h-6 w-6 ml-3 cursor-pointer'
+					className='h-6 w-6 ml-3 cursor-pointer dark:text-white'
 					fill='none'
 					viewBox='0 0 24 24'
 					stroke='currentColor'
@@ -87,7 +87,7 @@ function Card({
 				<svg
 					xmlns='http://www.w3.org/2000/svg'
 					fill='none'
-					className='h-6 w-6 ml-3 cursor-pointer w-6 h-6'
+					className='h-6 w-6 ml-3 cursor-pointer w-6 h-6 dark:text-white'
 					viewBox='0 0 24 24'
 					strokeWidth='1.5'
 					stroke='currentColor'

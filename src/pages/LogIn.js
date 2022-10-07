@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logInAction } from '../actionCreators/authActions';
 import { Navigate } from 'react-router';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import money from '../imgs/money.png';
 import money2 from '../imgs/money2.png';
@@ -50,6 +51,7 @@ function Login() {
 				animate={{ opacity: 1 }}
 				initial={{ opacity: 0 }}
 				transition={{ duration: 0.5, type: 'tween' }}
+				className='dark:bg-gray-900'
 			>
 				<div className='z-50 container flex flex-col justify-center h-hero  mx-auto items-center'>
 					<motion.h1
@@ -59,7 +61,7 @@ function Login() {
 						}}
 						initial={{ x: -100, opacity: 0 }}
 						transition={{ duration: 1, type: 'tween' }}
-						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-4xl text-3xl mb-6 italic'
+						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-3xl text-2xl mb-6 italic dark:text-white'
 					>
 						Experimenta una nueva forma de gestionar tu dinero
 					</motion.h1>
@@ -67,14 +69,14 @@ function Login() {
 						animate={{ opacity: 1 }}
 						initial={{ opacity: 0 }}
 						transition={{ delay: 0.2, duration: 1 }}
-						className='bg-white z-50 lg:w-96 w-80 pt-10 pb-8 px-10 shadow-2xl rounded-lg'
+						className='bg-white z-50 lg:w-96 w-80 pt-10 pb-8 px-10 shadow-2xl rounded-lg dark:bg-slate-800'
 					>
 						<form className='mb-0 space-y-6' onSubmit={handleSubmit}>
 							<div>
 								<div className='mb-2'>
 									<label
 										htmlFor='email'
-										className='block text-sm font-medium text-gray-700'
+										className='block text-sm font-medium text-gray-700 dark:text-white'
 									>
 										Correo electrónico
 									</label>
@@ -84,7 +86,8 @@ function Login() {
 											onChange={(e) => setEmail(e.target.value)}
 											type='email'
 											id='email'
-											autoComplete='off'
+											autoComplete='on'
+											placeholder='johndoe@gmail.com'
 											required
 											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
 										/>
@@ -92,7 +95,7 @@ function Login() {
 								</div>
 								<label
 									htmlFor='password'
-									className='block text-sm font-medium text-gray-700'
+									className='block text-sm font-medium text-gray-700 dark:text-white'
 								>
 									Contraseña
 								</label>
@@ -101,7 +104,7 @@ function Login() {
 										value={password}
 										onChange={(e) => setPassword(e.target.value)}
 										type='password'
-										autoComplete='off'
+										autoComplete='on'
 										id='password'
 										required
 										className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
@@ -109,6 +112,12 @@ function Login() {
 								</div>
 							</div>
 							<div>
+								<p className='dark:text-white mb-2 italic text-sm'>
+									No tengo usuario
+									<Link to='/signup'>
+										<a className='ml-1 hover:text-indigo-200'>Registrarme</a>
+									</Link>
+								</p>
 								<button
 									type='submit'
 									className='w-full flex justify-center py-3 px-4 border border-transparent shadow-sm bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md '
@@ -121,7 +130,7 @@ function Login() {
 				</div>
 				<svg
 					xmlns='http://www.w3.org/2000/svg'
-					className='absolute bottom-0 z-0 h-60 w-100'
+					className='absolute bottom-0 z-0 h-60 w-100 dark:bg-gray-900'
 					viewBox='10 100 2000 200'
 				>
 					<path

@@ -12,16 +12,17 @@ const LitaModal = ({ setShowModal, showModal }) => {
 			<motion.div
 				animate={{ opacity: 1 }}
 				initial={{ opacity: 0 }}
-				transition={{ duration: 0.4, type: 'tween', delay: 0.2 }}
+				transition={{ duration: 0.2, type: 'tween', delay: 0.1 }}
 				id='card'
+				className='flex justify-start overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-opacity-75 transition-opacity backdrop-blur dark:z-100'
 			>
-				<div className='flex justify-start overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-opacity-75 transition-opacity'>
-					<div className='absolute right-2 left-2 w-auto my-5 mx-auto max-w-2xl'>
-						<div className='border-4 border-purple-600 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none p-4 mb-2 focus:outline-none'>
+				<div className='flex justify-start overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-opacity-75 transition-opacity backdrop-blur dark:z-100'>
+					<div className='absolute right-2 left-2 w-auto my-5 mx-auto max-w-2xl border-4 border-purple-600 rounded-lg dark:bg-gray-900'>
+						<div className=' shadow-lg relative flex flex-col w-full bg-white outline-none p-4 focus:outline-none dark:bg-gray-900'>
 							<div className='flex items-start justify-between  p-6 border-b border-solid border-gray-300 rounded-t '>
-								<h4 className='text-2xl font=semibold'>
+								<h4 className='text-2xl font=semibold dark:text-white'>
 									Hola soy LITA 🤖 <br />
-									<span className='text-purple-600 text-base'>
+									<span className='text-purple-600 text-base italic dark:text-zinc-300'>
 										Tu consejera financiera
 									</span>
 								</h4>
