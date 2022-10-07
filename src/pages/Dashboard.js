@@ -184,7 +184,7 @@ function Dashboard() {
 						<form className='mb-0 space-y-6' onSubmit={handleSubmit}>
 							<div>
 								<h1 className='font-Nunito font-semibold text-xl mb-3 dark:text-zinc-100'>
-									Nueva transacción
+									{edit ? 'Editar transacción' : 'Nueva transacción'}
 								</h1>
 
 								<div className='mb-2'>
