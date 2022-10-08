@@ -70,7 +70,7 @@ module.exports = {
 			ping: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
 			pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1)',
 			bounce: 'bounce 1s infinite',
-			wavingHand: 'wave 2s linear infinite',
+			wave: 'wave 2s linear infinite',
 		},
 		backdropBlur: (theme) => theme('blur'),
 		backdropBrightness: (theme) => theme('brightness'),

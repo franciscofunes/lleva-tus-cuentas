@@ -69,7 +69,7 @@ function Login() {
 						animate={{ opacity: 1 }}
 						initial={{ opacity: 0 }}
 						transition={{ delay: 0.2, duration: 1 }}
-						className='bg-white z-50 lg:w-96 w-80 pt-10 pb-8 px-10 shadow-2xl rounded-lg dark:bg-slate-800'
+						className='bg-white z-50 lg:w-96 w-80 pt-10 pb-8 px-10 shadow-2xl mb-20 rounded-lg dark:bg-slate-800'
 					>
 						<form className='mb-0 space-y-6' onSubmit={handleSubmit}>
 							<div>
