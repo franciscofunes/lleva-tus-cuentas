@@ -16,7 +16,7 @@ module.exports = {
 				},
 			},
 			animation: {
-				wave: 'wave 2s linear infinite',
+				wave: 'wave 1.5s infinite',
 			},
 			fontFamily: {
 				Roboto: ['Roboto'],

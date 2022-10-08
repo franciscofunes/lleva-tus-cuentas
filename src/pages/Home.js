@@ -21,7 +21,8 @@ function Home() {
 						}}
 					>
 						<h1 className='uppercase font-bold lg:text-5xl text-4xl mb-2 mt-10 text-primary dark:text-white'>
-							Bienvenidos <span className='animate-wave'>👋</span>
+							Bienvenidos
+							<span className='animate-wave'>👋</span>
 						</h1>
 						<p className='font-normal font-Roboto lg:text-2xl text-gray-500 text-2xl mt-5 '>
 							Les presentamos un gestor de finanzas personales diseñado para
@@ -34,11 +35,8 @@ function Home() {
 						initial={{ opacity: 0 }}
 						transition={{ delay: 0.4, duration: 0.5 }}
 					>
-						<Link
-							to='/signup'
-							className={user ? `hidden` : `get-started-btn z-50`}
-						>
-							<div>Comencemos</div>
+						<Link to='/signup' className='get-started-btn z-50'>
+							<div>{user ? `Registar` : `Comenzar`}</div>
 						</Link>
 					</motion.div>
 				</div>
