@@ -35,7 +35,10 @@ function Home() {
 						initial={{ opacity: 0 }}
 						transition={{ delay: 0.4, duration: 0.5 }}
 					>
-						<Link to='/signup' className='get-started-btn z-50'>
+						<Link
+							to={user ? '/login/' : 'signup'}
+							className='get-started-btn z-50'
+						>
 							<div>{user ? `Registar` : `Comenzar`}</div>
 						</Link>
 					</motion.div>
