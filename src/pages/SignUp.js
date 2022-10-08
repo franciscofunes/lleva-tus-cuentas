@@ -36,7 +36,7 @@ function SignUp({ history }) {
 				transition={{ delay: 0.8, duration: 1, type: 'spring' }}
 				src={wallet}
 				alt='safe'
-				className='lg:h-52 lg:w-52 h-32 w-32 z-10 top-8/5  absolute lg:top-1/2 lg:right-28 right-5'
+				className='lg:h-52 lg:w-52 h-32 w-32 z-10 top-3/4 absolute lg:top-1/2 lg:right-28 right-5'
 			/>
 			<motion.img
 				animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
@@ -44,7 +44,7 @@ function SignUp({ history }) {
 				transition={{ delay: 0.8, duration: 1, type: 'spring' }}
 				src={wallet2}
 				alt='safe'
-				className='lg:h-52 lg:w-52 h-32 w-32 z-10  absolute lg:top-1/2 top-8/5 lg:left-28 left-5'
+				className='lg:h-52 lg:w-52 h-32 w-32 z-10 absolute lg:top-1/2 top-3/4 lg:left-28 left-5'
 			/>
 			<motion.div
 				animate={{ opacity: 1 }}
