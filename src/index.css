@@ -31,7 +31,7 @@ body::-webkit-scrollbar {
 }
 
 .get-started-btn {
-	@apply lg:mt-10 mt-6 flex justify-center w-36 border-0 rounded-lg bg-primary font-bold text-white px-4 py-3 transition-shadow duration-300 ease-in hover:shadow-primary;
+	@apply lg:mt-10 mt-6 flex justify-center w-36 border-0 rounded-lg bg-indigo-500 font-bold text-white px-4 py-3 transition-shadow duration-300 ease-in hover:shadow-primary;
 }
 .nav-btn {
 	@apply flex justify-center  border-2 rounded-md  font-bold text-black border-primary px-4 py-2 hover:shadow-xl transition-shadow ease-in-out duration-500;

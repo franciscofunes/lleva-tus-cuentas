@@ -1,4 +1,5 @@
 import { auth } from '../config/firebase.config';
+
 const initState = {
 	user: null,
 	isFetching: true,

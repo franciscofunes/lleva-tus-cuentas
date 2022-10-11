@@ -30,7 +30,7 @@ function Home() {
 						</p>
 					</motion.div>
 					<motion.div
-						className='flex justify-center lg:block dark:bg-gray-900'
+						className='flex justify-center lg:block'
 						animate={{ opacity: 1 }}
 						initial={{ opacity: 0 }}
 						transition={{ delay: 0.4, duration: 0.5 }}
@@ -39,7 +39,7 @@ function Home() {
 							to={user ? '/login/' : 'signup'}
 							className='get-started-btn z-50'
 						>
-							<div>{user ? `Registar` : `Comenzar`}</div>
+							<div>{user ? `Abrir` : `Comenzar`}</div>
 						</Link>
 					</motion.div>
 				</div>
