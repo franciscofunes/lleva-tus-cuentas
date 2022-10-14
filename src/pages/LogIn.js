@@ -1,9 +1,11 @@
+import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { logInAction } from '../actionCreators/authActions';
 import { Navigate } from 'react-router';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { logInAction } from '../actionCreators/authActions';
+import GoogleLoginButton from '../components/GoogleLoginButton';
+import bars from '../imgs/bars.svg';
 import money from '../imgs/money.png';
 import money2 from '../imgs/money2.png';
 
@@ -21,9 +23,12 @@ function Login() {
 		setPassword('');
 	};
 
-	if (isFetching) {
-		return <div>Cargando...</div>;
-	}
+	if (isFetching)
+		return (
+			<div className='h-screen flex flex-col items-center justify-center'>
+				<img className='h-20 w-20' src={bars} alt='loader' />
+			</div>
+		);
 
 	if (user) {
 		return <Navigate to='/dashboard'></Navigate>;
@@ -37,7 +42,7 @@ function Login() {
 				transition={{ delay: 1, duration: 2, type: 'spring' }}
 				src={money}
 				alt='money'
-				className='lg:h-52 lg:w-52 h-32 w-32 z-10  absolute lg:top-1/2 top-3/4 lg:left-28 left-5 '
+				className='lg:h-52 lg:w-52 h-30 w-30 z-10 absolute lg:top-1/2 top-3/4 lg:left-28 left-5 '
 			/>
 			<motion.img
 				animate={{ opacity: 1, rotate: 10 }}
@@ -45,7 +50,7 @@ function Login() {
 				transition={{ delay: 1, duration: 2, type: 'spring' }}
 				src={money2}
 				alt='money'
-				className='lg:h-52 lg:w-52 h-32 w-32 z-10 top-3/4  absolute lg:top-1/2 lg:right-28 right-5 '
+				className='lg:h-52 lg:w-52 h-30 w-30 z-10 top-3/4 absolute lg:top-1/2 lg:right-28 right-5 '
 			/>
 			<motion.div
 				animate={{ opacity: 1 }}
@@ -53,7 +58,7 @@ function Login() {
 				transition={{ duration: 0.5, type: 'tween' }}
 				className='dark:bg-gray-900'
 			>
-				<div className='z-50 container flex flex-col justify-center h-hero  mx-auto items-center'>
+				<div className='z-50 container flex flex-col justify-center h-hero mx-auto items-center'>
 					<motion.h1
 						animate={{
 							x: 0,
@@ -123,12 +128,13 @@ function Login() {
 								</p>
 								<button
 									type='submit'
-									className='w-full flex justify-center py-3 px-4 border border-transparent shadow-sm bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md '
+									className='w-full flex justify-center py-2 px-2 border border-transparent shadow-sm bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md '
 								>
 									Ingresar
 								</button>
 							</div>
 						</form>
+						<GoogleLoginButton />
 					</motion.div>
 				</div>
 				<svg

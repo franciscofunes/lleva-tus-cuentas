@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
 import { signUpAction } from '../actionCreators/authActions';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 import wallet from '../imgs/wallet.png';
 import wallet2 from '../imgs/wallet2.png';
 
@@ -145,6 +146,7 @@ function SignUp({ history }) {
 								</button>
 							</div>
 						</form>
+						<GoogleLoginButton />
 					</motion.div>
 				</div>
 				<svg
