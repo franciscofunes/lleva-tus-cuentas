@@ -32,6 +32,19 @@ export const logInAction = (creds) => {
 	};
 };
 
+export const googleLogInAction = (creds) => {
+	return (dispatch) => {
+		auth
+			.signInWithEmailAndPassword(creds.email, creds.password)
+			.then((res) => {
+				dispatch({ type: 'LOG_IN', res });
+			})
+			.catch((err) => {
+				dispatch({ type: 'LOG_IN_ERROR', err });
+			});
+	};
+};
+
 export const logOutAction = () => {
 	return { type: 'LOG_OUT' };
 };
