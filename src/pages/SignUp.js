@@ -51,16 +51,16 @@ function SignUp({ history }) {
 				animate={{ opacity: 1 }}
 				initial={{ opacity: 0 }}
 				transition={{ duration: 0.5, type: 'tween' }}
-				className='dark:bg-gray-900'
+				className='dark:bg-gray-900 mt-8'
 			>
 				<div className='container flex flex-col justify-center h-hero mx-auto items-center'>
 					<motion.h1
 						animate={{ opacity: 1, x: 0 }}
 						initial={{ opacity: 0, x: 100 }}
 						transition={{ duration: 1, type: 'tween' }}
-						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-3xl text-2xl mb-6 italic dark:text-white'
+						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-3xl text-2xl mb-6  italic dark:text-white'
 					>
-						No utilice papel con un gestor de gastos automatizado en línea
+						No utilice papel con un gestor de gastos en línea
 					</motion.h1>
 					<motion.div
 						animate={{ opacity: 1 }}
