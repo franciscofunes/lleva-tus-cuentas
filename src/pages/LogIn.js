@@ -67,7 +67,7 @@ function Login() {
 						}}
 						initial={{ x: -100, opacity: 0 }}
 						transition={{ duration: 1, type: 'tween' }}
-						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-3xl text-1xl mb-6 italic dark:text-white'
+						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-3xl text-2xl mb-6 italic dark:text-white'
 					>
 						Una nueva forma de gestionar tu dinero
 					</motion.h1>
