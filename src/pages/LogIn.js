@@ -131,8 +131,8 @@ function Login() {
 								Registrarme
 							</Link>
 							<span className='mr-2 ml-2'>&#124;</span>
-							<Link className='italic underline' to='/ingresar'>
-								Ingresar
+							<Link className='italic underline' to='/recuperar'>
+								Olvidé mí contraseña 
 							</Link>
 						</div>
 						<GoogleLoginButton />
