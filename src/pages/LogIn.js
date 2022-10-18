@@ -43,7 +43,7 @@ function Login() {
 				transition={{ delay: 1, duration: 2, type: 'spring' }}
 				src={money}
 				alt='money'
-				className='lg:h-52 lg:w-52 h-30 w-30 z-10 mb-3 absolute lg:top-1/2 top-3/4 lg:left-28 left-5 '
+				className='lg:h-52 lg:w-52 h-25 w-25 z-10 mb-5 absolute lg:top-1/2 top-3/4 lg:left-28 left-5 '
 			/>
 			<motion.img
 				animate={{ opacity: 1, rotate: 10 }}
@@ -51,7 +51,7 @@ function Login() {
 				transition={{ delay: 1, duration: 2, type: 'spring' }}
 				src={money2}
 				alt='money'
-				className='lg:h-52 lg:w-52 h-30 w-30 z-10 mb-3 top-3/4 absolute lg:top-1/2 lg:right-28 right-5 '
+				className='lg:h-52 lg:w-52 h-25 w-25 z-10 mb-5 top-3/4 absolute lg:top-1/2 lg:right-28 right-5 '
 			/>
 			<motion.div
 				animate={{ opacity: 1 }}
