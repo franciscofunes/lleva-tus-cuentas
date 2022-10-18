@@ -36,7 +36,7 @@ function Home() {
 						transition={{ delay: 0.4, duration: 0.5 }}
 					>
 						<Link
-							to={user ? '/login/' : 'signup'}
+							to={user ? '/ingresar' : '/registrarse'}
 							className='get-started-btn z-50'
 						>
 							<div>{user ? `Abrir` : `Comenzar`}</div>

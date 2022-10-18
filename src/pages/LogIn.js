@@ -5,6 +5,7 @@ import { Navigate } from 'react-router';
 import { Link } from 'react-router-dom';
 import { logInAction } from '../actionCreators/authActions';
 import GoogleLoginButton from '../components/GoogleLoginButton';
+import { resetPassword } from '../config/firebase.config';
 import bars from '../imgs/bars.svg';
 import money from '../imgs/money.png';
 import money2 from '../imgs/money2.png';
@@ -31,7 +32,7 @@ function Login() {
 		);
 
 	if (user) {
-		return <Navigate to='/dashboard'></Navigate>;
+		return <Navigate to='/transacciones'></Navigate>;
 	}
 
 	return (
@@ -42,7 +43,7 @@ function Login() {
 				transition={{ delay: 1, duration: 2, type: 'spring' }}
 				src={money}
 				alt='money'
-				className='lg:h-52 lg:w-52 h-30 w-30 z-10 absolute lg:top-1/2 top-3/4 lg:left-28 left-5 '
+				className='lg:h-52 lg:w-52 h-30 w-30 z-10 mb-3 absolute lg:top-1/2 top-3/4 lg:left-28 left-5 '
 			/>
 			<motion.img
 				animate={{ opacity: 1, rotate: 10 }}
@@ -50,7 +51,7 @@ function Login() {
 				transition={{ delay: 1, duration: 2, type: 'spring' }}
 				src={money2}
 				alt='money'
-				className='lg:h-52 lg:w-52 h-30 w-30 z-10 top-3/4 absolute lg:top-1/2 lg:right-28 right-5 '
+				className='lg:h-52 lg:w-52 h-30 w-30 z-10 mb-3 top-3/4 absolute lg:top-1/2 lg:right-28 right-5 '
 			/>
 			<motion.div
 				animate={{ opacity: 1 }}
@@ -117,15 +118,6 @@ function Login() {
 								</div>
 							</div>
 							<div>
-								<p className='dark:text-white mb-2 italic text-sm'>
-									No tengo usuario
-									<Link
-										className='ml-1 hover:text-indigo-200 underline'
-										to='/signup'
-									>
-										Registrarme
-									</Link>
-								</p>
 								<button
 									type='submit'
 									className='w-full flex justify-center py-2 px-2 border border-transparent shadow-sm bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md '
@@ -134,6 +126,15 @@ function Login() {
 								</button>
 							</div>
 						</form>
+						<div className='flex justify-center dark:text-white mb-2 mt-3 italic text-sm hover:text-indigo-200 underline'>
+							<Link className='mr-2' to='/registrarse'>
+								Registrarme
+							</Link>
+							<span className='mr-2 dark:text-white '>|</span>
+							<Link className='' to='/recupero'>
+								Olvide mi contraseña
+							</Link>
+						</div>
 						<GoogleLoginButton />
 					</motion.div>
 				</div>

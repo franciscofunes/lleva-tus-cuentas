@@ -45,6 +45,17 @@ export const googleLogInAction = (creds) => {
 	};
 };
 
+export const resetPassword = (creds) => {
+	auth
+		.sendPasswordResetEmail(creds.email)
+		.then((res) => {
+			console.log(res);
+		})
+		.catch((error) => {
+			console.log(error);
+		});
+};
+
 export const logOutAction = () => {
 	return { type: 'LOG_OUT' };
 };

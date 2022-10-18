@@ -3,31 +3,21 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
-import { signUpAction } from '../actionCreators/authActions';
+import { resetPassword } from '../actionCreators/authActions';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 import wallet from '../imgs/wallet.png';
 import wallet2 from '../imgs/wallet2.png';
 
-function SignUp({ history }) {
+function ForgotPassword({ history }) {
 	const dispatch = useDispatch();
-	const [username, setUsername] = useState('');
-	const [email, setEmail] = useState('');
-	const [password, setPassword] = useState('');
 
-	const user = useSelector((state) => state.auth.user);
-	const navigate = useNavigate();
+	const [email, setEmail] = useState('');
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
-		dispatch(signUpAction({ email, password, username }));
+		dispatch(resetPassword({ email }));
 		setEmail('');
-		setUsername('');
-		setPassword('');
 	};
-
-	if (user) {
-		navigate('/transacciones');
-	}
 
 	return (
 		<>
@@ -51,17 +41,33 @@ function SignUp({ history }) {
 				animate={{ opacity: 1 }}
 				initial={{ opacity: 0 }}
 				transition={{ duration: 0.5, type: 'tween' }}
-				className='dark:bg-gray-900 mt-8'
+				className='dark:bg-gray-900 mt-5'
 			>
 				<div className='container flex flex-col justify-center h-hero mx-auto items-center'>
 					<motion.h1
 						animate={{ opacity: 1, x: 0 }}
 						initial={{ opacity: 0, x: 100 }}
 						transition={{ duration: 1, type: 'tween' }}
-						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-3xl text-2xl mb-6  italic dark:text-white'
+						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-4xl text-3xl mb-6 dark:text-white'
 					>
-						No utilice papel con un gestor de gastos en línea
+						Resetea tu contraseña
 					</motion.h1>
+					<motion.span
+						animate={{ opacity: 1, x: 0 }}
+						initial={{ opacity: 0, x: 100 }}
+						transition={{ duration: 1, type: 'tween' }}
+						className='font-Roboto text-center text-gray-600 z-50 lg:text-2xl text-xl italic mb-1 dark:text-white'
+					>
+						Solicitar un link de reseteo
+					</motion.span>
+					<motion.span
+						animate={{ opacity: 1, x: 0 }}
+						initial={{ opacity: 0, x: 100 }}
+						transition={{ duration: 1, type: 'tween' }}
+						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-1xl text-base text-zinc-400 italic mb-6 dark:text-zinc'
+					>
+						(Recorda revisar tu casilla de spam)
+					</motion.span>
 					<motion.div
 						animate={{ opacity: 1 }}
 						initial={{ opacity: 0 }}
@@ -72,32 +78,12 @@ function SignUp({ history }) {
 							<div>
 								<div className='mb-2'>
 									<label
-										htmlFor='username'
-										className='block text-sm font-medium text-gray-700 dark:text-white'
-									>
-										Usuario
-									</label>
-									<div className='mt-1'>
-										<input
-											value={username}
-											onChange={(e) => setUsername(e.target.value)}
-											type='text'
-											autoComplete='on'
-											id='username'
-											placeholder='John Doe'
-											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
-										/>
-									</div>
-								</div>
-								<div className='mb-2'>
-									<label
 										htmlFor='email'
 										className='block text-sm font-medium text-gray-700 dark:text-white'
 									>
 										Correo electrónico
 									</label>
-									<div className='mt-1'>
+									<div className='mt-2 mb-2'>
 										<input
 											value={email}
 											onChange={(e) => setEmail(e.target.value)}
@@ -106,47 +92,27 @@ function SignUp({ history }) {
 											placeholder='johndoe@gmail.com'
 											id='email'
 											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
+											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 mb-5'
 										/>
+										<button
+											type='submit'
+											className='w-full flex justify-center py-3 px-4 border border-transparent shadow-sm bg-primary hover:opacity-80 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md'
+										>
+											Enviar Link
+										</button>
+									</div>
+									<div className='flex justify-center dark:text-white mb-2 mt-3 italic text-sm hover:text-indigo-200 underline'>
+										<Link className='mr-2' to='/registrarse'>
+											Registrarme
+										</Link>
+										<span className='mr-2 dark:text-white '>|</span>
+										<Link className='' to='/ingresar'>
+											Ingresar
+										</Link>
 									</div>
 								</div>
-								<label
-									htmlFor='password'
-									className='block text-sm font-medium text-gray-700 dark:text-white'
-								>
-									Contraseña
-								</label>
-								<div className='mt-1'>
-									<input
-										value={password}
-										onChange={(e) => setPassword(e.target.value)}
-										type='password'
-										id='password'
-										autoComplete='on'
-										required
-										className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
-									/>
-								</div>
-							</div>
-							<div>
-								<p className='dark:text-white mb-2 italic text-sm'>
-									Ya tengo usuario
-									<Link
-										className='ml-1 hover:text-indigo-200 underline'
-										to='/ingresar'
-									>
-										Ingresar
-									</Link>
-								</p>
-								<button
-									type='submit'
-									className='w-full flex justify-center py-3 px-4 border border-transparent shadow-sm bg-primary hover:opacity-80 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md'
-								>
-									Registrarme
-								</button>
 							</div>
 						</form>
-						<GoogleLoginButton />
 					</motion.div>
 				</div>
 				<svg
@@ -165,4 +131,4 @@ function SignUp({ history }) {
 	);
 }
 
-export default SignUp;
+export default ForgotPassword;

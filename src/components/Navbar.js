@@ -44,7 +44,10 @@ function Navbar() {
 				{user && (
 					<div className='flex items-center'>
 						{location.pathname === '/' && (
-							<Link to='/dashboard' className='nav-btn mr-3 dark:text-white'>
+							<Link
+								to='/transacciones'
+								className='nav-btn mr-3 dark:text-white'
+							>
 								Dashboard
 							</Link>
 						)}
@@ -61,7 +64,11 @@ function Navbar() {
 					<>
 						<div className='flex items-center'>
 							<Link
-								to={location.pathname.includes('login') ? '/signup' : '/login'}
+								to={
+									location.pathname.includes('login')
+										? '/registrarse'
+										: '/ingresar'
+								}
 								className='nav-btn dark:text-white'
 							>
 								{location.pathname.includes('login')

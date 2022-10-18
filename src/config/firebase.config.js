@@ -34,4 +34,16 @@ export const signInWithGoogle = () => {
 		});
 };
 
+export const resetPassword = (email) => {
+	return firebase
+		.auth()
+		.sendPasswordResetEmail(email)
+		.then((res) => {
+			console.log(res, 'Reset succeed');
+		})
+		.catch((error) => {
+			console.log(error.message);
+		});
+};
+
 export default firebaseConfig;
