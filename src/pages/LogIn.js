@@ -126,13 +126,13 @@ function Login() {
 								</button>
 							</div>
 						</form>
-						<div className='flex justify-center dark:text-white mb-2 mt-3 italic text-sm hover:text-indigo-200 underline'>
-							<Link className='mr-2' to='/registrarse'>
+						<div className='flex justify-center gap-y-2 dark:text-white mb-2 mt-3 text-sm hover:text-indigo-200'>
+							<Link className='italic underline' to='/registrarse'>
 								Registrarme
 							</Link>
-							<span className='mr-2 dark:text-white '>|</span>
-							<Link className='' to='/recupero'>
-								Olvide mi contraseña
+							<span className='mr-2 ml-2'>&#124;</span>
+							<Link className='italic underline' to='/ingresar'>
+								Ingresar
 							</Link>
 						</div>
 						<GoogleLoginButton />
