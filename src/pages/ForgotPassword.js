@@ -12,11 +12,13 @@ function ForgotPassword({ history }) {
 	const dispatch = useDispatch();
 
 	const [email, setEmail] = useState('');
+	const navigate = useNavigate();
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
 		dispatch(resetPassword({ email }));
 		setEmail('');
+		navigate('/ingresar');
 	};
 
 	return (
@@ -101,18 +103,18 @@ function ForgotPassword({ history }) {
 											Enviar Link
 										</button>
 									</div>
-									<div className='flex justify-center dark:text-white mb-2 mt-3 italic text-sm hover:text-indigo-200 underline'>
-										<Link className='mr-2' to='/registrarse'>
-											Registrarme
-										</Link>
-										<span className='mr-2 dark:text-white '>|</span>
-										<Link className='' to='/ingresar'>
-											Ingresar
-										</Link>
-									</div>
 								</div>
 							</div>
 						</form>
+						<div className='flex justify-center dark:text-white mb-2 mt-3 italic text-sm hover:text-indigo-200 underline'>
+							<Link className='mr-2' to='/registrarse'>
+								Registrarme
+							</Link>
+							<span className='mr-2 dark:text-white '>|</span>
+							<Link className='' to='/ingresar'>
+								Ingresar
+							</Link>
+						</div>
 					</motion.div>
 				</div>
 				<svg
