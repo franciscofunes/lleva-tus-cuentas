@@ -106,12 +106,12 @@ function ForgotPassword({ history }) {
 								</div>
 							</div>
 						</form>
-						<div className='flex justify-center dark:text-white mb-2 mt-3 italic text-sm hover:text-indigo-200 underline'>
-							<Link className='mr-2' to='/registrarse'>
+						<div className='flex justify-center dark:text-white mb-2 mt-3 text-sm hover:text-indigo-200'>
+							<Link className='mr-2 italic underline' to='/registrarse'>
 								Registrarme
 							</Link>
-							<span className='mr-2 dark:text-white '>&#124;</span>
-							<Link className='' to='/ingresar'>
+							<span className='mr-2 dark:text-white'>&#124;</span>
+							<Link className='italic underline' to='/ingresar'>
 								Ingresar
 							</Link>
 						</div>
