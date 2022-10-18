@@ -110,7 +110,7 @@ function ForgotPassword({ history }) {
 							<Link className='italic underline' to='/registrarse'>
 								Registrarme
 							</Link>
-							<span>&#124;</span>
+							<span className='mr-2 ml-2'>&#124;</span>
 							<Link className='italic underline' to='/ingresar'>
 								Ingresar
 							</Link>
