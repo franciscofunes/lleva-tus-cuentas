@@ -106,7 +106,7 @@ function ForgotPassword({ history }) {
 								</div>
 							</div>
 						</form>
-						<div className='flex justify-center gap-y-px dark:text-white mb-2 mt-3 text-sm hover:text-indigo-200'>
+						<div className='flex justify-center gap-y-2 dark:text-white mb-2 mt-3 text-sm hover:text-indigo-200'>
 							<Link className='italic underline' to='/registrarse'>
 								Registrarme
 							</Link>
