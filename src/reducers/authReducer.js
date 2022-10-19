@@ -5,6 +5,7 @@ const initState = {
 	isFetching: true,
 	signUpError: null,
 	logInError: null,
+	resetPasswordError: null,
 };
 
 export const authReducer = (state = initState, action) => {
@@ -31,6 +32,18 @@ export const authReducer = (state = initState, action) => {
 		case 'LOG_OUT':
 			auth.signOut();
 			return { ...state, isFetching: false };
+		case 'RESET_PASSWORD':
+			return {
+				...state,
+				user: action.res.user,
+				resetPasswordError: null,
+			};
+		case 'RESET_PASSWORD_ERROR':
+			return {
+				...state,
+				user: action.res.user,
+				resetPasswordError: action.err.message,
+			};
 		default:
 			return state;
 	}

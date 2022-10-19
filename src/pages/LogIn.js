@@ -126,7 +126,8 @@ function Login() {
 								</button>
 							</div>
 						</form>
-						<div className='flex justify-center dark:text-white mb-2 mt-3 italic text-sm hover:text-indigo-200 underline'>
+						<GoogleLoginButton />
+						<div className='flex justify-center dark:text-white mt-5 italic text-sm hover:text-indigo-200 underline'>
 							<Link className='mr-2' to='/registrarse'>
 								Registrarme
 							</Link>
@@ -135,7 +136,6 @@ function Login() {
 								Olvide mi contraseña
 							</Link>
 						</div>
-						<GoogleLoginButton />
 					</motion.div>
 				</div>
 				<svg

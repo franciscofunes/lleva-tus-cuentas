@@ -18,7 +18,6 @@ function ForgotPassword({ history }) {
 		e.preventDefault();
 		dispatch(resetPassword({ email }));
 		setEmail('');
-		navigate('/ingresar');
 	};
 
 	return (
@@ -90,7 +89,6 @@ function ForgotPassword({ history }) {
 											value={email}
 											onChange={(e) => setEmail(e.target.value)}
 											type='email'
-											autoComplete='on'
 											placeholder='johndoe@gmail.com'
 											id='email'
 											required

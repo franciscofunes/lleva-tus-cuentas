@@ -46,14 +46,16 @@ export const googleLogInAction = (creds) => {
 };
 
 export const resetPassword = (creds) => {
-	auth
-		.sendPasswordResetEmail(creds.email)
-		.then((res) => {
-			console.log(res);
-		})
-		.catch((error) => {
-			console.log(error);
-		});
+	return (dispatch) => {
+		auth
+			.sendPasswordResetEmail(creds.email)
+			.then((res) => {
+				dispatch({ type: 'RESET_PASSWORD', res });
+			})
+			.catch((err) => {
+				dispatch({ type: 'RESET_PASSWORD_ERROR', err });
+			});
+	};
 };
 
 export const logOutAction = () => {

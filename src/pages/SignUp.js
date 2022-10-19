@@ -129,15 +129,6 @@ function SignUp({ history }) {
 								</div>
 							</div>
 							<div>
-								<p className='dark:text-white mb-2 italic text-sm'>
-									Ya tengo usuario
-									<Link
-										className='ml-1 hover:text-indigo-200 underline'
-										to='/ingresar'
-									>
-										Ingresar
-									</Link>
-								</p>
 								<button
 									type='submit'
 									className='w-full flex justify-center py-3 px-4 border border-transparent shadow-sm bg-primary hover:opacity-80 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md'
@@ -147,6 +138,15 @@ function SignUp({ history }) {
 							</div>
 						</form>
 						<GoogleLoginButton />
+						<div className='flex justify-center mt-5 italic text-sm'>
+							<p className='dark:text-white'> Ya tengo usuario</p>
+							<Link
+								className='ml-1 dark:text-white hover:text-indigo-200 underline'
+								to='/ingresar'
+							>
+								Ingresar
+							</Link>
+						</div>
 					</motion.div>
 				</div>
 				<svg
