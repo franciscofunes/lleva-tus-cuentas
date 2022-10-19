@@ -42,7 +42,7 @@ function ForgotPassword({ history }) {
 				animate={{ opacity: 1 }}
 				initial={{ opacity: 0 }}
 				transition={{ duration: 0.5, type: 'tween' }}
-				className='dark:bg-gray-900 mt-5'
+				className='dark:bg-gray-900 mt-3'
 			>
 				<div className='container flex flex-col justify-center h-hero mx-auto items-center'>
 					<motion.h1
@@ -104,12 +104,12 @@ function ForgotPassword({ history }) {
 								</div>
 							</div>
 						</form>
-						<div className='flex justify-center dark:text-white mb-2 mt-3 italic text-sm hover:text-indigo-200 underline'>
-							<Link className='mr-2' to='/registrarse'>
+						<div className='flex justify-center gap-y-2 dark:text-white mb-2 mt-3 text-sm hover:text-indigo-200'>
+							<Link className='italic underline' to='/registrarse'>
 								Registrarme
 							</Link>
-							<span className='mr-2 dark:text-white '>|</span>
-							<Link className='' to='/ingresar'>
+							<span className='mr-2 ml-2'>&#124;</span>
+							<Link className='italic underline' to='/ingresar'>
 								Ingresar
 							</Link>
 						</div>
