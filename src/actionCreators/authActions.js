@@ -1,4 +1,9 @@
 import { auth } from '../config/firebase.config';
+import { toast } from 'react-toastify';
+import {
+	ERROR_MESSAGE,
+	SUCCESS_MESSAGE,
+} from '../shared/constants/toast-messages.const';
 
 export const signUpAction = (creds) => {
 	return (dispatch) => {
@@ -24,23 +29,29 @@ export const logInAction = (creds) => {
 		auth
 			.signInWithEmailAndPassword(creds.email, creds.password)
 			.then((res) => {
+				toast.success(SUCCESS_MESSAGE);
+
 				dispatch({ type: 'LOG_IN', res });
 			})
 			.catch((err) => {
+				toast.error(ERROR_MESSAGE);
+
 				dispatch({ type: 'LOG_IN_ERROR', err });
 			});
 	};
 };
 
-export const googleLogInAction = (creds) => {
+export const signInWithGoogleAction = (googleProvider) => {
 	return (dispatch) => {
 		auth
-			.signInWithEmailAndPassword(creds.email, creds.password)
+			.signInWithPopup(googleProvider)
 			.then((res) => {
-				dispatch({ type: 'LOG_IN', res });
+				toast.success(SUCCESS_MESSAGE);
+
+				dispatch({ type: 'LOG_IN_GOOGLE', res });
 			})
 			.catch((err) => {
-				dispatch({ type: 'LOG_IN_ERROR', err });
+				dispatch({ type: 'LOG_IN_ERROR_GOOGLE', err });
 			});
 	};
 };

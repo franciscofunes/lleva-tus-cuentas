@@ -26,6 +26,7 @@ function Navbar() {
 			});
 		});
 	}, [dispatch]);
+
 	return (
 		<>
 			<motion.nav
