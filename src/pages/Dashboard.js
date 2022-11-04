@@ -15,6 +15,7 @@ import { currencyFormater } from '../shared/utils/currencyFormater';
 function Dashboard() {
 	const user = useSelector((state) => state.auth.user);
 	const isFetching = useSelector((state) => state.auth.isFetching);
+	const isDataFeteching = useSelector((state) => state.database.isDataFetching);
 	const dispatch = useDispatch();
 	const docs = useSelector((state) => state.database.docs);
 	const [income, setIncome] = useState(0);
@@ -346,8 +347,24 @@ function Dashboard() {
 						<h1 className='font-Nunito font-bold text-3xl mb-2 mt dark:text-zinc-100'>
 							Transacciones 📕
 						</h1>
-						{docs &&
-							docs.map((doc) => {
+						{isDataFeteching && (
+							<div className='flex'>
+								<p className='text-zinc-500 font-semibold '>
+									Estamos cargando sus transacciones...
+								</p>
+							</div>
+						)}
+
+						{!isDataFeteching && !docs?.length && (
+							<div className='flex'>
+								<p className='text-zinc-500 font-semibold '>
+									Bienvenido , aún no registro ninguna transacción, ¿Qué estás
+									esperando? Empeza a gestionar tus finanzas
+								</p>
+							</div>
+						)}
+						{!isDataFeteching &&
+							docs?.map((doc) => {
 								return (
 									<Card
 										key={doc.id}

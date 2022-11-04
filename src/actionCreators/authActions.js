@@ -1,8 +1,11 @@
 import { auth } from '../config/firebase.config';
 import { toast } from 'react-toastify';
 import {
-	ERROR_MESSAGE,
-	SUCCESS_MESSAGE,
+	LOGIN_ERROR_MESSAGE,
+	LOGIN_SUCCESS_MESSAGE,
+	SIGNUP_ERROR_MESSAGE,
+	SIGNUP_ERROR_MESSAGE_EMAIL_EXISTS,
+	SIGNUP_SUCCESS_MESSAGE,
 } from '../shared/constants/toast-messages.const';
 
 export const signUpAction = (creds) => {
@@ -10,15 +13,22 @@ export const signUpAction = (creds) => {
 		auth
 			.createUserWithEmailAndPassword(creds.email, creds.password)
 			.then((res) => {
+				res.user.sendEmailVerification();
 				res.user.updateProfile({ displayName: creds.username });
 			})
 			.then(() => {
+				toast.success(SIGNUP_SUCCESS_MESSAGE);
+
 				dispatch({
 					type: 'SIGN_UP',
 					res: auth.currentUser,
 				});
 			})
 			.catch((err) => {
+				err.toString().includes('already')
+					? toast.error(SIGNUP_ERROR_MESSAGE_EMAIL_EXISTS)
+					: toast.error(SIGNUP_ERROR_MESSAGE);
+
 				dispatch({ type: 'SIGN_UP_ERROR', err });
 			});
 	};
@@ -29,12 +39,12 @@ export const logInAction = (creds) => {
 		auth
 			.signInWithEmailAndPassword(creds.email, creds.password)
 			.then((res) => {
-				toast.success(SUCCESS_MESSAGE);
+				toast.success(LOGIN_SUCCESS_MESSAGE);
 
 				dispatch({ type: 'LOG_IN', res });
 			})
 			.catch((err) => {
-				toast.error(ERROR_MESSAGE);
+				toast.error(LOGIN_ERROR_MESSAGE);
 
 				dispatch({ type: 'LOG_IN_ERROR', err });
 			});
@@ -46,7 +56,7 @@ export const signInWithGoogleAction = (googleProvider) => {
 		auth
 			.signInWithPopup(googleProvider)
 			.then((res) => {
-				toast.success(SUCCESS_MESSAGE);
+				toast.success(LOGIN_SUCCESS_MESSAGE);
 
 				dispatch({ type: 'LOG_IN_GOOGLE', res });
 			})
