@@ -15,7 +15,6 @@ function Navbar() {
 
 	const handleLogout = () => {
 		dispatch(logOutAction());
-		navigate('/');
 	};
 
 	useEffect(() => {
@@ -33,7 +32,7 @@ function Navbar() {
 				animate={{ opacity: 1 }}
 				initial={{ opacity: 0 }}
 				transition={{ delay: 0.1, duration: 0.7 }}
-				className='py-5 lg:px-10 px-3 flex justify-between items-center z-10 dark:bg-slate-800'
+				className='py-5 lg:px-10 px-3 flex bg-zinc-50 justify-between items-center z-10 dark:bg-slate-800'
 			>
 				<Link
 					to='/'

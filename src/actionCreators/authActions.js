@@ -3,6 +3,8 @@ import { toast } from 'react-toastify';
 import {
 	LOGIN_ERROR_MESSAGE,
 	LOGIN_SUCCESS_MESSAGE,
+	LOGOUT_MESSAGE,
+	RESET_PASSWORD_SUCCESS_MESSAGE,
 	SIGNUP_ERROR_MESSAGE,
 	SIGNUP_ERROR_MESSAGE_EMAIL_EXISTS,
 	SIGNUP_SUCCESS_MESSAGE,
@@ -71,6 +73,8 @@ export const resetPassword = (creds) => {
 		auth
 			.sendPasswordResetEmail(creds.email)
 			.then((res) => {
+				toast.success(RESET_PASSWORD_SUCCESS_MESSAGE);
+
 				dispatch({ type: 'RESET_PASSWORD', res });
 			})
 			.catch((err) => {
@@ -80,5 +84,7 @@ export const resetPassword = (creds) => {
 };
 
 export const logOutAction = () => {
+	toast.warn(LOGOUT_MESSAGE);
+
 	return { type: 'LOG_OUT' };
 };

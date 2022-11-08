@@ -13,17 +13,24 @@ import bars from '../imgs/bars.svg';
 import { currencyFormater } from '../shared/utils/currencyFormater';
 
 function Dashboard() {
+	const dispatch = useDispatch();
+
 	const user = useSelector((state) => state.auth.user);
 	const isFetching = useSelector((state) => state.auth.isFetching);
-	const isDataFeteching = useSelector((state) => state.database.isDataFetching);
-	const dispatch = useDispatch();
+	const isDataFetching = useSelector((state) => state.database.isDataFetching);
 	const docs = useSelector((state) => state.database.docs);
+
 	const [income, setIncome] = useState(0);
 	const [expense, setExpense] = useState(0);
 	const [total, setTotal] = useState(0);
 	const [edit, setEdit] = useState(false);
 	const [expenseId, setExpenseId] = useState('');
 	const [showModal, setShowModal] = useState(false);
+	const [name, setName] = useState('');
+	const [amount, setAmount] = useState('');
+	const [comment, setComment] = useState('');
+	const [category, setCategory] = useState('');
+	const [selectedDate, setSelectedDate] = useState('');
 
 	useEffect(() => {
 		if (user) {
@@ -54,12 +61,6 @@ function Dashboard() {
 			);
 		}
 	}, [docs]);
-
-	const [name, setName] = useState('');
-	const [amount, setAmount] = useState('');
-	const [comment, setComment] = useState('');
-	const [category, setCategory] = useState('');
-	const [selectedDate, setSelectedDate] = useState('');
 
 	if (isFetching)
 		return (
@@ -96,6 +97,7 @@ function Dashboard() {
 					selectedDate,
 				})
 			);
+
 			setName('');
 			setAmount('');
 			setComment('');
@@ -347,46 +349,47 @@ function Dashboard() {
 						<h1 className='font-Nunito font-bold text-3xl mb-2 mt dark:text-zinc-100'>
 							Transacciones 📕
 						</h1>
-						{isDataFeteching && (
+						{isDataFetching && (
 							<div className='flex'>
-								<p className='text-zinc-500 font-semibold '>
-									Estamos cargando sus transacciones...
+								<p className='text-zinc-500 font-semiboldt text-base'>
+									Estamos cargando sus transacciones
+								</p>
+								<img className='mt-1 ml-2 h-5 w-5' src={bars} alt='loader' />
+							</div>
+						)}
+
+						{!isDataFetching && !docs?.length && (
+							<div className='flex'>
+								<p className='text-zinc-500 font-semibold text-lg'>
+									Bienvenido , aún no registraste ninguna transacción, ¿Qué
+									estás esperando? Empeza a controlar tus gastos 💪
 								</p>
 							</div>
 						)}
 
-						{!isDataFeteching && !docs?.length && (
-							<div className='flex'>
-								<p className='text-zinc-500 font-semibold '>
-									Bienvenido , aún no registro ninguna transacción, ¿Qué estás
-									esperando? Empeza a gestionar tus finanzas
-								</p>
-							</div>
-						)}
-						{!isDataFeteching &&
-							docs?.map((doc) => {
-								return (
-									<Card
-										key={doc.id}
-										id={doc.id}
-										name={doc.expenseName}
-										amount={doc.amount}
-										date={doc.date}
-										comment={doc.comment}
-										category={doc.category}
-										selectedDate={doc.selectedDate}
-										setExpense={setExpense}
-										setIncome={setIncome}
-										setName={setName}
-										setAmount={setAmount}
-										setComment={setComment}
-										setCategory={setCategory}
-										setSelectedDate={setSelectedDate}
-										setEdit={setEdit}
-										setExpenseId={setExpenseId}
-									/>
-								);
-							})}
+						{docs?.map((doc) => {
+							return (
+								<Card
+									key={doc.id}
+									id={doc.id}
+									name={doc.expenseName}
+									amount={doc.amount}
+									date={doc.date}
+									comment={doc.comment}
+									category={doc.category}
+									selectedDate={doc.selectedDate}
+									setExpense={setExpense}
+									setIncome={setIncome}
+									setName={setName}
+									setAmount={setAmount}
+									setComment={setComment}
+									setCategory={setCategory}
+									setSelectedDate={setSelectedDate}
+									setEdit={setEdit}
+									setExpenseId={setExpenseId}
+								/>
+							);
+						})}
 					</div>
 				</motion.div>
 			</motion.div>
