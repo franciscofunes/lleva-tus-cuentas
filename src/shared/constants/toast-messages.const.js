@@ -21,4 +21,4 @@ export const UPDATE_TRANSACTION_SUCCESS_MESSAGE =
 export const CREATE_TRANSACTION_SUCCESS_MESSAGE =
 	'Transacción creada exitosamente';
 
-export const DELETE_TRANSACTION_WARNING_MESSAGE = 'Transacción elimanda';
+export const DELETE_TRANSACTION_WARNING_MESSAGE = 'Transacción eliminada';
