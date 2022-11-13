@@ -1,4 +1,10 @@
+import { toast } from 'react-toastify';
 import { firestore } from '../config/firebase.config';
+import {
+	CREATE_TRANSACTION_SUCCESS_MESSAGE,
+	DELETE_TRANSACTION_WARNING_MESSAGE,
+	UPDATE_TRANSACTION_SUCCESS_MESSAGE,
+} from '../shared/constants/toast-messages.const';
 
 export const storeDataAction = (data) => {
 	return (dispatch) => {
@@ -15,6 +21,8 @@ export const storeDataAction = (data) => {
 				selectedDate: data.selectedDate,
 			})
 			.then((res) => {
+				toast.success(CREATE_TRANSACTION_SUCCESS_MESSAGE);
+
 				dispatch({ type: 'STORE_DATA', res });
 			})
 			.catch((err) => {
@@ -47,6 +55,8 @@ export const deleteCardAction = (docId) => {
 			.doc(docId)
 			.delete()
 			.then(() => {
+				toast.warn(DELETE_TRANSACTION_WARNING_MESSAGE);
+
 				dispatch({ type: 'DELETE_DOC', docId });
 			})
 			.catch((err) => {
@@ -70,8 +80,10 @@ export const updateDataAction = (data, docId) => {
 				category: data.category,
 				selectedDate: data.selectedDate,
 			})
-			.then(() => {
-				dispatch({ type: 'UPDATE_DATA', docId });
+			.then((res) => {
+				toast.success(UPDATE_TRANSACTION_SUCCESS_MESSAGE);
+
+				dispatch({ type: 'UPDATE_DATA', res });
 			})
 			.catch((err) => {
 				console.log(err.message);

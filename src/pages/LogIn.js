@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate } from 'react-router';
 import { Link } from 'react-router-dom';
+import 'react-toastify/dist/ReactToastify.css';
 import { logInAction } from '../actionCreators/authActions';
 import GoogleLoginButton from '../components/GoogleLoginButton';
-import { resetPassword } from '../config/firebase.config';
 import bars from '../imgs/bars.svg';
 import money from '../imgs/money.png';
 import money2 from '../imgs/money2.png';
@@ -13,16 +14,21 @@ import money2 from '../imgs/money2.png';
 function Login() {
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
+
 	const dispatch = useDispatch();
+
 	const user = useSelector((state) => state.auth.user);
 	const isFetching = useSelector((state) => state.auth.isFetching);
 
-	const handleSubmit = (e) => {
-		e.preventDefault();
+	const onSubmit = () => {
 		dispatch(logInAction({ email, password }));
-		setEmail('');
-		setPassword('');
 	};
+
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm();
 
 	if (isFetching)
 		return (
@@ -77,62 +83,69 @@ function Login() {
 						transition={{ delay: 0.2, duration: 1 }}
 						className='bg-white z-50 lg:w-96 w-80 pt-10 pb-8 px-10 shadow-2xl mb-20 rounded-lg dark:bg-slate-800'
 					>
-						<form className='mb-0 space-y-6' onSubmit={handleSubmit}>
+						<form className='mb-0 space-y-6' onSubmit={handleSubmit(onSubmit)}>
 							<div>
-								<div className='mb-2'>
-									<label
-										htmlFor='email'
-										className='block text-sm font-medium text-gray-700 dark:text-white'
-									>
-										Correo electrónico
-									</label>
-									<div className='mt-1'>
-										<input
-											value={email}
-											onChange={(e) => setEmail(e.target.value)}
-											type='email'
-											id='email'
-											autoComplete='on'
-											placeholder='johndoe@gmail.com'
-											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
-										/>
-									</div>
-								</div>
+								<label
+									htmlFor='email'
+									className='block text-sm font-medium text-gray-700 dark:text-white'
+								>
+									Correo electrónico
+								</label>
+								<input
+									className='w-full mt-1 border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
+									type='email'
+									{...register('email', {
+										required: true,
+										pattern: /^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[A-Za-z]+$/,
+										onChange: (e) => {
+											setEmail(e.target.value);
+										},
+									})}
+									placeholder='Ingrese su correo electrónico'
+								/>
+								{errors.email && (
+									<p className='text-red-500 text-sm mb-1'>
+										Ingrese un correo electrónico válido
+									</p>
+								)}
 								<label
 									htmlFor='password'
 									className='block text-sm font-medium text-gray-700 dark:text-white'
 								>
 									Contraseña
 								</label>
-								<div className='mt-1'>
-									<input
-										value={password}
-										onChange={(e) => setPassword(e.target.value)}
-										type='password'
-										autoComplete='on'
-										id='password'
-										required
-										className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
-									/>
-								</div>
+								<input
+									className='w-full mt-1 border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
+									type='password'
+									{...register('password', {
+										onChange: (e) => {
+											setPassword(e.target.value);
+										},
+										required: true,
+										// pattern: /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,32}$/,
+									})}
+									placeholder='Ingrese su contraseña'
+								/>
+								{errors.password && (
+									<p className='text-red-500 text-sm mb-1'>
+										Ingrese su password correctamente
+									</p>
+								)}
 							</div>
-							<div>
-								<button
-									type='submit'
-									className='w-full flex justify-center py-2 px-2 border border-transparent shadow-sm bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md '
-								>
-									Ingresar
-								</button>
-							</div>
+							<button
+								type='submit'
+								className='w-full flex justify-center py-2 px-2 border border-transparent shadow-sm bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md '
+							>
+								Ingresar
+							</button>
 						</form>
 						<GoogleLoginButton />
-						<div className='flex justify-center dark:text-white mt-5 italic text-sm hover:text-indigo-200 underline'>
-							<Link className='mr-2' to='/registrarse'>
+						<div className='flex justify-center dark:text-white mt-5 italic text-sm  underline'>
+							<Link className='mr-2 hover:text-indigo-200' to='/registrarse'>
 								Registrarme
 							</Link>
-							<span className='mr-2 dark:text-white '>|</span>
-							<Link className='' to='/recupero'>
+							<span className=' dark:text-white  '>|</span>
+							<Link className='ml-2 hover:text-indigo-300' to='/recupero'>
 								Olvide mi contraseña
 							</Link>
 						</div>

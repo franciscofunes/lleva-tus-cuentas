@@ -25,13 +25,30 @@ export const authReducer = (state = initState, action) => {
 				...state,
 				logInError: null,
 				user: action.res.user,
-				isFetching: false,
 			};
 		case 'LOG_IN_ERROR':
+			return {
+				...state,
+				logInError: action.err.message,
+			};
+		case 'LOG_IN_GOOGLE':
+			return {
+				...state,
+				logInError: null,
+				user: action.res.user,
+				isFetching: false,
+			};
+		case 'LOG_IN_ERROR_GOOGLE':
 			return { ...state, logInError: action.err.message };
 		case 'LOG_OUT':
 			auth.signOut();
-			return { ...state, isFetching: false };
+			return {
+				...state,
+				isFetching: false,
+				user: null,
+				isFetching: true,
+				database: null,
+			};
 		case 'RESET_PASSWORD':
 			return {
 				...state,
