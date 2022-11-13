@@ -89,8 +89,6 @@ function Dashboard() {
 		setShowModal(true);
 	};
 
-	if (user === null) return <Navigate to='/' />;
-
 	const onSubmit = (e) => {
 		if (!edit) {
 			dispatch(
@@ -103,26 +101,33 @@ function Dashboard() {
 					selectedDate,
 				})
 			);
+		} else {
+			dispatch(
+				updateDataAction(
+					{
+						userId: user.uid,
+						name,
+						amount,
+						comment,
+						category,
+						selectedDate,
+					},
+					expenseId
+				)
+			);
+
+			setEdit(false);
+			setName('');
+			setAmount('');
+			setComment('');
+			setCategory('');
+			setSelectedDate('');
+
+			dispatch(getDataAction(user.uid));
 		}
-
-		dispatch(
-			updateDataAction(
-				{
-					userId: user.uid,
-					name,
-					amount,
-					comment,
-					category,
-					selectedDate,
-				},
-				expenseId
-			)
-		);
-
-		setEdit(false);
-
-		dispatch(getDataAction(user.uid));
 	};
+
+	if (user === null) return <Navigate to='/' />;
 
 	return (
 		<>
@@ -219,7 +224,7 @@ function Dashboard() {
 										htmlFor='category'
 										className='block text-sm font-medium text-gray-700 dark:text-white'
 									>
-										Categorías
+										Categoría
 									</label>
 									<select
 										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'

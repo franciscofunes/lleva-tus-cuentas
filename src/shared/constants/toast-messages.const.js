@@ -14,3 +14,11 @@ export const SIGNUP_SUCCESS_MESSAGE =
 
 export const RESET_PASSWORD_SUCCESS_MESSAGE =
 	'Mail de restauración enviado, revisa tu casilla de spam y elegí tu nueva password';
+
+export const UPDATE_TRANSACTION_SUCCESS_MESSAGE =
+	'Transacción modificada exitosamente';
+
+export const CREATE_TRANSACTION_SUCCESS_MESSAGE =
+	'Transacción creada exitosamente';
+
+export const DELETE_TRANSACTION_WARNING_MESSAGE = 'Transacción elimanda';
