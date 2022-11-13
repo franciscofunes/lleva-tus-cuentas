@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import {
@@ -13,16 +14,30 @@ import bars from '../imgs/bars.svg';
 import { currencyFormater } from '../shared/utils/currencyFormater';
 
 function Dashboard() {
+	const dispatch = useDispatch();
+
 	const user = useSelector((state) => state.auth.user);
 	const isFetching = useSelector((state) => state.auth.isFetching);
-	const dispatch = useDispatch();
+	const isDataFetching = useSelector((state) => state.database.isDataFetching);
 	const docs = useSelector((state) => state.database.docs);
+
 	const [income, setIncome] = useState(0);
 	const [expense, setExpense] = useState(0);
 	const [total, setTotal] = useState(0);
 	const [edit, setEdit] = useState(false);
 	const [expenseId, setExpenseId] = useState('');
 	const [showModal, setShowModal] = useState(false);
+	const [name, setName] = useState('');
+	const [amount, setAmount] = useState('');
+	const [comment, setComment] = useState('');
+	const [category, setCategory] = useState('');
+	const [selectedDate, setSelectedDate] = useState('');
+
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm();
 
 	useEffect(() => {
 		if (user) {
@@ -54,12 +69,6 @@ function Dashboard() {
 		}
 	}, [docs]);
 
-	const [name, setName] = useState('');
-	const [amount, setAmount] = useState('');
-	const [comment, setComment] = useState('');
-	const [category, setCategory] = useState('');
-	const [selectedDate, setSelectedDate] = useState('');
-
 	if (isFetching)
 		return (
 			<div className='h-screen flex flex-col items-center justify-center'>
@@ -80,11 +89,8 @@ function Dashboard() {
 		setShowModal(true);
 	};
 
-	if (user === null) return <Navigate to='/' />;
-
-	const handleSubmit = (e) => {
+	const onSubmit = (e) => {
 		if (!edit) {
-			e.preventDefault();
 			dispatch(
 				storeDataAction({
 					userId: user.uid,
@@ -95,13 +101,7 @@ function Dashboard() {
 					selectedDate,
 				})
 			);
-			setName('');
-			setAmount('');
-			setComment('');
-			setCategory('');
-			setSelectedDate('');
 		} else {
-			e.preventDefault();
 			dispatch(
 				updateDataAction(
 					{
@@ -115,16 +115,19 @@ function Dashboard() {
 					expenseId
 				)
 			);
+
+			setEdit(false);
 			setName('');
 			setAmount('');
 			setComment('');
 			setCategory('');
 			setSelectedDate('');
-			setEdit(false);
 
 			dispatch(getDataAction(user.uid));
 		}
 	};
+
+	if (user === null) return <Navigate to='/' />;
 
 	return (
 		<>
@@ -181,9 +184,9 @@ function Dashboard() {
 						id='add-transaction'
 						className='lg:w-3/4 w-full lg:mb-0 mb-8 bg-white p-8 border rounded-md shadow-md dark:bg-slate-800 dark:border-indigo-500'
 					>
-						<form className='mb-0 space-y-6' onSubmit={handleSubmit}>
+						<form className='mb-0 space-y-6' onSubmit={handleSubmit(onSubmit)}>
 							<div>
-								<h1 className='font-Nunito font-semibold text-xl mb-3 dark:text-zinc-100'>
+								<h1 className='font-Nunito font-semibold text-xl mb-3 dark:text-zinc-100 underline'>
 									{edit ? 'Editar transacción' : 'Nueva transacción'}
 								</h1>
 
@@ -194,18 +197,26 @@ function Dashboard() {
 									>
 										Nombre transacción
 									</label>
-									<div className='mt-1'>
-										<input
-											value={name}
-											onChange={(e) => setName(e.target.value)}
-											type='text'
-											id='name'
-											autoComplete='on'
-											placeholder='e.g. Compra supermercado'
-											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
-										/>
-									</div>
+									<input
+										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+										value={name}
+										type='text'
+										id='name'
+										{...register('name', {
+											required: true,
+											pattern: /^[A-Za-z0-9].{2,30}$/,
+											onChange: (e) => {
+												setName(e.target.value);
+											},
+										})}
+										placeholder='Ingrese nombre de transacción'
+										autoComplete='on'
+									/>
+									{errors.name && (
+										<p className='text-red-500 text-sm mb-1'>
+											Ingrese un nombre de transacción válido
+										</p>
+									)}
 								</div>
 
 								<div className='mb-2'>
@@ -213,42 +224,50 @@ function Dashboard() {
 										htmlFor='category'
 										className='block text-sm font-medium text-gray-700 dark:text-white'
 									>
-										Categorías
+										Categoría
 									</label>
-									<div className='mt-1'>
-										<select
-											value={category}
-											onChange={(e) => setCategory(e.target.value)}
-											type='text'
-											id='comment'
-											autoComplete='on'
-											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-zinc-200'
+									<select
+										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+										value={category}
+										type='text'
+										id='comment'
+										{...register('category', {
+											required: true,
+											onChange: (e) => {
+												setCategory(e.target.value);
+											},
+										})}
+										placeholder='Ingrese nombre de transacción'
+										autoComplete='on'
+									>
+										<option
+											className='dark:text-white'
+											defaultValue={'categoriaDefault'}
 										>
-											<option
-												className='dark:text-white'
-												defaultValue={'categoriaDefault'}
-											>
-												Elegí una categoría
-											</option>
-											<optgroup label='Gastos'>
-												<option>Alimentación</option>
-												<option>Salud</option>
-												<option>Tarjeta de crédito</option>
-												<option>Ocio</option>
-												<option>Transporte</option>
-												<option>Educación</option>
-												<option>Librería</option>
-												<option>Varios</option>
-											</optgroup>
-											<optgroup label='Ingresos'>
-												<option>Sueldo</option>
-												<option>Bono</option>
-												<option>Honorarios</option>
-												<option>Varios</option>
-											</optgroup>
-										</select>
-									</div>
+											Elegí una categoría
+										</option>
+										<optgroup label='Gastos'>
+											<option>Alimentación</option>
+											<option>Salud</option>
+											<option>Tarjeta de crédito</option>
+											<option>Ocio</option>
+											<option>Transporte</option>
+											<option>Educación</option>
+											<option>Librería</option>
+											<option>Varios</option>
+										</optgroup>
+										<optgroup label='Ingresos'>
+											<option>Sueldo</option>
+											<option>Bono</option>
+											<option>Honorarios</option>
+											<option>Varios</option>
+										</optgroup>
+									</select>
+									{errors.category && (
+										<p className='text-red-500 text-sm mb-1'>
+											Es obligatorio ingresar una categoría
+										</p>
+									)}
 								</div>
 
 								<div className='mb-2'>
@@ -261,18 +280,27 @@ function Dashboard() {
 											(usa el signo " - " para agregar gastos)
 										</small>
 									</label>
-									<div className='mt-1'>
-										<input
-											value={amount}
-											onChange={(e) => setAmount(e.target.value)}
-											type='text'
-											id='amount'
-											autoComplete='off'
-											required
-											placeholder='e.g. "5000" (Ingreso) o "-3000" (Gasto)'
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
-										/>
-									</div>
+									<input
+										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+										value={amount}
+										type='number'
+										min='-99999999999'
+										step='0.01'
+										id='amount'
+										{...register('amount', {
+											required: true,
+											pattern: /^-?\d+(\.\d{1,2})?$/,
+											onChange: (e) => {
+												setAmount(e.target.value);
+											},
+										})}
+										placeholder='e.g. "5000" (Ingreso) o "-3000" (Gasto)'
+									/>
+									{errors.amount && (
+										<p className='text-red-500 text-sm mb-1'>
+											Ingrese un monto de transacción válido
+										</p>
+									)}
 								</div>
 
 								<div className='mb-2'>
@@ -282,17 +310,23 @@ function Dashboard() {
 									>
 										Fecha
 									</label>
-									<div className='mt-1'>
-										<input
-											value={selectedDate}
-											onChange={(e) => setSelectedDate(e.target.value)}
-											type='date'
-											id='selectedDate'
-											autoComplete='off'
-											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:text-white dark:bg-slate-800 dark:border-purple-600 dark:text-zinc-200 '
-										/>
-									</div>
+									<input
+										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+										value={selectedDate}
+										type='date'
+										id='selectedDate'
+										{...register('selectedDate', {
+											required: true,
+											onChange: (e) => {
+												setSelectedDate(e.target.value);
+											},
+										})}
+									/>
+									{errors.selectedDate && (
+										<p className='text-red-500 text-sm mb-1'>
+											Ingrese una fecha válida
+										</p>
+									)}
 								</div>
 
 								<div className='mb-2'>
@@ -302,18 +336,26 @@ function Dashboard() {
 									>
 										Descripción
 									</label>
-									<div className='mt-1'>
-										<textarea
-											value={comment}
-											onChange={(e) => setComment(e.target.value)}
-											type='text'
-											id='comment'
-											autoComplete='on'
-											placeholder='e.g. Información adicional'
-											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
-										/>
-									</div>
+									<textarea
+										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+										value={comment}
+										type='text'
+										id='comment'
+										{...register('comment', {
+											required: true,
+											pattern: /^[A-Za-z0-9].{2,70}$/,
+											onChange: (e) => {
+												setComment(e.target.value);
+											},
+										})}
+										placeholder='e.g. Información adicional'
+										autoComplete='on'
+									/>
+									{errors.comment && (
+										<p className='text-red-500 text-sm mb-1'>
+											Ingrese una descripción de transacción válida
+										</p>
+									)}
 								</div>
 							</div>
 							<div>
@@ -346,30 +388,47 @@ function Dashboard() {
 						<h1 className='font-Nunito font-bold text-3xl mb-2 mt dark:text-zinc-100'>
 							Transacciones 📕
 						</h1>
-						{docs &&
-							docs.map((doc) => {
-								return (
-									<Card
-										key={doc.id}
-										id={doc.id}
-										name={doc.expenseName}
-										amount={doc.amount}
-										date={doc.date}
-										comment={doc.comment}
-										category={doc.category}
-										selectedDate={doc.selectedDate}
-										setExpense={setExpense}
-										setIncome={setIncome}
-										setName={setName}
-										setAmount={setAmount}
-										setComment={setComment}
-										setCategory={setCategory}
-										setSelectedDate={setSelectedDate}
-										setEdit={setEdit}
-										setExpenseId={setExpenseId}
-									/>
-								);
-							})}
+						{isDataFetching && (
+							<div className='flex'>
+								<p className='text-zinc-500 font-semiboldt text-base'>
+									Estamos cargando sus transacciones
+								</p>
+								<img className='mt-1 ml-2 h-5 w-5' src={bars} alt='loader' />
+							</div>
+						)}
+
+						{!isDataFetching && !docs?.length && (
+							<div className='flex'>
+								<p className='text-zinc-500 font-semibold text-lg'>
+									Bienvenido , aún no registraste ninguna transacción, ¿Qué
+									estás esperando? Empeza a controlar tus gastos 💪
+								</p>
+							</div>
+						)}
+
+						{docs?.map((doc) => {
+							return (
+								<Card
+									key={doc.id}
+									id={doc.id}
+									name={doc.expenseName}
+									amount={doc.amount}
+									date={doc.date}
+									comment={doc.comment}
+									category={doc.category}
+									selectedDate={doc.selectedDate}
+									setExpense={setExpense}
+									setIncome={setIncome}
+									setName={setName}
+									setAmount={setAmount}
+									setComment={setComment}
+									setCategory={setCategory}
+									setSelectedDate={setSelectedDate}
+									setEdit={setEdit}
+									setExpenseId={setExpenseId}
+								/>
+							);
+						})}
 					</div>
 				</motion.div>
 			</motion.div>

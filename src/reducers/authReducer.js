@@ -5,6 +5,7 @@ const initState = {
 	isFetching: true,
 	signUpError: null,
 	logInError: null,
+	resetPasswordError: null,
 };
 
 export const authReducer = (state = initState, action) => {
@@ -24,13 +25,42 @@ export const authReducer = (state = initState, action) => {
 				...state,
 				logInError: null,
 				user: action.res.user,
-				isFetching: false,
 			};
 		case 'LOG_IN_ERROR':
+			return {
+				...state,
+				logInError: action.err.message,
+			};
+		case 'LOG_IN_GOOGLE':
+			return {
+				...state,
+				logInError: null,
+				user: action.res.user,
+				isFetching: false,
+			};
+		case 'LOG_IN_ERROR_GOOGLE':
 			return { ...state, logInError: action.err.message };
 		case 'LOG_OUT':
 			auth.signOut();
-			return { ...state, isFetching: false };
+			return {
+				...state,
+				isFetching: false,
+				user: null,
+				isFetching: true,
+				database: null,
+			};
+		case 'RESET_PASSWORD':
+			return {
+				...state,
+				user: action.res.user,
+				resetPasswordError: null,
+			};
+		case 'RESET_PASSWORD_ERROR':
+			return {
+				...state,
+				user: action.res.user,
+				resetPasswordError: action.err.message,
+			};
 		default:
 			return state;
 	}

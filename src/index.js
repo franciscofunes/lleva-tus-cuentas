@@ -7,6 +7,7 @@ import thunk from 'redux-thunk';
 import App from './App';
 import './index.css';
 import Dashboard from './pages/Dashboard';
+import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import LogIn from './pages/LogIn';
 import SignUp from './pages/SignUp';
@@ -24,9 +25,10 @@ root.render(
 				<App />
 				<Routes>
 					<Route exact path='/' element={<Home />} />
-					<Route path='/signup' element={<SignUp />} />
-					<Route path='/login' element={<LogIn />} />
-					<Route path='/dashboard' element={<Dashboard />} />
+					<Route path='/registrarse' element={<SignUp />} />
+					<Route path='/ingresar' element={<LogIn />} />
+					<Route path='/transacciones' element={<Dashboard />} />
+					<Route path='/recupero' element={<ForgotPassword />} />
 				</Routes>
 			</Provider>
 		</Router>
