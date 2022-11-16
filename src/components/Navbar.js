@@ -41,7 +41,7 @@ function Navbar() {
 					LTC<span className='text-green-600'>$</span>
 				</Link>
 
-				{user && (
+				{user ? (
 					<div className='flex items-center'>
 						{location.pathname === '/' && (
 							<Link
@@ -59,8 +59,7 @@ function Navbar() {
 						</div>
 						<DarkModeToggle />
 					</div>
-				)}
-				{!user && (
+				) : (
 					<>
 						<div className='flex items-center'>
 							<Link
