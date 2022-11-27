@@ -45,6 +45,18 @@ export const getDataAction = (userId) => {
 	};
 };
 
+export const getCaterogiesDataAction = () => {
+	return (dispatch) => {
+		firestore
+			.collection('categories')
+			.orderBy('name', 'asc')
+			.onSnapshot((res) => {
+				const data = res.docs.map((d) => ({ id: d.id, ...d.data() }));
+				dispatch({ type: 'GOT_CATEGORY_DATA', data });
+			});
+	};
+};
+
 export const deleteCardAction = (docId) => {
 	return (dispatch, getState) => {
 		const userId = getState().auth.user.uid;

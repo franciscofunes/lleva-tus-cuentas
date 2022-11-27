@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import {
 	getDataAction,
+	getCaterogiesDataAction,
 	storeDataAction,
 	updateDataAction,
 } from '../actionCreators/databaseActions';
@@ -20,6 +21,7 @@ function Dashboard() {
 	const isFetching = useSelector((state) => state.auth.isFetching);
 	const isDataFetching = useSelector((state) => state.database.isDataFetching);
 	const docs = useSelector((state) => state.database.docs);
+	const categories = useSelector((state) => state.database.categories);
 
 	const [income, setIncome] = useState(0);
 	const [expense, setExpense] = useState(0);
@@ -41,6 +43,12 @@ function Dashboard() {
 
 	useEffect(() => {
 		if (user) {
+			dispatch(getCaterogiesDataAction());
+		}
+	}, [user]);
+
+	useEffect(() => {
+		if (user) {
 			dispatch(getDataAction(user.uid));
 		}
 	}, [user]);
@@ -51,6 +59,7 @@ function Dashboard() {
 
 		if (docs) {
 			const amounts = docs.map((doc) => parseInt(doc.amount));
+			const isExpense = categories.some((category) => category.isExpense);
 
 			setTotal(amounts.reduce((acc, item) => (acc += item), 0).toFixed(2));
 
@@ -122,8 +131,6 @@ function Dashboard() {
 			setComment('');
 			setCategory('');
 			setSelectedDate('');
-
-			dispatch(getDataAction(user.uid));
 		}
 	};
 
@@ -229,38 +236,39 @@ function Dashboard() {
 									<select
 										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
 										value={category}
-										type='text'
-										id='comment'
+										id='category'
 										{...register('category', {
 											required: true,
 											onChange: (e) => {
 												setCategory(e.target.value);
 											},
 										})}
-										placeholder='Ingrese nombre de transacción'
 										autoComplete='on'
 									>
-										<option
-											className='dark:text-white'
-											defaultValue={'categoriaDefault'}
-										>
+										<option className='dark:text-white'>
 											Elegí una categoría
 										</option>
 										<optgroup label='Gastos'>
-											<option>Alimentación</option>
-											<option>Salud</option>
-											<option>Tarjeta de crédito</option>
-											<option>Ocio</option>
-											<option>Transporte</option>
-											<option>Educación</option>
-											<option>Librería</option>
-											<option>Varios</option>
+											{categories
+												?.filter((category) => category.isExpense)
+												.map((category) => {
+													return (
+														<option key={category.id}>
+															{isDataFetching ? 'Cargando ...' : category.name}
+														</option>
+													);
+												})}
 										</optgroup>
 										<optgroup label='Ingresos'>
-											<option>Sueldo</option>
-											<option>Bono</option>
-											<option>Honorarios</option>
-											<option>Varios</option>
+											{categories
+												?.filter((category) => !category.isExpense)
+												.map((category) => {
+													return (
+														<option key={category.id}>
+															{isDataFetching ? 'Cargando ...' : category.name}
+														</option>
+													);
+												})}
 										</optgroup>
 									</select>
 									{errors.category && (
