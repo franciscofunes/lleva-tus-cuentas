@@ -1,22 +1,22 @@
 import { motion } from 'framer-motion';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import {
-	getDataAction,
 	getCaterogiesDataAction,
+	getDataAction,
 	storeDataAction,
 	updateDataAction,
 } from '../actionCreators/databaseActions';
 import Card from '../components/Card';
 import LitaModal from '../components/LitaModal';
+import Tooltip from '../components/Tooltip';
 import bars from '../imgs/bars.svg';
 import { currencyFormater } from '../shared/utils/currencyFormater';
 
 function Dashboard() {
 	const dispatch = useDispatch();
-
 	const user = useSelector((state) => state.auth.user);
 	const isFetching = useSelector((state) => state.auth.isFetching);
 	const isDataFetching = useSelector((state) => state.database.isDataFetching);
@@ -57,26 +57,31 @@ function Dashboard() {
 		setExpense(0);
 		setIncome(0);
 
-		if (docs) {
-			const amounts = docs.map((doc) => parseInt(doc.amount));
-			const isExpense = categories.some((category) => category.isExpense);
+		if (docs && categories) {
+			const expensesCategories = categories
+				.filter((category) => category.isExpense)
+				.map((category) => category.name);
 
-			setTotal(amounts.reduce((acc, item) => (acc += item), 0).toFixed(2));
+			const expenses = docs
+				.filter((doc) => expensesCategories.includes(doc.category))
+				.map((doc) => parseFloat(doc.amount));
 
-			setIncome(
-				amounts
-					.filter((item) => item > 0)
-					.reduce((acc, item) => acc + item, 0)
-					.toFixed(2)
-			);
+			const incomes = docs
+				.filter((doc) => !expensesCategories.includes(doc.category))
+				.map((doc) => parseFloat(doc.amount));
 
 			setExpense(
-				amounts
-					.filter((item) => item < 0)
-					.reduce((acc, item) => acc + item, 0) * -(1).toFixed(2)
+				expenses.reduce((acc, item) => acc + item, 0) * -(1).toFixed(2)
+			);
+
+			setIncome(incomes.reduce((acc, item) => acc + item, 0).toFixed(2));
+
+			setTotal(
+				incomes.reduce((acc, item) => acc + item, 0).toFixed(2) -
+					expenses.reduce((acc, item) => acc + item, 0).toFixed(2)
 			);
 		}
-	}, [docs]);
+	}, [docs, categories]);
 
 	if (isFetching)
 		return (
@@ -132,6 +137,13 @@ function Dashboard() {
 			setCategory('');
 			setSelectedDate('');
 		}
+	};
+
+	const getExpenseCategories = () => {
+		const expenseCategories = categories
+			.filter((c) => c.isExpense)
+			.map((c) => c.name)
+			.includes(category);
 	};
 
 	if (user === null) return <Navigate to='/' />;
@@ -193,17 +205,25 @@ function Dashboard() {
 					>
 						<form className='mb-0 space-y-6' onSubmit={handleSubmit(onSubmit)}>
 							<div>
-								<h1 className='font-Nunito font-semibold text-xl mb-3 dark:text-zinc-100 underline'>
-									{edit ? 'Editar transacción' : 'Nueva transacción'}
+								<h1 className='font-Nunito font-semibold text-xl mb-3 dark:text-purple-500 underline'>
+									{edit ? 'Editar transacción' : 'Crear transacción'}
 								</h1>
 
 								<div className='mb-2'>
-									<label
-										htmlFor='name'
-										className='block text-sm font-medium text-gray-700 dark:text-white'
-									>
-										Nombre transacción
-									</label>
+									<div className='flex flex-row'>
+										<label
+											htmlFor='name'
+											className='text-sm font-medium text-gray-700 dark:text-white'
+										>
+											Nombre transacción
+										</label>
+										<Tooltip
+											title={'Nombre Transacción'}
+											subtitle={
+												'Ingresa un nombre significativo para tu transaccion'
+											}
+										/>
+									</div>
 									<input
 										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
 										value={name}
@@ -231,7 +251,10 @@ function Dashboard() {
 										htmlFor='category'
 										className='block text-sm font-medium text-gray-700 dark:text-white'
 									>
-										Categoría
+										Categoría{' '}
+										<small className='font-bold text-purple-600 text-xs italic '>
+											(* existen categorías para gastos e ingresos)
+										</small>
 									</label>
 									<select
 										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
@@ -281,29 +304,47 @@ function Dashboard() {
 								<div className='mb-2'>
 									<label
 										htmlFor='amount'
-										className='block text-sm font-medium text-gray-700 dark:text-white'
+										className='relative text-sm font-medium text-gray-700 dark:text-white block'
 									>
-										Monto{' '}
-										<small className='font-bold text-purple-600 text-xs italic '>
-											(usa el signo " - " para agregar gastos)
-										</small>
+										Monto
+										<svg
+											fill='none'
+											viewBox='0 0 24 24'
+											stroke='currentColor'
+											className={`pointer-events-none shadow w-7 h-7 absolute top-11 transform -translate-y-1/2 right-2 ${
+												categories
+													?.filter((c) => c.isExpense)
+													.map((c) => c.name)
+													.includes(category)
+													? ` text-red-500`
+													: `text-green-500`
+											} `}
+										>
+											<path
+												strokeLinecap='round'
+												strokeLinejoin='round'
+												strokeWidth='2'
+												d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+											/>
+										</svg>
+										<input
+											className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+											value={amount}
+											type='number'
+											min='0'
+											step='0.1'
+											id='amount'
+											{...register('amount', {
+												required: true,
+												pattern: /^\d+(\.\d{1,2})?$/,
+												onChange: (e) => {
+													setAmount(e.target.value);
+												},
+											})}
+											placeholder='e.g. 5000'
+										/>
 									</label>
-									<input
-										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
-										value={amount}
-										type='number'
-										min='-99999999999'
-										step='0.01'
-										id='amount'
-										{...register('amount', {
-											required: true,
-											pattern: /^-?\d+(\.\d{1,2})?$/,
-											onChange: (e) => {
-												setAmount(e.target.value);
-											},
-										})}
-										placeholder='e.g. "5000" (Ingreso) o "-3000" (Gasto)'
-									/>
+
 									{errors.amount && (
 										<p className='text-red-500 text-sm mb-1'>
 											Ingrese un monto de transacción válido
@@ -434,6 +475,7 @@ function Dashboard() {
 									setSelectedDate={setSelectedDate}
 									setEdit={setEdit}
 									setExpenseId={setExpenseId}
+									categories={categories}
 								/>
 							);
 						})}
