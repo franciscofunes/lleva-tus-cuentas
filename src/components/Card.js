@@ -18,11 +18,16 @@ function Card({
 	setSelectedDate,
 	setEdit,
 	setExpenseId,
+	categories,
 }) {
 	const dispatch = useDispatch();
 
 	const handleDelete = () => {
 		dispatch(deleteCardAction(id));
+	};
+
+	const isExpense = (categories) => {
+		categories.some((category) => category.isExpense);
 	};
 
 	const handleEdit = () => {
@@ -63,10 +68,22 @@ function Card({
 			<div className='flex lg:justify-between items-center'>
 				<h1
 					className={`font-Nunito font-medium text-lg ${
-						amount[0] === '-' ? `text-red-500` : `text-green-500`
+						categories
+							?.filter((c) => c.isExpense)
+							.map((c) => c.name)
+							.includes(category)
+							? `text-red-500`
+							: `text-green-500`
 					}`}
 				>
-					{`$AR ${amount}`}
+					{`$AR ${
+						categories
+							.filter((c) => c.isExpense)
+							.map((c) => c.name)
+							.includes(category)
+							? `-${parseFloat(amount).toLocaleString()}`
+							: `+${parseFloat(amount).toLocaleString()}`
+					}`}
 				</h1>
 				<svg
 					xmlns='http://www.w3.org/2000/svg'
