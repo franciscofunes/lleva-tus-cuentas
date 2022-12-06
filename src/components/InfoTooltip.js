@@ -33,6 +33,7 @@ const InfoTooltip = ({
         allowHTML={true}
         followCursor={true}
         theme={"translucent"}
+        size={"small"}
       >
         <button onClick={(e) => e.preventDefault()}>
           <svg
