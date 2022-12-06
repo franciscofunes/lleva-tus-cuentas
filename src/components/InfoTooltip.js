@@ -8,28 +8,23 @@ const InfoTooltip = ({
   isInteractive = true,
   hasInteractiveBorder = 20,
   time = 50,
-  placement = "right",
   arrow = true,
 }) => {
   const [visible, setVisible] = useState(true);
 
   const hide = () => setVisible(false);
+
   const [screenWidth, setScreenWidth] = useState(0);
 
   useEffect(() => {
     setScreenWidth(window.innerWidth);
   }, []);
 
-  tippy(element, {
-    placement: screenWidth > 600 ? "top" : "right",
-    duration: screenWidth > 600 ? 1000 : 500,
-  });
-
   return (
     <>
       <Tippy
         content={content}
-        placement={placement}
+        placement={screenWidth > 600 ? 'top' : 'right'}
         arrow={arrow}
         interactive={isInteractive}
         interactiveBorder={hasInteractiveBorder}
