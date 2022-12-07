@@ -7,6 +7,7 @@ import 'tippy.js/themes/translucent.css';
 const InfoTooltip = ({
 	content,
 	isInteractive = true,
+	placement = 'right',
 	hasInteractiveBorder = 20,
 	time = 50,
 	arrow = true,
@@ -25,14 +26,16 @@ const InfoTooltip = ({
 		<>
 			<Tippy
 				content={content}
-				placement={'right'}
+				placement={placement}
 				animation={'scale'}
+				time={time}
 				arrow={arrow}
 				interactive={isInteractive}
 				interactiveBorder={hasInteractiveBorder}
-				maxWidth={screenWidth > 600 ? 350 : 200}
+				maxWidth={screenWidth > 600 ? 350 : 180}
 				onClickOutside={hide}
 				theme={'translucent'}
+				sticky={false}
 			>
 				<button onClick={(e) => e.preventDefault()}>
 					<svg
