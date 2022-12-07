@@ -1,6 +1,8 @@
 import Tippy from '@tippyjs/react';
 import { React, useState, useEffect } from 'react';
 import 'tippy.js/dist/tippy.css';
+import 'tippy.js/animations/scale.css';
+import 'tippy.js/themes/translucent.css';
 
 const InfoTooltip = ({
 	content,
@@ -23,16 +25,14 @@ const InfoTooltip = ({
 		<>
 			<Tippy
 				content={content}
-				placement={screenWidth > 600 ? 'top' : 'right'}
+				placement={'right'}
+				animation={'scale'}
 				arrow={arrow}
 				interactive={isInteractive}
 				interactiveBorder={hasInteractiveBorder}
-				delay={time}
+				maxWidth={screenWidth > 600 ? 350 : 200}
 				onClickOutside={hide}
-				allowHTML={true}
-				followCursor={true}
 				theme={'translucent'}
-				size={'small'}
 			>
 				<button onClick={(e) => e.preventDefault()}>
 					<svg
