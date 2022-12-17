@@ -9,6 +9,8 @@ function Card({
 	id,
 	amount,
 	selectedDate,
+	selectedCloseDate,
+	selectedExpirationDate,
 	comment,
 	category,
 	name,
@@ -17,6 +19,8 @@ function Card({
 	setComment,
 	setCategory,
 	setSelectedDate,
+	setSelectedCloseDate,
+	setSelectedExpirationDate,
 	setEdit,
 	setExpenseId,
 	categories,
@@ -37,6 +41,8 @@ function Card({
 		setComment(comment);
 		setCategory(category);
 		setSelectedDate(selectedDate);
+		setSelectedCloseDate(selectedCloseDate);
+		setSelectedExpirationDate(selectedExpirationDate);
 		setExpenseId(id);
 		setEdit(true);
 	};
@@ -49,54 +55,68 @@ function Card({
 			id='card'
 			className='lg:flex border-b-2 border-purple-400 w-full mb-2 justify-between items-center py-3 px-4 font-Nunito dark:border-indigo-400'
 		>
-			<div className='flex flex-col justify-evenly items-start'>
+			<div className='flex flex-col gap-y-1 justify-evenly items-start'>
 				<p className='font-semibold text-base text-gray-400'>
 					<span className='text-purple-600'>Nombre: </span>
 					{name}
 				</p>
-				<p className='font-semibold text-base text-gray-400'>
-					<span className='text-purple-600'>Categoría: </span>
-					{category}{' '}
-					<InfoTooltip
-						placement={'top'}
-						content={categories
-							.filter((c) => c.name === category)
-							.map((c) => c.description)}
-					/>
-				</p>
+
 				<p className='font-semibold text-base text-gray-400'>
 					<span className='text-purple-600'>Descripción: </span> {comment}
 				</p>
-				<p className='font-semibold text-base text-gray-400 mb-1'>
-					<span className='text-purple-600'>Fecha: </span>
+				<div className='flex flex-row gap-x-1 items-stretch'>
+					<p className='font-semibold text-base text-gray-400'>
+						<span className='text-purple-600'>Categoría: </span>
+						{category}{' '}
+						<InfoTooltip
+							placement={'top'}
+							content={categories
+								.filter((c) => c.name === category)
+								.map((c) => c.description)}
+						/>
+					</p>
+				</div>
+
+				{category.includes('Resumen tarjeta') && (
+					<>
+						<p className='font-semibold text-base text-gray-400'>
+							<span className='text-purple-600'>Fecha de Cierre: </span>
+							{moment(selectedCloseDate).format('DD/MM/YYYY')}
+						</p>
+						<p className='font-semibold text-base text-gray-400'>
+							<span className='text-purple-600'>Fecha de vencimiento: </span>
+							{moment(selectedExpirationDate).format('DD/MM/YYYY')}
+						</p>
+					</>
+				)}
+
+				<p className='font-semibold text-base text-gray-400'>
+					<span className='text-purple-600'>Fecha registro: </span>
 					{moment(selectedDate).format('DD/MM/YYYY')}
 				</p>
-			</div>
-			<div className='flex lg:justify-between items-center'>
-				<h1
-					className={`font-Nunito font-medium text-lg ${
-						categories
-							?.filter((c) => c.isExpense)
-							.map((c) => c.name)
-							.includes(category)
-							? `text-red-500`
-							: `text-green-500`
-					}`}
-				>
-					{`$AR ${
-						categories
-							.filter((c) => c.isExpense)
-							.map((c) => c.name)
-							.includes(category)
-							? `-${parseFloat(amount).toLocaleString()}`
-							: `+${parseFloat(amount).toLocaleString()}`
-					}`}
-				</h1>
-
-				<div className='flex flex-row items-center mb-1'>
+				<div className='flex flex-row gap-x-2 lg:justify-between items-stretch'>
+					<h1
+						className={`font-Nunito font-medium text-lg ${
+							categories
+								?.filter((c) => c.isExpense)
+								.map((c) => c.name)
+								.includes(category)
+								? `text-red-500`
+								: `text-green-500`
+						}`}
+					>
+						{`$AR ${
+							categories
+								.filter((c) => c.isExpense)
+								.map((c) => c.name)
+								.includes(category)
+								? `-${parseFloat(amount).toLocaleString()}`
+								: `+${parseFloat(amount).toLocaleString()}`
+						}`}
+					</h1>
 					<svg
 						xmlns='http://www.w3.org/2000/svg'
-						className='h-6 w-6 ml-3 cursor-pointer dark:text-white'
+						className='h-6 w-6 cursor-pointer dark:text-white'
 						fill='none'
 						viewBox='0 0 24 24'
 						stroke='currentColor'
@@ -113,7 +133,7 @@ function Card({
 					<svg
 						xmlns='http://www.w3.org/2000/svg'
 						fill='none'
-						className='h-6 w-6 ml-3 cursor-pointer w-6 h-6 dark:text-white'
+						className='h-6 w-6 cursor-pointer w-6 h-6 dark:text-white'
 						viewBox='0 0 24 24'
 						strokeWidth='1.5'
 						stroke='currentColor'

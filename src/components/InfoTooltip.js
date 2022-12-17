@@ -28,14 +28,12 @@ const InfoTooltip = ({
 				content={content}
 				placement={placement}
 				animation={'scale'}
-				time={time}
 				arrow={arrow}
 				interactive={isInteractive}
 				interactiveBorder={hasInteractiveBorder}
 				maxWidth={screenWidth > 600 ? 350 : 180}
 				onClickOutside={hide}
 				theme={'translucent'}
-				sticky={false}
 			>
 				<button onClick={(e) => e.preventDefault()}>
 					<svg
