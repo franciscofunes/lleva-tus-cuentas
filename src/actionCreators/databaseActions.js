@@ -19,12 +19,8 @@ export const storeDataAction = (data) => {
 				comment: data.comment,
 				category: data.category,
 				selectedDate: data.selectedDate,
-				selectedExpirationDate: data.category.includes('Resumen Tarjeta')
-					? data.selectedExpirationDate
-					: '-',
-				selectedCloseDate: data.category.includes('Resumen Tarjeta')
-					? data.selectedCloseDate
-					: '-',
+				selectedExpirationDate: data.selectedExpirationDate,
+				selectedCloseDate: data.selectedCloseDate,
 			})
 			.then((res) => {
 				toast.success(CREATE_TRANSACTION_SUCCESS_MESSAGE);
@@ -97,12 +93,8 @@ export const updateDataAction = (data, docId) => {
 				comment: data.comment,
 				category: data.category,
 				selectedDate: data.selectedDate,
-				selectedExpirationDate: data.category.includes('Resumen Tarjeta')
-					? data.selectedExpirationDate
-					: '-',
-				selectedCloseDate: data.category.includes('Resumen Tarjeta')
-					? data.selectedCloseDate
-					: '-',
+				selectedExpirationDate: data.selectedExpirationDate,
+				selectedCloseDate: data.selectedCloseDate,
 			})
 			.then((res) => {
 				toast.success(UPDATE_TRANSACTION_SUCCESS_MESSAGE);

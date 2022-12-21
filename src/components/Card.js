@@ -19,6 +19,7 @@ function Card({
 	setComment,
 	setCategory,
 	setSelectedDate,
+	setIsCreditCardCategory,
 	setSelectedCloseDate,
 	setSelectedExpirationDate,
 	setEdit,
@@ -43,6 +44,9 @@ function Card({
 		setSelectedDate(selectedDate);
 		setSelectedCloseDate(selectedCloseDate);
 		setSelectedExpirationDate(selectedExpirationDate);
+		setIsCreditCardCategory(
+			category.includes('Resumen tarjeta') ? true : false
+		);
 		setExpenseId(id);
 		setEdit(true);
 	};
@@ -79,11 +83,11 @@ function Card({
 
 				{category.includes('Resumen tarjeta') && (
 					<>
-						<p className='font-semibold text-base text-gray-400'>
+						<p className='font-semibold text-base text-gray-400 ml-2'>
 							<span className='text-purple-600'>Fecha de Cierre: </span>
 							{moment(selectedCloseDate).format('DD/MM/YYYY')}
 						</p>
-						<p className='font-semibold text-base text-gray-400'>
+						<p className='font-semibold text-base text-gray-400 ml-2'>
 							<span className='text-purple-600'>Fecha de vencimiento: </span>
 							{moment(selectedExpirationDate).format('DD/MM/YYYY')}
 						</p>

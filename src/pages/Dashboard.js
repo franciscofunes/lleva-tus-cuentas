@@ -633,6 +633,7 @@ function Dashboard() {
 									setAmount={setAmount}
 									setComment={setComment}
 									setCategory={setCategory}
+									setIsCreditCardCategory={setIsCreditCardCategory}
 									setSelectedDate={setSelectedDate}
 									setSelectedExpirationDate={setSelectedExpirationDate}
 									setSelectedCloseDate={setSelectedCloseDate}
