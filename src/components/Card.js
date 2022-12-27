@@ -11,6 +11,8 @@ function Card({
 	selectedDate,
 	selectedCloseDate,
 	selectedExpirationDate,
+	currencyQuantity,
+	currencyExchangeRate,
 	comment,
 	category,
 	name,
@@ -20,8 +22,12 @@ function Card({
 	setCategory,
 	setSelectedDate,
 	setIsCreditCardCategory,
+	setIsBuyCurrenciesCategory,
+	setIsCurrencyIncomeCategory,
 	setSelectedCloseDate,
 	setSelectedExpirationDate,
+	setCurrencyQuantity,
+	setCurrencyExchangeRate,
 	setEdit,
 	setExpenseId,
 	categories,
@@ -32,10 +38,6 @@ function Card({
 		dispatch(deleteCardAction(id));
 	};
 
-	const isExpense = (categories) => {
-		categories.some((category) => category.isExpense);
-	};
-
 	const handleEdit = () => {
 		setName(name);
 		setAmount(amount);
@@ -44,9 +46,11 @@ function Card({
 		setSelectedDate(selectedDate);
 		setSelectedCloseDate(selectedCloseDate);
 		setSelectedExpirationDate(selectedExpirationDate);
-		setIsCreditCardCategory(
-			category.includes('Resumen tarjeta') ? true : false
-		);
+		setCurrencyQuantity(currencyQuantity);
+		setCurrencyExchangeRate(currencyExchangeRate);
+		setIsCreditCardCategory(category?.includes('Resumen tarjeta'));
+		setIsBuyCurrenciesCategory(category?.includes('Compra divisas'));
+		setIsCurrencyIncomeCategory(category?.includes('Ingreso divisas'));
 		setExpenseId(id);
 		setEdit(true);
 	};
@@ -76,7 +80,7 @@ function Card({
 							placement={'top'}
 							content={categories
 								.filter((c) => c.name === category)
-								.map((c) => c.description)}
+								.map((c) => c?.description)}
 						/>
 					</p>
 				</div>
@@ -90,6 +94,19 @@ function Card({
 						<p className='font-semibold text-base text-gray-400 ml-2'>
 							<span className='text-purple-600'>Fecha de vencimiento: </span>
 							{moment(selectedExpirationDate).format('DD/MM/YYYY')}
+						</p>
+					</>
+				)}
+
+				{category.includes('Compra divisas') && (
+					<>
+						<p className='font-semibold text-base text-gray-400 ml-2'>
+							<span className='text-purple-600'>Cantidad: </span>
+							{`$USD ${currencyQuantity}`}
+						</p>
+						<p className='font-semibold text-base text-gray-400 ml-2'>
+							<span className='text-purple-600'>Cotización: </span>
+							{`$AR ${currencyExchangeRate}`}
 						</p>
 					</>
 				)}
@@ -109,14 +126,18 @@ function Card({
 								: `text-green-500`
 						}`}
 					>
-						{`$AR ${
+						{category.includes('Ingreso divisas')
+							? `$USD ${currencyQuantity}`
+							: `$AR 
+						${
 							categories
 								.filter((c) => c.isExpense)
 								.map((c) => c.name)
 								.includes(category)
-								? `-${parseFloat(amount).toLocaleString()}`
-								: `+${parseFloat(amount).toLocaleString()}`
-						}`}
+								? `-${parseFloat(amount)?.toLocaleString()}`
+								: `+${parseFloat(amount)?.toLocaleString()}`
+						}
+						`}
 					</h1>
 					<svg
 						xmlns='http://www.w3.org/2000/svg'

@@ -13,14 +13,26 @@ export const storeDataAction = (data) => {
 			.doc(data.userId)
 			.collection('expenses')
 			.add({
-				amount: data.amount,
 				date: new Date(),
 				expenseName: data.name,
 				comment: data.comment,
 				category: data.category,
+				...(data?.amount && {
+					amount: data?.amount,
+				}),
 				selectedDate: data.selectedDate,
-				selectedExpirationDate: data.selectedExpirationDate,
-				selectedCloseDate: data.selectedCloseDate,
+				...(data?.selectedExpirationDate && {
+					selectedExpirationDate: data?.selectedExpirationDate,
+				}),
+				...(data?.selectedCloseDate && {
+					selectedCloseDate: data?.selectedCloseDate,
+				}),
+				...(data?.currencyQuantity && {
+					currencyQuantity: data?.currencyQuantity,
+				}),
+				...(data?.currencyExchangeRate && {
+					currencyExchangeRate: data?.currencyExchangeRate,
+				}),
 			})
 			.then((res) => {
 				toast.success(CREATE_TRANSACTION_SUCCESS_MESSAGE);
@@ -29,6 +41,46 @@ export const storeDataAction = (data) => {
 			})
 			.catch((err) => {
 				dispatch({ type: 'STORE_ERROR', err });
+			});
+	};
+};
+
+export const updateDataAction = (data, docId) => {
+	return (dispatch) => {
+		firestore
+			.collection('users')
+			.doc(data.userId)
+			.collection('expenses')
+			.doc(docId)
+			.update({
+				date: new Date(),
+				expenseName: data.name,
+				comment: data.comment,
+				category: data.category,
+				...(data?.amount && {
+					amount: data?.amount,
+				}),
+				selectedDate: data.selectedDate,
+				...(data?.selectedExpirationDate && {
+					selectedExpirationDate: data?.selectedExpirationDate,
+				}),
+				...(data?.selectedCloseDate && {
+					selectedCloseDate: data?.selectedCloseDate,
+				}),
+				...(data?.currencyQuantity && {
+					currencyQuantity: data?.currencyQuantity,
+				}),
+				...(data?.currencyExchangeRate && {
+					currencyExchangeRate: data?.currencyExchangeRate,
+				}),
+			})
+			.then((res) => {
+				toast.success(UPDATE_TRANSACTION_SUCCESS_MESSAGE);
+
+				dispatch({ type: 'UPDATE_DATA', res });
+			})
+			.catch((err) => {
+				toast.error(err.message);
 			});
 	};
 };
@@ -72,34 +124,6 @@ export const deleteCardAction = (docId) => {
 				toast.warn(DELETE_TRANSACTION_WARNING_MESSAGE);
 
 				dispatch({ type: 'DELETE_DOC', docId });
-			})
-			.catch((err) => {
-				toast.error(err.message);
-			});
-	};
-};
-
-export const updateDataAction = (data, docId) => {
-	return (dispatch) => {
-		firestore
-			.collection('users')
-			.doc(data.userId)
-			.collection('expenses')
-			.doc(docId)
-			.update({
-				amount: data.amount,
-				date: new Date(),
-				expenseName: data.name,
-				comment: data.comment,
-				category: data.category,
-				selectedDate: data.selectedDate,
-				selectedExpirationDate: data.selectedExpirationDate,
-				selectedCloseDate: data.selectedCloseDate,
-			})
-			.then((res) => {
-				toast.success(UPDATE_TRANSACTION_SUCCESS_MESSAGE);
-
-				dispatch({ type: 'UPDATE_DATA', res });
 			})
 			.catch((err) => {
 				toast.error(err.message);

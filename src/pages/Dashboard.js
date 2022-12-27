@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import 'react-loading-skeleton/dist/skeleton.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import 'tippy.js/dist/tippy.css'; // optional
@@ -29,6 +30,7 @@ function Dashboard() {
 	const categories = useSelector((state) => state.database.categories);
 
 	const [income, setIncome] = useState(0);
+	const [currencyIncome, setCurrencyIncome] = useState(0);
 	const [expense, setExpense] = useState(0);
 	const [total, setTotal] = useState(0);
 
@@ -48,8 +50,11 @@ function Dashboard() {
 	const [selectedCloseDate, setSelectedCloseDate] = useState('');
 
 	const [isBuyCurrenciesCategory, setIsBuyCurrenciesCategory] = useState(false);
-	const [currencyQuantity, setCurrencyQuantity] = useState(0);
-	const [currencyExchangeRate, setCurrencyExchangeRate] = useState(0);
+	const [currencyQuantity, setCurrencyQuantity] = useState();
+	const [currencyExchangeRate, setCurrencyExchangeRate] = useState();
+
+	const [isCurrencyIncomeCategory, setIsCurrencyIncomeCategory] =
+		useState(false);
 
 	const {
 		register,
@@ -80,17 +85,32 @@ function Dashboard() {
 
 			const expenses = docs
 				.filter((doc) => expensesCategories?.includes(doc?.category))
-				.map((doc) => parseFloat(doc?.amount));
+				.map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
 
 			const incomes = docs
 				.filter((doc) => !expensesCategories?.includes(doc?.category))
-				.map((doc) => parseFloat(doc?.amount));
+				.map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
+
+			const currencyIncome = docs
+				.filter(
+					(doc) =>
+						doc.category.includes('Compra divisas') ||
+						doc.category.includes('Ingreso divisas')
+				)
+				.map(
+					(doc) =>
+						!isNaN(doc?.currencyQuantity) && parseFloat(doc?.currencyQuantity)
+				);
 
 			setExpense(
 				expenses?.reduce((acc, item) => acc + item, 0) * -(1).toFixed(2)
 			);
 
 			setIncome(incomes?.reduce((acc, item) => acc + item, 0).toFixed(2));
+
+			setCurrencyIncome(
+				currencyIncome?.reduce((acc, item) => acc + item, 0).toFixed(2)
+			);
 
 			setTotal(
 				incomes?.reduce((acc, item) => acc + item, 0).toFixed(2) -
@@ -115,6 +135,11 @@ function Dashboard() {
 		setSelectedDate('');
 		setSelectedExpirationDate('');
 		setSelectedCloseDate('');
+		setCurrencyQuantity('');
+		setCurrencyExchangeRate('');
+		setIsBuyCurrenciesCategory(false);
+		setIsCreditCardCategory(false);
+		setIsCurrencyIncomeCategory(false);
 	};
 
 	const handleFloatingButtonClick = () => {
@@ -125,7 +150,7 @@ function Dashboard() {
 		if (!edit) {
 			dispatch(
 				storeDataAction({
-					userId: user.uid,
+					userId: user?.uid,
 					name,
 					amount,
 					comment,
@@ -133,6 +158,8 @@ function Dashboard() {
 					selectedDate,
 					selectedExpirationDate,
 					selectedCloseDate,
+					currencyQuantity,
+					currencyExchangeRate,
 				})
 			);
 		} else {
@@ -147,6 +174,8 @@ function Dashboard() {
 						selectedDate,
 						selectedExpirationDate,
 						selectedCloseDate,
+						currencyQuantity,
+						currencyExchangeRate,
 					},
 					expenseId
 				)
@@ -160,14 +189,12 @@ function Dashboard() {
 			setSelectedDate('');
 			setSelectedExpirationDate('');
 			setSelectedCloseDate('');
+			setCurrencyQuantity('');
+			setCurrencyExchangeRate('');
+			setIsBuyCurrenciesCategory(false);
+			setIsCreditCardCategory(false);
+			setIsCurrencyIncomeCategory(false);
 		}
-	};
-
-	const getExpenseCategories = () => {
-		const expenseCategories = categories
-			.filter((c) => c.isExpense)
-			.map((c) => c.name)
-			.includes(category);
 	};
 
 	if (user === null) return <Navigate to='/' />;
@@ -235,7 +262,7 @@ function Dashboard() {
 							) : (
 								<p className='text-blue-500 font-medium'>{`${currencyGenericFormater(
 									'USD',
-									1000,
+									currencyIncome,
 									'en-US',
 									'USD'
 								)}`}</p>
@@ -257,18 +284,6 @@ function Dashboard() {
 										}`}
 									>
 										{currencyFormater(total)}
-									</h2>
-								)}
-
-								{isDataFetching ? (
-									<img className='ml-2 h-6 w-6' src={bars} alt='loader' />
-								) : (
-									<h2
-										className={`text-2xl font-semibold text-center ${
-											total < 0 ? `text-red-500` : `text-blue-500`
-										}`}
-									>
-										{currencyGenericFormater('USD', 1000, 'en-US', 'USD')}
 									</h2>
 								)}
 							</div>
@@ -334,8 +349,17 @@ function Dashboard() {
 									required: true,
 									onChange: (e) => {
 										setCategory(e.target.value);
+
 										setIsCreditCardCategory(
 											e.target.value.includes('Resumen tarjeta')
+										);
+
+										setIsBuyCurrenciesCategory(
+											e.target.value.includes('Compra divisas')
+										);
+
+										setIsCurrencyIncomeCategory(
+											e.target.value.includes('Ingreso divisas')
 										);
 									},
 								})}
@@ -374,12 +398,12 @@ function Dashboard() {
 							{isCreditCardCategory && (
 								<div className='ml-3'>
 									<label
-										htmlFor='expiration-date'
+										htmlFor='selectedExpirationDate'
 										className='relative text-sm font-medium text-gray-600 dark:text-zinc-300 block'
 									>
 										Fecha de Vencimiento
 										<input
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+											className='w-full border border-gray-300 px-3 mt-2 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
 											value={selectedExpirationDate}
 											type='date'
 											id='selectedExpirationDate'
@@ -397,12 +421,12 @@ function Dashboard() {
 										)}
 									</label>
 									<label
-										htmlFor='expiration-date'
+										htmlFor='selectedCloseDate'
 										className='relative text-sm font-medium text-gray-600 dark:text-zinc-300 block mt-2'
 									>
 										Fecha de Cierre
 										<input
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+											className='w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
 											value={selectedCloseDate}
 											type='date'
 											id='selectedCloseDate'
@@ -423,98 +447,154 @@ function Dashboard() {
 							)}
 
 							{isBuyCurrenciesCategory && (
-								<label
-									htmlFor='amount'
-									className='relative text-sm font-medium text-gray-700 dark:text-white block'
-								>
-									Monto
-									<svg
-										fill='none'
-										viewBox='0 0 24 24'
-										className={`pointer-events-none bg-slate-800 w-7 h-7 absolute top-11 transform -translate-y-1/2 right-2 ${
-											categories
-												?.filter((c) => c.isExpense)
-												.map((c) => c.name)
-												.includes(category)
-												? ` text-red-500`
-												: `text-green-500`
-										} `}
+								<div className='ml-3'>
+									<label
+										htmlFor='currencyQuantity'
+										className='relative text-sm font-medium text-gray-700 dark:text-white block'
 									>
-										<path d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
-									</svg>
-									<input
-										className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
-										value={amount}
-										type='number'
-										min='0'
-										step='0.1'
-										id='amount'
-										{...register('amount', {
-											required: true,
-											pattern: /^\d+(\.\d{1,2})?$/,
-											onChange: (e) => {
-												setAmount(e.target.value);
-											},
-										})}
-										placeholder='e.g. 5000'
-									/>
+										Cantidad
+										<input
+											className='w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+											type='number'
+											value={currencyQuantity}
+											id='currencyQuantity'
+											{...register('currencyQuantity', {
+												required: true,
+												pattern: /^\d+(\.\d{1,2})?$/,
+												onChange: (e) => {
+													setCurrencyQuantity(e.target.value);
+												},
+											})}
+											placeholder='e.g. 1000'
+										/>
+										{errors.currencyQuantity && (
+											<p className='text-red-500 text-sm'>
+												Ingrese una cantidad válida
+											</p>
+										)}
+									</label>
+
+									<label
+										htmlFor='currencyExchangeRate'
+										className='relative text-sm font-medium text-gray-700 dark:text-white block mt-2'
+									>
+										Cotización
+										<input
+											className='w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+											value={currencyExchangeRate}
+											type='number'
+											id='currencyExchangeRate'
+											{...register('currencyExchangeRate', {
+												required: true,
+												pattern: /^\d+(\.\d{1,2})?$/,
+												onChange: (e) => {
+													setCurrencyExchangeRate(e.target.value);
+												},
+											})}
+											placeholder='e.g. 330'
+										/>
+										{errors.currencyExchangeRate && (
+											<p className='text-red-500 text-sm'>
+												Ingrese una tasa de cambio válida
+											</p>
+										)}
+									</label>
+								</div>
+							)}
+
+							{isCurrencyIncomeCategory && (
+								<>
+									<label
+										htmlFor='currencyQuantity'
+										className='relative text-sm font-medium text-gray-700 dark:text-white block'
+									>
+										Monto divisa
+										<input
+											className='w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+											type='number'
+											value={currencyQuantity}
+											id='currencyQuantity'
+											{...register('currencyQuantity', {
+												required: true,
+												pattern: /^\d+(\.\d{1,2})?$/,
+												onChange: (e) => {
+													setCurrencyQuantity(e.target.value);
+												},
+											})}
+											placeholder='e.g. 1000'
+										/>
+										{errors.currencyQuantity && (
+											<p className='text-red-500 text-sm'>
+												Ingrese un monto valido
+											</p>
+										)}
+									</label>
+								</>
+							)}
+
+							{!isCurrencyIncomeCategory && (
+								<>
+									<label
+										htmlFor='amount'
+										className=' text-sm font-medium text-gray-700 dark:text-white block'
+									>
+										Monto
+									</label>
+
+									<div className='relative'>
+										<svg
+											fill='none'
+											viewBox='0 0 24 24'
+											stroke='currentColor'
+											className={`pointer-events-none shadow-none w-7 h-7 absolute top-5 transform -translate-y-1/2 right-2 ${
+												categories
+													?.filter((c) => c.isExpense)
+													.map((c) => c.name)
+													.includes(category)
+													? ` text-red-500`
+													: `text-green-500`
+											} `}
+										>
+											<path
+												strokeLinecap='round'
+												strokeLinejoin='round'
+												strokeWidth='2'
+												d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+											/>
+										</svg>
+										<input
+											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
+											value={
+												category.includes('Compra divisas')
+													? currencyQuantity * currencyExchangeRate
+													: amount
+											}
+											type='number'
+											min='0'
+											id='amount'
+											{...register('amount', {
+												required: true,
+												pattern: /^\d+(\.\d{1,2})?$/,
+												onChange: category.includes('Compra divisas')
+													? (e) => {
+															setAmount(
+																currencyQuantity * currencyExchangeRate
+															);
+													  }
+													: (e) => {
+															setAmount(e.target.value);
+													  },
+											})}
+											placeholder='e.g. 5000'
+										/>
+									</div>
+
 									{errors.amount && (
 										<p className='text-red-500 text-sm'>
 											Ingrese un monto de transacción válido
 										</p>
 									)}
-								</label>
-							)}
-
-							<label
-								htmlFor='amount'
-								className=' text-sm font-medium text-gray-700 dark:text-white block'
-							>
-								Monto
-							</label>
-							<div className='relative'>
-								<svg
-									fill='none'
-									viewBox='0 0 24 24'
-									stroke='currentColor'
-									className={`pointer-events-none shadow-none w-7 h-7 absolute top-5 transform -translate-y-1/2 right-2 ${
-										categories
-											?.filter((c) => c.isExpense)
-											.map((c) => c.name)
-											.includes(category)
-											? ` text-red-500`
-											: `text-green-500`
-									} `}
-								>
-									<path
-										strokeLinecap='round'
-										strokeLinejoin='round'
-										strokeWidth='2'
-										d='M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-									/>
-								</svg>
-								<input
-									className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
-									value={amount}
-									type='number'
-									min='0'
-									step='0.1'
-									id='amount'
-									{...register('amount', {
-										required: true,
-										pattern: /^\d+(\.\d{1,2})?$/,
-										onChange: (e) => {
-											setAmount(e.target.value);
-										},
-									})}
-									placeholder='e.g. 5000'
-								/>
-							</div>
-
-							{errors.amount && (
-								<p className='text-red-500 text-sm'>
-									Ingrese un monto de transacción válido
-								</p>
+								</>
 							)}
 
 							<label
@@ -627,6 +707,8 @@ function Dashboard() {
 									selectedDate={doc.selectedDate}
 									selectedExpirationDate={doc.selectedExpirationDate}
 									selectedCloseDate={doc.selectedCloseDate}
+									currencyExchangeRate={doc.currencyExchangeRate}
+									currencyQuantity={doc.currencyQuantity}
 									setExpense={setExpense}
 									setIncome={setIncome}
 									setName={setName}
@@ -634,9 +716,13 @@ function Dashboard() {
 									setComment={setComment}
 									setCategory={setCategory}
 									setIsCreditCardCategory={setIsCreditCardCategory}
+									setIsBuyCurrenciesCategory={setIsBuyCurrenciesCategory}
+									setIsCurrencyIncomeCategory={setIsCurrencyIncomeCategory}
 									setSelectedDate={setSelectedDate}
 									setSelectedExpirationDate={setSelectedExpirationDate}
 									setSelectedCloseDate={setSelectedCloseDate}
+									setCurrencyQuantity={setCurrencyQuantity}
+									setCurrencyExchangeRate={setCurrencyExchangeRate}
 									setEdit={setEdit}
 									setExpenseId={setExpenseId}
 									categories={categories}
