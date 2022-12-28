@@ -10,10 +10,12 @@ import {
 	getDataAction,
 	storeDataAction,
 	updateDataAction,
+	filterDataAction,
 } from '../actionCreators/databaseActions';
 import Card from '../components/Card';
 import InfoTooltip from '../components/InfoTooltip';
 import LitaModal from '../components/LitaModal';
+import ExpenseFilter from '../components/ExpenseFilter';
 import bars from '../imgs/bars.svg';
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from '../shared/constants/tooltip-messages.const';
 import {
@@ -236,7 +238,6 @@ function Dashboard() {
 									)}`}</p>
 								)}
 							</div>
-
 							<div className='flex flex-col justify-center items-center'>
 								<h1 className='font-semibold text-2xl uppercase dark:text-zinc-100'>
 									Gastos
@@ -288,6 +289,7 @@ function Dashboard() {
 								)}
 							</div>
 						</div>
+						<ExpenseFilter />
 					</motion.div>
 					<motion.div
 						animate={{ opacity: 1 }}

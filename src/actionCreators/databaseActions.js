@@ -5,6 +5,7 @@ import {
 	DELETE_TRANSACTION_WARNING_MESSAGE,
 	UPDATE_TRANSACTION_SUCCESS_MESSAGE,
 } from '../shared/constants/toast-messages.const';
+import moment from 'moment';
 
 export const storeDataAction = (data) => {
 	return (dispatch) => {
@@ -127,6 +128,52 @@ export const deleteCardAction = (docId) => {
 			})
 			.catch((err) => {
 				toast.error(err.message);
+			});
+	};
+};
+
+export const filterDataAction = (userId, filterType) => {
+	return (dispatch) => {
+		let startDate, endDate;
+
+		switch (filterType) {
+			case 'month':
+				startDate = moment().startOf('month').toDate();
+				endDate = moment().endOf('month').toDate();
+				break;
+			case 'year':
+				startDate = moment().startOf('year').toDate();
+				endDate = moment().endOf('year').toDate();
+				break;
+			case 'week':
+				startDate = moment().startOf('week').toDate();
+				endDate = moment().endOf('week').toDate();
+				break;
+			case 'day':
+				startDate = moment().startOf('day').toDate();
+				endDate = moment().endOf('day').toDate();
+				break;
+			default:
+				break;
+		}
+
+		firestore
+			.collection('users')
+			.doc(userId)
+			.collection('expenses')
+			.where('date', '>=', startDate)
+			.where('date', '<=', endDate)
+			.get()
+			.then((snapshot) => {
+				const expenses = [];
+
+				console.log(expenses);
+
+				snapshot.forEach((doc) => {
+					expenses.push({ id: doc.id, ...doc.data() });
+				});
+
+				dispatch({ type: 'SET_EXPENSES', expenses });
 			});
 	};
 };

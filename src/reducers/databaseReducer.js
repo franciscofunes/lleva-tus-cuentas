@@ -28,6 +28,12 @@ export const databaseReducer = (state = initState, action) => {
 				...state,
 			};
 			break;
+		case 'SET_EXPENSES':
+			return {
+				...state,
+				docs: action.expenses,
+			};
+			break;
 		default:
 			return state;
 	}
