@@ -93,6 +93,7 @@ const ExpenseFilter = () => {
 						clearButtonClassName='bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded'
 						withPortal={true}
 						dateFormat='dd/MM/yyyy'
+						disabledKeyboardNavigation={true}
 					/>
 					<button
 						className='px-4 py-2 rounded-lg bg-red-500 hover:scale-105 hover:opacity-75'
