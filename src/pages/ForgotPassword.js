@@ -1,10 +1,8 @@
 import { motion } from 'framer-motion';
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router';
+import { useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { resetPassword } from '../actionCreators/authActions';
-import GoogleLoginButton from '../components/GoogleLoginButton';
 import wallet from '../imgs/wallet.png';
 import wallet2 from '../imgs/wallet2.png';
 
@@ -12,7 +10,6 @@ function ForgotPassword({ history }) {
 	const dispatch = useDispatch();
 
 	const [email, setEmail] = useState('');
-	const navigate = useNavigate();
 
 	const handleSubmit = (e) => {
 		e.preventDefault();

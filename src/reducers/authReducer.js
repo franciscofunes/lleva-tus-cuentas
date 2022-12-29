@@ -46,7 +46,6 @@ export const authReducer = (state = initState, action) => {
 				...state,
 				isFetching: false,
 				user: null,
-				isFetching: true,
 				database: null,
 			};
 		case 'RESET_PASSWORD':

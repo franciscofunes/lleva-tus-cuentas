@@ -92,7 +92,7 @@ export const getDataAction = (userId) => {
 			.collection('users')
 			.doc(userId)
 			.collection('expenses')
-			.orderBy('date', 'desc')
+			.orderBy('selectedDate', 'desc')
 			.onSnapshot((res) => {
 				const data = res.docs.map((d) => ({ id: d.id, ...d.data() }));
 				dispatch({ type: 'GOT_DATA', data });
@@ -132,26 +132,61 @@ export const deleteCardAction = (docId) => {
 	};
 };
 
-export const filterDataAction = (userId, filterType) => {
+export const filterDataAction = (
+	userId,
+	filterType,
+	year,
+	month,
+	week,
+	day
+) => {
 	return (dispatch) => {
 		let startDate, endDate;
 
+		console.log(userId, filterType, year, month, week, day);
+
 		switch (filterType) {
 			case 'month':
-				startDate = moment().startOf('month').toDate();
-				endDate = moment().endOf('month').toDate();
+				startDate = moment()
+					.year(year)
+					.month(month)
+					.startOf('month')
+					.format('YYYY-MM-DD');
+				endDate = moment()
+					.year(year)
+					.month(month)
+					.endOf('month')
+					.format('YYYY-MM-DD');
 				break;
 			case 'year':
-				startDate = moment().startOf('year').toDate();
-				endDate = moment().endOf('year').toDate();
+				startDate = moment().year(year).startOf('year').format('YYYY-MM-DD');
+				endDate = moment().year(year).endOf('year').format('YYYY-MM-DD');
 				break;
 			case 'week':
-				startDate = moment().startOf('week').toDate();
-				endDate = moment().endOf('week').toDate();
+				startDate = moment()
+					.year(year)
+					.month(month)
+					.week(week)
+					.startOf('week')
+					.format('YYYY-MM-DD');
+				endDate = moment()
+					.year(year)
+					.month(month)
+					.week(week)
+					.endOf('week')
+					.format('YYYY-MM-DD');
 				break;
 			case 'day':
-				startDate = moment().startOf('day').toDate();
-				endDate = moment().endOf('day').toDate();
+				startDate = moment()
+					.year(year)
+					.month(month)
+					.date(day)
+					.format('YYYY-MM-DD');
+				endDate = moment()
+					.year(year)
+					.month(month)
+					.date(day)
+					.format('YYYY-MM-DD');
 				break;
 			default:
 				break;
@@ -161,19 +196,20 @@ export const filterDataAction = (userId, filterType) => {
 			.collection('users')
 			.doc(userId)
 			.collection('expenses')
-			.where('date', '>=', startDate)
-			.where('date', '<=', endDate)
+			.where('selectedDate', '>=', startDate)
+			.where('selectedDate', '<=', endDate)
 			.get()
 			.then((snapshot) => {
 				const expenses = [];
-
-				console.log(expenses);
 
 				snapshot.forEach((doc) => {
 					expenses.push({ id: doc.id, ...doc.data() });
 				});
 
 				dispatch({ type: 'SET_EXPENSES', expenses });
+			})
+			.catch((error) => {
+				console.error(error);
 			});
 	};
 };

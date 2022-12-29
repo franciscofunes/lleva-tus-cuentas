@@ -10,12 +10,11 @@ import {
 	getDataAction,
 	storeDataAction,
 	updateDataAction,
-	filterDataAction,
 } from '../actionCreators/databaseActions';
 import Card from '../components/Card';
+import ExpenseFilter from '../components/ExpenseFilter';
 import InfoTooltip from '../components/InfoTooltip';
 import LitaModal from '../components/LitaModal';
-import ExpenseFilter from '../components/ExpenseFilter';
 import bars from '../imgs/bars.svg';
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from '../shared/constants/tooltip-messages.const';
 import {
@@ -68,13 +67,13 @@ function Dashboard() {
 		if (user) {
 			dispatch(getCaterogiesDataAction());
 		}
-	}, [user]);
+	}, [user, dispatch]);
 
 	useEffect(() => {
 		if (user) {
 			dispatch(getDataAction(user.uid));
 		}
-	}, [user]);
+	}, [user, dispatch]);
 
 	useEffect(() => {
 		setExpense(0);

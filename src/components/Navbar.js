@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation } from 'react-router';
 import { Link } from 'react-router-dom';
 import { logOutAction } from '../actionCreators/authActions';
 import { auth } from '../config/firebase.config';
@@ -9,7 +9,6 @@ import DarkModeToggle from './DarkModeToggle';
 
 function Navbar() {
 	const user = useSelector((state) => state.auth.user);
-	const navigate = useNavigate();
 	const location = useLocation();
 	const dispatch = useDispatch();
 

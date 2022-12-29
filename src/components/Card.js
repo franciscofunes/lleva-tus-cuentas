@@ -112,7 +112,7 @@ function Card({
 				)}
 
 				<p className='font-semibold text-base text-gray-400'>
-					<span className='text-purple-600'>Fecha registro: </span>
+					<span className='text-purple-600'>Fecha transacción: </span>
 					{moment(selectedDate).format('DD/MM/YYYY')}
 				</p>
 				<div className='flex flex-row gap-x-2 lg:justify-between items-stretch'>

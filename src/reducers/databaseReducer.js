@@ -11,7 +11,6 @@ export const databaseReducer = (state = initState, action) => {
 			return {
 				...state,
 			};
-			break;
 		case 'GOT_DATA':
 			return { ...state, docs: action.data, isDataFetching: false };
 		case 'GOT_CATEGORY_DATA':
@@ -27,13 +26,12 @@ export const databaseReducer = (state = initState, action) => {
 			return {
 				...state,
 			};
-			break;
 		case 'SET_EXPENSES':
 			return {
 				...state,
 				docs: action.expenses,
+				isDataFetching: false,
 			};
-			break;
 		default:
 			return state;
 	}
