@@ -143,8 +143,6 @@ export const filterDataAction = (
 	return (dispatch) => {
 		let startDate, endDate;
 
-		console.log(userId, filterType, year, month, week, day);
-
 		switch (filterType) {
 			case 'month':
 				startDate = moment()
