@@ -8,7 +8,9 @@ import es from 'date-fns/locale/es';
 import moment from 'moment';
 
 const ExpenseFilter = () => {
-	const [selectedDate, setSelectedDate] = useState(null);
+	const [selectedDate, setSelectedDate] = useState(
+		moment().startOf('day').toDate()
+	);
 	const [selectedFilter, setSelectedFilter] = useState('year');
 
 	const dispatch = useDispatch();
@@ -16,6 +18,7 @@ const ExpenseFilter = () => {
 
 	const handleFilterClick = (filterType) => {
 		setSelectedFilter(filterType);
+
 		dispatch(
 			filterDataAction(
 				user.uid,
