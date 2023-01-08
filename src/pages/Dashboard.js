@@ -21,6 +21,7 @@ import {
 	currencyFormater,
 	currencyGenericFormater,
 } from '../shared/utils/currencyFormater';
+import FloatingButton from '../components/FloatingButton';
 
 function Dashboard() {
 	const dispatch = useDispatch();
@@ -218,11 +219,11 @@ function Dashboard() {
 						initial={{ opacity: 0 }}
 						transition={{ duration: 0.7, type: 'tween' }}
 						id='info'
-						className='container bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 mt-6 font-Nunito flex flex-col dark:bg-slate-800 dark:border-indigo-500'
+						className='container  bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 mt-6 font-Nunito flex flex-col  dark:bg-slate-800 dark:border-indigo-500'
 					>
 						<div
 							id='top-info'
-							className='flex flex-gol gap-x-2 justify-between max-w-full items-center mb-5'
+							className='flex gap-x-2 justify-between max-w-full items-center mb-5'
 						>
 							<div className='flex flex-col justify-center items-center'>
 								<h1 className='font-semibold text-2xl uppercase dark:text-zinc-100'>
@@ -269,7 +270,7 @@ function Dashboard() {
 							)}
 						</div>
 
-						<div className='flex flex-col gap-x-1 mt-2'>
+						<div className='flex flex-col gap-x-1 mt-2 mb-6'>
 							<p className='text-gray-400 text-center text-lg'>
 								Balance Total{' '}
 							</p>

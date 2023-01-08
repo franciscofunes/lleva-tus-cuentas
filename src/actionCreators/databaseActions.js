@@ -87,11 +87,32 @@ export const updateDataAction = (data, docId) => {
 };
 
 export const getDataAction = (userId) => {
+	const currentMonth = moment().month();
+	const currentYear = moment().year();
+
 	return (dispatch) => {
 		firestore
 			.collection('users')
 			.doc(userId)
 			.collection('expenses')
+			.where(
+				'selectedDate',
+				'>=',
+				moment()
+					.year(currentYear)
+					.month(currentMonth)
+					.startOf('month')
+					.format('YYYY-MM-DD')
+			)
+			.where(
+				'selectedDate',
+				'<=',
+				moment()
+					.year(currentYear)
+					.month(currentMonth)
+					.endOf('month')
+					.format('YYYY-MM-DD')
+			)
 			.orderBy('selectedDate', 'desc')
 			.onSnapshot((res) => {
 				const data = res.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -187,6 +208,16 @@ export const filterDataAction = (
 					.format('YYYY-MM-DD');
 				break;
 			default:
+				startDate = moment()
+					.year(year)
+					.month(month)
+					.startOf('month')
+					.format('YYYY-MM-DD');
+				endDate = moment()
+					.year(year)
+					.month(month)
+					.endOf('month')
+					.format('YYYY-MM-DD');
 				break;
 		}
 
