@@ -5,7 +5,10 @@ import { React, useState } from 'react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useDispatch, useSelector } from 'react-redux';
-import { filterDataAction } from '../actionCreators/databaseActions';
+import {
+	filterDataAction,
+	getTotalBalance,
+} from '../actionCreators/databaseActions';
 
 const ExpenseFilter = () => {
 	const [selectedDate, setSelectedDate] = useState(
@@ -18,6 +21,12 @@ const ExpenseFilter = () => {
 	const user = useSelector((state) => state.auth.user);
 
 	const handleFilterClick = (filterType) => {
+		if (filterType?.includes('total')) {
+			setSelectedFilter(filterType);
+
+			return dispatch(getTotalBalance(user.uid));
+		}
+
 		setSelectedFilter(filterType);
 
 		dispatch(
@@ -102,7 +111,18 @@ const ExpenseFilter = () => {
 					</button>
 				</div>
 
-				<div className='flex justify-center gap-x-3'>
+				<div className='flex items-center justify-center flex-col gap-x-3 gap-y-5'>
+					<button
+						className={`px-4 py-2 rounded-lg ${
+							selectedFilter === 'total'
+								? 'bg-indigo-500 text-white'
+								: 'bg-gray-300 text-black'
+						} hover:scale-105 hover:opacity-75`}
+						onClick={() => handleFilterClick('total')}
+					>
+						Balance Total
+					</button>
+
 					<DatePicker
 						className='text-center cursor-pointer rounded-lg py-2 bg-gray-200 hover:scale-105 hover:opacity-75 focus:outline-none focus:shadow-outline-purple'
 						selected={selectedDate}
