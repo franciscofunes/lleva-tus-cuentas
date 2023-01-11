@@ -271,9 +271,7 @@ function Dashboard() {
 						</div>
 
 						<div className='flex flex-col gap-x-1 mt-2 mb-6'>
-							<p className='text-gray-400 text-center text-lg'>
-								Balance Parcial
-							</p>
+							<p className='text-gray-400 text-center text-lg'>Balance</p>
 
 							<div className='flex flex-col gap-x-2 space-y-1 justify-center items-center'>
 								{isDataFetching ? (
