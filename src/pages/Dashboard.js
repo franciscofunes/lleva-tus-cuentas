@@ -22,6 +22,7 @@ import {
 	currencyGenericFormater,
 } from '../shared/utils/currencyFormater';
 import FloatingButton from '../components/FloatingButton';
+import SearchBar from '../components/SearchBar';
 
 function Dashboard() {
 	const dispatch = useDispatch();
@@ -676,6 +677,8 @@ function Dashboard() {
 						<h1 className='font-Nunito font-bold text-3xl mb-2 ml-1 dark:text-zinc-100'>
 							Transacciones 📕
 						</h1>
+						<SearchBar />
+
 						{isDataFetching && (
 							<div className='flex'>
 								<p className='text-zinc-500 font-semiboldt ml-2 text-base'>
@@ -696,37 +699,39 @@ function Dashboard() {
 
 						{docs?.map((doc) => {
 							return (
-								<Card
-									key={doc.id}
-									id={doc.id}
-									name={doc.expenseName}
-									amount={doc.amount}
-									date={doc.date}
-									comment={doc.comment}
-									category={doc.category}
-									selectedDate={doc.selectedDate}
-									selectedExpirationDate={doc.selectedExpirationDate}
-									selectedCloseDate={doc.selectedCloseDate}
-									currencyExchangeRate={doc.currencyExchangeRate}
-									currencyQuantity={doc.currencyQuantity}
-									setExpense={setExpense}
-									setIncome={setIncome}
-									setName={setName}
-									setAmount={setAmount}
-									setComment={setComment}
-									setCategory={setCategory}
-									setIsCreditCardCategory={setIsCreditCardCategory}
-									setIsBuyCurrenciesCategory={setIsBuyCurrenciesCategory}
-									setIsCurrencyIncomeCategory={setIsCurrencyIncomeCategory}
-									setSelectedDate={setSelectedDate}
-									setSelectedExpirationDate={setSelectedExpirationDate}
-									setSelectedCloseDate={setSelectedCloseDate}
-									setCurrencyQuantity={setCurrencyQuantity}
-									setCurrencyExchangeRate={setCurrencyExchangeRate}
-									setEdit={setEdit}
-									setExpenseId={setExpenseId}
-									categories={categories}
-								/>
+								<>
+									<Card
+										key={doc.id}
+										id={doc.id}
+										name={doc.expenseName}
+										amount={doc.amount}
+										date={doc.date}
+										comment={doc.comment}
+										category={doc.category}
+										selectedDate={doc.selectedDate}
+										selectedExpirationDate={doc.selectedExpirationDate}
+										selectedCloseDate={doc.selectedCloseDate}
+										currencyExchangeRate={doc.currencyExchangeRate}
+										currencyQuantity={doc.currencyQuantity}
+										setExpense={setExpense}
+										setIncome={setIncome}
+										setName={setName}
+										setAmount={setAmount}
+										setComment={setComment}
+										setCategory={setCategory}
+										setIsCreditCardCategory={setIsCreditCardCategory}
+										setIsBuyCurrenciesCategory={setIsBuyCurrenciesCategory}
+										setIsCurrencyIncomeCategory={setIsCurrencyIncomeCategory}
+										setSelectedDate={setSelectedDate}
+										setSelectedExpirationDate={setSelectedExpirationDate}
+										setSelectedCloseDate={setSelectedCloseDate}
+										setCurrencyQuantity={setCurrencyQuantity}
+										setCurrencyExchangeRate={setCurrencyExchangeRate}
+										setEdit={setEdit}
+										setExpenseId={setExpenseId}
+										categories={categories}
+									/>
+								</>
 							);
 						})}
 					</div>

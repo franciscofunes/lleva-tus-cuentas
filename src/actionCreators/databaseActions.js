@@ -1,3 +1,4 @@
+import moment from 'moment';
 import { toast } from 'react-toastify';
 import { firestore } from '../config/firebase.config';
 import {
@@ -5,7 +6,6 @@ import {
 	DELETE_TRANSACTION_WARNING_MESSAGE,
 	UPDATE_TRANSACTION_SUCCESS_MESSAGE,
 } from '../shared/constants/toast-messages.const';
-import moment from 'moment';
 
 export const storeDataAction = (data) => {
 	return (dispatch) => {
@@ -255,4 +255,25 @@ export const filterDataAction = (
 				console.error(error);
 			});
 	};
+};
+
+export const searchExpenses = (searchTerm, userId) => (dispatch) => {
+	firestore
+		.collection('users')
+		.doc(userId)
+		.collection('expenses')
+		.where('category', '==', searchTerm)
+		.get()
+		.then((querySnapshot) => {
+			const expenses = [];
+			querySnapshot.forEach((doc) => {
+				if (doc.data().category.includes(searchTerm)) {
+					expenses.push({ ...doc.data(), id: doc.id });
+				}
+			});
+			dispatch({ type: 'SEARCH_EXPENSES', expenses });
+		})
+		.catch((error) => {
+			console.error('Error searching expenses: ', error);
+		});
 };

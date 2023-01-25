@@ -32,6 +32,11 @@ export const databaseReducer = (state = initState, action) => {
 				docs: action.expenses,
 				isDataFetching: false,
 			};
+		case 'SEARCH_EXPENSES':
+			return {
+				...state,
+				docs: action.expenses,
+			};
 		default:
 			return state;
 	}
