@@ -33,10 +33,10 @@ function SearchBar() {
 
 	return (
 		<form onSubmit={handleSubmit}>
-			<div className='ml-2 mb-2 relative w-full sm:w-1/2'>
+			<div className='ml-2 mb-2 flex relative w-4/5 sm:w-4/5 md:w-4/5'>
 				<input
 					type='text'
-					className='bg-gray-200 rounded-md py-2 px-4 block w-full appearance-none leading-normal'
+					className='bg-gray-200 rounded-md py-2 px-4 flex-1 appearance-none leading-normal'
 					list='expense-names'
 					value={searchTerm}
 					placeholder='Busca por categoría'
@@ -49,14 +49,13 @@ function SearchBar() {
 							<option key={name} value={name} />
 						))}
 				</datalist>
-
-				<div className='mt-1 absolute top-0 right-2'>
-					<button type='submit' className=' p-2 text-gray-400 '>
+				<div className='absolute top-0 right-0 flex justify-center items-center mt-1'>
+					<button type='submit' className='p-2 text-gray-400 '>
 						<FaSearch />
 					</button>
 					<button
 						type='button'
-						className=' p-2 text-gray-400 '
+						className='p-2 text-gray-400 '
 						onClick={handleClearSearch}
 					>
 						<FaTrash />
