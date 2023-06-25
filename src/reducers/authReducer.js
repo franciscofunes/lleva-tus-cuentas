@@ -1,4 +1,4 @@
-import { auth } from '../config/firebase.config';
+import { auth } from '../shared/config/firebase/firebase.config';
 
 const initState = {
 	user: null,

@@ -1,6 +1,6 @@
 import moment from 'moment';
 import { toast } from 'react-toastify';
-import { firestore } from '../config/firebase.config';
+import { firestore } from '../shared/config/firebase/firebase.config';
 import {
 	CREATE_TRANSACTION_SUCCESS_MESSAGE,
 	DELETE_TRANSACTION_WARNING_MESSAGE,
@@ -135,7 +135,7 @@ export const getTotalBalance = (userId) => {
 	};
 };
 
-export const getCaterogiesDataAction = () => {
+export const getCategoriesDataAction = () => {
 	return (dispatch) => {
 		firestore
 			.collection('categories')
@@ -241,6 +241,7 @@ export const filterDataAction = (
 			.collection('expenses')
 			.where('selectedDate', '>=', startDate)
 			.where('selectedDate', '<=', endDate)
+			.orderBy('selectedDate', 'desc')
 			.get()
 			.then((snapshot) => {
 				const expenses = [];
@@ -258,19 +259,52 @@ export const filterDataAction = (
 };
 
 export const searchExpenses = (searchTerm, userId) => (dispatch) => {
-	firestore
+	const escapedSearchTerm = searchTerm.replace('í', '\\í');
+
+	const categoryQuery = firestore
 		.collection('users')
 		.doc(userId)
 		.collection('expenses')
-		.where('category', '==', searchTerm)
-		.get()
-		.then((querySnapshot) => {
+		.where('category', '==', escapedSearchTerm);
+
+	const commentQuery = firestore
+		.collection('users')
+		.doc(userId)
+		.collection('expenses')
+		.where('comment', '==', escapedSearchTerm);
+
+	const expenseNameQuery = firestore
+		.collection('users')
+		.doc(userId)
+		.collection('expenses')
+		.where('expenseName', '==', escapedSearchTerm);
+
+	Promise.all([categoryQuery.get(), commentQuery.get(), expenseNameQuery.get()])
+		.then(([categorySnapshot, commentSnapshot, expenseNameSnapshot]) => {
 			const expenses = [];
-			querySnapshot.forEach((doc) => {
-				if (doc.data().category.includes(searchTerm)) {
+
+			categorySnapshot.forEach((doc) => {
+				expenses.push({ ...doc.data(), id: doc.id });
+			});
+
+			commentSnapshot.forEach((doc) => {
+				const existingExpense = expenses.find(
+					(expense) => expense.id === doc.id
+				);
+				if (!existingExpense) {
 					expenses.push({ ...doc.data(), id: doc.id });
 				}
 			});
+
+			expenseNameSnapshot.forEach((doc) => {
+				const existingExpense = expenses.find(
+					(expense) => expense.id === doc.id
+				);
+				if (!existingExpense) {
+					expenses.push({ ...doc.data(), id: doc.id });
+				}
+			});
+
 			dispatch({ type: 'SEARCH_EXPENSES', expenses });
 		})
 		.catch((error) => {

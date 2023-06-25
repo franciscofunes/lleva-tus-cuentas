@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router';
 import { Link } from 'react-router-dom';
 import { logOutAction } from '../actionCreators/authActions';
-import { auth } from '../config/firebase.config';
+import { auth } from '../shared/config/firebase/firebase.config';
 import DarkModeToggle from './DarkModeToggle';
 
 function Navbar() {
@@ -25,13 +25,46 @@ function Navbar() {
 		});
 	}, [dispatch]);
 
+	const renderAuthLinks = () => {
+		if (user) {
+			return (
+				<>
+					{location.pathname === '/' && (
+						<Link to='/transacciones' className='nav-btn mr-3 dark:text-white'>
+							Dashboard
+						</Link>
+					)}
+					<div
+						onClick={handleLogout}
+						className='nav-btn cursor-pointer dark:text-white'
+					>
+						Salir
+					</div>
+				</>
+			);
+		} else {
+			return (
+				<>
+					<Link
+						to={
+							location.pathname.includes('login') ? '/registrarse' : '/ingresar'
+						}
+						className='nav-btn dark:text-white'
+					>
+						{location.pathname.includes('login') ? 'Registrarme' : 'Ingresar'}
+					</Link>
+				</>
+			);
+		}
+	};
+
 	return (
 		<>
 			<motion.nav
 				animate={{ opacity: 1 }}
 				initial={{ opacity: 0 }}
 				transition={{ delay: 0.1, duration: 0.7 }}
-				className='py-5 lg:px-10 px-3 flex bg-zinc-50 justify-between items-center z-10 dark:bg-slate-800'
+				className='py-5 lg:px-10 px-3 flex bg-zinc-50 justify-between items-center dark:bg-slate-800'
 			>
 				<Link
 					to='/'
@@ -39,44 +72,10 @@ function Navbar() {
 				>
 					LTC<span className='text-green-600'>$</span>
 				</Link>
-
-				{user ? (
-					<div className='flex items-center'>
-						{location.pathname === '/' && (
-							<Link
-								to='/transacciones'
-								className='nav-btn mr-3 dark:text-white'
-							>
-								Dashboard
-							</Link>
-						)}
-						<div
-							onClick={handleLogout}
-							className='nav-btn cursor-pointer dark:text-white'
-						>
-							Salir
-						</div>
-						<DarkModeToggle />
-					</div>
-				) : (
-					<>
-						<div className='flex items-center'>
-							<Link
-								to={
-									location.pathname.includes('login')
-										? '/registrarse'
-										: '/ingresar'
-								}
-								className='nav-btn dark:text-white'
-							>
-								{location.pathname.includes('login')
-									? 'Registrarme'
-									: 'Ingresar'}
-							</Link>
-							<DarkModeToggle />
-						</div>
-					</>
-				)}
+				<div className='flex items-center'>
+					{renderAuthLinks()}
+					<DarkModeToggle />
+				</div>
 			</motion.nav>
 		</>
 	);

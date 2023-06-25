@@ -5,6 +5,33 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+	--primary: rgb(30, 41, 59);
+	--secondary: rgb(89, 40, 229);
+}
+
+/* Firefox */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--secondary) var(--primary);
+}
+
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+	width: 15px;
+}
+
+*::-webkit-scrollbar-track {
+	background: var(--primary);
+	border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb {
+	background-color: var(--secondary);
+	border-radius: 14px;
+	border: 3px solid var(--primary);
+}
+
 @layer base {
 	input[type='number']::-webkit-inner-spin-button,
 	input[type='number']::-webkit-outer-spin-button {
@@ -50,6 +77,12 @@ input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
 	transition: background-color 5000s ease-in-out 0s;
+}
+
+.text-gray-gradient {
+	background: linear-gradient(135deg, #6e6d6d, #dddddd);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
 }
 
 [list]::-webkit-calendar-picker-indicator {

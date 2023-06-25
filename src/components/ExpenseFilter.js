@@ -73,8 +73,8 @@ const ExpenseFilter = () => {
 						className={`px-4 rounded-lg ${
 							selectedFilter === 'year'
 								? 'bg-indigo-500 text-white'
-								: 'bg-gray-300 text-black'
-						} hover:scale-105 hover:opacity-75 text-white`}
+								: 'bg-gray-200 text-black'
+						} hover:scale-105 hover:opacity-75`}
 						onClick={() => handleFilterClick('year')}
 					>
 						Año
@@ -83,7 +83,7 @@ const ExpenseFilter = () => {
 						className={`px-4 rounded-lg ${
 							selectedFilter === 'month'
 								? 'bg-indigo-500 text-white'
-								: 'bg-gray-300 text-black'
+								: 'bg-gray-200 text-black'
 						} hover:scale-105 hover:opacity-75`}
 						onClick={() => handleFilterClick('month')}
 					>
@@ -93,7 +93,7 @@ const ExpenseFilter = () => {
 						className={`px-4 rounded-lg ${
 							selectedFilter === 'week'
 								? 'bg-indigo-500 text-white'
-								: 'bg-gray-300 text-black'
+								: 'bg-gray-200 text-black'
 						} hover:scale-105 hover:opacity-75`}
 						onClick={() => handleFilterClick('week')}
 					>
@@ -103,7 +103,7 @@ const ExpenseFilter = () => {
 						className={`px-4 py-2 rounded-lg ${
 							selectedFilter === 'day'
 								? 'bg-indigo-500 text-white'
-								: 'bg-gray-300 text-black'
+								: 'bg-gray-200 text-black'
 						} hover:scale-105 hover:opacity-75`}
 						onClick={() => handleFilterClick('day')}
 					>
@@ -116,7 +116,7 @@ const ExpenseFilter = () => {
 						className={`px-4 py-2 rounded-lg ${
 							selectedFilter === 'total'
 								? 'bg-indigo-500 text-white'
-								: 'bg-gray-300 text-black'
+								: 'bg-gray-200 text-black'
 						} hover:scale-105 hover:opacity-75`}
 						onClick={() => handleFilterClick('total')}
 					>

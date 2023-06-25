@@ -50,12 +50,12 @@ function SearchBar() {
 						))}
 				</datalist>
 				<div className='absolute top-0 right-0 flex justify-center items-center mt-1'>
-					<button type='submit' className='p-2 text-gray-400 '>
+					<button type='submit' className='p-2 text-gray-400'>
 						<FaSearch />
 					</button>
 					<button
 						type='button'
-						className='p-2 text-gray-400 '
+						className='p-2 text-gray-400'
 						onClick={handleClearSearch}
 					>
 						<FaTrash />

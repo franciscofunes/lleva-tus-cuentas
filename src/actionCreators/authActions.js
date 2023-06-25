@@ -1,4 +1,4 @@
-import { auth } from '../config/firebase.config';
+import { auth } from '../shared/config/firebase/firebase.config';
 import { toast } from 'react-toastify';
 import {
 	LOGIN_ERROR_MESSAGE,

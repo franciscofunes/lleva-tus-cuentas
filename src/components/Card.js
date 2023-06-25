@@ -4,9 +4,11 @@ import { useDispatch } from 'react-redux';
 import { deleteCardAction } from '../actionCreators/databaseActions';
 import { motion } from 'framer-motion';
 import InfoTooltip from '../components/InfoTooltip';
+import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 
 function Card({
 	id,
+	expenseId,
 	amount,
 	selectedDate,
 	selectedCloseDate,
@@ -31,6 +33,7 @@ function Card({
 	setEdit,
 	setExpenseId,
 	categories,
+	openModal,
 }) {
 	const dispatch = useDispatch();
 
@@ -39,6 +42,7 @@ function Card({
 	};
 
 	const handleEdit = () => {
+		openModal();
 		setName(name);
 		setAmount(amount);
 		setComment(comment);
@@ -50,7 +54,7 @@ function Card({
 		setCurrencyExchangeRate(currencyExchangeRate);
 		setIsCreditCardCategory(category?.includes('Resumen tarjeta'));
 		setIsBuyCurrenciesCategory(category?.includes('Compra divisas'));
-		setIsCurrencyIncomeCategory(category?.includes('Ingreso divisas'));
+		setIsCurrencyIncomeCategory(category?.includes(INGRESO_DIVISAS_CATEGORY));
 		setExpenseId(id);
 		setEdit(true);
 	};
@@ -126,7 +130,7 @@ function Card({
 								: `text-green-500`
 						}`}
 					>
-						{category.includes('Ingreso divisas')
+						{category.includes(INGRESO_DIVISAS_CATEGORY)
 							? `$USD ${currencyQuantity}`
 							: `$AR 
 						${

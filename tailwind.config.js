@@ -1,5 +1,9 @@
 module.exports = {
-	purge: ['./src/**/*.{js,jsx,ts,tsx}', './public/index.html'],
+	purge: [
+		'./src/**/*.{js,jsx,ts,tsx}',
+		'./public/index.html',
+		'./node_modules/@tremor/**/*.{js,ts,jsx,tsx}',
+	],
 	darkMode: 'class', // or 'media' or 'class'
 	theme: {
 		extend: {
@@ -57,5 +61,11 @@ module.exports = {
 	variants: {
 		extend: {},
 	},
+	content: [
+		'./src/**/*.{js,jsx,ts,tsx}',
+
+		// Path to the tremor module
+		'./node_modules/@tremor/**/*.{js,ts,jsx,tsx}',
+	],
 	plugins: [],
 };

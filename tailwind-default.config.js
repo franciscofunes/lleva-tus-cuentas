@@ -183,9 +183,12 @@ module.exports = {
 			200: '2',
 		},
 		container: {},
-		content: {
-			none: 'none',
-		},
+		content: [
+			'./src/**/*.{js,jsx,ts,tsx}',
+
+			// Path to the tremor module
+			'./node_modules/@tremor/**/*.{js,ts,jsx,tsx}',
+		],
 		cursor: {
 			auto: 'auto',
 			default: 'default',
