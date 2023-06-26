@@ -1,10 +1,13 @@
 import { motion } from 'framer-motion';
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { FiLogIn, FiUserPlus } from 'react-icons/fi';
+import { MdDashboardCustomize } from 'react-icons/md';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router';
 import { Link } from 'react-router-dom';
 import { logOutAction } from '../actionCreators/authActions';
 import { auth } from '../shared/config/firebase/firebase.config';
+import AvatarDropdown from './AvatarDropdown';
 import DarkModeToggle from './DarkModeToggle';
 
 function Navbar() {
@@ -12,8 +15,15 @@ function Navbar() {
 	const location = useLocation();
 	const dispatch = useDispatch();
 
+	const [showDropdown, setShowDropdown] = useState(false);
+
 	const handleLogout = () => {
 		dispatch(logOutAction());
+		setShowDropdown(!showDropdown);
+	};
+
+	const handleDropdownToggle = () => {
+		setShowDropdown(!showDropdown);
 	};
 
 	useEffect(() => {
@@ -30,15 +40,23 @@ function Navbar() {
 			return (
 				<>
 					{location.pathname === '/' && (
-						<Link to='/transacciones' className='nav-btn mr-3 dark:text-white'>
-							Dashboard
+						<Link
+							to='/transacciones'
+							className='nav-btn flex items-center mr-3 dark:text-white'
+						>
+							Panel <MdDashboardCustomize className='ml-1' />
 						</Link>
 					)}
 					<div
-						onClick={handleLogout}
-						className='nav-btn cursor-pointer dark:text-white'
+						onClick={handleDropdownToggle}
+						className='flex items-center cursor-pointer'
 					>
-						Salir
+						<AvatarDropdown
+							handleLogout={handleLogout}
+							user={user}
+							showDropdown={showDropdown}
+							handleDropdownToggle={handleDropdownToggle}
+						/>
 					</div>
 				</>
 			);
@@ -47,11 +65,25 @@ function Navbar() {
 				<>
 					<Link
 						to={
-							location.pathname.includes('login') ? '/registrarse' : '/ingresar'
+							location.pathname.includes('/') ||
+							location.pathname.includes('/registrarse') ||
+							location.pathname.includes('/recupero')
+								? '/ingresar'
+								: '/registrarse'
 						}
-						className='nav-btn dark:text-white'
+						className='nav-btn dark:text-white flex items-center'
 					>
-						{location.pathname.includes('login') ? 'Registrarme' : 'Ingresar'}
+						{location.pathname.includes('ingresar') ? (
+							<>
+								<span className='mr-1'>Registrarme</span>
+								<FiUserPlus />
+							</>
+						) : (
+							<>
+								<span className='mr-1'>Ingresar</span>
+								<FiLogIn />
+							</>
+						)}
 					</Link>
 				</>
 			);

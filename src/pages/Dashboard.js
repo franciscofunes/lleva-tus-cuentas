@@ -266,7 +266,7 @@ function Dashboard() {
 					initial={{ opacity: 0 }}
 					transition={{ duration: 0.7, type: 'tween' }}
 					id='right'
-					className='lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500 h-screen lg:h-auto'
+					className='lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500 h-screen lg:h-auto mb-10'
 				>
 					<div>
 						<h1 className='font-Nunito font-bold text-3xl mb-2 ml-1 dark:text-zinc-100'>

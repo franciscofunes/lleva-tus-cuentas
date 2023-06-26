@@ -17,7 +17,7 @@ const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
 						<div className='absolute inset-0 bg-gray-500 opacity-75 dark:bg-gray-900'></div>
 					</div>
 					<motion.div
-						className='border-purple-600 bg-gray-600 dark:bg-gray-900 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full'
+						className='border-2 border-purple-600 bg-gray-600 dark:bg-gray-900 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full'
 						initial={{ opacity: 0, y: 50 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: 50 }}
