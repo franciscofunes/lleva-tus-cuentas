@@ -13,17 +13,16 @@ import Card from '../components/Card';
 import ExpenseFilter from '../components/ExpenseFilter';
 import FloatingMenu from '../components/FloatingMenu';
 import GenericModal from '../components/GenericModal';
-import LitaModal from '../components/LitaModal';
+import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import SearchBar from '../components/SearchBar';
 import TransactionForm from '../components/TransactionForm';
 import bars from '../imgs/bars.svg';
+import wavesFooter from '../imgs/waves.svg';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 import {
 	currencyFormater,
 	currencyGenericFormater,
 } from '../shared/utils/currencyFormater';
-import LitaAssistant from '../components/LitaAssistant';
-import wavesFooter from '../imgs/waves.svg';
 
 function Dashboard() {
 	const dispatch = useDispatch();
@@ -171,36 +170,31 @@ function Dashboard() {
 						initial={{ opacity: 0 }}
 						transition={{ duration: 0.7, type: 'tween' }}
 						id='info'
-						className='container  bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 mt-6 font-Nunito flex flex-col  dark:bg-slate-800 dark:border-indigo-500'
+						className='container p-4 bg-white lg:w-3/4 w-full border rounded-md shadow-md mb-6 mt-6 font-Nunito dark:bg-slate-800 dark:border-indigo-500'
 					>
-						<div
-							id='top-info'
-							className='flex gap-x-2 justify-between max-w-full items-center mb-5'
-						>
-							<div className='flex flex-col justify-center items-center'>
+						<div className='flex items-center mb-5'>
+							<div className='flex flex-col justify-center items-center flex-grow'>
 								<h1 className='font-semibold text-2xl uppercase dark:text-zinc-100'>
 									Ingresos
 								</h1>
-
 								{isDataFetching ? (
-									<img className='ml-2 h-6 w-6' src={bars} alt='loader' />
+									<img className='mt-2 h-6 w-6' src={bars} alt='loader' />
 								) : (
-									<p className='text-green-500 font-medium'>{`${currencyFormater(
-										income
-									)}`}</p>
+									<p className=' text-green-500 font-medium'>
+										{`${currencyFormater(income)}`}
+									</p>
 								)}
 							</div>
-							<div className='flex flex-col justify-center items-center'>
+							<div className='flex flex-col justify-center items-center ml-4 flex-grow'>
 								<h1 className='font-semibold text-2xl uppercase dark:text-zinc-100'>
 									Gastos
 								</h1>
-
 								{isDataFetching ? (
-									<img className='ml-2 h-6 w-6' src={bars} alt='loader' />
+									<img className='mt-2 h-6 w-6' src={bars} alt='loader' />
 								) : (
-									<p className='text-red-500 font-medium'>{`${currencyFormater(
-										expense
-									)}`}</p>
+									<p className=' text-red-500 font-medium'>
+										{`${currencyFormater(expense)}`}
+									</p>
 								)}
 							</div>
 						</div>
@@ -209,23 +203,23 @@ function Dashboard() {
 							<h1 className='font-semibold text-2xl uppercase dark:text-zinc-100'>
 								Inversión
 							</h1>
-
 							{isDataFetching ? (
 								<img className='ml-2 h-6 w-6' src={bars} alt='loader' />
 							) : (
-								<p className='text-blue-500 font-medium'>{`${currencyGenericFormater(
-									'USD',
-									currencyIncome,
-									'en-US',
-									'USD'
-								)}`}</p>
+								<p className='text-blue-500 font-medium'>
+									{`${currencyGenericFormater(
+										'USD',
+										currencyIncome,
+										'en-US',
+										'USD'
+									)}`}
+								</p>
 							)}
 						</div>
 
-						<div className='flex flex-col gap-x-1 mt-2 mb-2'>
+						<div className='flex flex-col mb-4'>
 							<p className='text-gray-400 text-center text-lg'>Balance</p>
-
-							<div className='flex flex-col gap-x-2 space-y-1 justify-center items-center'>
+							<div className='flex flex-col gap-2 justify-center items-center'>
 								{isDataFetching ? (
 									<img className='ml-2 h-6 w-6' src={bars} alt='loader' />
 								) : (
@@ -247,7 +241,7 @@ function Dashboard() {
 						initial={{ opacity: 0 }}
 						transition={{ duration: 0.7, type: 'tween' }}
 						id='left'
-						className='container  bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 font-Nunito flex flex-col dark:bg-slate-800 dark:border-indigo-500 items-center' // Added "items-center" class
+						className='container  bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 font-Nunito flex flex-col dark:bg-slate-800 dark:border-indigo-500 items-center'
 					>
 						{isDataFetching ? (
 							<div className='flex justify-center items-center'>
@@ -266,7 +260,7 @@ function Dashboard() {
 					initial={{ opacity: 0 }}
 					transition={{ duration: 0.7, type: 'tween' }}
 					id='right'
-					className='lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500 h-screen lg:h-auto mb-10'
+					className='lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500 h-screen lg:h-auto'
 				>
 					<div>
 						<h1 className='font-Nunito font-bold text-3xl mb-2 ml-1 dark:text-zinc-100'>
@@ -333,7 +327,7 @@ function Dashboard() {
 					</div>
 				</motion.div>
 
-				<div className='absolute bottom-0 left-0 w-full'>
+				<div className='absolute bottom-0 left-0 w-full block lg:hidden'>
 					<img src={wavesFooter} alt='purple waves footer' className='w-full' />
 				</div>
 			</motion.div>
@@ -395,7 +389,7 @@ function Dashboard() {
 						initial={{ opacity: 0 }}
 						transition={{ duration: 0.5, type: 'tween' }}
 					>
-						<LitaAssistant isOpen={showModal} setIsOpen={setShowModal} />
+						<LitaAssistantPanel isOpen={showModal} setIsOpen={setShowModal} />
 					</motion.div>
 				)}
 			</motion.div>

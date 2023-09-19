@@ -3,6 +3,8 @@ const initState = {
 	docs: null,
 	categories: null,
 	isDataFetching: true,
+	selectedFilter: 'month',
+	isFilterChanging: false,
 };
 
 export const databaseReducer = (state = initState, action) => {
@@ -36,6 +38,21 @@ export const databaseReducer = (state = initState, action) => {
 			return {
 				...state,
 				docs: action.expenses,
+			};
+		case 'SET_FETCHING':
+			return {
+				...state,
+				isDataFetching: action.isDataFetching,
+			};
+		case 'SET_SELECTED_FILTER':
+			return {
+				...state,
+				selectedFilter: action.filter,
+			};
+		case 'SET_FILTER_CHANGING':
+			return {
+				...state,
+				isFilterChanging: action.isFilterChanging,
 			};
 		default:
 			return state;

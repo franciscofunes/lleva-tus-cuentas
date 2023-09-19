@@ -1,5 +1,6 @@
-import { auth } from '../shared/config/firebase/firebase.config';
+import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
+import { auth } from '../shared/config/firebase/firebase.config';
 import {
 	LOGIN_ERROR_MESSAGE,
 	LOGIN_SUCCESS_MESSAGE,
@@ -54,17 +55,22 @@ export const logInAction = (creds) => {
 };
 
 export const signInWithGoogleAction = (googleProvider) => {
-	return (dispatch) => {
-		auth
-			.signInWithPopup(googleProvider)
-			.then((res) => {
-				toast.success(LOGIN_SUCCESS_MESSAGE);
+	return async (dispatch) => {
+		try {
+			const result = await auth.signInWithPopup(googleProvider);
+			const user = result.user;
 
-				dispatch({ type: 'LOG_IN_GOOGLE', res });
-			})
-			.catch((err) => {
-				dispatch({ type: 'LOG_IN_ERROR_GOOGLE', err });
-			});
+			// Store user information in a cookie
+			Cookies.set('userContext', JSON.stringify(user)); // Store user object as JSON
+
+			// Dispatch action and handle success
+			toast.success(LOGIN_SUCCESS_MESSAGE);
+			dispatch({ type: 'LOG_IN_GOOGLE', res: result });
+		} catch (error) {
+			// Handle error if Google Auth fails
+			console.error('Google Auth error:', error);
+			dispatch({ type: 'LOG_IN_ERROR_GOOGLE', err: error.message });
+		}
 	};
 };
 
@@ -85,6 +91,9 @@ export const resetPassword = (creds) => {
 
 export const logOutAction = () => {
 	toast.warn(LOGOUT_MESSAGE);
+
+	// Remove the 'userContext' cookie from the browser when the user logs out
+	Cookies.remove('userContext');
 
 	return { type: 'LOG_OUT' };
 };

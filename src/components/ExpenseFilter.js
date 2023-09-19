@@ -8,37 +8,48 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
 	filterDataAction,
 	getTotalBalance,
+	setSelectedFilter,
+	setFilterChanging,
 } from '../actionCreators/databaseActions';
 
 const ExpenseFilter = () => {
+	const dispatch = useDispatch();
 	const [selectedDate, setSelectedDate] = useState(
 		moment().startOf('day').toDate()
 	);
-	const [selectedFilter, setSelectedFilter] = useState('month');
-
-	const dispatch = useDispatch();
-
+	const selectedFilter = useSelector((state) => state.database.selectedFilter);
+	const isFilterChanging = useSelector(
+		(state) => state.database.isFilterChanging
+	);
 	const user = useSelector((state) => state.auth.user);
 
-	const handleFilterClick = (filterType) => {
+	const handleFilterClick = async (filterType) => {
+		dispatch({ type: 'SET_FETCHING', isDataFetching: true });
+		dispatch(setFilterChanging(true));
+
 		if (filterType?.includes('total')) {
-			setSelectedFilter(filterType);
+			dispatch(setSelectedFilter(filterType));
 
-			return dispatch(getTotalBalance(user.uid));
+			await dispatch(getTotalBalance(user.uid));
+
+			dispatch({ type: 'SET_FETCHING', isDataFetching: false });
+			dispatch(setFilterChanging(false));
+		} else {
+			dispatch(setSelectedFilter(filterType));
+
+			const year = moment(selectedDate).year();
+			const month = moment(selectedDate).month();
+			const week = moment(selectedDate).week();
+			const day = moment(selectedDate).date();
+
+			await dispatch(
+				filterDataAction(user.uid, filterType, year, month, week, day)
+			);
+
+			dispatch(setSelectedFilter(filterType));
+			dispatch({ type: 'SET_FETCHING', isDataFetching: false });
+			dispatch(setFilterChanging(false));
 		}
-
-		setSelectedFilter(filterType);
-
-		dispatch(
-			filterDataAction(
-				user.uid,
-				filterType,
-				moment(selectedDate).year(),
-				moment(selectedDate).month(),
-				moment(selectedDate).week(),
-				moment(selectedDate).date()
-			)
-		);
 	};
 
 	const handleDateChange = (selectedDate, dispatch) => {
@@ -67,7 +78,10 @@ const ExpenseFilter = () => {
 
 	return (
 		<>
-			<div className='flex flex-col gap-y-5'>
+			<div className='flex flex-col gap-y-5 justify-center'>
+				{isFilterChanging && (
+					<p className={isFilterChanging ? 'animate-wavy' : ''}>Cargando...</p>
+				)}
 				<div className='flex justify-evenly gap-x-2'>
 					<button
 						className={`px-4 rounded-lg ${

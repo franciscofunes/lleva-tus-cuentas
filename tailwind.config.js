@@ -18,9 +18,14 @@ module.exports = {
 					'60%': { transform: 'rotate(0.0deg)' },
 					'100%': { transform: 'rotate(0.0deg)' },
 				},
+				wavy: {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-0.5rem)' },
+				},
 			},
 			animation: {
 				wave: 'wave 6s',
+				wavy: 'wavy 0.5s ease-in-out infinite',
 			},
 			fontFamily: {
 				Roboto: ['Roboto'],

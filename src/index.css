@@ -57,7 +57,22 @@
 	overflow-y: scroll;
 	height: 75vh;
 }
+
+@media (min-width: 1024px) {
+	#right {
+		height: auto;
+	}
+}
+
 #right::-webkit-scrollbar {
+	width: 0 !important;
+}
+
+#left {
+	height: auto;
+}
+
+#left::-webkit-scrollbar {
 	width: 0 !important;
 }
 

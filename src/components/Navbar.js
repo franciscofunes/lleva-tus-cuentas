@@ -39,7 +39,7 @@ function Navbar() {
 		if (user) {
 			return (
 				<>
-					{location.pathname === '/' && (
+					{(location.pathname === '/' || location.pathname === '/recupero') && (
 						<Link
 							to='/transacciones'
 							className='nav-btn flex items-center mr-3 dark:text-white'
@@ -67,20 +67,25 @@ function Navbar() {
 						to={
 							location.pathname.includes('/') ||
 							location.pathname.includes('/registrarse') ||
-							location.pathname.includes('/recupero')
-								? '/ingresar'
-								: '/registrarse'
+							location.pathname.includes('/recupero') ||
+							!location.pathname.includes('/ingresar')
+								? '/registrarse'
+								: '/ingresar'
 						}
 						className='nav-btn dark:text-white flex items-center'
 					>
 						{location.pathname.includes('ingresar') ? (
 							<>
-								<span className='mr-1'>Registrarme</span>
+								<Link className='mr-1' to='/registrarse'>
+									Registrarme
+								</Link>
 								<FiUserPlus />
 							</>
 						) : (
 							<>
-								<span className='mr-1'>Ingresar</span>
+								<Link className='mr-1' to='/ingresar'>
+									Ingresar
+								</Link>
 								<FiLogIn />
 							</>
 						)}

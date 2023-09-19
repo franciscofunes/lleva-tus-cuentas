@@ -55,22 +55,22 @@ function SignUp({ history }) {
 				animate={{ opacity: 1 }}
 				initial={{ opacity: 0 }}
 				transition={{ duration: 0.5, type: 'tween' }}
-				className='dark:bg-gray-900 mt-8'
+				className='dark:bg-gray-900 mt-6'
 			>
 				<div className='container flex flex-col justify-center h-hero mx-auto items-center'>
 					<motion.h1
 						animate={{ opacity: 1, x: 0 }}
 						initial={{ opacity: 0, x: 100 }}
 						transition={{ duration: 1, type: 'tween' }}
-						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-3xl text-2xl mb-6  italic dark:text-white'
+						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-2xl text-1xl mb-6  italic dark:text-white'
 					>
-						No utilice papel con un gestor de gastos en línea
+						¡Descubre una experiencia financiera innovadora y cómoda!
 					</motion.h1>
 					<motion.div
 						animate={{ opacity: 1 }}
 						initial={{ opacity: 0 }}
 						transition={{ delay: 0.2, duration: 1 }}
-						className='bg-white z-50 lg:w-96 w-80 pt-10 pb-8 mb-20 px-10 shadow-2xl rounded-lg dark:bg-slate-800'
+						className='bg-white z-50 lg:w-96 w-80 pt-10 pb-8 mb-20 px-10 shadow-2xl rounded-lg dark:bg-slate-800 mb-2'
 					>
 						<form className='mb-0 space-y-6 ' onSubmit={handleSubmit(onSubmit)}>
 							<div>

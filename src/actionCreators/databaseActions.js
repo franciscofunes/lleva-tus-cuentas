@@ -311,3 +311,15 @@ export const searchExpenses = (searchTerm, userId) => (dispatch) => {
 			console.error('Error searching expenses: ', error);
 		});
 };
+
+export const setSelectedFilter = (filter) => ({
+	type: 'SET_SELECTED_FILTER',
+	filter,
+});
+
+export const setFilterChanging = (isFilterChanging) => {
+	return {
+		type: 'SET_FILTER_CHANGING',
+		isFilterChanging,
+	};
+};
