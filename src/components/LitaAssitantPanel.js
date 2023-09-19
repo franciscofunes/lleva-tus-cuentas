@@ -47,7 +47,7 @@ const LitaAssistantPanel = ({ isOpen, setIsOpen }) => {
 					</div>
 
 					<iframe
-						src={LITA_CHAT_LOCALHOST}
+						src={LITA_CHAT_VERCEL_URL}
 						title='Lita Assistant'
 						className='w-full h-full border-none'
 						style={{ minHeight: '500px', overflow: 'hidden' }}
