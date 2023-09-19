@@ -61,8 +61,10 @@ export const signInWithGoogleAction = (googleProvider) => {
 			const user = result.user;
 
 			// Store user information in a cookie
-			Cookies.set('userContext', JSON.stringify(user)); // Store user object as JSON
+			// Cookies.set('userContext', JSON.stringify(user)); // Store user object as JSON
 
+			Cookies.set('userContext', JSON.stringify(user), { domain: 'lleva-tus-cuentas.netlify.app', path: '/transacciones', sameSite: 'None', secure: true });
+			
 			// Dispatch action and handle success
 			toast.success(LOGIN_SUCCESS_MESSAGE);
 			dispatch({ type: 'LOG_IN_GOOGLE', res: result });
