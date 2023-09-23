@@ -100,6 +100,8 @@ export const signInWithGoogleAction = (googleProvider) => {
 				secure: true,
 			});
 
+			sessionStorage.setItem('userContext', JSON.stringify(user));
+
 			sendCookieToEmbeddedApp(
 				'userContext',
 				JSON.stringify(user),
