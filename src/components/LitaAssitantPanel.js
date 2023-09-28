@@ -1,6 +1,7 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import React from 'react';
 import { IoMdClose } from 'react-icons/io';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useSelector } from 'react-redux';
 import {
 	LITA_CHAT_LOCALHOST,
 	LITA_CHAT_VERCEL_URL,
@@ -12,6 +13,8 @@ const LitaAssistantPanel = ({ isOpen, setIsOpen }) => {
 		visible: { opacity: 1, x: '0%', transition: { duration: 0.3 } },
 	};
 
+	const docs = useSelector((state) => state.database.docs);
+
 	// Add an event listener to listen for messages from the iframe
 	window.addEventListener('message', (event) => {
 		if (event.data === 'closeLitaPanel') {
@@ -22,6 +25,35 @@ const LitaAssistantPanel = ({ isOpen, setIsOpen }) => {
 			if (closeButton) {
 				closeButton.click();
 			}
+		}
+	});
+
+	window.addEventListener('message', (event) => {
+		if (event.data === 'getLastFiveUserTransactions') {
+			const baseUrl =
+				process.env.NODE_ENV === 'development'
+					? 'http://localhost:3005' // Local development URL
+					: 'https://holalita.vercel.app'; // Deployed URL
+
+			// Add fetch request to send user context data to the Next.js API
+			fetch(`${baseUrl}/api/user-transactions`, {
+				method: 'POST',
+				mode: 'no-cors',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(docs.slice(0, 5)),
+			})
+				.then((response) => {
+					if (response.ok) {
+						console.log('User context sent successfully to Next.js API');
+					} else {
+						console.error('Failed to send user context to Next.js API');
+					}
+				})
+				.catch((error) => {
+					console.error('Error sending user context to Next.js API', error);
+				});
 		}
 	});
 

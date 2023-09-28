@@ -10,10 +10,6 @@ import {
 	SIGNUP_ERROR_MESSAGE_EMAIL_EXISTS,
 	SIGNUP_SUCCESS_MESSAGE,
 } from '../shared/constants/toast-messages.const';
-import {
-	LITA_CHAT_LOCALHOST,
-	LITA_CHAT_VERCEL_URL,
-} from '../shared/constants/urls.const';
 
 export const signUpAction = (creds) => {
 	return (dispatch) => {
@@ -61,46 +57,8 @@ export const logInAction = (creds) => {
 export const signInWithGoogleAction = (googleProvider) => {
 	return async (dispatch) => {
 		try {
-			const sendCookieToEmbeddedApp = (
-				cookieName,
-				cookieValue,
-				targetOrigin
-			) => {
-				const cookieString = `${encodeURIComponent(
-					cookieName
-				)}=${encodeURIComponent(cookieValue)}`;
-
-				// Assuming you have a reference to the embedded app's iframe element
-				const embeddedAppIframe = document.getElementById(
-					'embedded-lita-chat-app-panel'
-				);
-
-				if (embeddedAppIframe) {
-					// Send the cookie using postMessage to the embedded app's iframe
-					embeddedAppIframe.contentWindow.postMessage(
-						{
-							type: 'setCookie',
-							cookie: cookieString,
-						},
-						targetOrigin
-					);
-				}
-			};
-
 			const result = await auth.signInWithPopup(googleProvider);
 			const user = result.user;
-
-			// Store user information in a cookie
-			// Cookies.set('userContext', JSON.stringify(user)); // Store user object as JSON
-
-			Cookies.set('userContext', JSON.stringify(user), {
-				domain: '',
-				path: '',
-				sameSite: 'None',
-				secure: true,
-			});
-
-			sessionStorage.setItem('userContext', JSON.stringify(user));
 
 			// Determine the base URL based on the environment
 			const baseUrl =
@@ -127,12 +85,6 @@ export const signInWithGoogleAction = (googleProvider) => {
 				.catch((error) => {
 					console.error('Error sending user context to Next.js API', error);
 				});
-
-			sendCookieToEmbeddedApp(
-				'userContext',
-				JSON.stringify(user),
-				LITA_CHAT_VERCEL_URL
-			);
 
 			// Dispatch action and handle success
 			toast.success(LOGIN_SUCCESS_MESSAGE);
