@@ -46,13 +46,16 @@ const LitaAssistantPanel = ({ isOpen, setIsOpen }) => {
 			})
 				.then((response) => {
 					if (response.ok) {
-						console.log('User context sent successfully to Next.js API');
+						console.log('User transactions sent successfully to Next.js API');
 					} else {
-						console.error('Failed to send user context to Next.js API');
+						console.error('Failed to send user transactions to Next.js API');
 					}
 				})
 				.catch((error) => {
-					console.error('Error sending user context to Next.js API', error);
+					console.error(
+						'Error sending user transactions to Next.js API',
+						error
+					);
 				});
 		}
 	});

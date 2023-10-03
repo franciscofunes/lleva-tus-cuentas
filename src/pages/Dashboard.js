@@ -129,6 +129,50 @@ function Dashboard() {
 
 	const handleFloatingButtonClick = () => {
 		setShowModal(true);
+
+		const baseUrl =
+			process.env.NODE_ENV === 'development'
+				? 'http://localhost:3005' // Local development URL
+				: 'https://holalita.vercel.app'; // Deployed URL
+
+		// Add fetch request to send user context data to the Next.js API
+		fetch(`${baseUrl}/api/user-transactions`, {
+			method: 'POST',
+			mode: 'no-cors',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(docs.slice(0, 5)),
+		})
+			.then((response) => {
+				if (response.ok) {
+					console.log('User transactions sent successfully to Next.js API');
+				} else {
+					console.error('Failed to send user transactions to Next.js API');
+				}
+			})
+			.catch((error) => {
+				console.error('Error sending user transactions to Next.js API', error);
+			});
+
+		fetch(`${baseUrl}/api/user-context`, {
+			method: 'POST',
+			mode: 'no-cors',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(user),
+		})
+			.then((response) => {
+				if (response.ok) {
+					console.log('User context sent successfully to Next.js API');
+				} else {
+					console.error('Failed to send user context to Next.js API');
+				}
+			})
+			.catch((error) => {
+				console.error('Error sending user context to Next.js API', error);
+			});
 	};
 
 	const openModal = () => {
