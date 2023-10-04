@@ -19,8 +19,8 @@ const SubscriptionCard = () => {
 							Suscripción Premium sin anuncios"
 						</div>
 						<div className='font-light max-w-lg mt-5 text-sm text-[#718096] dark:text-[#A0AEC0]'>
-							La suscripción Premium te ofrece una experiencia sin publicidad en
-							nuestra aplicación por solo 800 AR$ al mes.
+							La suscripción Premium te ofrece una experiencia sin publicidad de
+							nuestra aplicación por solo 2500 AR$ al mes.
 						</div>
 					</div>
 
@@ -35,7 +35,7 @@ const SubscriptionCard = () => {
 							Premium Pack
 						</div>
 						<div className='text-sm font-light text-[#718096] dark:text-[#A0AEC0]'>
-							Libre de publicidad
+							Libre de anuncios
 						</div>
 						<div className='my-4'>
 							<span className='font-bold text-base text-[#1E293B] dark:text-white'>
