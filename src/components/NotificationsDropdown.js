@@ -67,7 +67,7 @@ const NotificationDropdown = () => {
 						<FaBell className='text-xl text-gray-600 dark:text-white' />
 						{notifications.length > 0 && (
 							<div
-								className={`absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white w-4 h-4 rounded-full flex items-center justify-center text-xs ${
+								className={`absolute -top-1/2 left-full transform -translate-y-1/2 -ml-2 bg-red-500 text-white w-4 h-4 rounded-full flex items-center justify-center text-xs ${
 									notificationRead ? 'hidden' : 'animate-pulse'
 								}`}
 							>
@@ -78,7 +78,7 @@ const NotificationDropdown = () => {
 				</button>
 			</div>
 			{showDropdown && (
-				<div className='origin-top-right absolute right-0 mt-3 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50'>
+				<div className='origin-top-right absolute -right-12 mt-4 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50'>
 					<div
 						className='p-1'
 						role='menu'
