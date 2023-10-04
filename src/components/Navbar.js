@@ -104,7 +104,7 @@ function Navbar() {
 				animate={{ opacity: 1 }}
 				initial={{ opacity: 0 }}
 				transition={{ delay: 0.1, duration: 0.7 }}
-				className='py-5 lg:px-10 px-3 flex bg-zinc-50 justify-between items-center dark:bg-slate-800'
+				className='py-5 lg:px-10 px-3 flex bg-zinc-50 justify-between items-center dark:bg-slate-800 border-b-2 border-zinc-400'
 			>
 				<Link
 					to='/'

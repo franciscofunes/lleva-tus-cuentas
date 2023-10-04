@@ -16,6 +16,12 @@ import GenericModal from '../components/GenericModal';
 import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import SearchBar from '../components/SearchBar';
 import TransactionForm from '../components/TransactionForm';
+import AdvertisementContainer from '../components/AdvertisementContainer';
+import kavakAd from '../imgs/ads/kavakAd.jpg';
+import cocacolaAd from '../imgs/ads/cocaColaAd.jpg';
+import cbseAd from '../imgs/ads/cbseAd.jpg';
+import lotoAd from '../imgs/ads/lotoAd.jpg';
+import cotoAd from '../imgs/ads/cotoAd.png';
 import bars from '../imgs/bars.svg';
 import wavesFooter from '../imgs/waves.svg';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
@@ -60,6 +66,8 @@ function Dashboard() {
 		useState(false);
 
 	const [isOpen, setIsOpen] = useState(false);
+
+	const advertisements = [kavakAd, cocacolaAd, cbseAd, lotoAd, cotoAd];
 
 	useEffect(() => {
 		if (user) {
@@ -297,6 +305,8 @@ function Dashboard() {
 							)
 						)}
 					</motion.div>
+
+					<AdvertisementContainer advertisements={advertisements} />
 				</div>
 
 				<motion.div

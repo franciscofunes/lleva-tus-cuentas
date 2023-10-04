@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 const SubscriptionCard = () => {
 	return (
-		<div className='flex items-center justify-center flex-col mt-10 dark:bg-gray-900'>
+		<div className='flex items-center justify-center flex-col mt-10 lg:mt-0 dark:bg-gray-900'>
 			<div className='p-4 md:p-10 w-full max-w-md relative'>
 				{/* Main Card */}
 				<motion.div
@@ -12,11 +12,17 @@ const SubscriptionCard = () => {
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.5, duration: 0.8 }}
 					className='rounded-xl bg-zinc-200 dark:bg-[#1E293B] p-6 md:p-10 shadow-xl relative'
+					style={{
+						// Apply padding-bottom for desktop screen sizes
+						'@media (min-width: 768px)': {
+							paddingBottom: '2rem', // Adjust the padding as needed
+						},
+					}}
 				>
 					<div className='flex flex-col justify-center items-center text-center'>
 						<div className='max-w-sm font-bold font-sans italic text-indigo-500'>
-							"Experimenta lo mejor de nuestra aplicación con nuestra
-							Suscripción Premium sin anuncios"
+							"Experimenta lo mejor de nuestra aplicación con una Suscripción
+							Premium"
 						</div>
 						<div className='font-light max-w-lg mt-5 text-sm text-[#718096] dark:text-[#A0AEC0]'>
 							La suscripción Premium te ofrece una experiencia sin publicidad de
