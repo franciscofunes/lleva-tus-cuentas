@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { FiLogIn, FiUserPlus } from 'react-icons/fi';
+import { FiUserPlus } from 'react-icons/fi';
 import { MdDashboardCustomize } from 'react-icons/md';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router';
@@ -9,6 +9,7 @@ import { logOutAction } from '../actionCreators/authActions';
 import { auth } from '../shared/config/firebase/firebase.config';
 import AvatarDropdown from './AvatarDropdown';
 import DarkModeToggle from './DarkModeToggle';
+import NotificationsDropdown from './NotificationsDropdown';
 
 function Navbar() {
 	const user = useSelector((state) => state.auth.user);
@@ -39,7 +40,9 @@ function Navbar() {
 		if (user) {
 			return (
 				<>
-					{(location.pathname === '/' || location.pathname === '/recupero') && (
+					{(location.pathname === '/' ||
+						location.pathname === '/recupero' ||
+						location.pathname === '/suscripcion') && (
 						<Link
 							to='/transacciones'
 							className='nav-btn flex items-center mr-3 dark:text-white'
@@ -49,7 +52,7 @@ function Navbar() {
 					)}
 					<div
 						onClick={handleDropdownToggle}
-						className='flex items-center cursor-pointer'
+						className='flex items-center cursor-pointer gap-x-4'
 					>
 						<AvatarDropdown
 							handleLogout={handleLogout}
@@ -57,6 +60,7 @@ function Navbar() {
 							showDropdown={showDropdown}
 							handleDropdownToggle={handleDropdownToggle}
 						/>
+						<NotificationsDropdown />
 					</div>
 				</>
 			);
@@ -86,7 +90,6 @@ function Navbar() {
 								<Link className='mr-1' to='/ingresar'>
 									Ingresar
 								</Link>
-								<FiLogIn />
 							</>
 						)}
 					</Link>

@@ -12,6 +12,7 @@ import Home from './pages/Home';
 import LogIn from './pages/LogIn';
 import SignUp from './pages/SignUp';
 import rootReducer from './reducers/rootReducer';
+import SubscriptionCard from './pages/Subscription';
 
 const store = createStore(rootReducer, applyMiddleware(thunk));
 
@@ -29,6 +30,7 @@ root.render(
 					<Route path='/ingresar' element={<LogIn />} />
 					<Route path='/transacciones' element={<Dashboard />} />
 					<Route path='/recupero' element={<ForgotPassword />} />
+					<Route path='/suscripcion' element={<SubscriptionCard />} />
 				</Routes>
 			</Provider>
 		</Router>
