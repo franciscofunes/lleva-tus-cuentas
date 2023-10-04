@@ -9,7 +9,7 @@ function Home() {
 	const user = useSelector((state) => state.auth.user);
 	return (
 		<>
-			<div className='max-w-screen relative lg:px-20 flex justify-center lg:flex-row flex-col items-center lg:mt-0 dark:bg-gray-900'>
+			<div className='max-w-screen relative lg:px-20 flex justify-center lg:flex-row flex-col items-center lg:mt-0 dark:bg-gray-900 z-40'>
 				<div className='container lg:block flex justify-center align-middle flex-col z-50 lg:mx-auto w-full lg:text-left text-center '>
 					<motion.div
 						className='w-full '
