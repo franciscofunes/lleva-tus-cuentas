@@ -1,6 +1,7 @@
 import React from 'react';
 import payOnline from '../imgs/payOnline.svg';
 import { motion } from 'framer-motion';
+import { SiPrometheus } from 'react-icons/si';
 
 const SubscriptionCard = () => {
 	return (
@@ -37,8 +38,11 @@ const SubscriptionCard = () => {
 						transition={{ delay: 0.8, duration: 0.8 }}
 						className='rounded-xl bg-[#FFFBEC] dark:bg-gray-600 mt-5 p-6 md:p-8'
 					>
-						<div className='font-semibold text-lg text-[#1E293B] dark:text-white'>
-							Premium Pack
+						<div className='flex gap-x-2'>
+							<div className='font-semibold text-lg text-[#1E293B] dark:text-white'>
+								Premium Pack
+							</div>
+							<SiPrometheus className='font-semibold text-lg text-[#1E293B] dark:text-white' />
 						</div>
 						<div className='text-sm font-light text-[#718096] dark:text-[#A0AEC0]'>
 							Libre de anuncios
