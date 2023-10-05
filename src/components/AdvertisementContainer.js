@@ -24,10 +24,14 @@ const AdvertisementContainer = ({ advertisements }) => {
 	};
 
 	const isMobile = window.innerWidth <= 768; // Define your breakpoint here
+	const containerHeight = isMobile ? '140px' : '150px'; // Adjust the maximum height as needed
 
 	const motionDivStyles = {
 		width: isMobile ? '350px' : '320px', // Set different widths for mobile and desktop
+		height: containerHeight, // Set a fixed height for the container
 	};
+
+	const maxImageHeight = `calc(${containerHeight} - 40px)`; // Subtract some padding and button height
 
 	return (
 		<AnimatePresence>
@@ -39,7 +43,7 @@ const AdvertisementContainer = ({ advertisements }) => {
 					exit={{ opacity: 0, y: 50 }}
 					style={motionDivStyles}
 				>
-					<div style={{ position: 'relative' }}>
+					<div style={{ position: 'relative', height: '100%' }}>
 						<motion.img
 							key={currentIndex}
 							src={advertisements[currentIndex]}
@@ -50,7 +54,7 @@ const AdvertisementContainer = ({ advertisements }) => {
 							transition={{ duration: 1 }}
 							style={{
 								width: '100%', // Adjust the width of the image
-								maxHeight: '100px', // Limit the image height to match the container
+								maxHeight: maxImageHeight, // Set a maximum height for the image
 								objectFit: 'contain', // Fit the image within the container
 								filter: 'contrast(1.0)',
 							}}
@@ -63,8 +67,8 @@ const AdvertisementContainer = ({ advertisements }) => {
 								borderRadius: '50%', // Make it a circle
 								padding: '4px', // Add some padding for spacing
 								position: 'absolute',
-								top: '0px',
-								right: '10px',
+								top: '2px',
+								right: '2px',
 							}}
 						>
 							<FiX />
