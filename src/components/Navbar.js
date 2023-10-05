@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { FiUserPlus } from 'react-icons/fi';
 import { MdDashboardCustomize } from 'react-icons/md';
+import { ImEnter } from 'react-icons/im';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -90,6 +91,7 @@ function Navbar() {
 								<Link className='mr-1' to='/ingresar'>
 									Ingresar
 								</Link>
+								<ImEnter />
 							</>
 						)}
 					</Link>

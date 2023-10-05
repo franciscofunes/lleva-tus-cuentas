@@ -1,9 +1,8 @@
-import React from 'react';
-import bank from '../imgs/bank.png';
-import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import wavesFooter from '../imgs/waves.svg';
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
+import bank from '../imgs/bank.png';
 
 function Home() {
 	const user = useSelector((state) => state.auth.user);
@@ -21,7 +20,7 @@ function Home() {
 							type: 'tween',
 						}}
 					>
-						<h1 className='uppercase font-bold lg:text-5xl text-4xl mb-2 mt-10 text-primary dark:text-white'>
+						<h1 className='uppercase font-bold lg:text-5xl text-4xl mb-2 lg:mt-5 mt-10 text-primary dark:text-white'>
 							Bienvenidos
 							<button className='animate-wave'>👋</button>
 						</h1>
@@ -61,9 +60,6 @@ function Home() {
 					className='lg:h-auto lg:relative z-auto h-full w-full top-full lg:w-hero mt-2 z-20'
 				/>
 			</div>
-			{/* <div className='absolute bottom-0 left-0 w-full z-50'>
-				<img src={wavesFooter} alt='purple waves footer' className='w-full' />
-			</div> */}
 		</>
 	);
 }
