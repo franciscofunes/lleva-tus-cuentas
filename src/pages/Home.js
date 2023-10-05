@@ -58,12 +58,12 @@ function Home() {
 					}}
 					src={bank}
 					alt='hero'
-					className='lg:h-auto lg:relative z-40 h-full w-full top-full lg:w-hero mt-2'
+					className='lg:h-auto lg:relative z-auto h-full w-full top-full lg:w-hero mt-2 z-20'
 				/>
 			</div>
-			<div className='absolute bottom-0 left-0 w-full z-50'>
+			{/* <div className='absolute bottom-0 left-0 w-full z-50'>
 				<img src={wavesFooter} alt='purple waves footer' className='w-full' />
-			</div>
+			</div> */}
 		</>
 	);
 }
