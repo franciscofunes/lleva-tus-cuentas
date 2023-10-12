@@ -69,16 +69,21 @@ function Card({
 		>
 			<div className='flex flex-col gap-y-1 justify-evenly items-start'>
 				<p className='font-semibold text-base text-gray-400'>
-					<span className='text-purple-600'>Nombre: </span>
+					<span className='text-indigo-600 dark:text-indigo-300'>Nombre: </span>
 					{name}
 				</p>
 
 				<p className='font-semibold text-base text-gray-400'>
-					<span className='text-purple-600'>Descripción: </span> {comment}
+					<span className='text-indigo-600 dark:text-indigo-300'>
+						Descripción:{' '}
+					</span>{' '}
+					{comment}
 				</p>
 				<div className='flex flex-row gap-x-1 items-stretch'>
 					<p className='font-semibold text-base text-gray-400'>
-						<span className='text-purple-600'>Categoría: </span>
+						<span className='text-indigo-600 dark:text-indigo-300'>
+							Categoría:{' '}
+						</span>
 						{category}{' '}
 						<InfoTooltip
 							placement={'top'}
@@ -92,11 +97,15 @@ function Card({
 				{category.includes('Resumen tarjeta') && (
 					<>
 						<p className='font-semibold text-base text-gray-400 ml-2'>
-							<span className='text-purple-600'>Fecha de Cierre: </span>
+							<span className='text-indigo-600 dark:text-indigo-300'>
+								Fecha de Cierre:{' '}
+							</span>
 							{moment(selectedCloseDate).format('DD/MM/YYYY')}
 						</p>
 						<p className='font-semibold text-base text-gray-400 ml-2'>
-							<span className='text-purple-600'>Fecha de vencimiento: </span>
+							<span className='text-indigo-600 dark:text-indigo-300'>
+								Fecha de vencimiento:{' '}
+							</span>
 							{moment(selectedExpirationDate).format('DD/MM/YYYY')}
 						</p>
 					</>
@@ -105,18 +114,24 @@ function Card({
 				{category.includes('Compra divisas') && (
 					<>
 						<p className='font-semibold text-base text-gray-400 ml-2'>
-							<span className='text-purple-600'>Cantidad: </span>
+							<span className='text-indigo-600 dark:text-indigo-300'>
+								Cantidad:{' '}
+							</span>
 							{`$USD ${currencyQuantity}`}
 						</p>
 						<p className='font-semibold text-base text-gray-400 ml-2'>
-							<span className='text-purple-600'>Cotización: </span>
+							<span className='text-indigo-600 dark:text-indigo-300'>
+								Cotización:{' '}
+							</span>
 							{`$AR ${currencyExchangeRate}`}
 						</p>
 					</>
 				)}
 
 				<p className='font-semibold text-base text-gray-400'>
-					<span className='text-purple-600'>Fecha transacción: </span>
+					<span className='text-indigo-600 dark:text-indigo-300'>
+						Fecha transacción:{' '}
+					</span>
 					{moment(selectedDate).format('DD/MM/YYYY')}
 				</p>
 				<div className='flex flex-row gap-x-2 lg:justify-between items-stretch'>

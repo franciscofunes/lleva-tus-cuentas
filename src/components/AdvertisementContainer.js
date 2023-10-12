@@ -18,7 +18,7 @@ const AdvertisementContainer = ({ advertisements }) => {
 	const navigate = useNavigate();
 
 	const handleClose = () => {
-		let path = `/suscripcion`;
+		let path = `/subscripcion`;
 		navigate(path);
 		setIsVisible(false);
 	};

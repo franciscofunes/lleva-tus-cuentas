@@ -50,7 +50,7 @@ const NotificationDropdown = () => {
 	}, []);
 
 	const handleSuscribirClick = () => {
-		let path = `suscripcion`;
+		let path = `subscripcion`;
 		navigate(path);
 		setShowDropdown(false);
 	};

@@ -30,7 +30,7 @@ root.render(
 					<Route path='/ingresar' element={<LogIn />} />
 					<Route path='/transacciones' element={<Dashboard />} />
 					<Route path='/recupero' element={<ForgotPassword />} />
-					<Route path='/suscripcion' element={<SubscriptionCard />} />
+					<Route path='/subscripcion' element={<SubscriptionCard />} />
 				</Routes>
 			</Provider>
 		</Router>

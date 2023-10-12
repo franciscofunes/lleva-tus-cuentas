@@ -1,80 +1,32 @@
 import React from 'react';
-import payOnline from '../imgs/payOnline.svg';
-import { motion } from 'framer-motion';
-import { SiPrometheus } from 'react-icons/si';
 
 const SubscriptionCard = () => {
+	// URL query parameters string
+	const queryString =
+		'?collection_id=1315485636&collection_status=approved&payment_id=1315485636&status=approved&external_reference=null&payment_type=credit_card&merchant_order_id=12482676543&preference_id=21784512-f079bdc3-a852-4573-a0c0-494ae0e6b587&site_id=MLA&processing_mode=aggregator&merchant_account_id=null';
+
+	// Create a URLSearchParams object
+	const urlSearchParams = new URLSearchParams(queryString);
+
+	// Extract the values you need
+	const paymentId = urlSearchParams.get('payment_id');
+	const status = urlSearchParams.get('status');
+	const orderId = urlSearchParams.get('merchant_order_id');
+	const paymentType = urlSearchParams.get('payment_type');
+
+	console.log('Payment ID:', paymentId);
+	console.log('Status:', status);
+	console.log('Order ID:', orderId);
+	console.log('Payment Type:', paymentType);
+
 	return (
 		<div className='flex items-center justify-center flex-col mt-10 lg:mt-0 dark:bg-gray-900'>
-			<div className='p-4 md:p-10 w-full max-w-md relative'>
-				{/* Main Card */}
-				<motion.div
-					initial={{ opacity: 0, y: 20 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ delay: 0.5, duration: 0.8 }}
-					className='rounded-xl bg-zinc-200 dark:bg-[#1E293B] p-6 md:p-10 shadow-xl relative'
-					style={{
-						// Apply padding-bottom for desktop screen sizes
-						'@media (min-width: 768px)': {
-							paddingBottom: '2rem', // Adjust the padding as needed
-						},
-					}}
-				>
-					<div className='flex flex-col justify-center items-center text-center'>
-						<div className='max-w-sm font-bold font-sans italic text-indigo-500'>
-							"Experimenta lo mejor de nuestra aplicación con una Suscripción
-							Premium"
-						</div>
-						<div className='font-light max-w-lg mt-5 text-sm text-[#718096] dark:text-[#A0AEC0]'>
-							La suscripción Premium te ofrece una experiencia sin publicidad de
-							nuestra aplicación por solo 2500 AR$ al mes.
-						</div>
-					</div>
-
-					{/* Inner Card */}
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ delay: 0.8, duration: 0.8 }}
-						className='rounded-xl bg-[#FFFBEC] dark:bg-gray-600 mt-5 p-6 md:p-8'
-					>
-						<div className='flex gap-x-2'>
-							<div className='font-semibold text-lg text-[#1E293B] dark:text-white'>
-								Premium Pack
-							</div>
-							<SiPrometheus className='font-semibold text-lg text-[#1E293B] dark:text-white' />
-						</div>
-						<div className='text-sm font-light text-[#718096] dark:text-[#A0AEC0]'>
-							Libre de anuncios
-						</div>
-						<div className='my-4'>
-							<span className='font-bold text-base text-[#1E293B] dark:text-white'>
-								2500 AR$
-							</span>
-							<span className='font-light text-sm text-[#718096] dark:text-[#A0AEC0]'>
-								/mes
-							</span>
-						</div>
-						<button className='get-started-btn text-white px-4 py-3 rounded-full border shadow-xl mt-4 transition duration-300 ease-in-out'>
-							Suscribirme
-						</button>
-					</motion.div>
-
-					{/* Image in the bottom right corner */}
-					<motion.div
-						initial={{ opacity: 0, x: 50, y: 50 }}
-						animate={{ opacity: 1, x: 0, y: 0 }}
-						transition={{ delay: 0.8, duration: 0.8 }}
-						className='absolute bottom-0 right-0 h-24 w-24 md:h-32 md:w-32 overflow-hidden'
-					>
-						<img
-							src={payOnline}
-							alt='safe'
-							className='w-full h-full object-cover'
-						/>
-					</motion.div>
-				</motion.div>
-			</div>
+			<iframe
+				src='https://ltc-subscripcion.vercel.app/'
+				title='Subscription Website'
+				className='w-full'
+				style={{ height: '600px' }}
+			/>
 		</div>
 	);
 };
