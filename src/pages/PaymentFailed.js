@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { RiCloseFill } from 'react-icons/ri';
 import { Link } from 'react-router-dom';
+import PaymentFailure from '../imgs/paymentFailure.svg';
 
 const PaymentFailed = () => {
 	const failureVariants = {
