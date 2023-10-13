@@ -1,27 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { RiCheckFill } from 'react-icons/ri';
+import { useSearchParams } from 'react-router-dom';
 
 const PaymentSuccess = () => {
-	const paymentIdRef = useRef(null);
-	const statusRef = useRef(null);
-	const orderIdRef = useRef(null);
-	const paymentTypeRef = useRef(null);
 	const DEFAULT_VALUE = '-';
-
-	useEffect(() => {
-		const searchParams = new URLSearchParams(window.location.search);
-
-		paymentIdRef.current = searchParams.get('payment_id');
-		statusRef.current = searchParams.get('status');
-		orderIdRef.current = searchParams.get('merchant_order_id');
-		paymentTypeRef.current = searchParams.get('payment_type');
-	}, []);
+	const [searchParams, setSearchParams] = useSearchParams();
 
 	const successVariants = {
 		hidden: { opacity: 0, y: 20 },
 		visible: { opacity: 1, y: 0 },
 	};
+
+	console.log(searchParams.get['collection_status']);
 
 	return (
 		<div className='flex items-center justify-center flex-col mt-10 lg:mt-0 dark:bg-gray-900'>
@@ -33,14 +24,16 @@ const PaymentSuccess = () => {
 					<RiCheckFill className='text-green-500 text-2xl' />
 				</div>
 				<ul className='list-inside list-disc text-lg dark:text-indigo-400'>
-					<li>ID de Pago: {paymentIdRef.current ?? DEFAULT_VALUE}</li>
-					<li>Estado: {statusRef.current ?? DEFAULT_VALUE}</li>
-					<li>ID de Pedido: {orderIdRef.current ?? DEFAULT_VALUE}</li>
-					<li>Tipo de Pago: {paymentTypeRef.current ?? DEFAULT_VALUE}</li>
+					<li>ID de Pago: {searchParams.get('payment_id')}</li>
+					<li>Estado: {searchParams.get('collection_status')}</li>
+					<li>ID de Pedido: {searchParams.get('merchant_order_id')}</li>
+					<li>Tipo de Pago: {searchParams.get('payment_type')}</li>
 				</ul>
 			</motion.div>
 		</div>
 	);
 };
+
+// ?collection_id=1315486726&collection_status=approved&payment_id=1315486726&status=approved&external_reference=null&payment_type=credit_card&merchant_order_id=12489219194&preference_id=21784512-c940fb5d-0f32-4238-9a0f-fed7e22178f2&site_id=MLA&processing_mode=aggregator&merchant_account_id=null
 
 export default PaymentSuccess;
