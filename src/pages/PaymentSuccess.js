@@ -45,7 +45,7 @@ const PaymentSuccess = () => {
 			`* Estado: ${searchParams.get('collection_status') || '-'}`,
 			`* ID de Pedido: ${searchParams.get('merchant_order_id') || '-'}`,
 			`* Tipo de Pago: ${searchParams.get('payment_type') || '-'}`,
-			`* Fecha: ${timestamp}`,
+			`* Fec. Venc.: ${getExpirationDate()}`, // Updated the Fecha field
 			`------------------------------------------------------`,
 		];
 
@@ -57,6 +57,13 @@ const PaymentSuccess = () => {
 		});
 
 		report.save('pago_exitoso.pdf');
+	};
+
+	// Function to calculate the expiration date (sum one month)
+	const getExpirationDate = () => {
+		const currentDate = new Date();
+		currentDate.setMonth(currentDate.getMonth() + 1);
+		return currentDate.toLocaleDateString();
 	};
 
 	useEffect(() => {
@@ -79,7 +86,6 @@ const PaymentSuccess = () => {
 			navigate('/pago-exitoso');
 		}
 
-		// Generate timestamp
 		const currentTimestamp = new Date().toLocaleString();
 		setTimestamp(currentTimestamp);
 	}, [navigate, setSearchParams, searchParams]);
@@ -150,7 +156,7 @@ const PaymentSuccess = () => {
 							ID de Pedido: {searchParams.get('merchant_order_id') || '-'}
 						</li>
 						<li>Tipo de Pago: {searchParams.get('payment_type') || '-'}</li>
-						<li>Fecha: {timestamp}</li>
+						<li>Fec. Venc.: {getExpirationDate()}</li>
 					</ul>
 					<button
 						onClick={generatePDF}
