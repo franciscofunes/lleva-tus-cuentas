@@ -3,13 +3,15 @@ import JsPDF from 'jspdf';
 import React, { useEffect, useState } from 'react';
 import { FaFilePdf } from 'react-icons/fa';
 import { RiCheckFill } from 'react-icons/ri';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import PaymentSucceed from '../imgs/paymentSucceed.svg';
 
 const PaymentSuccess = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const navigate = useNavigate();
 	const [timestamp, setTimestamp] = useState('');
+	const user = useSelector((state) => state.auth.user);
 
 	const successVariants = {
 		hidden: { opacity: 0, y: 20 },
@@ -77,6 +79,8 @@ const PaymentSuccess = () => {
 		const currentTimestamp = new Date().toLocaleString();
 		setTimestamp(currentTimestamp);
 	}, [navigate, setSearchParams, searchParams]);
+
+	if (user === null) return <Navigate to='/' />;
 
 	return (
 		<div className='flex items-center justify-center mt-10 p-4 dark:bg-gray-900'>

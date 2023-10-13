@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { Link, Navigate } from 'react-router-dom';
 import PaymentFailure from '../imgs/paymentFailure.svg';
 
 const PaymentFailed = () => {
@@ -8,6 +9,10 @@ const PaymentFailed = () => {
 		hidden: { opacity: 0, x: -20 },
 		visible: { opacity: 1, x: 0 },
 	};
+
+	const user = useSelector((state) => state.auth.user);
+
+	if (user === null) return <Navigate to='/' />;
 
 	return (
 		<div className='flex items-center justify-center mt-10 p-4 lg:mt-0 dark:bg-gray-900'>
