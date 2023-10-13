@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import React, { useEffect } from 'react';
-import { RiCheckFill } from 'react-icons/ri';
-import { FaFilePdf } from 'react-icons/fa'; // Import the FaFilePdf icon
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import PaymentSucceed from '../imgs/paymentSucceed.svg';
 import JsPDF from 'jspdf';
+import React, { useEffect } from 'react';
+import { FaFilePdf } from 'react-icons/fa';
+import { RiCheckFill } from 'react-icons/ri';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import PaymentSucceed from '../imgs/paymentSucceed.svg';
 
 const PaymentSuccess = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -15,18 +15,6 @@ const PaymentSuccess = () => {
 		visible: { opacity: 1, y: 0 },
 	};
 
-	// Define a function to store the query parameters in local storage
-	const storeQueryParametersInLocalStorage = () => {
-		const queryParams = {
-			payment_id: searchParams.get('payment_id'),
-			collection_status: searchParams.get('collection_status'),
-			merchant_order_id: searchParams.get('merchant_order_id'),
-			payment_type: searchParams.get('payment_type'),
-		};
-		localStorage.setItem('paymentSuccessData', JSON.stringify(queryParams));
-	};
-
-	// Define a function to retrieve the query parameters from local storage
 	const getQueryParametersFromLocalStorage = () => {
 		const storedData = localStorage.getItem('paymentSuccessData');
 		if (storedData) {
@@ -35,16 +23,46 @@ const PaymentSuccess = () => {
 		return null;
 	};
 
-	// Define a function to generate and export the PDF
 	const generatePDF = () => {
-		const report = new JsPDF('portrait', 'pt', 'a4');
-		report.html(document.querySelector('#report')).then(() => {
-			report.save('report.pdf');
+		const report = new JsPDF();
+		report.setFont('Lato-Regular', 'normal');
+
+		report.text('Lleva tus cuentas', 20, 20).setFontSize(25);
+
+		report.text('Pago Exitoso', 20, 30).setFontSize(20);
+		report.text('Muchas gracias por su confianza', 20, 100).setFontSize(10);
+
+		const listItems = [
+			`------------------------------------------------------`,
+			`* ID de Pago: ${searchParams.get('payment_id') || '-'}`,
+			`* Estado: ${searchParams.get('collection_status') || '-'}`,
+			`* ID de Pedido: ${searchParams.get('merchant_order_id') || '-'}`,
+			`* Tipo de Pago: ${searchParams.get('payment_type') || '-'}`,
+			`------------------------------------------------------`,
+		];
+
+		let verticalPosition = 40;
+
+		listItems.forEach((item) => {
+			report.text(item, 20, verticalPosition).setFontSize(15);
+			verticalPosition += 10;
 		});
+
+		report.save('pago_exitoso.pdf');
 	};
 
 	useEffect(() => {
 		const storedQueryParams = getQueryParametersFromLocalStorage();
+
+		const storeQueryParametersInLocalStorage = () => {
+			const queryParams = {
+				payment_id: searchParams.get('payment_id'),
+				collection_status: searchParams.get('collection_status'),
+				merchant_order_id: searchParams.get('merchant_order_id'),
+				payment_type: searchParams.get('payment_type'),
+			};
+			localStorage.setItem('paymentSuccessData', JSON.stringify(queryParams));
+		};
 
 		if (storedQueryParams) {
 			setSearchParams(storedQueryParams);
@@ -52,7 +70,7 @@ const PaymentSuccess = () => {
 			storeQueryParametersInLocalStorage();
 			navigate('/pago-exitoso');
 		}
-	}, [navigate, setSearchParams]);
+	}, [navigate, setSearchParams, searchParams]);
 
 	return (
 		<div className='flex items-center justify-center mt-10 p-4 dark:bg-gray-900'>
@@ -77,21 +95,24 @@ const PaymentSuccess = () => {
 						</li>
 						<li>Tipo de Pago: {searchParams.get('payment_type') || '-'}</li>
 					</ul>
-					<div className='text-center mt-4'>
-						<button
-							onClick={generatePDF}
-							className='bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded flex'
-						>
-							<FaFilePdf size={20} className='mr-2' />
-							Descagar PDF
-						</button>
-					</div>
+					<button
+						onClick={generatePDF}
+						className='bg-purple-500 hover-bg-purple-700 mt-4 text-white font-bold py-2 px-4 rounded'
+						style={{
+							display: 'flex',
+							alignItems: 'center',
+							width: 'fit-content',
+						}}
+					>
+						<FaFilePdf size={20} className='mr-2' />
+						Descargar PDF
+					</button>
 				</div>
 				<div className='sm:w-1/2 p-4 flex items-center justify-center'>
 					<img
 						src={PaymentSucceed}
 						alt='Payment Succeed'
-						className='w-48 h-48 sm:w-64 sm:h-64'
+						className='w-48 h-48 sm:w-64 sm-h-64'
 					/>
 				</div>
 			</motion.div>
