@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import JsPDF from 'jspdf';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaFilePdf } from 'react-icons/fa';
 import { RiCheckFill } from 'react-icons/ri';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -9,6 +9,7 @@ import PaymentSucceed from '../imgs/paymentSucceed.svg';
 const PaymentSuccess = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const navigate = useNavigate();
+	const [timestamp, setTimestamp] = useState('');
 
 	const successVariants = {
 		hidden: { opacity: 0, y: 20 },
@@ -30,7 +31,7 @@ const PaymentSuccess = () => {
 		report.text('Lleva tus cuentas', 20, 20).setFontSize(25);
 
 		report.text('Pago Exitoso', 20, 30).setFontSize(20);
-		report.text('Muchas gracias por su confianza', 20, 100).setFontSize(10);
+		report.text('Muchas gracias por su confianza', 20, 120).setFontSize(10);
 
 		const listItems = [
 			`------------------------------------------------------`,
@@ -38,6 +39,7 @@ const PaymentSuccess = () => {
 			`* Estado: ${searchParams.get('collection_status') || '-'}`,
 			`* ID de Pedido: ${searchParams.get('merchant_order_id') || '-'}`,
 			`* Tipo de Pago: ${searchParams.get('payment_type') || '-'}`,
+			`* Fecha: ${timestamp}`,
 			`------------------------------------------------------`,
 		];
 
@@ -70,6 +72,10 @@ const PaymentSuccess = () => {
 			storeQueryParametersInLocalStorage();
 			navigate('/pago-exitoso');
 		}
+
+		// Generate timestamp
+		const currentTimestamp = new Date().toLocaleString();
+		setTimestamp(currentTimestamp);
 	}, [navigate, setSearchParams, searchParams]);
 
 	return (
@@ -94,6 +100,7 @@ const PaymentSuccess = () => {
 							ID de Pedido: {searchParams.get('merchant_order_id') || '-'}
 						</li>
 						<li>Tipo de Pago: {searchParams.get('payment_type') || '-'}</li>
+						<li>Fecha: {timestamp}</li>
 					</ul>
 					<button
 						onClick={generatePDF}
