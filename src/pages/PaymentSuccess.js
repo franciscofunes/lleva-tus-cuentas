@@ -3,8 +3,8 @@ import JsPDF from 'jspdf';
 import React, { useEffect, useState } from 'react';
 import { FaFilePdf } from 'react-icons/fa';
 import { RiCheckFill } from 'react-icons/ri';
-import { useSelector } from 'react-redux';
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import PaymentSucceed from '../imgs/paymentSucceed.svg';
 
 const PaymentSuccess = () => {
@@ -12,6 +12,8 @@ const PaymentSuccess = () => {
 	const navigate = useNavigate();
 	const [timestamp, setTimestamp] = useState('');
 	const user = useSelector((state) => state.auth.user);
+	const [isAuthorized, setAuthorize] = useState(true);
+	const dispatch = useDispatch();
 
 	const successVariants = {
 		hidden: { opacity: 0, y: 20 },
@@ -80,7 +82,21 @@ const PaymentSuccess = () => {
 		setTimestamp(currentTimestamp);
 	}, [navigate, setSearchParams, searchParams]);
 
-	if (user === null) return <Navigate to='/' />;
+	useEffect(() => {
+		if (user === null) {
+			setAuthorize(false);
+		} else {
+			setAuthorize(true);
+		}
+	}, [user, dispatch]);
+
+	if (!isAuthorized) {
+		return (
+			<div className='text-center text-lg dark:text-indigo-400 mt-10'>
+				Sitio no autorizado ⛔
+			</div>
+		);
+	}
 
 	return (
 		<div className='flex items-center justify-center mt-10 p-4 dark:bg-gray-900'>

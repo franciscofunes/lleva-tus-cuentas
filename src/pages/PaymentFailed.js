@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import React from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import PaymentFailure from '../imgs/paymentFailure.svg';
 
@@ -11,8 +11,24 @@ const PaymentFailed = () => {
 	};
 
 	const user = useSelector((state) => state.auth.user);
+	const [isAuthorized, setAuthorize] = useState(true);
+	const dispatch = useDispatch();
 
-	if (user === null) return <Navigate to='/' />;
+	useEffect(() => {
+		if (user === null) {
+			setAuthorize(false);
+		} else {
+			setAuthorize(true);
+		}
+	}, [user, dispatch]);
+
+	if (!isAuthorized) {
+		return (
+			<div className='text-center text-lg dark:text-indigo-400 mt-10'>
+				Sitio no autorizado ⛔
+			</div>
+		);
+	}
 
 	return (
 		<div className='flex items-center justify-center mt-10 p-4 lg:mt-0 dark:bg-gray-900'>
