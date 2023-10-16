@@ -87,7 +87,7 @@ const PaymentSuccess = () => {
 	};
 
 	useEffect(() => {
-		checkQueryParametersAndRedirect();
+		// checkQueryParametersAndRedirect();
 
 		if (user === null) {
 			setAuthorize(false);
