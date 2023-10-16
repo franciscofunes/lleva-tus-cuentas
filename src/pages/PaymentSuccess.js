@@ -26,7 +26,7 @@ const PaymentSuccess = () => {
 	);
 
 	const isFetching = useSelector((state) => state.auth.isFetching);
-	let circleCommonClasses = 'h-2 w-2 bg-white rounded-full';
+	let circleCommonClasses = 'h-2 w-2 bg-purple rounded-full';
 
 	const successVariants = {
 		hidden: { opacity: 0, y: 20 },
@@ -93,10 +93,14 @@ const PaymentSuccess = () => {
 
 	if (isFetching) {
 		return (
-			<div className='flex'>
-				<div className={`${circleCommonClasses} mr-1 animate-bounce`}></div>
-				<div className={`${circleCommonClasses} mr-1 animate-bounce200`}></div>
-				<div className={`${circleCommonClasses} animate-bounce400`}></div>
+			<div className='fixed top-0 left-0 w-full h-full flex items-center justify-center bg-gray-900 bg-opacity-70 z-50'>
+				<div className='flex'>
+					<div className={`${circleCommonClasses} mr-1 animate-bounce`}></div>
+					<div
+						className={`${circleCommonClasses} mr-1 animate-bounce200`}
+					></div>
+					<div className={`${circleCommonClasses} animate-bounce400`}></div>
+				</div>
 			</div>
 		);
 	}
