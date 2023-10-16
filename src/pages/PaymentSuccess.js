@@ -8,6 +8,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import PaymentSucceed from '../imgs/paymentSucceed.svg';
 import AccessDenied from '../imgs/accessDenied.svg';
 import { Link } from 'react-router-dom';
+import {
+	storeSubscriptionAction,
+	checkUserSubscriptionAction,
+} from '../actionCreators/databaseActions';
 
 const PaymentSuccess = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -45,7 +49,7 @@ const PaymentSuccess = () => {
 			`* Estado: ${searchParams.get('collection_status') || '-'}`,
 			`* ID de Pedido: ${searchParams.get('merchant_order_id') || '-'}`,
 			`* Tipo de Pago: ${searchParams.get('payment_type') || '-'}`,
-			`* Fec. Venc.: ${getExpirationDate()}`, // Updated the Fecha field
+			`* Fec. Venc.: ${getExpirationDate()}`,
 			`------------------------------------------------------`,
 		];
 
@@ -59,14 +63,32 @@ const PaymentSuccess = () => {
 		report.save('pago_exitoso.pdf');
 	};
 
-	// Function to calculate the expiration date (sum one month)
 	const getExpirationDate = () => {
 		const currentDate = new Date();
 		currentDate.setMonth(currentDate.getMonth() + 1);
 		return currentDate.toLocaleDateString();
 	};
 
+	// Check if specific query parameters are null and redirect
+	const checkQueryParametersAndRedirect = () => {
+		const paramsToCheck = [
+			searchParams.get('userId'),
+			searchParams.get('payment_id'),
+			searchParams.get('collection_status'),
+			searchParams.get('merchant_order_id'),
+			searchParams.get('payment_type'),
+		];
+
+		const hasNullParams = paramsToCheck.some((param) => !param);
+
+		if (hasNullParams) {
+			navigate('/transacciones');
+		}
+	};
+
 	useEffect(() => {
+		checkQueryParametersAndRedirect();
+
 		const storedQueryParams = getQueryParametersFromLocalStorage();
 
 		const storeQueryParametersInLocalStorage = () => {
@@ -95,8 +117,26 @@ const PaymentSuccess = () => {
 			setAuthorize(false);
 		} else {
 			setAuthorize(true);
+			// Check if the user has a subscription when the user is authorized
+			const userHasSubscription = dispatch(
+				checkUserSubscriptionAction(user.uid)
+			);
+			console.log(userHasSubscription);
+
+			if (!userHasSubscription) {
+				// If the user does not have a subscription, call storeSubscriptionAction
+				dispatch(
+					storeSubscriptionAction({
+						userId: user.uid,
+						payment_id: searchParams.get('payment_id'),
+						collection_status: searchParams.get('collection_status'),
+						merchant_order_id: searchParams.get('merchant_order_id'),
+						payment_type: searchParams.get('payment_type'),
+					})
+				);
+			}
 		}
-	}, [user, dispatch]);
+	}, [user, dispatch, searchParams]);
 
 	if (!isAuthorized) {
 		return (

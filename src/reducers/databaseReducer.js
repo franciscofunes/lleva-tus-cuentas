@@ -5,6 +5,8 @@ const initState = {
 	isDataFetching: true,
 	selectedFilter: 'month',
 	isFilterChanging: false,
+	savedSubscription: true,
+	hasSubscription: false,
 };
 
 export const databaseReducer = (state = initState, action) => {
@@ -53,6 +55,21 @@ export const databaseReducer = (state = initState, action) => {
 			return {
 				...state,
 				isFilterChanging: action.isFilterChanging,
+			};
+		case 'STORE_SUBSCRIPTION_SUCCESS':
+			return {
+				...state,
+				savedSubscription: action.savedSubscription,
+			};
+		case 'STORE_SUBSCRIPTION_ERROR':
+			return {
+				...state,
+				savedSubscription: !action.savedSubscription,
+			};
+		case 'USER_HAS_SUBSCRIPTION':
+			return {
+				...state,
+				hasSubscription: action.hasSubscription,
 			};
 		default:
 			return state;

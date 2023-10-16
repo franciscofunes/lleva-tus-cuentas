@@ -20,3 +20,7 @@ export const UPDATE_TRANSACTION_SUCCESS_MESSAGE = 'Transacción modificada';
 export const CREATE_TRANSACTION_SUCCESS_MESSAGE = 'Transacción ingresada';
 
 export const DELETE_TRANSACTION_WARNING_MESSAGE = 'Transacción eliminada';
+
+export const CREATE_SUBSCRIPTION_SUCCESS_MESSAGE = 'Subscripción registrada';
+
+export const ALREADY_SUBSCRIBED_ERROR_MESSAGE = 'Ya se encuentra subscripto';

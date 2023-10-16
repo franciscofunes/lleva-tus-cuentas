@@ -5,6 +5,8 @@ import {
 	CREATE_TRANSACTION_SUCCESS_MESSAGE,
 	DELETE_TRANSACTION_WARNING_MESSAGE,
 	UPDATE_TRANSACTION_SUCCESS_MESSAGE,
+	CREATE_SUBSCRIPTION_SUCCESS_MESSAGE,
+	ALREADY_SUBSCRIBED_ERROR_MESSAGE,
 } from '../shared/constants/toast-messages.const';
 
 export const storeDataAction = (data) => {
@@ -321,5 +323,87 @@ export const setFilterChanging = (isFilterChanging) => {
 	return {
 		type: 'SET_FILTER_CHANGING',
 		isFilterChanging,
+	};
+};
+
+export const storeSubscriptionAction = (data) => {
+	return (dispatch) => {
+		const subscribersCollection = firestore.collection('subscribers');
+
+		// Query to check if a document with the same 'userId' exists
+		const query = subscribersCollection.where('userId', '==', data.userId);
+
+		query
+			.get()
+			.then((querySnapshot) => {
+				if (!querySnapshot.empty) {
+					// A document with the same 'userId' already exists
+					throw new Error('User already has a subscription');
+				}
+
+				// Calculate the subscription expiration date (one month from now)
+				const expirationDate = new Date();
+				expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+				// Now, add the subscription data to the 'subscribers' collection
+				return subscribersCollection.add({
+					userId: data.userId,
+					payment_id: data.payment_id,
+					collection_status: data.collection_status,
+					merchant_order_id: data.merchant_order_id,
+					payment_type: data.payment_type,
+					subscriptionExpirationDate: expirationDate,
+					createdAt: new Date(),
+				});
+			})
+			.then(() => {
+				toast.success(CREATE_SUBSCRIPTION_SUCCESS_MESSAGE);
+				dispatch({ type: 'STORE_SUBSCRIPTION_SUCCESS' });
+			})
+			.catch((err) => {
+				if (err.message === 'User already has a subscription') {
+					toast.error(ALREADY_SUBSCRIBED_ERROR_MESSAGE);
+				} else {
+					toast.error(err.message);
+				}
+				dispatch({ type: 'STORE_SUBSCRIPTION_ERROR', err });
+			});
+	};
+};
+
+export const checkUserSubscriptionAction = (userId) => {
+	return (dispatch) => {
+		// Reference the 'subscribers' collection
+		const subscribersCollection = firestore.collection('subscribers');
+
+		// Check if the 'subscribers' collection exists, and create it if it doesn't
+		subscribersCollection
+			.get()
+			.then((snapshot) => {
+				if (snapshot.empty) {
+					// The 'subscribers' collection doesn't exist, create it
+					return firestore.createCollection('subscribers');
+				}
+			})
+			.then(() => {
+				// Now, use the where query to check if a document with the user's ID exists
+				return subscribersCollection.where('userId', '==', userId).get();
+			})
+			.then((querySnapshot) => {
+				// Check if there are any documents that match the query
+				if (!querySnapshot.empty) {
+					// The user has a subscription
+					dispatch({ type: 'USER_HAS_SUBSCRIPTION', hasSubscription: true });
+				} else {
+					// The user does not have a subscription
+
+					dispatch({ type: 'USER_HAS_SUBSCRIPTION', hasSubscription: false });
+				}
+			})
+			.catch((error) => {
+				// Handle the error
+				console.error('Error checking user subscription:', error);
+				dispatch({ type: 'USER_SUBSCRIPTION_ERROR', error });
+			});
 	};
 };
