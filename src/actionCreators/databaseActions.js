@@ -371,39 +371,26 @@ export const storeSubscriptionAction = (data) => {
 	};
 };
 
-export const checkUserSubscriptionAction = (userId) => {
+export const getPaymentDataAction = (userId) => {
 	return (dispatch) => {
-		// Reference the 'subscribers' collection
 		const subscribersCollection = firestore.collection('subscribers');
 
-		// Check if the 'subscribers' collection exists, and create it if it doesn't
-		subscribersCollection
-			.get()
-			.then((snapshot) => {
-				if (snapshot.empty) {
-					// The 'subscribers' collection doesn't exist, create it
-					return firestore.createCollection('subscribers');
-				}
-			})
-			.then(() => {
-				// Now, use the where query to check if a document with the user's ID exists
-				return subscribersCollection.where('userId', '==', userId).get();
-			})
-			.then((querySnapshot) => {
-				// Check if there are any documents that match the query
-				if (!querySnapshot.empty) {
-					// The user has a subscription
-					dispatch({ type: 'USER_HAS_SUBSCRIPTION', hasSubscription: true });
-				} else {
-					// The user does not have a subscription
+		// Query to get the document with a matching 'userId'
+		const query = subscribersCollection.where('userId', '==', userId);
 
-					dispatch({ type: 'USER_HAS_SUBSCRIPTION', hasSubscription: false });
+		query
+			.get()
+			.then((querySnapshot) => {
+				if (!querySnapshot.empty) {
+					// Return the data from the first matching document
+					const data = querySnapshot.docs[0].data();
+					dispatch({ type: 'GET_PAYMENT_DATA_SUCCESS', data });
+				} else {
+					dispatch({ type: 'GET_PAYMENT_DATA_NOT_FOUND' });
 				}
 			})
-			.catch((error) => {
-				// Handle the error
-				console.error('Error checking user subscription:', error);
-				dispatch({ type: 'USER_SUBSCRIPTION_ERROR', error });
+			.catch((err) => {
+				dispatch({ type: 'GET_PAYMENT_DATA_ERROR', err });
 			});
 	};
 };

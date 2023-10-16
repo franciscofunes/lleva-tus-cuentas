@@ -71,6 +71,21 @@ export const databaseReducer = (state = initState, action) => {
 				...state,
 				hasSubscription: action.hasSubscription,
 			};
+		case 'GET_PAYMENT_DATA_SUCCESS': // Handle the new action
+			return {
+				...state,
+				paymentData: action.data, // Store payment data retrieved from Firestore
+			};
+		case 'GET_PAYMENT_DATA_NOT_FOUND': // Handle the new action
+			return {
+				...state,
+				paymentData: null, // Reset payment data if not found
+			};
+		case 'GET_PAYMENT_DATA_ERROR': // Handle the new action
+			return {
+				...state,
+				paymentDataError: action.err.message, // Store error if any
+			};
 		default:
 			return state;
 	}

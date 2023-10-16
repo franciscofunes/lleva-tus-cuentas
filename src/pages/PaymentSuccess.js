@@ -10,7 +10,7 @@ import AccessDenied from '../imgs/accessDenied.svg';
 import { Link } from 'react-router-dom';
 import {
 	storeSubscriptionAction,
-	checkUserSubscriptionAction,
+	getPaymentDataAction,
 } from '../actionCreators/databaseActions';
 
 const PaymentSuccess = () => {
@@ -20,18 +20,17 @@ const PaymentSuccess = () => {
 	const user = useSelector((state) => state.auth.user);
 	const [isAuthorized, setAuthorize] = useState(true);
 	const dispatch = useDispatch();
+	const paymentData = useSelector((state) => state.database.paymentData);
+	const paymentDataError = useSelector(
+		(state) => state.database.paymentDataError
+	);
+
+	const isFetching = useSelector((state) => state.auth.isFetching);
+	let circleCommonClasses = 'h-2 w-2 bg-white rounded-full';
 
 	const successVariants = {
 		hidden: { opacity: 0, y: 20 },
 		visible: { opacity: 1, y: 0 },
-	};
-
-	const getQueryParametersFromLocalStorage = () => {
-		const storedData = localStorage.getItem('paymentSuccessData');
-		if (storedData) {
-			return JSON.parse(storedData);
-		}
-		return null;
 	};
 
 	const generatePDF = () => {
@@ -45,11 +44,13 @@ const PaymentSuccess = () => {
 
 		const listItems = [
 			`------------------------------------------------------`,
-			`* ID de Pago: ${searchParams.get('payment_id') || '-'}`,
-			`* Estado: ${searchParams.get('collection_status') || '-'}`,
-			`* ID de Pedido: ${searchParams.get('merchant_order_id') || '-'}`,
-			`* Tipo de Pago: ${searchParams.get('payment_type') || '-'}`,
-			`* Fec. Venc.: ${getExpirationDate()}`,
+			`* ID de Pago: ${paymentData?.payment_id || '-'}`,
+			`* Estado: ${paymentData?.collection_status || '-'}`,
+			`* ID de Pedido: ${paymentData?.merchant_order_id || '-'}`,
+			`* Tipo de Pago: ${paymentData?.payment_type || '-'}`,
+			`* Fec. Venc.: ${convertFirestoreTimestamp(
+				paymentData?.subscriptionExpirationDate
+			)}`,
 			`------------------------------------------------------`,
 		];
 
@@ -63,32 +64,14 @@ const PaymentSuccess = () => {
 		report.save('pago_exitoso.pdf');
 	};
 
-	const getExpirationDate = () => {
-		const currentDate = new Date();
-		currentDate.setMonth(currentDate.getMonth() + 1);
-		return currentDate.toLocaleDateString();
-	};
+	const convertFirestoreTimestamp = (timestamp) => {
+		if (!timestamp) return '-';
 
-	// Check if specific query parameters are null and redirect
-	const checkQueryParametersAndRedirect = () => {
-		const paramsToCheck = [
-			searchParams.get('userId'),
-			searchParams.get('payment_id'),
-			searchParams.get('collection_status'),
-			searchParams.get('merchant_order_id'),
-			searchParams.get('payment_type'),
-		];
-
-		const hasNullParams = paramsToCheck.some((param) => !param);
-
-		if (hasNullParams) {
-			navigate('/transacciones');
-		}
+		const date = timestamp.toDate();
+		return date.toLocaleDateString(); // Format it as needed
 	};
 
 	useEffect(() => {
-		// checkQueryParametersAndRedirect();
-
 		if (user === null) {
 			setAuthorize(false);
 		} else {
@@ -103,8 +86,20 @@ const PaymentSuccess = () => {
 					payment_type: searchParams.get('payment_type'),
 				})
 			);
+
+			dispatch(getPaymentDataAction(user.uid));
 		}
 	}, [user, dispatch, searchParams]);
+
+	if (isFetching) {
+		return (
+			<div className='flex'>
+				<div className={`${circleCommonClasses} mr-1 animate-bounce`}></div>
+				<div className={`${circleCommonClasses} mr-1 animate-bounce200`}></div>
+				<div className={`${circleCommonClasses} animate-bounce400`}></div>
+			</div>
+		);
+	}
 
 	if (!isAuthorized) {
 		return (
@@ -158,13 +153,16 @@ const PaymentSuccess = () => {
 						<RiCheckFill className='text-green-500 text-2xl' />
 					</div>
 					<ul className='list-inside list-disc text-lg dark:text-indigo-400'>
-						<li>ID de Pago: {searchParams.get('payment_id') || '-'}</li>
-						<li>Estado: {searchParams.get('collection_status') || '-'}</li>
+						<li>ID de Pago: {paymentData?.payment_id || '-'}</li>
+						<li>Estado: {paymentData?.collection_status || '-'}</li>
+						<li>ID de Pedido: {paymentData?.merchant_order_id || '-'}</li>
+						<li>Tipo de Pago: {paymentData?.payment_type || '-'}</li>
 						<li>
-							ID de Pedido: {searchParams.get('merchant_order_id') || '-'}
+							Fec. Venc.:{' '}
+							{convertFirestoreTimestamp(
+								paymentData?.subscriptionExpirationDate
+							)}
 						</li>
-						<li>Tipo de Pago: {searchParams.get('payment_type') || '-'}</li>
-						<li>Fec. Venc.: {getExpirationDate()}</li>
 					</ul>
 					<button
 						onClick={generatePDF}
@@ -174,6 +172,7 @@ const PaymentSuccess = () => {
 							alignItems: 'center',
 							width: 'fit-content',
 						}}
+						disabled={!paymentData} // Disable button if paymentData is null
 					>
 						<FaFilePdf size={20} className='mr-2' />
 						Descargar PDF
