@@ -89,52 +89,20 @@ const PaymentSuccess = () => {
 	useEffect(() => {
 		checkQueryParametersAndRedirect();
 
-		const storedQueryParams = getQueryParametersFromLocalStorage();
-
-		const storeQueryParametersInLocalStorage = () => {
-			const queryParams = {
-				payment_id: searchParams.get('payment_id'),
-				collection_status: searchParams.get('collection_status'),
-				merchant_order_id: searchParams.get('merchant_order_id'),
-				payment_type: searchParams.get('payment_type'),
-			};
-			localStorage.setItem('paymentSuccessData', JSON.stringify(queryParams));
-		};
-
-		if (storedQueryParams) {
-			setSearchParams(storedQueryParams);
-		} else if (window.location.search) {
-			storeQueryParametersInLocalStorage();
-			navigate('/pago-exitoso');
-		}
-
-		const currentTimestamp = new Date().toLocaleString();
-		setTimestamp(currentTimestamp);
-	}, [navigate, setSearchParams, searchParams]);
-
-	useEffect(() => {
 		if (user === null) {
 			setAuthorize(false);
 		} else {
 			setAuthorize(true);
-			// Check if the user has a subscription when the user is authorized
-			const userHasSubscription = dispatch(
-				checkUserSubscriptionAction(user.uid)
-			);
-			console.log(userHasSubscription);
 
-			if (!userHasSubscription) {
-				// If the user does not have a subscription, call storeSubscriptionAction
-				dispatch(
-					storeSubscriptionAction({
-						userId: user.uid,
-						payment_id: searchParams.get('payment_id'),
-						collection_status: searchParams.get('collection_status'),
-						merchant_order_id: searchParams.get('merchant_order_id'),
-						payment_type: searchParams.get('payment_type'),
-					})
-				);
-			}
+			dispatch(
+				storeSubscriptionAction({
+					userId: user.uid,
+					payment_id: searchParams.get('payment_id'),
+					collection_status: searchParams.get('collection_status'),
+					merchant_order_id: searchParams.get('merchant_order_id'),
+					payment_type: searchParams.get('payment_type'),
+				})
+			);
 		}
 	}, [user, dispatch, searchParams]);
 

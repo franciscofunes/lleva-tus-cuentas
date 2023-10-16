@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import PaymentFailure from '../imgs/paymentFailure.svg';
 import AccessDenied from '../imgs/accessDenied.svg';
 
@@ -10,12 +11,33 @@ const PaymentFailed = () => {
 		hidden: { opacity: 0, x: -20 },
 		visible: { opacity: 1, x: 0 },
 	};
+	const [searchParams, setSearchParams] = useSearchParams();
+	const navigate = useNavigate();
 
 	const user = useSelector((state) => state.auth.user);
 	const [isAuthorized, setAuthorize] = useState(true);
 	const dispatch = useDispatch();
 
+	// Check if specific query parameters are null and redirect
+	const checkQueryParametersAndRedirect = () => {
+		const paramsToCheck = [
+			searchParams.get('userId'),
+			searchParams.get('payment_id'),
+			searchParams.get('collection_status'),
+			searchParams.get('merchant_order_id'),
+			searchParams.get('payment_type'),
+		];
+
+		const hasNullParams = paramsToCheck.some((param) => !param);
+
+		if (hasNullParams) {
+			navigate('/transacciones');
+		}
+	};
+
 	useEffect(() => {
+		checkQueryParametersAndRedirect();
+
 		if (user === null) {
 			setAuthorize(false);
 		} else {
