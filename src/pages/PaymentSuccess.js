@@ -4,26 +4,25 @@ import React, { useEffect, useState } from 'react';
 import { FaFilePdf } from 'react-icons/fa';
 import { RiCheckFill } from 'react-icons/ri';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import PaymentSucceed from '../imgs/paymentSucceed.svg';
-import AccessDenied from '../imgs/accessDenied.svg';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-	storeSubscriptionAction,
 	getPaymentDataAction,
+	storeSubscriptionAction,
 } from '../actionCreators/databaseActions';
+import AccessDenied from '../imgs/accessDenied.svg';
+import PaymentSucceed from '../imgs/paymentSucceed.svg';
 
 const PaymentSuccess = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
-	const navigate = useNavigate();
-	const [timestamp, setTimestamp] = useState('');
 	const user = useSelector((state) => state.auth.user);
 	const [isAuthorized, setAuthorize] = useState(true);
 	const dispatch = useDispatch();
 	const paymentData = useSelector((state) => state.database.paymentData);
-	const paymentDataError = useSelector(
-		(state) => state.database.paymentDataError
-	);
+	// const paymentDataError = useSelector(
+	// 	(state) => state.database.paymentDataError
+	// );
+
+	const navigate = useNavigate();
 
 	const isFetching = useSelector((state) => state.auth.isFetching);
 	let circleCommonClasses = 'h-2 w-2 bg-purple rounded-full';
@@ -72,6 +71,17 @@ const PaymentSuccess = () => {
 	};
 
 	useEffect(() => {
+		if (
+			// Modify these conditions according to your requirements
+			!searchParams.get('payment_id') ||
+			!searchParams.get('collection_status') ||
+			!searchParams.get('merchant_order_id') ||
+			!searchParams.get('payment_type')
+		) {
+			let path = `/subscripcion`;
+			navigate(path);
+			return;
+		}
 		if (user === null) {
 			setAuthorize(false);
 		} else {
