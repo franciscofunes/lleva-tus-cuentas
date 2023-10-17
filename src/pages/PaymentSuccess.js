@@ -18,6 +18,7 @@ const PaymentSuccess = () => {
 	const [isAuthorized, setAuthorize] = useState(true);
 	const dispatch = useDispatch();
 	const paymentData = useSelector((state) => state.database.paymentData);
+	const [isPaymentDataLoaded, setIsPaymentDataLoaded] = useState(false);
 	// const paymentDataError = useSelector(
 	// 	(state) => state.database.paymentDataError
 	// );
@@ -96,10 +97,19 @@ const PaymentSuccess = () => {
 					payment_type: searchParams.get('payment_type'),
 				})
 			);
-
-			dispatch(getPaymentDataAction(user.uid));
 		}
 	}, [user, dispatch, searchParams]);
+
+	// Use this effect to get payment data
+	useEffect(() => {
+		if (user) {
+			dispatch(getPaymentDataAction(user.uid))
+				.then(() => setIsPaymentDataLoaded(true))
+				.catch((error) => {
+					// Handle error if needed
+				});
+		}
+	}, [user, dispatch]);
 
 	if (isFetching) {
 		return (
@@ -111,6 +121,17 @@ const PaymentSuccess = () => {
 					></div>
 					<div className={`${circleCommonClasses} animate-bounce400`}></div>
 				</div>
+			</div>
+		);
+	}
+
+	if (!isPaymentDataLoaded) {
+		// You can add a loading indicator here if needed
+		return (
+			<div className='flex items-center justify-center mt-10 p-4 dark:bg-gray-900'>
+				<div className={`${circleCommonClasses} mr-1 animate-bounce`}></div>
+				<div className={`${circleCommonClasses} mr-1 animate-bounce200`}></div>
+				<div className={`${circleCommonClasses} animate-bounce400`}></div>
 			</div>
 		);
 	}
@@ -180,13 +201,16 @@ const PaymentSuccess = () => {
 					</ul>
 					<button
 						onClick={generatePDF}
-						className='bg-purple-500 hover-bg-purple-700 mt-4 text-white font-bold py-2 px-4 rounded'
+						className={`bg-purple-500 hover:bg-purple-700 mt-4 text-white font-bold py-2 px-4 rounded 
+             ${
+								!paymentData ? 'opacity-60 pointer-events-none bg-gray-300' : ''
+							}`}
 						style={{
 							display: 'flex',
 							alignItems: 'center',
 							width: 'fit-content',
 						}}
-						disabled={!paymentData} // Disable button if paymentData is null
+						disabled={!paymentData}
 					>
 						<FaFilePdf size={20} className='mr-2' />
 						Descargar PDF

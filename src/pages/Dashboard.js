@@ -7,6 +7,7 @@ import 'tippy.js/dist/tippy.css';
 import {
 	getCategoriesDataAction,
 	getDataAction,
+	getPaymentDataAction,
 } from '../actionCreators/databaseActions';
 import BarChartWrapper from '../components/BarChartWrapper';
 import Card from '../components/Card';
@@ -33,6 +34,7 @@ import {
 function Dashboard() {
 	const dispatch = useDispatch();
 	const user = useSelector((state) => state.auth.user);
+	const paymentData = useSelector((state) => state.database.paymentData);
 	const isFetching = useSelector((state) => state.auth.isFetching);
 	const isDataFetching = useSelector((state) => state.database.isDataFetching);
 	const docs = useSelector((state) => state.database.docs);
@@ -80,6 +82,12 @@ function Dashboard() {
 			dispatch(getDataAction(user.uid));
 		}
 	}, [user, dispatch]);
+
+	useEffect(() => {
+		if (user) {
+			dispatch(getPaymentDataAction(user.uid));
+		}
+	}, [dispatch, user]);
 
 	useEffect(() => {
 		setExpense(0);
@@ -287,7 +295,6 @@ function Dashboard() {
 						</div>
 						<ExpenseFilter />
 					</motion.div>
-
 					<motion.div
 						animate={{ opacity: 1 }}
 						initial={{ opacity: 0 }}
@@ -305,8 +312,11 @@ function Dashboard() {
 							)
 						)}
 					</motion.div>
-
-					<AdvertisementContainer advertisements={advertisements} />
+					{!paymentData ? (
+						<AdvertisementContainer advertisements={advertisements} />
+					) : (
+						''
+					)}
 				</div>
 
 				<motion.div
