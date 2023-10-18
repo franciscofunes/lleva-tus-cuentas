@@ -57,6 +57,7 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 							className='block px-4 py-2 flex items-center text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
 							role='menuitem'
 							to='/subscripcion'
+							onClick={handleDropdownToggleChangePassword}
 							style={{ minWidth: '100px' }}
 						>
 							subscripción <AiOutlineUser className='ml-2 text-base' />
