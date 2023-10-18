@@ -1,12 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FaBell } from 'react-icons/fa';
+import { FaRobot } from 'react-icons/fa';
 import { RiAdvertisementLine } from 'react-icons/ri';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { getPaymentDataAction } from '../actionCreators/databaseActions';
 
 const NotificationDropdown = () => {
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [notifications, setNotifications] = useState(['Elimina la publicidad']);
 	const [notificationRead, setNotificationRead] = useState(false);
+	const paymentData = useSelector((state) => state.database.paymentData);
+	const user = useSelector((state) => state.auth.user);
+	const dispatch = useDispatch();
 
 	const dropdownRef = useRef(null);
 	const navigate = useNavigate();
@@ -30,6 +36,12 @@ const NotificationDropdown = () => {
 		}
 	};
 
+	useEffect(() => {
+		if (user) {
+			dispatch(getPaymentDataAction(user.uid));
+		}
+	}, [dispatch, user]);
+
 	const handleHideDropdown = (event) => {
 		if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
 			setShowDropdown(false);
@@ -50,7 +62,7 @@ const NotificationDropdown = () => {
 	}, []);
 
 	const handleSuscribirClick = () => {
-		let path = `subscripcion`;
+		let path = !paymentData ? `subscripcion` : `/transacciones`;
 		navigate(path);
 		setShowDropdown(false);
 	};
@@ -91,8 +103,12 @@ const NotificationDropdown = () => {
 							onClick={handleSuscribirClick}
 							style={{ minWidth: '100px' }}
 						>
-							Eliminar publicidad
-							<RiAdvertisementLine className='ml-2 text-lg' />
+							{paymentData ? 'Conoce a LITA' : 'Eliminar publicidad'}
+							{paymentData ? (
+								<FaRobot className='ml-2 text-lg' />
+							) : (
+								<RiAdvertisementLine className='ml-2 text-lg' />
+							)}
 						</button>
 					</div>
 				</div>

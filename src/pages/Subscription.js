@@ -30,6 +30,13 @@ const SubscriptionCard = () => {
 		return 0;
 	};
 
+	const convertFirestoreTimestamp = (timestamp) => {
+		if (!timestamp) return '-';
+
+		const date = timestamp.toDate();
+		return date.toLocaleDateString(); // Format it as needed
+	};
+
 	useEffect(() => {
 		if (user) {
 			dispatch(getPaymentDataAction(user.uid));
@@ -49,7 +56,19 @@ const SubscriptionCard = () => {
 								¡Usted ya está subscripto!
 							</h2>
 						</div>
-						<p className='text-lg dark:text-indigo-400'>
+						<ul className='list-inside list-disc text-lg dark:text-indigo-400 mb-2 mt-2'>
+							<li>ID de Pago: {paymentData?.payment_id || '-'}</li>
+							<li>Estado: {paymentData?.collection_status || '-'}</li>
+							<li>ID de Pedido: {paymentData?.merchant_order_id || '-'}</li>
+							<li>Tipo de Pago: {paymentData?.payment_type || '-'}</li>
+							<li>
+								Fec. Venc.:{' '}
+								{convertFirestoreTimestamp(
+									paymentData?.subscriptionExpirationDate
+								)}
+							</li>
+						</ul>
+						<p className='text dark:text-yellow-400'>
 							Tiene {calculateRemainingDays()} días restantes en su
 							subscripción.
 						</p>
