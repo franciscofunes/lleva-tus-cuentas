@@ -18,10 +18,9 @@ const PaymentSuccess = () => {
 	const [isAuthorized, setAuthorize] = useState(true);
 	const dispatch = useDispatch();
 	const paymentData = useSelector((state) => state.database.paymentData);
-	const [isPaymentDataLoaded, setIsPaymentDataLoaded] = useState(false);
-	// const paymentDataError = useSelector(
-	// 	(state) => state.database.paymentDataError
-	// );
+	const isPaymentDataLoading = useSelector(
+		(state) => state.database.isPaymentDataLoading
+	);
 
 	const navigate = useNavigate();
 
@@ -83,6 +82,7 @@ const PaymentSuccess = () => {
 			navigate(path);
 			return;
 		}
+
 		if (user === null) {
 			setAuthorize(false);
 		} else {
@@ -97,19 +97,12 @@ const PaymentSuccess = () => {
 					payment_type: searchParams.get('payment_type'),
 				})
 			);
-		}
-	}, [user, dispatch, searchParams]);
 
-	// Use this effect to get payment data
-	useEffect(() => {
-		setIsPaymentDataLoaded(false);
-		if (user) {
 			dispatch(getPaymentDataAction(user.uid));
-			setIsPaymentDataLoaded(true);
 		}
 	}, [user, dispatch]);
 
-	if (isFetching || !isPaymentDataLoaded) {
+	if (isFetching) {
 		return (
 			<div className='fixed top-0 left-0 w-full h-full flex items-center justify-center bg-gray-900 bg-opacity-70 z-50'>
 				<div className='flex'>
@@ -174,18 +167,24 @@ const PaymentSuccess = () => {
 						</h2>
 						<RiCheckFill className='text-green-500 text-2xl' />
 					</div>
-					<ul className='list-inside list-disc text-lg dark:text-indigo-400'>
-						<li>ID de Pago: {paymentData?.payment_id || '-'}</li>
-						<li>Estado: {paymentData?.collection_status || '-'}</li>
-						<li>ID de Pedido: {paymentData?.merchant_order_id || '-'}</li>
-						<li>Tipo de Pago: {paymentData?.payment_type || '-'}</li>
-						<li>
-							Fec. Venc.:{' '}
-							{convertFirestoreTimestamp(
-								paymentData?.subscriptionExpirationDate
-							)}
-						</li>
-					</ul>
+					{!isPaymentDataLoading ? (
+						<ul className='list-inside list-disc text-lg dark:text-indigo-400'>
+							<li>ID de Pago: {paymentData?.payment_id || '-'}</li>
+							<li>Estado: {paymentData?.collection_status || '-'}</li>
+							<li>ID de Pedido: {paymentData?.merchant_order_id || '-'}</li>
+							<li>Tipo de Pago: {paymentData?.payment_type || '-'}</li>
+							<li>
+								Fec. Venc.:{' '}
+								{convertFirestoreTimestamp(
+									paymentData?.subscriptionExpirationDate
+								)}
+							</li>
+						</ul>
+					) : (
+						<p className='text-lg dark:text-indigo-400'>
+							Cargando información de pago...
+						</p>
+					)}
 					<button
 						onClick={generatePDF}
 						className={`bg-purple-500 hover:bg-purple-700 mt-4 text-white font-bold py-2 px-4 rounded 

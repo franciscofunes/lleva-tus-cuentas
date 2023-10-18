@@ -358,11 +358,12 @@ export const storeSubscriptionAction = (data) => {
 			})
 			.then(() => {
 				toast.success(CREATE_SUBSCRIPTION_SUCCESS_MESSAGE);
+				window.location.reload();
 				dispatch({ type: 'STORE_SUBSCRIPTION_SUCCESS' });
 			})
 			.catch((err) => {
 				if (err.message === 'User already has a subscription') {
-					toast.error(ALREADY_SUBSCRIBED_ERROR_MESSAGE);
+					// toast.success(CREATE_SUBSCRIPTION_SUCCESS_MESSAGE);
 				} else {
 					toast.error(err.message);
 				}
@@ -373,23 +374,29 @@ export const storeSubscriptionAction = (data) => {
 
 export const getPaymentDataAction = (userId) => {
 	return (dispatch) => {
+		// 1. Access the 'subscribers' collection
 		const subscribersCollection = firestore.collection('subscribers');
 
-		// Query to get the document with a matching 'userId'
+		// 2. Query to get the document with a matching 'userId'
 		const query = subscribersCollection.where('userId', '==', userId);
+
+		// 3. Dispatch an action to indicate that you're requesting payment data (optional but useful for loading indicators)
+		dispatch({ type: 'GET_PAYMENT_DATA_REQUEST' });
 
 		query
 			.get()
 			.then((querySnapshot) => {
 				if (!querySnapshot.empty) {
-					// Return the data from the first matching document
+					// 4. Return the data from the first matching document
 					const data = querySnapshot.docs[0].data();
 					dispatch({ type: 'GET_PAYMENT_DATA_SUCCESS', data });
 				} else {
+					// 5. Handle the case where no matching document is found
 					dispatch({ type: 'GET_PAYMENT_DATA_NOT_FOUND' });
 				}
 			})
 			.catch((err) => {
+				// 6. Handle any errors that occur during the request
 				dispatch({ type: 'GET_PAYMENT_DATA_ERROR', err });
 			});
 	};

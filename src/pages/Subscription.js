@@ -2,8 +2,9 @@ import React, { useEffect } from 'react';
 
 import { useDispatch, useSelector } from 'react-redux';
 
-import UserSubscribed from '../imgs/userSubscribed.svg';
+import { Navigate } from 'react-router-dom';
 import { getPaymentDataAction } from '../actionCreators/databaseActions';
+import UserSubscribed from '../imgs/userSubscribed.svg';
 
 const SubscriptionCard = () => {
 	const isDevelopment = process.env.NODE_ENV === 'development';
@@ -25,8 +26,8 @@ const SubscriptionCard = () => {
 			const remainingDays = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
 			return remainingDays;
 		}
-		console.log(paymentData);
-		return 0; // Default to 0 days if paymentData is not available
+
+		return 0;
 	};
 
 	useEffect(() => {
@@ -34,6 +35,8 @@ const SubscriptionCard = () => {
 			dispatch(getPaymentDataAction(user.uid));
 		}
 	}, [dispatch, user]);
+
+	if (user === null) return <Navigate to='/' />;
 
 	return (
 		<div className='flex items-center justify-center mt-2 p-4 dark:bg-gray-900'>
@@ -43,12 +46,12 @@ const SubscriptionCard = () => {
 					<div className='sm:w-1/2 p-4 flex flex-col'>
 						<div className='flex items-center'>
 							<h2 className='text-green-500 text-2xl font-semibold mr-2'>
-								¡Usted ya está suscrito!
+								¡Usted ya está subscripto!
 							</h2>
 						</div>
 						<p className='text-lg dark:text-indigo-400'>
-							Usted tiene {calculateRemainingDays()} días restantes en su
-							suscripción.
+							Tiene {calculateRemainingDays()} días restantes en su
+							subscripción.
 						</p>
 					</div>
 					<div className='sm:w-1/2 p-4 flex items-center justify-center'>

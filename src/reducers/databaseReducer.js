@@ -7,6 +7,7 @@ const initState = {
 	isFilterChanging: false,
 	savedSubscription: true,
 	hasSubscription: false,
+	isPaymentDataLoading: false,
 };
 
 export const databaseReducer = (state = initState, action) => {
@@ -60,6 +61,7 @@ export const databaseReducer = (state = initState, action) => {
 			return {
 				...state,
 				savedSubscription: action.savedSubscription,
+				isPaymentDataLoading: false,
 			};
 		case 'STORE_SUBSCRIPTION_ERROR':
 			return {
@@ -71,20 +73,28 @@ export const databaseReducer = (state = initState, action) => {
 				...state,
 				hasSubscription: action.hasSubscription,
 			};
-		case 'GET_PAYMENT_DATA_SUCCESS': // Handle the new action
+		case 'GET_PAYMENT_DATA_REQUEST':
 			return {
 				...state,
-				paymentData: action.data, // Store payment data retrieved from Firestore
+				isPaymentDataLoading: true,
 			};
-		case 'GET_PAYMENT_DATA_NOT_FOUND': // Handle the new action
+		case 'GET_PAYMENT_DATA_SUCCESS':
 			return {
 				...state,
-				paymentData: null, // Reset payment data if not found
+				paymentData: action.data,
+				isPaymentDataLoading: false,
 			};
-		case 'GET_PAYMENT_DATA_ERROR': // Handle the new action
+		case 'GET_PAYMENT_DATA_NOT_FOUND':
 			return {
 				...state,
-				paymentDataError: action.err.message, // Store error if any
+				paymentData: null,
+				isPaymentDataLoading: false,
+			};
+		case 'GET_PAYMENT_DATA_ERROR':
+			return {
+				...state,
+				paymentDataError: action.err.message,
+				isPaymentDataLoading: false,
 			};
 		default:
 			return state;
