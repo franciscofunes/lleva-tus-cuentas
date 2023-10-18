@@ -102,16 +102,14 @@ const PaymentSuccess = () => {
 
 	// Use this effect to get payment data
 	useEffect(() => {
+		setIsPaymentDataLoaded(false);
 		if (user) {
-			dispatch(getPaymentDataAction(user.uid))
-				.then(() => setIsPaymentDataLoaded(true))
-				.catch((error) => {
-					// Handle error if needed
-				});
+			dispatch(getPaymentDataAction(user.uid));
+			setIsPaymentDataLoaded(true);
 		}
 	}, [user, dispatch]);
 
-	if (isFetching) {
+	if (isFetching || !isPaymentDataLoaded) {
 		return (
 			<div className='fixed top-0 left-0 w-full h-full flex items-center justify-center bg-gray-900 bg-opacity-70 z-50'>
 				<div className='flex'>
@@ -121,17 +119,6 @@ const PaymentSuccess = () => {
 					></div>
 					<div className={`${circleCommonClasses} animate-bounce400`}></div>
 				</div>
-			</div>
-		);
-	}
-
-	if (!isPaymentDataLoaded) {
-		// You can add a loading indicator here if needed
-		return (
-			<div className='flex items-center justify-center mt-10 p-4 dark:bg-gray-900'>
-				<div className={`${circleCommonClasses} mr-1 animate-bounce`}></div>
-				<div className={`${circleCommonClasses} mr-1 animate-bounce200`}></div>
-				<div className={`${circleCommonClasses} animate-bounce400`}></div>
 			</div>
 		);
 	}
