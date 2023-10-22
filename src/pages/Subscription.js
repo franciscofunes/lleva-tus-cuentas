@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import { getPaymentDataAction } from '../actionCreators/databaseActions';
 import UserSubscribed from '../imgs/userSubscribed.svg';
+import { FaTimes } from 'react-icons/fa';
 
 const SubscriptionCard = () => {
 	const isDevelopment = process.env.NODE_ENV === 'development';
@@ -46,7 +47,7 @@ const SubscriptionCard = () => {
 	if (user === null) return <Navigate to='/' />;
 
 	return (
-		<div className='flex items-center justify-center mt-2 p-4 dark:bg-gray-900'>
+		<div className='flex items-center justify-center mt-2 p-2 dark:bg-gray-900'>
 			{user && paymentData ? (
 				// User is logged in and subscribed, show the card with remaining days
 				<div className='max-w-3xl w-full p-4 bg-white dark:bg-gray-800 rounded-md shadow-md flex flex-col mt-4 sm:flex-row'>

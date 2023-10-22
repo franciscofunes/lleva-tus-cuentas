@@ -389,14 +389,31 @@ export const getPaymentDataAction = (userId) => {
 				if (!querySnapshot.empty) {
 					// 4. Return the data from the first matching document
 					const data = querySnapshot.docs[0].data();
-					dispatch({ type: 'GET_PAYMENT_DATA_SUCCESS', data });
+
+					// 5. Check if the subscription has not expired
+					const currentTimestamp = new Date();
+					const expirationTimestamp = data.subscriptionExpirationDate.toDate();
+
+					if (currentTimestamp <= expirationTimestamp) {
+						// The subscription is still valid
+						dispatch({ type: 'GET_PAYMENT_DATA_SUCCESS', data });
+					} else {
+						// The subscription has expired
+						// Display a toast error message
+						dispatch({
+							type: 'GET_PAYMENT_DATA_ERROR',
+							err: { message: 'Su subscripción expiró' },
+						});
+					}
 				} else {
-					// 5. Handle the case where no matching document is found
+					// 6. Handle the case where no matching document is found
 					dispatch({ type: 'GET_PAYMENT_DATA_NOT_FOUND' });
 				}
 			})
 			.catch((err) => {
-				// 6. Handle any errors that occur during the request
+				// 7. Handle any errors that occur during the request
+				// Display a toast error message for other errors
+				toast.error(err.message);
 				dispatch({ type: 'GET_PAYMENT_DATA_ERROR', err });
 			});
 	};
