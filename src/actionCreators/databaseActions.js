@@ -337,9 +337,32 @@ export const storeSubscriptionAction = (data) => {
 			.get()
 			.then((querySnapshot) => {
 				if (!querySnapshot.empty) {
-					// A document with the same 'userId' already exists
-					throw new Error('User already has a subscription');
+					// A document with the same 'userId' already exists, update it
+
+					// Get the first matching document
+					const docRef = querySnapshot.docs[0].ref;
+
+					// Update the subscription data
+					const expirationDate = new Date();
+					expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+					// Increment the renewal counter
+					const renewalCounter =
+						querySnapshot.docs[0].data().renewalCounter || 0;
+					const updatedData = {
+						payment_id: data.payment_id,
+						collection_status: data.collection_status,
+						merchant_order_id: data.merchant_order_id,
+						payment_type: data.payment_type,
+						subscriptionExpirationDate: expirationDate,
+						renewalCounter: renewalCounter + 1,
+					};
+
+					// Update the document with the new data
+					return docRef.update(updatedData);
 				}
+
+				// The document with the same 'userId' does not exist; create a new one
 
 				// Calculate the subscription expiration date (one month from now)
 				const expirationDate = new Date();
@@ -363,7 +386,8 @@ export const storeSubscriptionAction = (data) => {
 			})
 			.catch((err) => {
 				if (err.message === 'User already has a subscription') {
-					// toast.success(CREATE_SUBSCRIPTION_SUCCESS_MESSAGE);
+					// Handle the case where the user already has a subscription
+					// This can be done by showing a message or other appropriate actions.
 				} else {
 					toast.error(err.message);
 				}
