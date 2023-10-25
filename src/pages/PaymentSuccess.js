@@ -90,17 +90,33 @@ const PaymentSuccess = () => {
 		} else {
 			setAuthorize(true);
 
-			dispatch(
-				storeSubscriptionAction({
-					userId: user.uid,
-					payment_id: searchParams.get('payment_id'),
-					collection_status: searchParams.get('collection_status'),
-					merchant_order_id: searchParams.get('merchant_order_id'),
-					payment_type: searchParams.get('payment_type'),
-				})
-			);
+			const storeSubscription = async () => {
+				try {
+					await dispatch(
+						storeSubscriptionAction({
+							userId: user.uid,
+							payment_id: searchParams.get('payment_id'),
+							collection_status: searchParams.get('collection_status'),
+							merchant_order_id: searchParams.get('merchant_order_id'),
+							payment_type: searchParams.get('payment_type'),
+						})
+					);
+					let path = `/subscripcion`;
+					navigate(path);
 
-			dispatch(getPaymentDataAction(user.uid));
+					// This code will run after the storeSubscriptionAction has completed
+					await dispatch(getPaymentDataAction(user.uid));
+				} catch (err) {
+					if (err.message === 'User already has a subscription') {
+						// Handle the case where the user already has a subscription
+						// This can be done by showing a message or other appropriate actions.
+					} else {
+						console.error(err.message);
+					}
+				}
+			};
+
+			storeSubscription();
 		}
 	}, [user, dispatch]);
 

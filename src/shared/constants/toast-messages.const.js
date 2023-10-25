@@ -23,4 +23,4 @@ export const DELETE_TRANSACTION_WARNING_MESSAGE = 'Transacción eliminada';
 
 export const CREATE_SUBSCRIPTION_SUCCESS_MESSAGE = 'Subscripción registrada';
 
-export const ALREADY_SUBSCRIBED_ERROR_MESSAGE = 'Ya se encuentra subscripto';
+export const SUBSCRIBED_ERROR_MESSAGE = 'Subscripción fallida';
