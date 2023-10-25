@@ -381,7 +381,7 @@ export const storeSubscriptionAction = (data) => {
 			})
 			.then(() => {
 				toast.success(CREATE_SUBSCRIPTION_SUCCESS_MESSAGE);
-				window.location.reload();
+				// window.location.reload();
 				dispatch({ type: 'STORE_SUBSCRIPTION_SUCCESS' });
 			})
 			.catch((err) => {
