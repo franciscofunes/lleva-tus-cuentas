@@ -74,6 +74,7 @@ const PaymentSuccess = () => {
 
 	useEffect(() => {
 		if (
+			// Modify these conditions according to your requirements
 			!searchParams.get('payment_id') ||
 			!searchParams.get('collection_status') ||
 			!searchParams.get('merchant_order_id') ||
@@ -97,21 +98,9 @@ const PaymentSuccess = () => {
 					merchant_order_id: searchParams.get('merchant_order_id'),
 					payment_type: searchParams.get('payment_type'),
 				})
-			)
-				.then(() => {
-					// Handle the success case
-					dispatch(getPaymentDataAction(user.uid));
-					setPaymentDataLoaded(true);
-				})
-				.catch((err) => {
-					// Handle the error case
-					if (err.message === 'User already has a subscription') {
-						// Handle the case where the user already has a subscription
-						// This can be done by showing a message or other appropriate actions.
-					} else {
-						console.error(err.message);
-					}
-				});
+			);
+
+			dispatch(getPaymentDataAction(user.uid));
 		}
 	}, [user, dispatch]);
 
@@ -180,7 +169,7 @@ const PaymentSuccess = () => {
 						</h2>
 						<RiCheckFill className='text-green-500 text-2xl' />
 					</div>
-					{isPaymentDataLoaded ? (
+					{!isPaymentDataLoading ? (
 						<ul className='list-inside list-disc text-lg dark:text-indigo-400'>
 							<li>ID de Pago: {paymentData?.payment_id || '-'}</li>
 							<li>Estado: {paymentData?.collection_status || '-'}</li>

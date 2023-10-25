@@ -337,32 +337,9 @@ export const storeSubscriptionAction = (data) => {
 			.get()
 			.then((querySnapshot) => {
 				if (!querySnapshot.empty) {
-					// A document with the same 'userId' already exists, update it
-
-					// Get the first matching document
-					const docRef = querySnapshot.docs[0].ref;
-
-					// Update the subscription data
-					const expirationDate = new Date();
-					expirationDate.setMonth(expirationDate.getMonth() + 1);
-
-					// Increment the renewal counter
-					const renewalCounter =
-						querySnapshot.docs[0].data().renewalCounter || 0;
-					const updatedData = {
-						payment_id: data.payment_id,
-						collection_status: data.collection_status,
-						merchant_order_id: data.merchant_order_id,
-						payment_type: data.payment_type,
-						subscriptionExpirationDate: expirationDate,
-						renewalCounter: renewalCounter + 1,
-					};
-
-					// Update the document with the new data
-					return docRef.update(updatedData);
+					// A document with the same 'userId' already exists
+					throw new Error('User already has a subscription');
 				}
-
-				// The document with the same 'userId' does not exist; create a new one
 
 				// Calculate the subscription expiration date (one month from now)
 				const expirationDate = new Date();
@@ -381,13 +358,12 @@ export const storeSubscriptionAction = (data) => {
 			})
 			.then(() => {
 				toast.success(CREATE_SUBSCRIPTION_SUCCESS_MESSAGE);
-				// window.location.reload();
+				window.location.reload();
 				dispatch({ type: 'STORE_SUBSCRIPTION_SUCCESS' });
 			})
 			.catch((err) => {
 				if (err.message === 'User already has a subscription') {
-					// Handle the case where the user already has a subscription
-					// This can be done by showing a message or other appropriate actions.
+					// toast.success(CREATE_SUBSCRIPTION_SUCCESS_MESSAGE);
 				} else {
 					toast.error(err.message);
 				}
@@ -424,6 +400,7 @@ export const getPaymentDataAction = (userId) => {
 					} else {
 						// The subscription has expired
 						// Display a toast error message
+
 						dispatch({
 							type: 'GET_PAYMENT_DATA_ERROR',
 							err: { message: 'Su subscripción expiró' },
