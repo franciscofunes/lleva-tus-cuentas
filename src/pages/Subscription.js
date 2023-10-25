@@ -69,10 +69,18 @@ const SubscriptionCard = () => {
 								)}
 							</li>
 						</ul>
-						<p className='text dark:text-yellow-400'>
-							Tiene {calculateRemainingDays()} días restantes en su
-							subscripción.
-						</p>
+						{calculateRemainingDays() <= 0 ? (
+							<p className='text-red-500'>
+								Tu suscripción ha expirado.
+								<FaTimes className='text-red-500 inline ml-1' />{' '}
+								{/* Add the red cross icon */}
+							</p>
+						) : (
+							<p className='text dark:text-yellow-400'>
+								Tiene {calculateRemainingDays()} días restantes en su
+								subscripción.
+							</p>
+						)}
 					</div>
 					<div className='sm:w-1/2 p-4 flex items-center justify-center'>
 						<img
