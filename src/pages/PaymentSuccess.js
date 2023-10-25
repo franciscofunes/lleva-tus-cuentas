@@ -101,8 +101,8 @@ const PaymentSuccess = () => {
 							payment_type: searchParams.get('payment_type'),
 						})
 					);
-					let path = `/subscripcion`;
-					navigate(path);
+					// let path = `/subscripcion`;
+					// navigate(path);
 
 					// This code will run after the storeSubscriptionAction has completed
 					await dispatch(getPaymentDataAction(user.uid));

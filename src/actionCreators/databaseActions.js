@@ -2,11 +2,11 @@ import moment from 'moment';
 import { toast } from 'react-toastify';
 import { firestore } from '../shared/config/firebase/firebase.config';
 import {
+	CREATE_SUBSCRIPTION_SUCCESS_MESSAGE,
 	CREATE_TRANSACTION_SUCCESS_MESSAGE,
 	DELETE_TRANSACTION_WARNING_MESSAGE,
-	UPDATE_TRANSACTION_SUCCESS_MESSAGE,
-	CREATE_SUBSCRIPTION_SUCCESS_MESSAGE,
 	SUBSCRIBED_ERROR_MESSAGE,
+	UPDATE_TRANSACTION_SUCCESS_MESSAGE,
 } from '../shared/constants/toast-messages.const';
 
 export const storeDataAction = (data) => {
@@ -382,6 +382,7 @@ export const storeSubscriptionAction = (data) => {
 			.then(() => {
 				toast.success(CREATE_SUBSCRIPTION_SUCCESS_MESSAGE);
 				dispatch({ type: 'STORE_SUBSCRIPTION_SUCCESS' });
+				window.location.href = '/subscripcion';
 			})
 			.catch((err) => {
 				if (err.message === 'An error happened while subscribing') {

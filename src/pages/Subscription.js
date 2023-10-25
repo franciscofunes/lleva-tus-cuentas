@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 import { useDispatch, useSelector } from 'react-redux';
 
-import { Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+
+import { FaTimes } from 'react-icons/fa';
 import { getPaymentDataAction } from '../actionCreators/databaseActions';
 import UserSubscribed from '../imgs/userSubscribed.svg';
-import { FaTimes } from 'react-icons/fa';
 
 const SubscriptionCard = () => {
 	const isDevelopment = process.env.NODE_ENV === 'development';
@@ -17,6 +19,11 @@ const SubscriptionCard = () => {
 	// Use the paymentData from the Redux store
 	const paymentData = useSelector((state) => state.database.paymentData);
 	const user = useSelector((state) => state.auth.user);
+
+	const successVariants = {
+		hidden: { opacity: 0, y: 20 },
+		visible: { opacity: 1, y: 0 },
+	};
 
 	// Function to calculate the remaining days of the subscription
 	const calculateRemainingDays = () => {
@@ -44,7 +51,7 @@ const SubscriptionCard = () => {
 		}
 	}, [dispatch, user]);
 
-	if (user === null) return <Navigate to='/' />;
+	// if (user === null) return <Navigate to='/' />;
 
 	return (
 		<div className='flex items-center justify-center mt-2 p-2 dark:bg-gray-900'>
@@ -92,12 +99,44 @@ const SubscriptionCard = () => {
 				</div>
 			) : (
 				<>
-					<iframe
-						src={iframeSrc}
-						title='Subscription Website'
-						className='w-full'
-						style={{ height: '600px' }}
-					/>
+					{user ? (
+						<iframe
+							src={iframeSrc}
+							title='Subscription Website'
+							className='w-full'
+							style={{ height: '600px' }}
+						/>
+					) : (
+						<div className='flex items-center justify-center mt-10 p-4 dark:bg-gray-900'>
+							<motion.div
+								initial='hidden'
+								animate='visible'
+								variants={successVariants}
+								className='max-w-3xl w-full p-4 bg-white dark:bg-gray-800 rounded-md shadow-md flex flex-col mt-4 sm:flex-row'
+							>
+								<div className='sm:w-1/2 p-4 flex flex-col'>
+									<div className='flex items-center'>
+										<h2 className='text-red-500 text-2xl font-semibold mr-2'>
+											Sitio no autorizado ⛔
+										</h2>
+									</div>
+									<p className='text-lg dark:text-indigo-400'>
+										Disculpe las molestias ocasionadas. Para acceder a esta
+										funcionalidad, por favor regístrese o inicie sesión con su
+										cuenta de Gmail.
+									</p>
+									<Link to='/registrarse'>
+										<button className='mt-4 text-white bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded'>
+											Ir a la página de registro
+										</button>
+									</Link>
+								</div>
+								<div className='sm:w-1/2 p-4 flex items-center justify-center'>
+									{/* You can add an image here if needed */}
+								</div>
+							</motion.div>
+						</div>
+					)}
 				</>
 			)}
 		</div>
