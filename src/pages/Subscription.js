@@ -52,8 +52,6 @@ const SubscriptionCard = () => {
 		}
 	}, [dispatch, user]);
 
-	// if (user === null) return <Navigate to='/' />;
-
 	if (isFetching) {
 		return (
 			<div className='fixed top-0 left-0 w-full h-full flex items-center justify-center bg-gray-900 bg-opacity-70 z-50'>
@@ -115,7 +113,7 @@ const SubscriptionCard = () => {
 				</div>
 			) : (
 				<>
-					{user ? (
+					{user && !isFetching ? (
 						<iframe
 							src={iframeSrc}
 							title='Subscription Website'
