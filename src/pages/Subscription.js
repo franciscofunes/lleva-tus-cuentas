@@ -19,6 +19,7 @@ const SubscriptionCard = () => {
 	// Use the paymentData from the Redux store
 	const paymentData = useSelector((state) => state.database.paymentData);
 	const user = useSelector((state) => state.auth.user);
+	const isFetching = useSelector((state) => state.auth.isFetching);
 
 	const successVariants = {
 		hidden: { opacity: 0, y: 20 },
@@ -52,6 +53,21 @@ const SubscriptionCard = () => {
 	}, [dispatch, user]);
 
 	// if (user === null) return <Navigate to='/' />;
+
+	if (isFetching) {
+		return (
+			<div className='fixed top-0 left-0 w-full h-full flex items-center justify-center bg-gray-900 bg-opacity-70 z-50'>
+				<div className='w-[50%] h-10 flex items-center justify-center'>
+					<div
+						style={{ width: '60px', height: '60px' }}
+						className='animate-spin'
+					>
+						<div className='h-full w-full border-4 border-t-indigo-900 border-b-indigo-700 border-l-gray-800 border-r-gray-800 rounded-[50%]'></div>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className='flex items-center justify-center mt-2 p-2 dark:bg-gray-900'>

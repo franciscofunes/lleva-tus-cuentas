@@ -22,8 +22,6 @@ const PaymentSuccess = () => {
 		(state) => state.database.isPaymentDataLoading
 	);
 
-	const [isPaymentDataLoaded, setPaymentDataLoaded] = useState(false);
-
 	const navigate = useNavigate();
 
 	const isFetching = useSelector((state) => state.auth.isFetching);

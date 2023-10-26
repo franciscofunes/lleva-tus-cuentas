@@ -37,6 +37,23 @@ export const signUpAction = (creds) => {
 	};
 };
 
+// export const logInAction = (creds) => {
+// 	return (dispatch) => {
+// 		auth
+// 			.signInWithEmailAndPassword(creds.email, creds.password)
+// 			.then((res) => {
+// 				toast.success(LOGIN_SUCCESS_MESSAGE);
+
+// 				dispatch({ type: 'LOG_IN', res });
+// 			})
+// 			.catch((err) => {
+// 				toast.error(LOGIN_ERROR_MESSAGE);
+
+// 				dispatch({ type: 'LOG_IN_ERROR', err });
+// 			});
+// 	};
+// };
+
 export const logInAction = (creds) => {
 	return (dispatch) => {
 		auth
@@ -45,11 +62,13 @@ export const logInAction = (creds) => {
 				toast.success(LOGIN_SUCCESS_MESSAGE);
 
 				dispatch({ type: 'LOG_IN', res });
+				dispatch({ type: 'SET_USER', payload: res.user }); // Set user and set isFetching to false
 			})
 			.catch((err) => {
 				toast.error(LOGIN_ERROR_MESSAGE);
 
 				dispatch({ type: 'LOG_IN_ERROR', err });
+				dispatch({ type: 'SET_USER', payload: null }); // Set isFetching to false when there's an error
 			});
 	};
 };
