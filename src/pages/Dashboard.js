@@ -30,6 +30,11 @@ import {
 	currencyFormater,
 	currencyGenericFormater,
 } from '../shared/utils/currencyFormater';
+import ChartToggleMenu from '../components/ChartToogleMenu';
+import IncomeChartWrapper from '../components/IncomeChartWrapper';
+import DivisasChartWrapper from '../components/DivisasChartWrapper';
+import IncomeExpenseLineChart from '../components/IncomeExpenseLineChart';
+import IngresoDivisasLineChart from '../components/IngresoDivisasLineChart';
 
 function Dashboard() {
 	const dispatch = useDispatch();
@@ -69,7 +74,21 @@ function Dashboard() {
 
 	const [isOpen, setIsOpen] = useState(false);
 
+	const [selectedChart, setSelectedChart] = useState('expenses');
+
+	const handleChartToggle = (chart) => {
+		setSelectedChart(chart);
+	};
+
 	const advertisements = [kavakAd, cocacolaAd, cbseAd, lotoAd, cotoAd];
+
+	const chartComponents = {
+		expenses: BarChartWrapper,
+		income: IncomeChartWrapper,
+		divisas: DivisasChartWrapper,
+		incomesVsExpenses: IncomeExpenseLineChart,
+		ingresoDivisas: IngresoDivisasLineChart,
+	};
 
 	useEffect(() => {
 		if (user) {
@@ -308,7 +327,21 @@ function Dashboard() {
 							</div>
 						) : (
 							docs && (
-								<BarChartWrapper chartData={docs} categories={categories} />
+								<>
+									{/* Conditionally render the appropriate chart */}
+									{selectedChart &&
+										chartComponents[selectedChart] &&
+										React.createElement(chartComponents[selectedChart], {
+											chartData: docs,
+											categories,
+										})}
+
+									<ChartToggleMenu
+										selectedChart={selectedChart}
+										handleChartToggle={handleChartToggle}
+										chartComponents={chartComponents}
+									/>
+								</>
 							)
 						)}
 					</motion.div>

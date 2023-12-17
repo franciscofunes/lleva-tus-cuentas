@@ -1,15 +1,19 @@
-import { BarList, Card, Title, Bold, Flex, Text } from '@tremor/react';
+// IncomeChartWrapper.js
+
 import React from 'react';
+import { BarList, Card, Title, Bold, Flex, Text } from '@tremor/react';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 
-const BarChartWrapper = ({ chartData, categories }) => {
+const IncomeChartWrapper = ({ chartData, categories }) => {
 	const generateChartData = () => {
 		const filteredData = chartData.filter((dataItem) => {
 			const isExpenseCategory = categories.find(
 				(category) => category.name === dataItem.category
 			)?.isExpense;
+
+			// Include categories that are not expenses
 			return (
-				isExpenseCategory &&
+				!isExpenseCategory &&
 				!dataItem.category.includes(INGRESO_DIVISAS_CATEGORY)
 			);
 		});
@@ -58,7 +62,7 @@ const BarChartWrapper = ({ chartData, categories }) => {
 
 	return (
 		<Card className='max-w-lg'>
-			<Title>Gastos en pesos</Title>
+			<Title>Ingresos en pesos</Title>
 			<Flex className='mt-4'>
 				<Text>
 					<Bold>Categoría</Bold>
@@ -77,4 +81,4 @@ const BarChartWrapper = ({ chartData, categories }) => {
 	);
 };
 
-export default BarChartWrapper;
+export default IncomeChartWrapper;
