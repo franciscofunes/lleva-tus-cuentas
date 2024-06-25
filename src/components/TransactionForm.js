@@ -395,7 +395,7 @@ const TransactionForm = ({
 								id='amount'
 								{...register('amount', {
 									required: true,
-									pattern: /^\d+(\.\d{1,2})?$/,
+									pattern: /^\d+(\.\d{1,10})?$/,
 									onChange: category.includes('Compra divisas')
 										? (e) => {
 												setAmount(currencyQuantity * currencyExchangeRate);
