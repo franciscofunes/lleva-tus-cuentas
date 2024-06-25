@@ -309,7 +309,7 @@ const TransactionForm = ({
 								id='currencyExchangeRate'
 								{...register('currencyExchangeRate', {
 									required: true,
-									pattern: /^\d+(\.\d{1,2})?$/,
+									pattern: /^\d+(\.\d{1,20})?$/,
 									onChange: (e) => {
 										setCurrencyExchangeRate(e.target.value);
 									},
@@ -339,7 +339,7 @@ const TransactionForm = ({
 								id='currencyQuantity'
 								{...register('currencyQuantity', {
 									required: true,
-									pattern: /^\d+(\.\d{1,2})?$/,
+									pattern: /^\d+(\.\d{1,30})?$/,
 									onChange: (e) => {
 										setCurrencyQuantity(e.target.value);
 									},
@@ -391,7 +391,6 @@ const TransactionForm = ({
 										: amount
 								}
 								type='number'
-								min='0'
 								id='amount'
 								{...register('amount', {
 									required: true,
