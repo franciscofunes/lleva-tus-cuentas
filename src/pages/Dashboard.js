@@ -24,6 +24,9 @@ import cbseAd from "../imgs/ads/cbseAd.jpg";
 import lotoAd from "../imgs/ads/lotoAd.jpg";
 import cotoAd from "../imgs/ads/cotoAd.png";
 import bars from "../imgs/bars.svg";
+import eyeHide from "../imgs/eyeHide.svg";
+import closeEye from "../imgs/closeEye.svg";
+
 import wavesFooter from "../imgs/waves.svg";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
 import {
@@ -70,6 +73,11 @@ function Dashboard() {
   const [currencyExchangeRate, setCurrencyExchangeRate] = useState();
   const [currencySale, setCurrencySale] = useState(0);
 
+  const [isDataVisible, setIsDataVisible] = useState(() => {
+    const savedVisibility = sessionStorage.getItem("isDataVisible");
+    return savedVisibility ? JSON.parse(savedVisibility) : true;
+  });
+
   const [isCurrencyIncomeCategory, setIsCurrencyIncomeCategory] =
     useState(false);
 
@@ -81,6 +89,12 @@ function Dashboard() {
   const [isOpen, setIsOpen] = useState(false);
 
   const [selectedChart, setSelectedChart] = useState("expenses");
+
+  const toggleDataVisibility = () => {
+    const newVisibility = !isDataVisible;
+    setIsDataVisible(newVisibility);
+    sessionStorage.setItem("isDataVisible", JSON.stringify(newVisibility));
+  };
 
   const handleChartToggle = (chart) => {
     setSelectedChart(chart);
@@ -273,6 +287,7 @@ function Dashboard() {
             className="container p-4 bg-white lg:w-3/4 w-full border rounded-md shadow-md mb-6 mt-6 font-Nunito dark:bg-slate-800 dark:border-indigo-500"
           >
             <div className="flex items-center mb-5">
+              {/* Ingresos */}
               <div className="flex flex-col justify-center items-center flex-grow">
                 <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
                   Ingresos
@@ -280,11 +295,19 @@ function Dashboard() {
                 {isDataFetching ? (
                   <img className="mt-2 h-6 w-6" src={bars} alt="loader" />
                 ) : (
-                  <p className=" text-green-500 font-medium">
-                    {`${currencyFormater(income)}`}
-                  </p>
+                  <motion.p
+                    initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
+                    animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
+                    exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
+                    transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
+                    key={isDataVisible ? "expense-value" : "hidden-value"}
+                    className="text-green-500 font-medium"
+                  >
+                    {isDataVisible ? `${currencyFormater(income)}` : "*******"}
+                  </motion.p>
                 )}
               </div>
+              {/* Gastos */}
               <div className="flex flex-col justify-center items-center ml-4 flex-grow">
                 <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
                   Gastos
@@ -292,13 +315,21 @@ function Dashboard() {
                 {isDataFetching ? (
                   <img className="mt-2 h-6 w-6" src={bars} alt="loader" />
                 ) : (
-                  <p className=" text-red-500 font-medium">
-                    {`${currencyFormater(expense)}`}
-                  </p>
+                  <motion.p
+                    initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
+                    animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
+                    exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
+                    transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
+                    className="text-red-500 font-medium"
+                    key={isDataVisible ? "expense-value" : "hidden-value"} // Key to trigger animation on state change
+                  >
+                    {isDataVisible ? `${currencyFormater(expense)}` : "*******"}
+                  </motion.p>
                 )}
               </div>
             </div>
 
+            {/* Inversión */}
             <div className="flex flex-col justify-center items-center mb-2">
               <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
                 Inversión
@@ -306,30 +337,59 @@ function Dashboard() {
               {isDataFetching ? (
                 <img className="ml-2 h-6 w-6" src={bars} alt="loader" />
               ) : (
-                <p className="text-blue-500 font-medium">
-                  {`${currencyGenericFormater(
-                    "USD",
-                    currencyIncome,
-                    "en-US",
-                    "USD"
-                  )}`}
-                </p>
+                <motion.p
+                  initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
+                  animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
+                  exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
+                  transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
+                  key={isDataVisible ? "expense-value" : "hidden-value"}
+                  className="text-blue-500 font-medium"
+                >
+                  {isDataVisible
+                    ? `${currencyGenericFormater(
+                        "USD",
+                        currencyIncome,
+                        "en-US",
+                        "USD"
+                      )}`
+                    : "*******"}
+                </motion.p>
               )}
             </div>
 
+            {/* Balance */}
             <div className="flex flex-col mb-4">
-              <p className="text-gray-400 text-center text-lg">Balance</p>
+              <div className="flex justify-center items-center mb-2">
+                <p className="text-gray-400 text-center text-lg">Balance</p>
+                <button onClick={toggleDataVisibility} className="ml-2">
+                  <motion.img
+                    className="mb-1 h-5 w-5"
+                    src={isDataVisible ? eyeHide : closeEye}
+                    alt={isDataVisible ? "open eye" : "close eye"}
+                    key={isDataVisible ? "open-eye" : "close-eye"} // Key for animation
+                    initial={{ scale: 0.5, rotate: -180 }} // Initial state
+                    animate={{ scale: 1, rotate: 0 }} // End state
+                    transition={{ duration: 0.5, ease: "easeOut" }} // Animation properties
+                  />
+                </button>
+              </div>
+
               <div className="flex flex-col gap-2 justify-center items-center">
                 {isDataFetching ? (
                   <img className="ml-2 h-6 w-6" src={bars} alt="loader" />
                 ) : (
-                  <h2
+                  <motion.h2
+                    initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
+                    animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
+                    exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
+                    transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
+                    key={isDataVisible ? "expense-value" : "hidden-value"}
                     className={`text-2xl font-semibold text-center ${
                       total < 0 ? `text-red-500` : `text-green-500`
                     }`}
                   >
-                    {currencyFormater(total)}
-                  </h2>
+                    {isDataVisible ? currencyFormater(total) : "*******"}
+                  </motion.h2>
                 )}
               </div>
             </div>
