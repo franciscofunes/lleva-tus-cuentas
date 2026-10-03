@@ -4,6 +4,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaWallet, FaChartLine, FaRegClock } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
+import wavesFooter from '../imgs/waves.svg';
 import { IoMdClose } from 'react-icons/io';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -277,6 +278,10 @@ function Portfolio() {
 							</article>
 						))}
 					</section>
+			</div>
+
+			<div className='relative h-24 -mx-4 lg:-mx-8 mt-4 overflow-hidden pointer-events-none' aria-hidden='true'>
+				<img src={wavesFooter} alt='' className='absolute bottom-0 left-0 w-full min-w-[720px] opacity-90 dark:opacity-70' />
 			</div>
 
 			<AnimatePresence>
