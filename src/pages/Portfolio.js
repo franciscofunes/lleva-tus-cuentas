@@ -7,6 +7,7 @@ import {
 	createPortfolioSnapshot,
 	deletePortfolioPosition,
 	subscribePortfolioPositions,
+	subscribePortfolioSnapshots,
 	updatePortfolioPosition,
 } from '../services/portfolioService';
 
@@ -36,6 +37,7 @@ function Portfolio() {
 	const user = useSelector((state) => state.auth.user);
 	const isFetching = useSelector((state) => state.auth.isFetching);
 	const [positions, setPositions] = useState([]);
+	const [snapshots, setSnapshots] = useState([]);
 	const [form, setForm] = useState(emptyForm);
 	const [editingId, setEditingId] = useState(null);
 	const [loading, setLoading] = useState(true);
@@ -55,6 +57,35 @@ function Portfolio() {
 		);
 	}, [user]);
 
+	useEffect(() => {
+		if (!user) return undefined;
+		return subscribePortfolioSnapshots(
+			user.uid,
+			setSnapshots,
+			() => toast.error('No se pudo cargar el historial del portfolio')
+		);
+	}, [user]);
+
+	const performanceByPosition = useMemo(() => {
+		const grouped = snapshots.reduce((acc, item) => {
+			if (!acc[item.positionId]) acc[item.positionId] = [];
+			acc[item.positionId].push(item);
+			return acc;
+		}, {});
+
+		return Object.entries(grouped).reduce((acc, [positionId, history]) => {
+			if (history.length < 2) return acc;
+			const first = history[0];
+			const last = history[history.length - 1];
+			const change = Number(last.balance || 0) - Number(first.balance || 0);
+			const percent = Number(first.balance || 0) > 0
+				? (change / Number(first.balance)) * 100
+				: 0;
+			acc[positionId] = { change, percent, count: history.length };
+			return acc;
+		}, {});
+	}, [snapshots]);
+
 	const totals = useMemo(() => {
 		return positions.reduce((acc, position) => {
 			const currency = position.currency || 'ARS';
@@ -66,6 +97,13 @@ function Portfolio() {
 			return acc;
 		}, {});
 	}, [positions]);
+
+	const weightedRates = useMemo(() => {
+		return Object.entries(totals).reduce((acc, [currency, total]) => {
+			acc[currency] = total.balance > 0 ? (total.annual / total.balance) * 100 : 0;
+			return acc;
+		}, {});
+	}, [totals]);
 
 	if (isFetching) return <div className='p-8 text-center dark:text-white'>Cargando...</div>;
 	if (!user) return <Navigate to='/' />;
@@ -144,6 +182,7 @@ function Portfolio() {
 							<p className='text-2xl font-bold'>{money(total.balance, currency)}</p>
 							<p className='text-sm text-green-600 mt-2'>Estimado anual: {money(total.annual, currency)}</p>
 							<p className='text-xs text-gray-400'>Estimado mensual: {money(total.annual / 12, currency)}</p>
+							<p className='text-xs text-gray-400'>Tasa ponderada: {weightedRates[currency].toFixed(2)}%</p>
 						</div>
 					))}
 					{!Object.keys(totals).length && <div className='text-gray-500'>Todavía no cargaste posiciones.</div>}
@@ -195,6 +234,14 @@ function Portfolio() {
 										<p className='font-semibold'>{Number(position.annualRate || 0).toFixed(2)}% {position.rateType || ''}</p>
 										<p className='text-sm text-gray-500'>{position.liquidity || 'Liquidez no informada'}</p>
 										<p className='text-sm text-green-600 mt-1'>≈ {money(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 12, position.currency)} / mes</p>
+										{performanceByPosition[position.id] && (
+											<div className='mt-2 text-sm'>
+												<p className={performanceByPosition[position.id].change >= 0 ? 'text-green-600' : 'text-red-500'}>
+													Cambio observado: {money(performanceByPosition[position.id].change, position.currency)} ({performanceByPosition[position.id].percent.toFixed(2)}%)
+												</p>
+												<p className='text-xs text-gray-400'>{performanceByPosition[position.id].count} snapshots</p>
+											</div>
+										)}
 									</div>
 								</div>
 								<div className='flex flex-wrap gap-2 mt-4'>
