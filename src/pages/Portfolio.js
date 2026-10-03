@@ -6,8 +6,7 @@ import { FaWallet, FaChartLine, FaRegClock } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import wavesFooter from '../imgs/waves.svg';
 import PortfolioCharts from '../components/PortfolioCharts';
-import { IoMdClose } from 'react-icons/io';
-import { AnimatePresence, motion } from 'framer-motion';
+import GenericModal from '../components/GenericModal';
 import {
 	createPortfolioPosition,
 	createPortfolioSnapshot,
@@ -212,7 +211,6 @@ function Portfolio() {
 			<div className='max-w-7xl mx-auto'>
 				<div className='flex flex-wrap justify-between items-end gap-4 mb-6'>
 					<div>
-						<p className='text-sm font-semibold text-purple-600'>LTC$ Portfolio</p>
 						<h1 className='text-3xl font-bold'>Cuentas e inversiones</h1>
 						<p className='text-gray-500 dark:text-gray-400 max-w-2xl'>Tu patrimonio financiero en un solo lugar. Los totales y rendimientos se mantienen separados por moneda.</p>
 					</div>
@@ -316,17 +314,11 @@ function Portfolio() {
 				</div>
 			)}
 
-			<AnimatePresence>
-				{showForm && (
-					<motion.div className='fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-						<motion.div className='w-full sm:max-w-2xl max-h-[92dvh] bg-white dark:bg-slate-800 border-t-2 sm:border-2 border-purple-600 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col' initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
-							<div className='flex items-center justify-between px-5 py-4 border-b dark:border-slate-700 shrink-0'>
-								<div><p className='text-xs font-semibold text-purple-500'>LTC$ Portfolio</p><h2 className='text-xl font-bold'>{editingId ? 'Editar posición' : 'Nueva posición'}</h2></div>
-								<button type='button' aria-label='Cerrar' className='p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700' onClick={reset}><IoMdClose size={26} /></button>
-							</div>
-							<div className='overflow-y-auto overscroll-contain px-5 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]'>
-<form onSubmit={submit} className='space-y-3'>
-						
+			<GenericModal
+				show={showForm}
+				component={() => (
+					<form onSubmit={submit} className='space-y-3 text-white'>
+						<h2 className='text-xl font-bold pr-10'>{editingId ? 'Editar posición' : 'Nueva posición'}</h2>
 						<div className='space-y-3'>
 							<input className='portfolio-input' name='institution' value={form.institution} onChange={onChange} placeholder='Institución / plataforma' required />
 							<input className='portfolio-input' name='name' value={form.name} onChange={onChange} placeholder='Producto / cuenta' required />
@@ -334,9 +326,7 @@ function Portfolio() {
 								{['Cuenta remunerada','Plazo fijo','FCI','ETF','Crypto / staking','Cash','Carry trade','Otro'].map((item) => <option key={item}>{item}</option>)}
 							</select>
 							<div className='grid grid-cols-2 gap-3'>
-								<select className='portfolio-input' name='currency' value={form.currency} onChange={onChange}>
-									<option>ARS</option><option>USD</option><option>EUR</option><option>USDT</option>
-								</select>
+								<select className='portfolio-input' name='currency' value={form.currency} onChange={onChange}><option>ARS</option><option>USD</option><option>EUR</option><option>USDT</option></select>
 								<input className='portfolio-input' type='number' step='0.01' min='0' name='balance' value={form.balance} onChange={onChange} placeholder='Capital actual' required />
 							</div>
 							<div className='grid grid-cols-2 gap-3'>
@@ -344,10 +334,7 @@ function Portfolio() {
 								<select className='portfolio-input' name='rateType' value={form.rateType} onChange={onChange}><option>TNA</option><option>TEA</option><option>TIR</option><option>APY</option><option>Variable</option></select>
 							</div>
 							<select className='portfolio-input' name='trackingMode' value={form.trackingMode || 'MANUAL'} onChange={onChange}>
-								<option value='DAILY_RATE'>Cuenta remunerada · diario</option>
-								<option value='MATURITY'>Plazo fijo · vencimiento</option>
-								<option value='NAV'>FCI · valuación</option>
-								<option value='MANUAL'>Manual</option>
+								<option value='DAILY_RATE'>Cuenta remunerada · diario</option><option value='MATURITY'>Plazo fijo · vencimiento</option><option value='NAV'>FCI · valuación</option><option value='MANUAL'>Manual</option>
 							</select>
 							<input className='portfolio-input' name='appUrl' value={form.appUrl || ''} onChange={onChange} placeholder='Acceso app/web (opcional)' />
 							<input className='portfolio-input' name='liquidity' value={form.liquidity} onChange={onChange} placeholder='Liquidez (ej. inmediata / 24 h)' />
@@ -361,12 +348,9 @@ function Portfolio() {
 						<button className='w-full mt-4 py-3 rounded-lg bg-primary text-white font-semibold' type='submit'>{editingId ? 'Guardar cambios' : 'Agregar al portfolio'}</button>
 						{editingId && <button className='w-full mt-2 py-2 text-sm' type='button' onClick={reset}>Cancelar edición</button>}
 					</form>
-
-							</div>
-						</motion.div>
-					</motion.div>
 				)}
-			</AnimatePresence>
+				closeModal={reset}
+			/>
 
 			{!showForm && (
 				<PrimaryFab onClick={() => setShowForm(true)} ariaLabel='Agregar posición' />
