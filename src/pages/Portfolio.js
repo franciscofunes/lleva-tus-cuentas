@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus, FaWallet, FaChartLine, FaRegClock } from 'react-icons/fa';
 import { IoMdClose } from 'react-icons/io';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -102,6 +102,12 @@ function Portfolio() {
 		}, {});
 	}, [positions]);
 
+	const portfolioMeta = useMemo(() => ({
+		positions: positions.length,
+		snapshots: snapshots.length,
+		currencies: Object.keys(totals).length,
+	}), [positions.length, snapshots.length, totals]);
+
 	const weightedRates = useMemo(() => {
 		return Object.entries(totals).reduce((acc, [currency, total]) => {
 			acc[currency] = total.balance > 0 ? (total.annual / total.balance) * 100 : 0;
@@ -175,14 +181,38 @@ function Portfolio() {
 					<div>
 						<p className='text-sm font-semibold text-purple-600'>LTC$ Portfolio</p>
 						<h1 className='text-3xl font-bold'>Cuentas e inversiones</h1>
-						<p className='text-gray-500 dark:text-gray-400'>Monitoreá capital, rendimiento estimado y snapshots sin mezclar monedas.</p>
+						<p className='text-gray-500 dark:text-gray-400 max-w-2xl'>Tu patrimonio financiero en un solo lugar. Los totales y rendimientos se mantienen separados por moneda.</p>
 					</div>
 					<Link to='/transacciones' className='nav-btn dark:text-white'>Ver transacciones</Link>
 				</div>
 
-				<section className='grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6'>
+				<section className='grid grid-cols-3 gap-2 sm:gap-4 mb-6'>
+					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
+						<FaWallet className='text-purple-500 mb-2' />
+						<p className='text-xl sm:text-2xl font-bold'>{portfolioMeta.positions}</p>
+						<p className='text-xs text-gray-500'>Posiciones</p>
+					</div>
+					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
+						<FaChartLine className='text-purple-500 mb-2' />
+						<p className='text-xl sm:text-2xl font-bold'>{portfolioMeta.currencies}</p>
+						<p className='text-xs text-gray-500'>Monedas</p>
+					</div>
+					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
+						<FaRegClock className='text-purple-500 mb-2' />
+						<p className='text-xl sm:text-2xl font-bold'>{portfolioMeta.snapshots}</p>
+						<p className='text-xs text-gray-500'>Snapshots</p>
+					</div>
+				</section>
+
+				<section className='mb-7'>
+					<div className='flex items-center justify-between mb-3'>
+						<h2 className='text-lg font-bold'>Resumen por moneda</h2>
+						<span className='text-xs text-gray-500'>Sin conversión FX</span>
+					</div>
+					<div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+
 					{Object.entries(totals).map(([currency, total]) => (
-						<div key={currency} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5 shadow-sm'>
+						<div key={currency} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-2xl p-4 sm:p-5 shadow-sm'>
 							<p className='text-sm text-gray-500'>{currency}</p>
 							<p className='text-2xl font-bold'>{money(total.balance, currency)}</p>
 							<p className='text-sm text-green-600 mt-2'>Estimado anual: {money(total.annual, currency)}</p>
@@ -191,12 +221,20 @@ function Portfolio() {
 						</div>
 					))}
 					{!Object.keys(totals).length && <div className='text-gray-500'>Todavía no cargaste posiciones.</div>}
+					</div>
 				</section>
 
-
-					<section className='space-y-3'>
-						<h2 className='text-xl font-bold'>Posiciones</h2>
+				<section className='space-y-3 pb-20'>
+						<div className='flex items-center justify-between'><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-gray-500'>{positions.length} activas</span></div>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
+						{!loading && !positions.length && (
+							<div className='border border-dashed dark:border-slate-700 rounded-2xl p-8 text-center'>
+								<div className='w-12 h-12 mx-auto mb-3 rounded-full bg-purple-100 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center'><FaWallet /></div>
+								<h3 className='font-semibold'>Tu portfolio está vacío</h3>
+								<p className='text-sm text-gray-500 mt-1'>Agregá tu primera cuenta o inversión desde el botón +.</p>
+								<button type='button' onClick={() => setShowForm(true)} className='mt-4 px-4 py-2 rounded-lg bg-secondary text-white font-semibold'>Agregar posición</button>
+							</div>
+						)}
 						{!loading && positions.map((position) => (
 							<article key={position.id} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5 shadow-sm'>
 								<div className='flex flex-wrap justify-between gap-4'>
