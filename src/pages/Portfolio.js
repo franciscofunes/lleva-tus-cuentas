@@ -7,6 +7,7 @@ import PrimaryFab from '../components/PrimaryFab';
 import wavesFooter from '../imgs/waves.svg';
 import PortfolioCharts from '../components/PortfolioCharts';
 import GenericModal from '../components/GenericModal';
+import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
 import {
 	createPortfolioPosition,
 	createPortfolioSnapshot,
@@ -54,6 +55,8 @@ function Portfolio() {
 	const [editingId, setEditingId] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [showForm, setShowForm] = useState(false);
+	const [markdownImport, setMarkdownImport] = useState('');
+	const [showMarkdownImport, setShowMarkdownImport] = useState(false);
 
 	useEffect(() => {
 		if (!user) return undefined;
@@ -134,6 +137,21 @@ function Portfolio() {
 		setForm(emptyForm);
 		setEditingId(null);
 		setShowForm(false);
+		setMarkdownImport('');
+		setShowMarkdownImport(false);
+	};
+
+	const importMarkdown = () => {
+		try {
+			const { parsed, unknown } = parsePortfolioMarkdown(markdownImport);
+			setForm((current) => ({ ...current, ...parsed }));
+			setShowMarkdownImport(false);
+			const imported = Object.keys(parsed).length;
+			if (unknown.length) toast.info(`Autocompletados ${imported} campos. ${unknown.length} campos no reconocidos se ignoraron.`);
+			else toast.success(`Autocompletados ${imported} campos. Revisalos antes de guardar.`);
+		} catch (error) {
+			toast.error(error.message || 'No se pudo interpretar el Markdown');
+		}
 	};
 
 	const submit = async (event) => {
@@ -318,6 +336,20 @@ function Portfolio() {
 				component={() => (
 					<form onSubmit={submit} className='space-y-2 text-white max-h-[78dvh] overflow-y-auto pr-1'>
 										<h2 className='text-lg font-bold pr-10 mb-2'>{editingId ? 'Editar posición' : 'Nueva posición'}</h2>
+										{!editingId && (
+											<div className='mb-2'>
+												<button type='button' onClick={() => setShowMarkdownImport((value) => !value)} className='w-full py-2 rounded-lg border border-purple-500 text-purple-300 text-sm font-semibold'>
+													{showMarkdownImport ? 'Ocultar importador' : 'Pegar Markdown y autocompletar'}
+												</button>
+												{showMarkdownImport && (
+													<div className='mt-2 p-2 rounded-lg border border-slate-700 bg-slate-950/30'>
+														<textarea className='portfolio-input min-h-[120px] text-sm' value={markdownImport} onChange={(event) => setMarkdownImport(event.target.value)} placeholder={'Pegá acá el bloque Markdown generado por ChatGPT...'} />
+														<p className='text-xs text-gray-400 mt-1'>No guarda automáticamente: completa el formulario para que puedas revisarlo.</p>
+														<button type='button' disabled={!markdownImport.trim()} onClick={importMarkdown} className='w-full mt-2 py-2 rounded-lg bg-secondary disabled:opacity-40 text-white font-semibold'>Autocompletar formulario</button>
+													</div>
+												)}
+											</div>
+										)}
 											
 											<div className='space-y-2'>
 												<input className='portfolio-input' name='institution' value={form.institution} onChange={onChange} placeholder='Institución / plataforma' required />
