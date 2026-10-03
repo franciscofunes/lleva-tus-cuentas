@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MdOutlineExitToApp } from 'react-icons/md';
 import { RiLockPasswordFill } from 'react-icons/ri';
-import { AiOutlineUser } from 'react-icons/ai';
+import { AiOutlineUser, AiOutlineFund } from 'react-icons/ai';
 import { Link } from 'react-router-dom';
 
 const AvatarDropdown = ({ user, handleLogout }) => {
@@ -53,6 +53,15 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 						aria-orientation='vertical'
 						aria-labelledby='options-menu'
 					>
+						<Link
+							className='block px-4 py-2 flex items-center text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
+							role='menuitem'
+							to='/portfolio'
+							onClick={handleDropdownToggleChangePassword}
+							style={{ minWidth: '140px' }}
+						>
+							Portfolio <AiOutlineFund className='ml-2 text-base' />
+						</Link>
 						<Link
 							className='block px-4 py-2 flex items-center text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
 							role='menuitem'
