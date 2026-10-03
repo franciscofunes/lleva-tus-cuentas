@@ -10,6 +10,12 @@ const FIELD_MAP = {
 	'vencimiento': 'maturityDate', 'fecha vencimiento': 'maturityDate',
 	'notas': 'notes', 'acceso app/web': 'appUrl', 'acceso app': 'appUrl', 'app url': 'appUrl', 'deep link': 'appUrl', 'url': 'appUrl',
 	'web fallback': 'webUrl', 'web oficial': 'webUrl', 'web url': 'webUrl',
+	'ticker': 'ticker', 'clase': 'ticker', 'cuotapartes': 'shares', 'shares': 'shares',
+	'nav': 'nav', 'valor cuotaparte': 'nav', 'valor de cuotaparte': 'nav', 'fecha nav': 'navDate', 'fecha valuacion': 'navDate', 'fecha valuación': 'navDate',
+	'rescate': 'redemptionPeriod', 'plazo rescate': 'redemptionPeriod', 'inversion minima': 'minimumInvestment', 'inversión mínima': 'minimumInvestment',
+	'rendimiento 1d': 'performance1D', 'performance1d': 'performance1D', 'rendimiento 1s': 'performance1W', 'rendimiento 1w': 'performance1W', 'performance1w': 'performance1W',
+	'rendimiento 1m': 'performance1M', 'performance1m': 'performance1M', 'rendimiento ytd': 'performanceYTD', 'performanceytd': 'performanceYTD', 'rendimiento 1a': 'performance1Y', 'rendimiento 1y': 'performance1Y', 'performance1y': 'performance1Y',
+	'tipo de fondo': 'fundType', 'horizonte': 'investmentHorizon', 'inicio del fondo': 'fundStartDate', 'calificacion': 'rating', 'calificación': 'rating', 'volatilidad 21d anualizada': 'volatility21dAnnualized',
 };
 
 const strip = (value) => value.replace(/^\*\*|\*\*$/g, '').trim();
@@ -44,8 +50,8 @@ export const parsePortfolioMarkdown = (markdown) => {
 		const value = strip(line.slice(separator + 1));
 		const field = FIELD_MAP[rawKey];
 		if (!field) { unknown.push(rawKey); return; }
-		if (['balance', 'annualRate', 'fees'].includes(field)) parsed[field] = normalizeNumber(value);
-		else if (['startDate', 'maturityDate'].includes(field)) parsed[field] = normalizeDate(value);
+		if (['balance', 'annualRate', 'fees', 'shares', 'nav', 'minimumInvestment', 'performance1D', 'performance1W', 'performance1M', 'performanceYTD', 'performance1Y', 'volatility21dAnnualized'].includes(field)) parsed[field] = normalizeNumber(value);
+		else if (['startDate', 'maturityDate', 'navDate', 'fundStartDate'].includes(field)) parsed[field] = normalizeDate(value);
 		else if (field === 'currency') parsed[field] = value.toUpperCase();
 		else if (field === 'rateType') parsed[field] = value.toUpperCase();
 		else if (field === 'trackingMode') parsed[field] = value.toUpperCase().replace(/[ -]+/g, '_');
