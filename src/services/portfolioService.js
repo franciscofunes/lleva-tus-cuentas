@@ -22,6 +22,15 @@ const normalize = (data) => ({
 	realizedEarnings: Number(data.realizedEarnings || 0),
 	lastEarning: Number(data.lastEarning || 0),
 	trackingMode: data.trackingMode || 'MANUAL',
+	shares: data.shares === '' ? null : Number(data.shares || 0),
+	nav: data.nav === '' ? null : Number(data.nav || 0),
+	minimumInvestment: data.minimumInvestment === '' ? null : Number(data.minimumInvestment || 0),
+	performance1D: data.performance1D === '' ? null : Number(data.performance1D || 0),
+	performance1W: data.performance1W === '' ? null : Number(data.performance1W || 0),
+	performance1M: data.performance1M === '' ? null : Number(data.performance1M || 0),
+	performanceYTD: data.performanceYTD === '' ? null : Number(data.performanceYTD || 0),
+	performance1Y: data.performance1Y === '' ? null : Number(data.performance1Y || 0),
+	volatility21dAnnualized: data.volatility21dAnnualized === '' ? null : Number(data.volatility21dAnnualized || 0),
 });
 
 export const createPortfolioPosition = (userId, data) =>
@@ -42,6 +51,8 @@ export const createPortfolioSnapshot = (userId, position, overrides = {}) =>
 		currency: position.currency,
 		balance: Number(overrides.balance ?? position.balance),
 		annualRate: Number(position.annualRate || 0),
+		nav: position.nav == null ? null : Number(position.nav),
+		shares: position.shares == null ? null : Number(position.shares),
 		expectedEarning: Number(overrides.expectedEarning || 0),
 		observedEarning: Number(overrides.observedEarning || 0),
 		source: overrides.source || 'manual',
