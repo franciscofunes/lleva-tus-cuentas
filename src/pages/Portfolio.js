@@ -208,7 +208,7 @@ function Portfolio() {
 	};
 
 	return (
-		<main className='min-h-screen bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 p-4 lg:p-8'>
+		<main className='relative min-h-screen overflow-hidden bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 p-4 lg:p-8 pb-32 lg:pb-8'>
 			<div className='max-w-7xl mx-auto'>
 				<div className='flex flex-wrap justify-between items-end gap-4 mb-6'>
 					<div>
@@ -311,8 +311,8 @@ function Portfolio() {
 			</div>
 
 			{!loading && (
-				<div className='relative h-24 -mx-4 lg:-mx-8 mt-4 overflow-hidden pointer-events-none' aria-hidden='true'>
-					<img src={wavesFooter} alt='' className='absolute bottom-0 left-0 w-full min-w-[720px] opacity-90 dark:opacity-70' />
+				<div className='absolute bottom-0 left-0 w-full block lg:hidden pointer-events-none' aria-hidden='true'>
+					<img src={wavesFooter} alt='' className='w-full' />
 				</div>
 			)}
 
