@@ -272,8 +272,8 @@ function Portfolio() {
 	};
 
 	return (
-		<main className='relative min-h-screen bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 p-4 lg:p-8 pb-0 lg:pb-8'>
-			<div className='max-w-7xl mx-auto'>
+		<main className='relative min-h-screen bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8'>
+			<div className='max-w-7xl mx-auto px-4 pt-4 lg:px-0 lg:pt-0'>
 				<div className='flex flex-wrap justify-between items-end gap-4 mb-6'>
 					<div>
 						<h1 className='text-3xl font-bold'>Cuentas e inversiones</h1>
@@ -321,7 +321,7 @@ function Portfolio() {
 
 				<PortfolioCharts positions={positions} snapshots={snapshots} />
 
-				<section className='space-y-3 pb-8'>
+				<section className='space-y-3 pb-6 lg:pb-8'>
 						<div className='flex items-center justify-between'><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-gray-500'>{positions.length} activas</span></div>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
 						{!loading && !positions.length && (
@@ -375,7 +375,7 @@ function Portfolio() {
 					</section>
 			</div>
 
-			<div className='relative -mx-4 mt-8 block lg:hidden pointer-events-none leading-none' aria-hidden='true'>
+			<div className='relative z-0 mt-2 block w-full lg:hidden pointer-events-none leading-none' aria-hidden='true'>
 				<img src={wavesFooter} alt='' className='block w-full h-auto' />
 			</div>
 
