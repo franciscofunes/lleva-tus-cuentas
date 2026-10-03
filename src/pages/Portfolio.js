@@ -37,6 +37,7 @@ const emptyForm = {
 	notes: '',
 	trackingMode: 'DAILY_RATE',
 	appUrl: '',
+	webUrl: '',
 };
 
 const money = (value, currency) =>
@@ -212,7 +213,27 @@ function Portfolio() {
 			toast.info('Todavía no configuraste un acceso para esta institución');
 			return;
 		}
-		window.location.href = position.appUrl;
+
+		const target = position.appUrl.trim();
+		const fallbackUrl = position.webUrl?.trim();
+		const isWebUrl = /^https?:\/\//i.test(target);
+
+		if (isWebUrl) {
+			window.location.assign(target);
+			return;
+		}
+
+		// Custom schemes / universal links can launch an installed mobile app.
+		// If the app does not handle the scheme, fall back to its official web page.
+		const startedAt = Date.now();
+		window.location.assign(target);
+		if (fallbackUrl) {
+			window.setTimeout(() => {
+				if (document.visibilityState === 'visible' && Date.now() - startedAt < 2500) {
+					window.location.assign(fallbackUrl);
+				}
+			}, 1200);
+		}
 	};
 
 	const snapshot = async (position) => {
@@ -373,7 +394,8 @@ function Portfolio() {
 													<option value='NAV'>FCI · valuación</option>
 													<option value='MANUAL'>Manual</option>
 												</select>
-												<input className='portfolio-input' name='appUrl' value={form.appUrl || ''} onChange={onChange} placeholder='Acceso app/web (opcional)' />
+												<input className='portfolio-input' name='appUrl' value={form.appUrl || ''} onChange={onChange} placeholder='Acceso app / deep link (opcional)' />
+												<input className='portfolio-input' name='webUrl' value={form.webUrl || ''} onChange={onChange} placeholder='Web fallback oficial (opcional)' />
 												<input className='portfolio-input' name='liquidity' value={form.liquidity} onChange={onChange} placeholder='Liquidez (ej. inmediata / 24 h)' />
 												<input className='portfolio-input' type='number' step='0.01' min='0' name='fees' value={form.fees} onChange={onChange} placeholder='Comisiones estimadas' />
 												<div className='grid grid-cols-2 gap-2'>
