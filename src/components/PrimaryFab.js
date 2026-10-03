@@ -7,9 +7,12 @@ const PrimaryFab = ({ onClick, ariaLabel = 'Agregar', className = '' }) => {
 	const [pressed, setPressed] = useState(false);
 
 	const handleClick = () => {
+		if (pressed) return;
 		setPressed(true);
-		onClick?.();
-		window.setTimeout(() => setPressed(false), 260);
+		window.setTimeout(() => {
+			onClick?.();
+			setPressed(false);
+		}, 260);
 	};
 
 	return (
@@ -22,7 +25,7 @@ const PrimaryFab = ({ onClick, ariaLabel = 'Agregar', className = '' }) => {
 		>
 			<motion.span
 				className='flex items-center justify-center'
-				animate={{ rotate: pressed ? 135 : 0 }}
+				animate={{ rotate: pressed ? 135 : 0, scale: pressed ? 1.08 : 1 }}
 				transition={{ duration: 0.25, ease: 'easeInOut' }}
 			>
 				<FaPlusCircle />

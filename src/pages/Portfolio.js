@@ -283,9 +283,11 @@ function Portfolio() {
 					</section>
 			</div>
 
-			<div className='relative h-24 -mx-4 lg:-mx-8 mt-4 overflow-hidden pointer-events-none' aria-hidden='true'>
-				<img src={wavesFooter} alt='' className='absolute bottom-0 left-0 w-full min-w-[720px] opacity-90 dark:opacity-70' />
-			</div>
+			{!loading && (
+				<div className='relative h-24 -mx-4 lg:-mx-8 mt-4 overflow-hidden pointer-events-none' aria-hidden='true'>
+					<img src={wavesFooter} alt='' className='absolute bottom-0 left-0 w-full min-w-[720px] opacity-90 dark:opacity-70' />
+				</div>
+			)}
 
 			<AnimatePresence>
 				{showForm && (
