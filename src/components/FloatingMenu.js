@@ -4,15 +4,9 @@ import { Fab } from 'react-tiny-fab';
 import { AnimatePresence, motion } from 'framer-motion';
 import 'react-tiny-fab/dist/styles.css';
 import ActionButton from './ActionButton';
+import { primaryFabStyle } from '../shared/styles/floatingAction';
 
 const FloatingMenu = ({ openTransactionModal, openLitaModal, isModalOpen }) => {
-	const floatingMenuStyles = {
-		backgroundColor: '#5928e5',
-		color: 'white',
-		height: 60,
-		width: 60,
-		fontSize: 30,
-	};
 
 	return (
 		<AnimatePresence>
@@ -24,7 +18,7 @@ const FloatingMenu = ({ openTransactionModal, openLitaModal, isModalOpen }) => {
 					transition={{ duration: 0.3 }}
 				>
 					<Fab
-						mainButtonStyles={floatingMenuStyles}
+						mainButtonStyles={primaryFabStyle}
 						style={{ bottom: 5, right: 5 }}
 						event={'click'}
 						icon={<FaPlusCircle />}
