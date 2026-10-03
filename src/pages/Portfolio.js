@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { FaPlus } from 'react-icons/fa';
+import { IoMdClose } from 'react-icons/io';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
 	createPortfolioPosition,
 	createPortfolioSnapshot,
@@ -41,6 +44,7 @@ function Portfolio() {
 	const [form, setForm] = useState(emptyForm);
 	const [editingId, setEditingId] = useState(null);
 	const [loading, setLoading] = useState(true);
+	const [showForm, setShowForm] = useState(false);
 
 	useEffect(() => {
 		if (!user) return undefined;
@@ -114,6 +118,7 @@ function Portfolio() {
 	const reset = () => {
 		setForm(emptyForm);
 		setEditingId(null);
+		setShowForm(false);
 	};
 
 	const submit = async (event) => {
@@ -141,7 +146,7 @@ function Portfolio() {
 			annualRate: String(position.annualRate ?? ''),
 			fees: String(position.fees ?? 0),
 		});
-		window.scrollTo({ top: 0, behavior: 'smooth' });
+		setShowForm(true);
 	};
 
 	const remove = async (positionId) => {
@@ -188,38 +193,8 @@ function Portfolio() {
 					{!Object.keys(totals).length && <div className='text-gray-500'>Todavía no cargaste posiciones.</div>}
 				</section>
 
-				<div className='grid lg:grid-cols-3 gap-6'>
-					<form onSubmit={submit} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5 shadow-sm h-fit'>
-						<h2 className='text-xl font-bold mb-4'>{editingId ? 'Editar posición' : 'Nueva posición'}</h2>
-						<div className='space-y-3'>
-							<input className='portfolio-input' name='institution' value={form.institution} onChange={onChange} placeholder='Institución / plataforma' required />
-							<input className='portfolio-input' name='name' value={form.name} onChange={onChange} placeholder='Producto / cuenta' required />
-							<select className='portfolio-input' name='category' value={form.category} onChange={onChange}>
-								{['Cuenta remunerada','Plazo fijo','FCI','ETF','Crypto / staking','Cash','Carry trade','Otro'].map((item) => <option key={item}>{item}</option>)}
-							</select>
-							<div className='grid grid-cols-2 gap-3'>
-								<select className='portfolio-input' name='currency' value={form.currency} onChange={onChange}>
-									<option>ARS</option><option>USD</option><option>EUR</option><option>USDT</option>
-								</select>
-								<input className='portfolio-input' type='number' step='0.01' min='0' name='balance' value={form.balance} onChange={onChange} placeholder='Capital actual' required />
-							</div>
-							<div className='grid grid-cols-2 gap-3'>
-								<input className='portfolio-input' type='number' step='0.01' min='0' name='annualRate' value={form.annualRate} onChange={onChange} placeholder='Tasa anual %' />
-								<select className='portfolio-input' name='rateType' value={form.rateType} onChange={onChange}><option>TNA</option><option>TEA</option><option>TIR</option><option>APY</option><option>Variable</option></select>
-							</div>
-							<input className='portfolio-input' name='liquidity' value={form.liquidity} onChange={onChange} placeholder='Liquidez (ej. inmediata / 24 h)' />
-							<input className='portfolio-input' type='number' step='0.01' min='0' name='fees' value={form.fees} onChange={onChange} placeholder='Comisiones estimadas' />
-							<div className='grid grid-cols-2 gap-3'>
-								<input className='portfolio-input' type='date' name='startDate' value={form.startDate || ''} onChange={onChange} />
-								<input className='portfolio-input' type='date' name='maturityDate' value={form.maturityDate || ''} onChange={onChange} />
-							</div>
-							<textarea className='portfolio-input' name='notes' value={form.notes} onChange={onChange} placeholder='Notas' rows='3' />
-						</div>
-						<button className='w-full mt-4 py-3 rounded-lg bg-primary text-white font-semibold' type='submit'>{editingId ? 'Guardar cambios' : 'Agregar al portfolio'}</button>
-						{editingId && <button className='w-full mt-2 py-2 text-sm' type='button' onClick={reset}>Cancelar edición</button>}
-					</form>
 
-					<section className='lg:col-span-2 space-y-3'>
+					<section className='space-y-3'>
 						<h2 className='text-xl font-bold'>Posiciones</h2>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
 						{!loading && positions.map((position) => (
@@ -252,8 +227,59 @@ function Portfolio() {
 							</article>
 						))}
 					</section>
-				</div>
 			</div>
+
+			<AnimatePresence>
+				{showForm && (
+					<motion.div className='fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+						<motion.div className='w-full sm:max-w-2xl max-h-[92dvh] bg-white dark:bg-slate-800 border-t-2 sm:border-2 border-purple-600 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col' initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
+							<div className='flex items-center justify-between px-5 py-4 border-b dark:border-slate-700 shrink-0'>
+								<div><p className='text-xs font-semibold text-purple-500'>LTC$ Portfolio</p><h2 className='text-xl font-bold'>{editingId ? 'Editar posición' : 'Nueva posición'}</h2></div>
+								<button type='button' aria-label='Cerrar' className='p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700' onClick={reset}><IoMdClose size={26} /></button>
+							</div>
+							<div className='overflow-y-auto overscroll-contain px-5 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]'>
+<form onSubmit={submit} className='space-y-3'>
+						
+						<div className='space-y-3'>
+							<input className='portfolio-input' name='institution' value={form.institution} onChange={onChange} placeholder='Institución / plataforma' required />
+							<input className='portfolio-input' name='name' value={form.name} onChange={onChange} placeholder='Producto / cuenta' required />
+							<select className='portfolio-input' name='category' value={form.category} onChange={onChange}>
+								{['Cuenta remunerada','Plazo fijo','FCI','ETF','Crypto / staking','Cash','Carry trade','Otro'].map((item) => <option key={item}>{item}</option>)}
+							</select>
+							<div className='grid grid-cols-2 gap-3'>
+								<select className='portfolio-input' name='currency' value={form.currency} onChange={onChange}>
+									<option>ARS</option><option>USD</option><option>EUR</option><option>USDT</option>
+								</select>
+								<input className='portfolio-input' type='number' step='0.01' min='0' name='balance' value={form.balance} onChange={onChange} placeholder='Capital actual' required />
+							</div>
+							<div className='grid grid-cols-2 gap-3'>
+								<input className='portfolio-input' type='number' step='0.01' min='0' name='annualRate' value={form.annualRate} onChange={onChange} placeholder='Tasa anual %' />
+								<select className='portfolio-input' name='rateType' value={form.rateType} onChange={onChange}><option>TNA</option><option>TEA</option><option>TIR</option><option>APY</option><option>Variable</option></select>
+							</div>
+							<input className='portfolio-input' name='liquidity' value={form.liquidity} onChange={onChange} placeholder='Liquidez (ej. inmediata / 24 h)' />
+							<input className='portfolio-input' type='number' step='0.01' min='0' name='fees' value={form.fees} onChange={onChange} placeholder='Comisiones estimadas' />
+							<div className='grid grid-cols-2 gap-3'>
+								<input className='portfolio-input' type='date' name='startDate' value={form.startDate || ''} onChange={onChange} />
+								<input className='portfolio-input' type='date' name='maturityDate' value={form.maturityDate || ''} onChange={onChange} />
+							</div>
+							<textarea className='portfolio-input' name='notes' value={form.notes} onChange={onChange} placeholder='Notas' rows='3' />
+						</div>
+						<button className='w-full mt-4 py-3 rounded-lg bg-primary text-white font-semibold' type='submit'>{editingId ? 'Guardar cambios' : 'Agregar al portfolio'}</button>
+						{editingId && <button className='w-full mt-2 py-2 text-sm' type='button' onClick={reset}>Cancelar edición</button>}
+					</form>
+
+							</div>
+						</motion.div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
+			{!showForm && (
+				<button type='button' onClick={() => setShowForm(true)} aria-label='Agregar posición' className='fixed z-40 right-5 bottom-5 w-14 h-14 rounded-full bg-secondary text-white shadow-xl flex items-center justify-center text-xl hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-purple-400'>
+					<FaPlus />
+				</button>
+			)}
+
 		</main>
 	);
 }
