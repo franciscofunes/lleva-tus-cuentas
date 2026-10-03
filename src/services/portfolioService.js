@@ -47,3 +47,12 @@ export const createPortfolioSnapshot = (userId, position) =>
 		annualRate: Number(position.annualRate || 0),
 		capturedAt: new Date(),
 	});
+
+
+export const subscribePortfolioSnapshots = (userId, onData, onError) =>
+	snapshots(userId)
+		.orderBy('capturedAt', 'asc')
+		.onSnapshot(
+			(res) => onData(res.docs.map((doc) => ({ id: doc.id, ...doc.data() }))),
+			onError
+		);
