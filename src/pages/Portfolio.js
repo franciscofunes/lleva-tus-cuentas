@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { FaWallet, FaChartLine, FaRegClock } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import wavesFooter from '../imgs/waves.svg';
+import PortfolioCharts from '../components/PortfolioCharts';
 import { IoMdClose } from 'react-icons/io';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -234,6 +235,8 @@ function Portfolio() {
 					</div>
 				</section>
 
+				<PortfolioCharts positions={positions} snapshots={snapshots} />
+
 				<section className='space-y-3 pb-20'>
 						<div className='flex items-center justify-between'><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-gray-500'>{positions.length} activas</span></div>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
@@ -242,7 +245,7 @@ function Portfolio() {
 								<div className='w-12 h-12 mx-auto mb-3 rounded-full bg-purple-100 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center'><FaWallet /></div>
 								<h3 className='font-semibold'>Tu portfolio está vacío</h3>
 								<p className='text-sm text-gray-500 mt-1'>Agregá tu primera cuenta o inversión desde el botón +.</p>
-								<button type='button' onClick={() => setShowForm(true)} className='mt-4 px-4 py-2 rounded-lg bg-secondary text-white font-semibold'>Agregar posición</button>
+								<button type='button' onClick={() => setShowForm(true)} className='mt-4 px-4 py-2 rounded-lg bg-[#16a34a] hover:bg-[#15803d] text-white font-semibold transition-colors'>Agregar posición</button>
 							</div>
 						)}
 						{!loading && positions.map((position) => (
