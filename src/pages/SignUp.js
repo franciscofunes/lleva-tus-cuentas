@@ -8,6 +8,7 @@ import { signUpAction } from '../actionCreators/authActions';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 import wallet from '../imgs/wallet.png';
 import wallet2 from '../imgs/wallet2.png';
+import wavesFooter from '../imgs/waves.svg';
 
 function SignUp({ history }) {
 	const dispatch = useDispatch();
@@ -54,22 +55,22 @@ function SignUp({ history }) {
 				animate={{ opacity: 1 }}
 				initial={{ opacity: 0 }}
 				transition={{ duration: 0.5, type: 'tween' }}
-				className='dark:bg-gray-900 mt-8'
+				className='dark:bg-gray-900 mt-6'
 			>
 				<div className='container flex flex-col justify-center h-hero mx-auto items-center'>
 					<motion.h1
 						animate={{ opacity: 1, x: 0 }}
 						initial={{ opacity: 0, x: 100 }}
 						transition={{ duration: 1, type: 'tween' }}
-						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-3xl text-2xl mb-6  italic dark:text-white'
+						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-2xl text-1xl mb-6  italic dark:text-white'
 					>
-						No utilice papel con un gestor de gastos en línea
+						¡Descubre una experiencia financiera innovadora y cómoda!
 					</motion.h1>
 					<motion.div
 						animate={{ opacity: 1 }}
 						initial={{ opacity: 0 }}
 						transition={{ delay: 0.2, duration: 1 }}
-						className='bg-white z-50 lg:w-96 w-80 pt-10 pb-8 mb-20 px-10 shadow-2xl rounded-lg dark:bg-slate-800'
+						className='bg-white z-50 lg:w-96 w-80 pt-10 pb-8 mb-20 px-10 shadow-2xl rounded-lg dark:bg-slate-800 mb-2'
 					>
 						<form className='mb-0 space-y-6 ' onSubmit={handleSubmit(onSubmit)}>
 							<div>
@@ -178,18 +179,10 @@ function SignUp({ history }) {
 						</div>
 					</motion.div>
 				</div>
-				<svg
-					xmlns='http://www.w3.org/2000/svg'
-					className='absolute bottom-0 z-0 h-60 w-100 dark:bg-gray-900'
-					viewBox='10 100 2000 200'
-				>
-					<path
-						fill='#5928E5'
-						fillOpacity='1'
-						d='M0,96L48,117.3C96,139,192,181,288,202.7C384,224,480,224,576,202.7C672,181,768,139,864,128C960,117,1056,139,1152,154.7C1248,171,1344,181,1392,186.7L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'
-					></path>
-				</svg>
 			</motion.div>
+			<div className='absolute bottom-0 left-0 w-full'>
+				<img src={wavesFooter} alt='purple waves footer' className='w-full' />
+			</div>
 		</>
 	);
 }

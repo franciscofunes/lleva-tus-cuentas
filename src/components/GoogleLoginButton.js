@@ -1,6 +1,6 @@
 import { useDispatch } from 'react-redux';
 import { signInWithGoogleAction } from '../actionCreators/authActions';
-import { googleProvider } from '../config/firebase.config';
+import { googleProvider } from '../shared/config/firebase/firebase.config';
 import googleLogo from '../imgs/googleLogo.svg';
 
 function GoogleLoginButton() {
