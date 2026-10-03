@@ -43,3 +43,10 @@ input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
 	transition: background-color 5000s ease-in-out 0s;
 }
+
+
+@layer components {
+  .portfolio-input {
+    @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 dark:border-slate-600 dark:bg-slate-900 dark:text-white;
+  }
+}
