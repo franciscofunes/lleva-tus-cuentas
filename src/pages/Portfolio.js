@@ -15,6 +15,7 @@ import {
 	subscribePortfolioPositions,
 	subscribePortfolioSnapshots,
 	updatePortfolioPosition,
+	verifyPortfolioPosition,
 } from '../services/portfolioService';
 
 const emptyForm = {
@@ -34,6 +35,8 @@ const emptyForm = {
 	startDate: '',
 	maturityDate: '',
 	notes: '',
+	trackingMode: 'DAILY_RATE',
+	appUrl: '',
 };
 
 const money = (value, currency) =>
@@ -176,6 +179,25 @@ function Portfolio() {
 		}
 	};
 
+	const verify = async (position) => {
+		const value = window.prompt('Saldo actual para verificar', String(position.balance || ''));
+		if (value === null || value === '') return;
+		try {
+			await verifyPortfolioPosition(user.uid, position, value);
+			toast.success('Saldo verificado y snapshot guardado');
+		} catch (error) {
+			toast.error('No se pudo verificar el saldo');
+		}
+	};
+
+	const openInstitution = (position) => {
+		if (!position.appUrl) {
+			toast.info('Todavía no configuraste un acceso para esta institución');
+			return;
+		}
+		window.location.href = position.appUrl;
+	};
+
 	const snapshot = async (position) => {
 		try {
 			await createPortfolioSnapshot(user.uid, position);
@@ -260,6 +282,9 @@ function Portfolio() {
 										<p className='font-semibold'>{Number(position.annualRate || 0).toFixed(2)}% {position.rateType || ''}</p>
 										<p className='text-sm text-gray-500'>{position.liquidity || 'Liquidez no informada'}</p>
 										<p className='text-sm text-green-600 mt-1'>≈ {money(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 12, position.currency)} / mes proyectado</p>
+										{position.trackingMode === 'DAILY_RATE' && <p className='text-xs text-gray-400'>Esperado hoy: {money(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 365, position.currency)}</p>}
+										{position.trackingMode === 'MATURITY' && position.maturityDate && <p className='text-xs text-gray-400'>Seguimiento al vencimiento: {position.maturityDate}</p>}
+										<p className='text-xs text-gray-400'>Tracking: {position.trackingMode || 'MANUAL'}</p>
 										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-emerald-600 mt-1'>Ganado: {money(position.realizedEarnings, position.currency)}</p>}
 										{Number(position.lastEarning || 0) !== 0 && <p className='text-xs text-gray-400'>Último rendimiento: {money(position.lastEarning, position.currency)}</p>}
 										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {Number(position.effectiveRate).toFixed(2)}%</p>}
@@ -274,6 +299,8 @@ function Portfolio() {
 									</div>
 								</div>
 								<div className='flex flex-wrap gap-2 mt-4'>
+									<button className='px-3 py-2 rounded-lg bg-[#16a34a] hover:bg-[#15803d] text-white font-semibold' onClick={() => verify(position)}>Verificar saldo</button>
+									{position.appUrl && <button className='px-3 py-2 rounded-lg border dark:border-slate-600' onClick={() => openInstitution(position)}>Abrir app / web</button>}
 									<button className='px-3 py-2 rounded-lg border dark:border-slate-600' onClick={() => snapshot(position)}>Guardar snapshot</button>
 									<button className='px-3 py-2 rounded-lg border dark:border-slate-600' onClick={() => edit(position)}>Editar</button>
 									<button className='px-3 py-2 rounded-lg text-red-600 border border-red-200' onClick={() => remove(position.id)}>Eliminar</button>
@@ -316,6 +343,13 @@ function Portfolio() {
 								<input className='portfolio-input' type='number' step='0.01' min='0' name='annualRate' value={form.annualRate} onChange={onChange} placeholder='Tasa anual %' />
 								<select className='portfolio-input' name='rateType' value={form.rateType} onChange={onChange}><option>TNA</option><option>TEA</option><option>TIR</option><option>APY</option><option>Variable</option></select>
 							</div>
+							<select className='portfolio-input' name='trackingMode' value={form.trackingMode || 'MANUAL'} onChange={onChange}>
+								<option value='DAILY_RATE'>Cuenta remunerada · diario</option>
+								<option value='MATURITY'>Plazo fijo · vencimiento</option>
+								<option value='NAV'>FCI · valuación</option>
+								<option value='MANUAL'>Manual</option>
+							</select>
+							<input className='portfolio-input' name='appUrl' value={form.appUrl || ''} onChange={onChange} placeholder='Acceso app/web (opcional)' />
 							<input className='portfolio-input' name='liquidity' value={form.liquidity} onChange={onChange} placeholder='Liquidez (ej. inmediata / 24 h)' />
 							<input className='portfolio-input' type='number' step='0.01' min='0' name='fees' value={form.fees} onChange={onChange} placeholder='Comisiones estimadas' />
 							<div className='grid grid-cols-2 gap-3'>
