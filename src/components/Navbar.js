@@ -41,7 +41,6 @@ function Navbar() {
 		if (user) {
 			return (
 				<>
-					<Link to='/portfolio' className='nav-btn flex items-center mr-3 dark:text-white'>Portfolio</Link>
 					{(location.pathname === '/' ||
 						location.pathname === '/recupero' ||
 						location.pathname === '/subscripcion') && (
