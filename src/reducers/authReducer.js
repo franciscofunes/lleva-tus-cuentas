@@ -1,4 +1,4 @@
-import { auth } from '../config/firebase.config';
+import { auth } from '../shared/config/firebase/firebase.config';
 
 const initState = {
 	user: null,
@@ -46,7 +46,6 @@ export const authReducer = (state = initState, action) => {
 				...state,
 				isFetching: false,
 				user: null,
-				isFetching: true,
 				database: null,
 			};
 		case 'RESET_PASSWORD':

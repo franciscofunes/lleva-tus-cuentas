@@ -1,455 +1,587 @@
-import { motion } from 'framer-motion';
-import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useDispatch, useSelector } from 'react-redux';
-import { Navigate } from 'react-router-dom';
+import { motion } from "framer-motion";
+import React, { useEffect, useState } from "react";
+import "react-loading-skeleton/dist/skeleton.css";
+import { useDispatch, useSelector } from "react-redux";
+import { Navigate } from "react-router-dom";
+import "tippy.js/dist/tippy.css";
 import {
-	getDataAction,
-	storeDataAction,
-	updateDataAction,
-} from '../actionCreators/databaseActions';
-import Card from '../components/Card';
-import LitaModal from '../components/LitaModal';
-import bars from '../imgs/bars.svg';
-import { currencyFormater } from '../shared/utils/currencyFormater';
+  getCategoriesDataAction,
+  getDataAction,
+  getPaymentDataAction,
+} from "../actionCreators/databaseActions";
+import BarChartWrapper from "../components/BarChartWrapper";
+import Card from "../components/Card";
+import ExpenseFilter from "../components/ExpenseFilter";
+import FloatingMenu from "../components/FloatingMenu";
+import GenericModal from "../components/GenericModal";
+import LitaAssistantPanel from "../components/LitaAssitantPanel";
+import SearchBar from "../components/SearchBar";
+import TransactionForm from "../components/TransactionForm";
+import AdvertisementContainer from "../components/AdvertisementContainer";
+import kavakAd from "../imgs/ads/kavakAd.jpg";
+import cocacolaAd from "../imgs/ads/cocaColaAd.jpg";
+import cbseAd from "../imgs/ads/cbseAd.jpg";
+import lotoAd from "../imgs/ads/lotoAd.jpg";
+import cotoAd from "../imgs/ads/cotoAd.png";
+import bars from "../imgs/bars.svg";
+import eyeHide from "../imgs/eyeHide.svg";
+import closeEye from "../imgs/closeEye.svg";
+
+import wavesFooter from "../imgs/waves.svg";
+import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
+import {
+  currencyFormater,
+  currencyGenericFormater,
+} from "../shared/utils/currencyFormater";
+import ChartToggleMenu from "../components/ChartToogleMenu";
+import IncomeChartWrapper from "../components/IncomeChartWrapper";
+import DivisasChartWrapper from "../components/DivisasChartWrapper";
+import IncomeExpenseLineChart from "../components/IncomeExpenseLineChart";
+import IngresoDivisasLineChart from "../components/IngresoDivisasLineChart";
 
 function Dashboard() {
-	const dispatch = useDispatch();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
+  const paymentData = useSelector((state) => state.database.paymentData);
+  const isFetching = useSelector((state) => state.auth.isFetching);
+  const isDataFetching = useSelector((state) => state.database.isDataFetching);
+  const docs = useSelector((state) => state.database.docs);
+  const categories = useSelector((state) => state.database.categories);
 
-	const user = useSelector((state) => state.auth.user);
-	const isFetching = useSelector((state) => state.auth.isFetching);
-	const isDataFetching = useSelector((state) => state.database.isDataFetching);
-	const docs = useSelector((state) => state.database.docs);
+  const [income, setIncome] = useState(0);
+  const [currencyIncome, setCurrencyIncome] = useState(0);
+  const [expense, setExpense] = useState(0);
+  const [total, setTotal] = useState(0);
 
-	const [income, setIncome] = useState(0);
-	const [expense, setExpense] = useState(0);
-	const [total, setTotal] = useState(0);
-	const [edit, setEdit] = useState(false);
-	const [expenseId, setExpenseId] = useState('');
-	const [showModal, setShowModal] = useState(false);
-	const [name, setName] = useState('');
-	const [amount, setAmount] = useState('');
-	const [comment, setComment] = useState('');
-	const [category, setCategory] = useState('');
-	const [selectedDate, setSelectedDate] = useState('');
+  const [edit, setEdit] = useState(false);
 
-	const {
-		register,
-		handleSubmit,
-		formState: { errors },
-	} = useForm();
+  const [showModal, setShowModal] = useState(false);
 
-	useEffect(() => {
-		if (user) {
-			dispatch(getDataAction(user.uid));
-		}
-	}, [user]);
+  const [expenseId, setExpenseId] = useState("");
+  const [name, setName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [comment, setComment] = useState("");
+  const [category, setCategory] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
 
-	useEffect(() => {
-		setExpense(0);
-		setIncome(0);
+  const [isCreditCardCategory, setIsCreditCardCategory] = useState(false);
+  const [selectedExpirationDate, setSelectedExpirationDate] = useState("");
+  const [selectedCloseDate, setSelectedCloseDate] = useState("");
 
-		if (docs) {
-			const amounts = docs.map((doc) => parseInt(doc.amount));
+  const [isBuyCurrenciesCategory, setIsBuyCurrenciesCategory] = useState(false);
+  const [currencyQuantity, setCurrencyQuantity] = useState();
+  const [currencyExchangeRate, setCurrencyExchangeRate] = useState();
+  const [currencySale, setCurrencySale] = useState(0);
 
-			setTotal(amounts.reduce((acc, item) => (acc += item), 0).toFixed(2));
+  const [isDataVisible, setIsDataVisible] = useState(() => {
+    const savedVisibility = sessionStorage.getItem("isDataVisible");
+    return savedVisibility ? JSON.parse(savedVisibility) : true;
+  });
 
-			setIncome(
-				amounts
-					.filter((item) => item > 0)
-					.reduce((acc, item) => acc + item, 0)
-					.toFixed(2)
-			);
+  const [isCurrencyIncomeCategory, setIsCurrencyIncomeCategory] =
+    useState(false);
 
-			setExpense(
-				amounts
-					.filter((item) => item < 0)
-					.reduce((acc, item) => acc + item, 0) * -(1).toFixed(2)
-			);
-		}
-	}, [docs]);
+  const [isSellCurrenciesCategory, setIsSellCurrenciesCategory] =
+    useState(false);
+  const [currencySellQuantity, setCurrencySellQuantity] = useState();
+  const [currencySellRate, setCurrencySellRate] = useState();
 
-	if (isFetching)
-		return (
-			<div className='h-screen flex flex-col items-center justify-center'>
-				<img className='h-20 w-20' src={bars} alt='loader' />
-			</div>
-		);
+  const [isOpen, setIsOpen] = useState(false);
 
-	const handleCancelEdit = () => {
-		setEdit(false);
-		setName('');
-		setAmount('');
-		setComment('');
-		setCategory('');
-		setSelectedDate('');
-	};
+  const [selectedChart, setSelectedChart] = useState("expenses");
 
-	const handleFloatingButtonClick = () => {
-		setShowModal(true);
-	};
+  const toggleDataVisibility = () => {
+    const newVisibility = !isDataVisible;
+    setIsDataVisible(newVisibility);
+    sessionStorage.setItem("isDataVisible", JSON.stringify(newVisibility));
+  };
 
-	const onSubmit = (e) => {
-		if (!edit) {
-			dispatch(
-				storeDataAction({
-					userId: user.uid,
-					name,
-					amount,
-					comment,
-					category,
-					selectedDate,
-				})
-			);
-		} else {
-			dispatch(
-				updateDataAction(
-					{
-						userId: user.uid,
-						name,
-						amount,
-						comment,
-						category,
-						selectedDate,
-					},
-					expenseId
-				)
-			);
+  const handleChartToggle = (chart) => {
+    setSelectedChart(chart);
+  };
 
-			setEdit(false);
-			setName('');
-			setAmount('');
-			setComment('');
-			setCategory('');
-			setSelectedDate('');
+  const advertisements = [kavakAd, cocacolaAd, cbseAd, lotoAd, cotoAd];
 
-			dispatch(getDataAction(user.uid));
-		}
-	};
+  const chartComponents = {
+    expenses: BarChartWrapper,
+    income: IncomeChartWrapper,
+    divisas: DivisasChartWrapper,
+    incomesVsExpenses: IncomeExpenseLineChart,
+    ingresoDivisas: IngresoDivisasLineChart,
+  };
 
-	if (user === null) return <Navigate to='/' />;
+  useEffect(() => {
+    if (user) {
+      dispatch(getCategoriesDataAction());
+    }
+  }, [user, dispatch]);
 
-	return (
-		<>
-			<motion.div
-				animate={{ opacity: 1 }}
-				initial={{ opacity: 0 }}
-				transition={{ duration: 1 }}
-				id='dashboard'
-				className='container lg:px-6   max-w-full grid lg:grid-cols-3  overflow-y-auto lg:overflow-hidden dark:bg-gray-900'
-			>
-				<div
-					id='left'
-					className='container flex lg:py-5 mx-auto w-full flex-col justify-between items-center'
-				>
-					<motion.div
-						animate={{ opacity: 1 }}
-						initial={{ opacity: 0 }}
-						transition={{ duration: 0.7, type: 'tween' }}
-						id='info'
-						className='container bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 mt-6 font-Nunito flex flex-col dark:bg-slate-800 dark:border-indigo-500'
-					>
-						<div
-							id='top-info'
-							className='flex justify-between  max-w-full items-center mb-10 '
-						>
-							<div className='flex flex-col justify-center items-center  '>
-								<h1 className='font-semibold text-2xl uppercase dark:text-zinc-100'>
-									Ingresos
-								</h1>
-								<p className='text-green-500 font-medium'>{`${currencyFormater(
-									income
-								)}`}</p>
-							</div>
-							<div className='flex flex-col justify-center items-center '>
-								<h1 className='font-semibold text-2xl uppercase dark:text-zinc-100'>
-									Gastos
-								</h1>
-								<p className='text-red-500 font-medium'>{`${currencyFormater(
-									expense
-								)}`}</p>
-							</div>
-						</div>
-						<div>
-							<h2 className='text-2xl font-semibold text-center dark:text-zinc-100 '>
-								{currencyFormater(total)}
-							</h2>
-							<p className='text-gray-400 text-center'>Balance Total</p>
-						</div>
-					</motion.div>
-					<motion.div
-						animate={{ opacity: 1 }}
-						initial={{ opacity: 0 }}
-						transition={{ duration: 0.7, type: 'tween' }}
-						id='add-transaction'
-						className='lg:w-3/4 w-full lg:mb-0 mb-8 bg-white p-8 border rounded-md shadow-md dark:bg-slate-800 dark:border-indigo-500'
-					>
-						<form className='mb-0 space-y-6' onSubmit={handleSubmit(onSubmit)}>
-							<div>
-								<h1 className='font-Nunito font-semibold text-xl mb-3 dark:text-zinc-100 underline'>
-									{edit ? 'Editar transacción' : 'Nueva transacción'}
-								</h1>
+  useEffect(() => {
+    if (user) {
+      dispatch(getDataAction(user.uid));
+    }
+  }, [user, dispatch]);
 
-								<div className='mb-2'>
-									<label
-										htmlFor='name'
-										className='block text-sm font-medium text-gray-700 dark:text-white'
-									>
-										Nombre transacción
-									</label>
-									<input
-										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
-										value={name}
-										type='text'
-										id='name'
-										{...register('name', {
-											required: true,
-											pattern: /^[A-Za-z0-9].{2,30}$/,
-											onChange: (e) => {
-												setName(e.target.value);
-											},
-										})}
-										placeholder='Ingrese nombre de transacción'
-										autoComplete='on'
-									/>
-									{errors.name && (
-										<p className='text-red-500 text-sm mb-1'>
-											Ingrese un nombre de transacción válido
-										</p>
-									)}
-								</div>
+  useEffect(() => {
+    if (user) {
+      dispatch(getPaymentDataAction(user.uid));
+    }
+  }, [dispatch, user]);
 
-								<div className='mb-2'>
-									<label
-										htmlFor='category'
-										className='block text-sm font-medium text-gray-700 dark:text-white'
-									>
-										Categoría
-									</label>
-									<select
-										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
-										value={category}
-										type='text'
-										id='comment'
-										{...register('category', {
-											required: true,
-											onChange: (e) => {
-												setCategory(e.target.value);
-											},
-										})}
-										placeholder='Ingrese nombre de transacción'
-										autoComplete='on'
-									>
-										<option
-											className='dark:text-white'
-											defaultValue={'categoriaDefault'}
-										>
-											Elegí una categoría
-										</option>
-										<optgroup label='Gastos'>
-											<option>Alimentación</option>
-											<option>Salud</option>
-											<option>Tarjeta de crédito</option>
-											<option>Ocio</option>
-											<option>Transporte</option>
-											<option>Educación</option>
-											<option>Librería</option>
-											<option>Varios</option>
-										</optgroup>
-										<optgroup label='Ingresos'>
-											<option>Sueldo</option>
-											<option>Bono</option>
-											<option>Honorarios</option>
-											<option>Varios</option>
-										</optgroup>
-									</select>
-									{errors.category && (
-										<p className='text-red-500 text-sm mb-1'>
-											Es obligatorio ingresar una categoría
-										</p>
-									)}
-								</div>
+  useEffect(() => {
+    setExpense(0);
+    setIncome(0);
 
-								<div className='mb-2'>
-									<label
-										htmlFor='amount'
-										className='block text-sm font-medium text-gray-700 dark:text-white'
-									>
-										Monto{' '}
-										<small className='font-bold text-purple-600 text-xs italic '>
-											(usa el signo " - " para agregar gastos)
-										</small>
-									</label>
-									<input
-										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
-										value={amount}
-										type='number'
-										min='-99999999999'
-										step='0.01'
-										id='amount'
-										{...register('amount', {
-											required: true,
-											pattern: /^-?\d+(\.\d{1,2})?$/,
-											onChange: (e) => {
-												setAmount(e.target.value);
-											},
-										})}
-										placeholder='e.g. "5000" (Ingreso) o "-3000" (Gasto)'
-									/>
-									{errors.amount && (
-										<p className='text-red-500 text-sm mb-1'>
-											Ingrese un monto de transacción válido
-										</p>
-									)}
-								</div>
+    if (docs && categories) {
+      const expensesCategories = categories
+        ?.filter((category) => category.isExpense)
+        ?.map((category) => category.name);
 
-								<div className='mb-2'>
-									<label
-										htmlFor='name'
-										className='block text-sm font-medium text-gray-700 dark:text-white'
-									>
-										Fecha
-									</label>
-									<input
-										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
-										value={selectedDate}
-										type='date'
-										id='selectedDate'
-										{...register('selectedDate', {
-											required: true,
-											onChange: (e) => {
-												setSelectedDate(e.target.value);
-											},
-										})}
-									/>
-									{errors.selectedDate && (
-										<p className='text-red-500 text-sm mb-1'>
-											Ingrese una fecha válida
-										</p>
-									)}
-								</div>
+      const expenses = docs
+        .filter((doc) => expensesCategories?.includes(doc?.category))
+        .map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
 
-								<div className='mb-2'>
-									<label
-										htmlFor='name'
-										className='block text-sm font-medium text-gray-700 dark:text-white'
-									>
-										Descripción
-									</label>
-									<textarea
-										className='mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white'
-										value={comment}
-										type='text'
-										id='comment'
-										{...register('comment', {
-											required: true,
-											pattern: /^[A-Za-z0-9].{2,70}$/,
-											onChange: (e) => {
-												setComment(e.target.value);
-											},
-										})}
-										placeholder='e.g. Información adicional'
-										autoComplete='on'
-									/>
-									{errors.comment && (
-										<p className='text-red-500 text-sm mb-1'>
-											Ingrese una descripción de transacción válida
-										</p>
-									)}
-								</div>
-							</div>
-							<div>
-								<button
-									type='submit'
-									className='w-full flex justify-center py-3 px-4 border border-transparent shadow-sm bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md '
-								>
-									{edit ? 'Guardar' : 'Añadir'}
-								</button>
-								{edit && (
-									<button
-										className=' w-full flex justify-center py-3 px-4  border-transparent shadow-sm bg-red-600 hover:opacity-95 font-Roboto font-medium text-white text-center mt-2 text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md '
-										onClick={handleCancelEdit}
-									>
-										Cancelar
-									</button>
-								)}
-							</div>
-						</form>
-					</motion.div>
-				</div>
-				<motion.div
-					animate={{ opacity: 1 }}
-					initial={{ opacity: 0 }}
-					transition={{ duration: 0.7, type: 'tween' }}
-					id='right'
-					className='lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500'
-				>
-					<div>
-						<h1 className='font-Nunito font-bold text-3xl mb-2 mt dark:text-zinc-100'>
-							Transacciones 📕
-						</h1>
-						{isDataFetching && (
-							<div className='flex'>
-								<p className='text-zinc-500 font-semiboldt text-base'>
-									Estamos cargando sus transacciones
-								</p>
-								<img className='mt-1 ml-2 h-5 w-5' src={bars} alt='loader' />
-							</div>
-						)}
+      const incomes = docs
+        .filter((doc) => !expensesCategories?.includes(doc?.category))
+        .map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
 
-						{!isDataFetching && !docs?.length && (
-							<div className='flex'>
-								<p className='text-zinc-500 font-semibold text-lg'>
-									Bienvenido , aún no registraste ninguna transacción, ¿Qué
-									estás esperando? Empeza a controlar tus gastos 💪
-								</p>
-							</div>
-						)}
+      const currencyIncome = docs
+        .filter(
+          (doc) =>
+            doc.category.includes("Compra divisas") ||
+            doc.category.includes(INGRESO_DIVISAS_CATEGORY)
+        )
+        .map((doc) => {
+          const currencyQuantity = parseFloat(doc?.currencyQuantity);
+          return isNaN(currencyQuantity) ? 0 : currencyQuantity;
+        });
 
-						{docs?.map((doc) => {
-							return (
-								<Card
-									key={doc.id}
-									id={doc.id}
-									name={doc.expenseName}
-									amount={doc.amount}
-									date={doc.date}
-									comment={doc.comment}
-									category={doc.category}
-									selectedDate={doc.selectedDate}
-									setExpense={setExpense}
-									setIncome={setIncome}
-									setName={setName}
-									setAmount={setAmount}
-									setComment={setComment}
-									setCategory={setCategory}
-									setSelectedDate={setSelectedDate}
-									setEdit={setEdit}
-									setExpenseId={setExpenseId}
-								/>
-							);
-						})}
-					</div>
-				</motion.div>
-			</motion.div>
-			<motion.div
-				animate={{ opacity: 1 }}
-				initial={{ opacity: 0 }}
-				transition={{ duration: 0.7, type: 'tween' }}
-			>
-				<button
-					onClick={handleFloatingButtonClick}
-					className='fixed z-90 bottom-10 right-8 lg:right-12 bg-primary w-20 h-20 rounded-full drop-shadow-lg flex justify-center items-center text-white text-4xl hover:bg-primary-200 hover:drop-shadow-2xl hover:animate-none animate-bounce focus:animate-none'
-				>
-					💰
-				</button>
-			</motion.div>
+      const currencySale = docs
+        .filter((doc) => doc.category.includes("Venta divisas"))
+        .map((doc) => {
+          const currencyQuantity = parseFloat(doc?.currencyQuantity);
+          return isNaN(currencyQuantity) ? 0 : currencyQuantity;
+        });
 
-			{showModal && (
-				<LitaModal showModal={showModal} setShowModal={setShowModal} />
-			)}
-		</>
-	);
+      setExpense(
+        expenses?.reduce((acc, item) => acc + item, 0) * -(1).toFixed(2)
+      );
+
+      setIncome(incomes?.reduce((acc, item) => acc + item, 0).toFixed(2));
+
+      // Calculate currencyIncome minus currencySale
+      const netCurrencyIncome =
+        currencyIncome?.reduce((acc, item) => acc + item, 0) -
+        currencySale?.reduce((acc, item) => acc + item, 0);
+
+      setCurrencyIncome(netCurrencyIncome.toFixed(2));
+
+      setCurrencySale(
+        currencySale?.reduce((acc, item) => acc + item, 0).toFixed(2)
+      );
+
+      setTotal(
+        incomes?.reduce((acc, item) => acc + item, 0).toFixed(2) -
+          expenses?.reduce((acc, item) => acc + item, 0).toFixed(2)
+      );
+    }
+  }, [docs, categories]);
+
+  if (user === null) return <Navigate to="/" />;
+
+  if (isFetching)
+    return (
+      <div className="h-screen flex flex-col items-center justify-center align-center">
+        <img className="h-20 w-20" src={bars} alt="loader" />
+      </div>
+    );
+
+  const handleFloatingButtonClick = () => {
+    setShowModal(true);
+
+    const baseUrl =
+      process.env.NODE_ENV === "development"
+        ? "http://localhost:3005" // Local development URL
+        : "https://holalita.vercel.app"; // Deployed URL
+
+    // Add fetch request to send user context data to the Next.js API
+    fetch(`${baseUrl}/api/user-transactions`, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(docs.slice(0, 5)),
+    })
+      .then((response) => {
+        if (response.ok) {
+          console.log("User transactions sent successfully to Next.js API");
+        } else {
+          console.error("Failed to send user transactions to Next.js API");
+        }
+      })
+      .catch((error) => {
+        console.error("Error sending user transactions to Next.js API", error);
+      });
+
+    fetch(`${baseUrl}/api/user-context`, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(user),
+    })
+      .then((response) => {
+        if (response.ok) {
+          console.log("User context sent successfully to Next.js API");
+        } else {
+          console.error("Failed to send user context to Next.js API");
+        }
+      })
+      .catch((error) => {
+        console.error("Error sending user context to Next.js API", error);
+      });
+  };
+
+  const openModal = () => {
+    setIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setEdit(false);
+    setName("");
+    setAmount("");
+    setComment("");
+    setCategory("");
+    setSelectedDate("");
+    setSelectedExpirationDate("");
+    setSelectedCloseDate("");
+    setCurrencyQuantity("");
+    setCurrencyExchangeRate("");
+    setIsBuyCurrenciesCategory(false);
+    setIsSellCurrenciesCategory(false);
+    setIsCreditCardCategory(false);
+    setIsCurrencyIncomeCategory(false);
+    setIsOpen(false);
+  };
+
+  return (
+    <>
+      <motion.div
+        animate={{ opacity: 1 }}
+        initial={{ opacity: 0 }}
+        transition={{ duration: 1 }}
+        id="dashboard"
+        className="container lg:px-6 max-w-full grid lg:grid-cols-3 overflow-y-auto lg:overflow-hidden dark:bg-gray-900"
+      >
+        <div
+          id="left"
+          className="container flex lg:py-5 mx-auto w-full flex-col justify-between items-center"
+        >
+          <motion.div
+            animate={{ opacity: 1 }}
+            initial={{ opacity: 0 }}
+            transition={{ duration: 0.7, type: "tween" }}
+            id="info"
+            className="container p-4 bg-white lg:w-3/4 w-full border rounded-md shadow-md mb-6 mt-6 font-Nunito dark:bg-slate-800 dark:border-indigo-500"
+          >
+            <div className="flex items-center mb-5">
+              {/* Ingresos */}
+              <div className="flex flex-col justify-center items-center flex-grow">
+                <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
+                  Ingresos
+                </h1>
+                {isDataFetching ? (
+                  <img className="mt-2 h-6 w-6" src={bars} alt="loader" />
+                ) : (
+                  <motion.p
+                    initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
+                    animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
+                    exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
+                    transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
+                    key={isDataVisible ? "expense-value" : "hidden-value"}
+                    className="text-green-500 font-medium"
+                  >
+                    {isDataVisible ? `${currencyFormater(income)}` : "*******"}
+                  </motion.p>
+                )}
+              </div>
+              {/* Gastos */}
+              <div className="flex flex-col justify-center items-center ml-4 flex-grow">
+                <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
+                  Gastos
+                </h1>
+                {isDataFetching ? (
+                  <img className="mt-2 h-6 w-6" src={bars} alt="loader" />
+                ) : (
+                  <motion.p
+                    initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
+                    animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
+                    exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
+                    transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
+                    className="text-red-500 font-medium"
+                    key={isDataVisible ? "expense-value" : "hidden-value"} // Key to trigger animation on state change
+                  >
+                    {isDataVisible ? `${currencyFormater(expense)}` : "*******"}
+                  </motion.p>
+                )}
+              </div>
+            </div>
+
+            {/* Inversión */}
+            <div className="flex flex-col justify-center items-center mb-2">
+              <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
+                Inversión
+              </h1>
+              {isDataFetching ? (
+                <img className="ml-2 h-6 w-6" src={bars} alt="loader" />
+              ) : (
+                <motion.p
+                  initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
+                  animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
+                  exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
+                  transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
+                  key={isDataVisible ? "expense-value" : "hidden-value"}
+                  className="text-blue-500 font-medium"
+                >
+                  {isDataVisible
+                    ? `${currencyGenericFormater(
+                        "USD",
+                        currencyIncome,
+                        "en-US",
+                        "USD"
+                      )}`
+                    : "*******"}
+                </motion.p>
+              )}
+            </div>
+
+            {/* Balance */}
+            <div className="flex flex-col mb-4">
+              <div className="flex justify-center items-center mb-2">
+                <p className="text-gray-400 text-center text-lg">Balance</p>
+                <button onClick={toggleDataVisibility} className="ml-2">
+                  <motion.img
+                    className="mb-1 h-5 w-5"
+                    src={isDataVisible ? eyeHide : closeEye}
+                    alt={isDataVisible ? "open eye" : "close eye"}
+                    key={isDataVisible ? "open-eye" : "close-eye"} // Key for animation
+                    initial={{ scale: 0.5, rotate: -180 }} // Initial state
+                    animate={{ scale: 1, rotate: 0 }} // End state
+                    transition={{ duration: 0.5, ease: "easeOut" }} // Animation properties
+                  />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-2 justify-center items-center">
+                {isDataFetching ? (
+                  <img className="ml-2 h-6 w-6" src={bars} alt="loader" />
+                ) : (
+                  <motion.h2
+                    initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
+                    animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
+                    exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
+                    transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
+                    key={isDataVisible ? "expense-value" : "hidden-value"}
+                    className={`text-2xl font-semibold text-center ${
+                      total < 0 ? `text-red-500` : `text-green-500`
+                    }`}
+                  >
+                    {isDataVisible ? currencyFormater(total) : "*******"}
+                  </motion.h2>
+                )}
+              </div>
+            </div>
+            <ExpenseFilter />
+          </motion.div>
+          <motion.div
+            animate={{ opacity: 1 }}
+            initial={{ opacity: 0 }}
+            transition={{ duration: 0.7, type: "tween" }}
+            id="left"
+            className="container  bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 font-Nunito flex flex-col dark:bg-slate-800 dark:border-indigo-500 items-center"
+          >
+            {isDataFetching ? (
+              <div className="flex justify-center items-center">
+                <img className="ml-2 h-5 w-5" src={bars} alt="loader" />
+              </div>
+            ) : (
+              docs && (
+                <>
+                  {/* Conditionally render the appropriate chart */}
+                  {selectedChart &&
+                    chartComponents[selectedChart] &&
+                    React.createElement(chartComponents[selectedChart], {
+                      chartData: docs,
+                      categories,
+                    })}
+
+                  <ChartToggleMenu
+                    selectedChart={selectedChart}
+                    handleChartToggle={handleChartToggle}
+                    chartComponents={chartComponents}
+                  />
+                </>
+              )
+            )}
+          </motion.div>
+          {!paymentData ? (
+            <AdvertisementContainer advertisements={advertisements} />
+          ) : (
+            ""
+          )}
+        </div>
+
+        <motion.div
+          animate={{ opacity: 1 }}
+          initial={{ opacity: 0 }}
+          transition={{ duration: 0.7, type: "tween" }}
+          id="right"
+          className="lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500 h-screen lg:h-auto"
+        >
+          <div>
+            <h1 className="font-Nunito font-bold text-3xl mb-2 ml-1 dark:text-zinc-100">
+              Transacciones 📕
+            </h1>
+            <SearchBar />
+
+            {isDataFetching ? (
+              <div className="flex">
+                <p className="text-zinc-500 font-semiboldt ml-2 text-base">
+                  Estamos cargando sus transacciones
+                </p>
+                <img className="mt-1 ml-2 h-5 w-5" src={bars} alt="loader" />
+              </div>
+            ) : (
+              !docs ||
+              (docs.length === 0 && (
+                <div className="flex">
+                  <p className="text-zinc-500 font-semibold text-lg">
+                    Bienvenido, aún no registraste ninguna transacción. ¿Qué
+                    estás esperando? ¡Empezá a controlar tus gastos! 💪
+                  </p>
+                </div>
+              ))
+            )}
+
+            {docs?.map((doc) => {
+              return (
+                <div key={doc.id}>
+                  <Card
+                    id={doc.id}
+                    name={doc.expenseName}
+                    amount={doc.amount}
+                    date={doc.date}
+                    comment={doc.comment}
+                    category={doc.category}
+                    selectedDate={doc.selectedDate}
+                    selectedExpirationDate={doc.selectedExpirationDate}
+                    selectedCloseDate={doc.selectedCloseDate}
+                    currencyExchangeRate={doc.currencyExchangeRate}
+                    currencyQuantity={doc.currencyQuantity}
+                    currencySellQuantity={doc.currencySellQuantity}
+                    setExpense={setExpense}
+                    setIncome={setIncome}
+                    setName={setName}
+                    setAmount={setAmount}
+                    setComment={setComment}
+                    setCategory={setCategory}
+                    setIsCreditCardCategory={setIsCreditCardCategory}
+                    setIsBuyCurrenciesCategory={setIsBuyCurrenciesCategory}
+                    setIsCurrencyIncomeCategory={setIsCurrencyIncomeCategory}
+                    setIsSellCurrenciesCategory={setIsSellCurrenciesCategory}
+                    setCurrencySellQuantity={setCurrencySellQuantity}
+                    setCurrencySellRate={setCurrencySellRate}
+                    setSelectedDate={setSelectedDate}
+                    setSelectedExpirationDate={setSelectedExpirationDate}
+                    setSelectedCloseDate={setSelectedCloseDate}
+                    setCurrencyQuantity={setCurrencyQuantity}
+                    setCurrencyExchangeRate={setCurrencyExchangeRate}
+                    setEdit={setEdit}
+                    setExpenseId={setExpenseId}
+                    categories={categories}
+                    openModal={openModal}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        <div className="absolute bottom-0 left-0 w-full block lg:hidden">
+          <img src={wavesFooter} alt="purple waves footer" className="w-full" />
+        </div>
+      </motion.div>
+
+      <motion.div
+        animate={{ opacity: 1 }}
+        initial={{ opacity: 0 }}
+        transition={{ duration: 0.2, type: "tween" }}
+      >
+        <FloatingMenu
+          openTransactionModal={openModal}
+          openLitaModal={handleFloatingButtonClick}
+          isModalOpen={isOpen || showModal}
+        />
+
+        {isOpen && (
+          <GenericModal
+            component={TransactionForm}
+            name={name}
+            amount={amount}
+            edit={edit}
+            comment={comment}
+            category={category}
+            selectedDate={selectedDate}
+            selectedExpirationDate={selectedExpirationDate}
+            selectedCloseDate={selectedCloseDate}
+            currencyExchangeRate={currencyExchangeRate}
+            currencySellRate={currencySellRate}
+            currencyQuantity={currencyQuantity}
+            currencySellQuantity={currencySellQuantity}
+            isCreditCardCategory={isCreditCardCategory}
+            isBuyCurrenciesCategory={isBuyCurrenciesCategory}
+            isCurrencyIncomeCategory={isCurrencyIncomeCategory}
+            isSellCurrenciesCategory={isSellCurrenciesCategory}
+            expenseId={expenseId}
+            categories={categories}
+            closeModal={closeModal}
+            show={isOpen}
+            setEdit={setEdit}
+            setExpense={setExpense}
+            setExpenseId={setExpenseId}
+            setIncome={setIncome}
+            setName={setName}
+            setAmount={setAmount}
+            setComment={setComment}
+            setCategory={setCategory}
+            setIsCreditCardCategory={setIsCreditCardCategory}
+            setIsBuyCurrenciesCategory={setIsBuyCurrenciesCategory}
+            setIsSellCurrenciesCategory={setIsSellCurrenciesCategory}
+            setIsCurrencyIncomeCategory={setIsCurrencyIncomeCategory}
+            setSelectedDate={setSelectedDate}
+            setSelectedExpirationDate={setSelectedExpirationDate}
+            setSelectedCloseDate={setSelectedCloseDate}
+            setCurrencyQuantity={setCurrencyQuantity}
+            setCurrencySellQuantity={setCurrencySellQuantity}
+            setCurrencyExchangeRate={setCurrencyExchangeRate}
+            setIsOpen={setIsOpen}
+          />
+        )}
+
+        {showModal && (
+          <motion.div
+            animate={{ opacity: 1 }}
+            initial={{ opacity: 0 }}
+            transition={{ duration: 0.5, type: "tween" }}
+          >
+            <LitaAssistantPanel isOpen={showModal} setIsOpen={setShowModal} />
+          </motion.div>
+        )}
+      </motion.div>
+    </>
+  );
 }
 
 export default Dashboard;

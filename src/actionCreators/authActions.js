@@ -1,5 +1,6 @@
-import { auth } from '../config/firebase.config';
+import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
+import { auth } from '../shared/config/firebase/firebase.config';
 import {
 	LOGIN_ERROR_MESSAGE,
 	LOGIN_SUCCESS_MESSAGE,
@@ -36,6 +37,23 @@ export const signUpAction = (creds) => {
 	};
 };
 
+// export const logInAction = (creds) => {
+// 	return (dispatch) => {
+// 		auth
+// 			.signInWithEmailAndPassword(creds.email, creds.password)
+// 			.then((res) => {
+// 				toast.success(LOGIN_SUCCESS_MESSAGE);
+
+// 				dispatch({ type: 'LOG_IN', res });
+// 			})
+// 			.catch((err) => {
+// 				toast.error(LOGIN_ERROR_MESSAGE);
+
+// 				dispatch({ type: 'LOG_IN_ERROR', err });
+// 			});
+// 	};
+// };
+
 export const logInAction = (creds) => {
 	return (dispatch) => {
 		auth
@@ -44,27 +62,57 @@ export const logInAction = (creds) => {
 				toast.success(LOGIN_SUCCESS_MESSAGE);
 
 				dispatch({ type: 'LOG_IN', res });
+				dispatch({ type: 'SET_USER', payload: res.user }); // Set user and set isFetching to false
 			})
 			.catch((err) => {
 				toast.error(LOGIN_ERROR_MESSAGE);
 
 				dispatch({ type: 'LOG_IN_ERROR', err });
+				dispatch({ type: 'SET_USER', payload: null }); // Set isFetching to false when there's an error
 			});
 	};
 };
 
 export const signInWithGoogleAction = (googleProvider) => {
-	return (dispatch) => {
-		auth
-			.signInWithPopup(googleProvider)
-			.then((res) => {
-				toast.success(LOGIN_SUCCESS_MESSAGE);
+	return async (dispatch) => {
+		try {
+			const result = await auth.signInWithPopup(googleProvider);
+			const user = result.user;
 
-				dispatch({ type: 'LOG_IN_GOOGLE', res });
+			// Determine the base URL based on the environment
+			const baseUrl =
+				process.env.NODE_ENV === 'development'
+					? 'http://localhost:3005' // Local development URL
+					: 'https://holalita.vercel.app'; // Deployed URL
+
+			// Add fetch request to send user context data to the Next.js API
+			fetch(`${baseUrl}/api/user-context`, {
+				method: 'POST',
+				mode: 'no-cors',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(user),
 			})
-			.catch((err) => {
-				dispatch({ type: 'LOG_IN_ERROR_GOOGLE', err });
-			});
+				.then((response) => {
+					if (response.ok) {
+						console.log('User context sent successfully to Next.js API');
+					} else {
+						console.error('Failed to send user context to Next.js API');
+					}
+				})
+				.catch((error) => {
+					console.error('Error sending user context to Next.js API', error);
+				});
+
+			// Dispatch action and handle success
+			toast.success(LOGIN_SUCCESS_MESSAGE);
+			dispatch({ type: 'LOG_IN_GOOGLE', res: result });
+		} catch (error) {
+			// Handle error if Google Auth fails
+			console.error('Google Auth error:', error);
+			dispatch({ type: 'LOG_IN_ERROR_GOOGLE', err: error.message });
+		}
 	};
 };
 
@@ -85,6 +133,9 @@ export const resetPassword = (creds) => {
 
 export const logOutAction = () => {
 	toast.warn(LOGOUT_MESSAGE);
+
+	// Remove the 'userContext' cookie from the browser when the user logs out
+	Cookies.remove('userContext');
 
 	return { type: 'LOG_OUT' };
 };
