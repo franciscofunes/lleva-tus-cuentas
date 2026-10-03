@@ -25,6 +25,10 @@ const emptyForm = {
 	rateType: 'TNA',
 	liquidity: 'Inmediata',
 	fees: '0',
+	principal: '',
+	realizedEarnings: '',
+	lastEarning: '',
+	effectiveRate: '',
 	startDate: '',
 	maturityDate: '',
 	notes: '',
@@ -152,6 +156,10 @@ function Portfolio() {
 			balance: String(position.balance ?? ''),
 			annualRate: String(position.annualRate ?? ''),
 			fees: String(position.fees ?? 0),
+			principal: String(position.principal ?? position.balance ?? ''),
+			realizedEarnings: String(position.realizedEarnings ?? ''),
+			lastEarning: String(position.lastEarning ?? ''),
+			effectiveRate: String(position.effectiveRate ?? ''),
 		});
 		setShowForm(true);
 	};
@@ -200,8 +208,8 @@ function Portfolio() {
 					</div>
 					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
 						<FaRegClock className='text-purple-500 mb-2' />
-						<p className='text-xl sm:text-2xl font-bold'>{portfolioMeta.snapshots}</p>
-						<p className='text-xs text-gray-500'>Snapshots</p>
+						<p className='text-xl sm:text-2xl font-bold'>{positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length}</p>
+						<p className='text-xs text-gray-500'>Con ganancias</p>
 					</div>
 				</section>
 
@@ -247,7 +255,10 @@ function Portfolio() {
 									<div className='text-right'>
 										<p className='font-semibold'>{Number(position.annualRate || 0).toFixed(2)}% {position.rateType || ''}</p>
 										<p className='text-sm text-gray-500'>{position.liquidity || 'Liquidez no informada'}</p>
-										<p className='text-sm text-green-600 mt-1'>≈ {money(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 12, position.currency)} / mes</p>
+										<p className='text-sm text-green-600 mt-1'>≈ {money(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 12, position.currency)} / mes proyectado</p>
+										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-emerald-600 mt-1'>Ganado: {money(position.realizedEarnings, position.currency)}</p>}
+										{Number(position.lastEarning || 0) !== 0 && <p className='text-xs text-gray-400'>Último rendimiento: {money(position.lastEarning, position.currency)}</p>}
+										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {Number(position.effectiveRate).toFixed(2)}%</p>}
 										{performanceByPosition[position.id] && (
 											<div className='mt-2 text-sm'>
 												<p className={performanceByPosition[position.id].change >= 0 ? 'text-green-600' : 'text-red-500'}>
