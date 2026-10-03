@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaPlus, FaWallet, FaChartLine, FaRegClock } from 'react-icons/fa';
+import { FaWallet, FaChartLine, FaRegClock } from 'react-icons/fa';
+import PrimaryFab from '../components/PrimaryFab';
 import { IoMdClose } from 'react-icons/io';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -313,9 +314,7 @@ function Portfolio() {
 			</AnimatePresence>
 
 			{!showForm && (
-				<button type='button' onClick={() => setShowForm(true)} aria-label='Agregar posición' className='fixed z-40 right-5 bottom-5 w-14 h-14 rounded-full bg-secondary text-white shadow-xl flex items-center justify-center text-xl hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-purple-400'>
-					<FaPlus />
-				</button>
+				<PrimaryFab onClick={() => setShowForm(true)} ariaLabel='Agregar posición' />
 			)}
 
 		</main>
