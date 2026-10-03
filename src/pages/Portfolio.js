@@ -38,6 +38,23 @@ const emptyForm = {
 	trackingMode: 'DAILY_RATE',
 	appUrl: '',
 	webUrl: '',
+	// FCI / NAV-specific metadata
+	ticker: '',
+	shares: '',
+	nav: '',
+	navDate: '',
+	redemptionPeriod: '',
+	minimumInvestment: '',
+	performance1D: '',
+	performance1W: '',
+	performance1M: '',
+	performanceYTD: '',
+	performance1Y: '',
+	fundType: '',
+	investmentHorizon: '',
+	fundStartDate: '',
+	rating: '',
+	volatility21dAnnualized: '',
 };
 
 const money = (value, currency) =>
@@ -183,6 +200,15 @@ function Portfolio() {
 			realizedEarnings: String(position.realizedEarnings ?? ''),
 			lastEarning: String(position.lastEarning ?? ''),
 			effectiveRate: String(position.effectiveRate ?? ''),
+			shares: String(position.shares ?? ''),
+			nav: String(position.nav ?? ''),
+			minimumInvestment: String(position.minimumInvestment ?? ''),
+			performance1D: String(position.performance1D ?? ''),
+			performance1W: String(position.performance1W ?? ''),
+			performance1M: String(position.performance1M ?? ''),
+			performanceYTD: String(position.performanceYTD ?? ''),
+			performance1Y: String(position.performance1Y ?? ''),
+			volatility21dAnnualized: String(position.volatility21dAnnualized ?? ''),
 		});
 		setShowForm(true);
 	};
@@ -321,6 +347,9 @@ function Portfolio() {
 										{position.trackingMode === 'DAILY_RATE' && <p className='text-xs text-gray-400'>Esperado hoy: {money(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 365, position.currency)}</p>}
 										{position.trackingMode === 'MATURITY' && position.maturityDate && <p className='text-xs text-gray-400'>Seguimiento al vencimiento: {position.maturityDate}</p>}
 										<p className='text-xs text-gray-400'>Tracking: {position.trackingMode || 'MANUAL'}</p>
+										{position.category === 'FCI' && position.ticker && <p className='text-xs text-gray-400'>Ticker: {position.ticker}</p>}
+										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
+										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-emerald-600'>Rend. 1A: {Number(position.performance1Y).toFixed(2)}%</p>}
 										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-emerald-600 mt-1'>Ganado: {money(position.realizedEarnings, position.currency)}</p>}
 										{Number(position.lastEarning || 0) !== 0 && <p className='text-xs text-gray-400'>Último rendimiento: {money(position.lastEarning, position.currency)}</p>}
 										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {Number(position.effectiveRate).toFixed(2)}%</p>}
@@ -392,6 +421,19 @@ function Portfolio() {
 													<option value='NAV'>FCI · valuación</option>
 													<option value='MANUAL'>Manual</option>
 												</select>
+												{form.category === 'FCI' && (
+													<div className='space-y-2 rounded-lg border border-slate-700 p-2'>
+														<p className='text-xs font-semibold text-purple-300'>Datos específicos del FCI</p>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' name='ticker' value={form.ticker} onChange={onChange} placeholder='Ticker / clase' /><input className='portfolio-input' name='redemptionPeriod' value={form.redemptionPeriod} onChange={onChange} placeholder='Rescate (ej. 24h)' /></div>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='number' step='any' min='0' name='shares' value={form.shares} onChange={onChange} placeholder='Cuotapartes' /><input className='portfolio-input' type='number' step='any' min='0' name='nav' value={form.nav} onChange={onChange} placeholder='Valor cuotaparte / NAV' /></div>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='date' name='navDate' value={form.navDate} onChange={onChange} /><input className='portfolio-input' type='number' step='any' min='0' name='minimumInvestment' value={form.minimumInvestment} onChange={onChange} placeholder='Inversión mínima' /></div>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='number' step='any' name='performance1D' value={form.performance1D} onChange={onChange} placeholder='Rend. 1D %' /><input className='portfolio-input' type='number' step='any' name='performance1W' value={form.performance1W} onChange={onChange} placeholder='Rend. 1S %' /></div>
+														<div className='grid grid-cols-3 gap-2'><input className='portfolio-input' type='number' step='any' name='performance1M' value={form.performance1M} onChange={onChange} placeholder='1M %' /><input className='portfolio-input' type='number' step='any' name='performanceYTD' value={form.performanceYTD} onChange={onChange} placeholder='YTD %' /><input className='portfolio-input' type='number' step='any' name='performance1Y' value={form.performance1Y} onChange={onChange} placeholder='1A %' /></div>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' name='fundType' value={form.fundType} onChange={onChange} placeholder='Tipo (ej. Renta fija)' /><input className='portfolio-input' name='investmentHorizon' value={form.investmentHorizon} onChange={onChange} placeholder='Horizonte' /></div>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='date' name='fundStartDate' value={form.fundStartDate} onChange={onChange} /><input className='portfolio-input' name='rating' value={form.rating} onChange={onChange} placeholder='Calificación' /></div>
+														<input className='portfolio-input' type='number' step='any' min='0' name='volatility21dAnnualized' value={form.volatility21dAnnualized} onChange={onChange} placeholder='Volatilidad 21d anualizada %' />
+													</div>
+												)}
 												<input className='portfolio-input' name='appUrl' value={form.appUrl || ''} onChange={onChange} placeholder='Acceso app / deep link (opcional)' />
 												<input className='portfolio-input' name='webUrl' value={form.webUrl || ''} onChange={onChange} placeholder='Web fallback oficial (opcional)' />
 												<input className='portfolio-input' name='liquidity' value={form.liquidity} onChange={onChange} placeholder='Liquidez (ej. inmediata / 24 h)' />
