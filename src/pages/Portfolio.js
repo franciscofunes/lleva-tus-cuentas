@@ -246,7 +246,7 @@ function Portfolio() {
 	};
 
 	return (
-		<main className='relative min-h-screen bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 p-4 lg:p-8 pb-36 lg:pb-8'>
+		<main className='relative min-h-screen bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 p-4 lg:p-8 pb-0 lg:pb-8'>
 			<div className='max-w-7xl mx-auto'>
 				<div className='flex flex-wrap justify-between items-end gap-4 mb-6'>
 					<div>
@@ -295,7 +295,7 @@ function Portfolio() {
 
 				<PortfolioCharts positions={positions} snapshots={snapshots} />
 
-				<section className='space-y-3 pb-20'>
+				<section className='space-y-3 pb-8'>
 						<div className='flex items-center justify-between'><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-gray-500'>{positions.length} activas</span></div>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
 						{!loading && !positions.length && (
@@ -346,11 +346,9 @@ function Portfolio() {
 					</section>
 			</div>
 
-			{!loading && (
-				<div className='absolute bottom-0 left-0 w-full block lg:hidden pointer-events-none z-0' aria-hidden='true'>
-					<img src={wavesFooter} alt='' className='w-full' />
-				</div>
-			)}
+			<div className='relative -mx-4 mt-8 block lg:hidden pointer-events-none leading-none' aria-hidden='true'>
+				<img src={wavesFooter} alt='' className='block w-full h-auto' />
+			</div>
 
 			<GenericModal
 				show={showForm}
