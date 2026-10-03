@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import LogIn from './pages/LogIn';
+import Portfolio from './pages/Portfolio';
 import SignUp from './pages/SignUp';
 import rootReducer from './reducers/rootReducer';
 
@@ -28,6 +29,7 @@ root.render(
 					<Route path='/registrarse' element={<SignUp />} />
 					<Route path='/ingresar' element={<LogIn />} />
 					<Route path='/transacciones' element={<Dashboard />} />
+					<Route path='/portfolio' element={<Portfolio />} />
 					<Route path='/recupero' element={<ForgotPassword />} />
 				</Routes>
 			</Provider>
