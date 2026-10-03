@@ -8,7 +8,8 @@ const FIELD_MAP = {
 	'liquidez': 'liquidity', 'comisiones': 'fees',
 	'fecha inicio': 'startDate', 'fecha de inicio': 'startDate',
 	'vencimiento': 'maturityDate', 'fecha vencimiento': 'maturityDate',
-	'notas': 'notes', 'acceso app/web': 'appUrl', 'app url': 'appUrl', 'url': 'appUrl',
+	'notas': 'notes', 'acceso app/web': 'appUrl', 'acceso app': 'appUrl', 'app url': 'appUrl', 'deep link': 'appUrl', 'url': 'appUrl',
+	'web fallback': 'webUrl', 'web oficial': 'webUrl', 'web url': 'webUrl',
 };
 
 const strip = (value) => value.replace(/^\*\*|\*\*$/g, '').trim();
