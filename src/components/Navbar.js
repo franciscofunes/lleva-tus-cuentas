@@ -43,6 +43,7 @@ function Navbar() {
 
 				{user ? (
 					<div className='flex items-center'>
+						<Link to='/portfolio' className='nav-btn mr-3 dark:text-white'>Portfolio</Link>
 						{location.pathname === '/' && (
 							<Link
 								to='/transacciones'
