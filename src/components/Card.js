@@ -26,6 +26,7 @@ function Card({
 	setIsCreditCardCategory,
 	setIsBuyCurrenciesCategory,
 	setIsCurrencyIncomeCategory,
+	setIsSellCurrenciesCategory,
 	setSelectedCloseDate,
 	setSelectedExpirationDate,
 	setCurrencyQuantity,
@@ -55,6 +56,7 @@ function Card({
 		setIsCreditCardCategory(category?.includes('Resumen tarjeta'));
 		setIsBuyCurrenciesCategory(category?.includes('Compra divisas'));
 		setIsCurrencyIncomeCategory(category?.includes(INGRESO_DIVISAS_CATEGORY));
+		setIsSellCurrenciesCategory(category?.includes('Venta divisas'));
 		setExpenseId(id);
 		setEdit(true);
 	};
