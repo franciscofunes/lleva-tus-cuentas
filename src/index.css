@@ -48,7 +48,20 @@
 }
 
 #root {
-	height: 100vh;
+	min-height: 100vh;
+	height: auto;
+}
+
+html,
+body,
+#root {
+	min-height: 100%;
+}
+
+html,
+body {
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
 }
 #dashboard {
 	overflow-y: scroll;
