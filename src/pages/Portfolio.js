@@ -276,7 +276,7 @@ function Portfolio() {
 	};
 
 	return (
-		<main className='relative min-h-[calc(100vh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 flex flex-col pb-24 lg:pb-8'>
+		<main className='relative min-h-[calc(100vh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 flex flex-col pb-0 lg:pb-8'>
 			<div className='max-w-7xl mx-auto px-4 pt-4 lg:px-0 lg:pt-0 w-full flex-1'>
 				<div className='flex flex-wrap justify-between items-end gap-4 mb-6'>
 					<div>
@@ -380,6 +380,7 @@ function Portfolio() {
 			<div className='relative z-0 mt-auto block w-full lg:hidden pointer-events-none leading-none' aria-hidden='true'>
 				<img src={wavesFooter} alt='' className='block w-full h-auto' />
 			</div>
+			<div className='h-24 lg:hidden shrink-0' aria-hidden='true' />
 
 			<GenericModal
 				show={showForm}
