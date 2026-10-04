@@ -31,6 +31,7 @@ const normalize = (data) => ({
 	performanceYTD: data.performanceYTD === '' ? null : Number(data.performanceYTD || 0),
 	performance1Y: data.performance1Y === '' ? null : Number(data.performance1Y || 0),
 	volatility21dAnnualized: data.volatility21dAnnualized === '' ? null : Number(data.volatility21dAnnualized || 0),
+	maxInterestBearingBalance: data.maxInterestBearingBalance === '' ? null : (/^sin tope$/i.test(String(data.maxInterestBearingBalance).trim()) ? 'Sin tope' : (Number.isFinite(Number(data.maxInterestBearingBalance)) ? Number(data.maxInterestBearingBalance) : data.maxInterestBearingBalance)),
 });
 
 export const createPortfolioPosition = (userId, data) =>
