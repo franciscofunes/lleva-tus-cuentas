@@ -54,6 +54,8 @@ const emptyForm = {
 	fundStartDate: '',
 	rating: '',
 	volatility21dAnnualized: '',
+	monthlyReturns: {},
+	publishedYtdReturn: '',
 };
 
 const money = (value, currency) =>
@@ -154,6 +156,12 @@ function Portfolio() {
 	const onChange = (event) =>
 		setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
 
+	const monthKeys = [['jan','Ene'],['feb','Feb'],['mar','Mar'],['apr','Abr'],['may','May'],['jun','Jun'],['jul','Jul'],['aug','Ago'],['sep','Sep'],['oct','Oct'],['nov','Nov'],['dec','Dic']];
+	const monthlyValues = Object.values(form.monthlyReturns || {}).map(Number).filter(Number.isFinite);
+	const monthlySimpleTotal = monthlyValues.reduce((sum, value) => sum + value, 0);
+	const monthlyCompoundTotal = (monthlyValues.reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100;
+	const onMonthlyReturnChange = (month, value) => setForm((current) => ({ ...current, monthlyReturns: { ...(current.monthlyReturns || {}), [month]: value } }));
+
 	const reset = () => {
 		setForm(emptyForm);
 		setEditingId(null);
@@ -212,6 +220,8 @@ function Portfolio() {
 			performanceYTD: String(position.performanceYTD ?? ''),
 			performance1Y: String(position.performance1Y ?? ''),
 			volatility21dAnnualized: String(position.volatility21dAnnualized ?? ''),
+			monthlyReturns: position.monthlyReturns || {},
+			publishedYtdReturn: String(position.publishedYtdReturn ?? ''),
 		});
 		setShowForm(true);
 	};
@@ -356,6 +366,7 @@ function Portfolio() {
 										{position.category === 'FCI' && position.ticker && <p className='text-xs text-gray-400'>Ticker: {position.ticker}</p>}
 										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
 										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-green-600 dark:text-green-500'>Rend. 1A: {Number(position.performance1Y).toFixed(2)}%</p>}
+										{position.category === 'FCI' && position.monthlyReturns && Object.keys(position.monthlyReturns).length > 0 && <p className='text-sm font-bold text-green-600 dark:text-green-400'>YTD compuesto: {((Object.values(position.monthlyReturns).map(Number).filter(Number.isFinite).reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100).toFixed(2)}%</p>}
 										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-green-600 dark:text-green-500 mt-1'>Ganado: {money(position.realizedEarnings, position.currency)}</p>}
 										{Number(position.lastEarning || 0) !== 0 && <p className='text-xs text-gray-400'>Último rendimiento: {money(position.lastEarning, position.currency)}</p>}
 										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {Number(position.effectiveRate).toFixed(2)}%</p>}
@@ -438,6 +449,7 @@ function Portfolio() {
 														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' name='fundType' value={form.fundType} onChange={onChange} placeholder='Tipo (ej. Renta fija)' /><input className='portfolio-input' name='investmentHorizon' value={form.investmentHorizon} onChange={onChange} placeholder='Horizonte' /></div>
 														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='date' name='fundStartDate' value={form.fundStartDate} onChange={onChange} /><input className='portfolio-input' name='rating' value={form.rating} onChange={onChange} placeholder='Calificación' /></div>
 														<input className='portfolio-input' type='number' step='any' min='0' name='volatility21dAnnualized' value={form.volatility21dAnnualized} onChange={onChange} placeholder='Volatilidad 21d anualizada %' />
+										<div className='rounded-lg border border-slate-600 p-3 space-y-3'><div><p className='text-sm font-bold text-white'>Rentabilidad mensual</p><p className='text-xs text-gray-300'>Cargá los porcentajes publicados por el fondo. LTC conserva el total publicado y calcula también el acumulado compuesto.</p></div><div className='grid grid-cols-3 gap-2'>{monthKeys.map(([key,label]) => <label key={key} className='text-xs font-semibold text-gray-200'>{label}<input className='portfolio-input mt-1' type='number' step='0.01' value={form.monthlyReturns?.[key] ?? ''} onChange={(event) => onMonthlyReturnChange(key, event.target.value)} placeholder='0.00' /></label>)}</div><div className='grid grid-cols-2 gap-2'><div className='rounded-lg bg-slate-800 p-2'><p className='text-xs text-gray-300'>Suma simple</p><p className='font-bold'>{monthlySimpleTotal.toFixed(2)}%</p></div><div className='rounded-lg bg-slate-800 p-2'><p className='text-xs text-gray-300'>Acumulado compuesto</p><p className='font-bold text-green-400'>{monthlyCompoundTotal.toFixed(2)}%</p></div></div><input className='portfolio-input' type='number' step='0.01' name='publishedYtdReturn' value={form.publishedYtdReturn || ''} onChange={onChange} placeholder='Total YTD publicado por el fondo %' /></div>
 													</div>
 												)}
 												<input className='portfolio-input' name='appUrl' value={form.appUrl || ''} onChange={onChange} placeholder='Acceso app / deep link (opcional)' />
