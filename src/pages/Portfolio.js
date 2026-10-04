@@ -380,6 +380,14 @@ function Portfolio() {
 												<input className='portfolio-input' name='appUrl' value={form.appUrl || ''} onChange={onChange} placeholder='Acceso app / deep link (opcional)' />
 												<input className='portfolio-input' name='webUrl' value={form.webUrl || ''} onChange={onChange} placeholder='Web fallback oficial (opcional)' />
 												<input className='portfolio-input' type='url' name='infoUrl' value={form.infoUrl || ''} onChange={onChange} placeholder='Página oficial de información / rendimiento' />
+												<div className='rounded-lg border border-slate-700 p-3 space-y-2'>
+													<p className='text-xs font-semibold text-purple-300'>Fuente y verificación</p>
+													<input className='portfolio-input' type='url' name='sourceUrl' value={form.sourceUrl || ''} onChange={onChange} placeholder='Fuente oficial usada para verificar' />
+													<div className='grid grid-cols-2 gap-2'><label className='text-xs text-gray-300'>Fuente consultada<input className='portfolio-input mt-1' type='date' name='sourceCheckedAt' value={form.sourceCheckedAt || ''} onChange={onChange} /></label><label className='text-xs text-gray-300'>Tasa verificada<input className='portfolio-input mt-1' type='date' name='rateVerifiedAt' value={form.rateVerifiedAt || ''} onChange={onChange} /></label></div>
+													<textarea className='portfolio-input' name='interestCalculationBasis' value={form.interestCalculationBasis || ''} onChange={onChange} placeholder='Base / metodología de cálculo' rows='2' />
+													<textarea className='portfolio-input' name='interestAccrual' value={form.interestAccrual || ''} onChange={onChange} placeholder='Devengamiento / acreditación' rows='2' />
+													<input className='portfolio-input' name='maxInterestBearingBalance' value={form.maxInterestBearingBalance || ''} onChange={onChange} placeholder='Saldo máximo remunerado (número o Sin tope)' />
+												</div>
 												<input className='portfolio-input' name='liquidity' value={form.liquidity} onChange={onChange} placeholder='Liquidez (ej. inmediata / 24 h)' />
 												<input className='portfolio-input' type='number' step='0.01' min='0' name='fees' value={form.fees} onChange={onChange} placeholder='Comisiones estimadas' />
 												<div className='grid grid-cols-2 gap-2'>
