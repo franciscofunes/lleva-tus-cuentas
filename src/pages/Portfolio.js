@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaCamera } from 'react-icons/fa';
+import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import wavesFooter from '../imgs/waves.svg';
 import PortfolioCharts from '../components/PortfolioCharts';
@@ -10,7 +10,6 @@ import GenericModal from '../components/GenericModal';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
 import {
 	createPortfolioPosition,
-	createPortfolioSnapshot,
 	deletePortfolioPosition,
 	subscribePortfolioPositions,
 	subscribePortfolioSnapshots,
@@ -78,7 +77,7 @@ function Portfolio() {
 	const [deleteTarget, setDeleteTarget] = useState(null);
 	const [verifyTarget, setVerifyTarget] = useState(null);
 	const [verifyBalance, setVerifyBalance] = useState('');
-	const [snapshotTarget, setSnapshotTarget] = useState(null);
+	
 
 	useEffect(() => {
 		if (!user) return undefined;
@@ -275,16 +274,6 @@ function Portfolio() {
 		}
 	};
 
-	const snapshot = async () => {
-		if (!snapshotTarget) return;
-		try {
-			await createPortfolioSnapshot(user.uid, snapshotTarget);
-			toast.success('Snapshot guardado');
-			setSnapshotTarget(null);
-		} catch (error) {
-			toast.error('No se pudo guardar el snapshot');
-		}
-	};
 
 	return (
 		<main className='relative min-h-[calc(100vh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 flex flex-col pb-0 lg:pb-8'>
@@ -351,12 +340,14 @@ function Portfolio() {
 							<article key={position.id} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5 shadow-sm'>
 								<div className='flex flex-wrap justify-between gap-4'>
 									<div>
-										<p className='text-xs uppercase text-gray-400'>{position.category} · {position.institution}</p>
-										<h3 className='text-lg font-bold'>{position.name}</h3>
-										<p className='text-2xl font-semibold mt-2'>{money(position.balance, position.currency)}</p>
+										<p className='text-sm font-bold uppercase tracking-wide text-purple-500'>{position.institution}</p>
+										<h3 className='text-xl sm:text-2xl font-bold leading-tight mt-1'>{position.name}</h3>
+										<p className='text-xs uppercase text-gray-400 mt-1'>{position.category}</p>
+										<p className='text-3xl font-bold mt-3'>{money(position.balance, position.currency)}</p>
 									</div>
 									<div className='text-right'>
-										<p className='font-semibold'>{Number(position.annualRate || 0).toFixed(2)}% {position.rateType || ''}</p>
+										<p className='text-xs uppercase tracking-wide text-gray-400'>Rendimiento</p>
+										<p className='text-2xl font-bold text-green-600 dark:text-green-500'>{Number(position.annualRate || 0).toFixed(2)}% <span className='text-sm'>{position.rateType || ''}</span></p>
 										<p className='text-sm text-gray-500'>{position.liquidity || 'Liquidez no informada'}</p>
 										<p className='text-sm text-green-600 mt-1'>≈ {money(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 12, position.currency)} / mes proyectado</p>
 										{position.trackingMode === 'DAILY_RATE' && <p className='text-xs text-gray-400'>Esperado hoy: {money(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 365, position.currency)}</p>}
@@ -381,7 +372,6 @@ function Portfolio() {
 								<div className='flex flex-wrap items-center gap-2 mt-4'>
 									<button className='px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => requestVerify(position)}>Verificar saldo</button>
 									{(position.appUrl || position.webUrl) && <button title='Abrir app / web' aria-label='Abrir app o web' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' onClick={() => openInstitution(position)}><FaExternalLinkAlt /></button>}
-									<button title='Guardar snapshot' aria-label='Guardar snapshot' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' onClick={() => setSnapshotTarget(position)}><FaCamera /></button>
 									<button title='Editar posición' aria-label='Editar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-purple-500' onClick={() => edit(position)}><FaPencilAlt /></button>
 									<button title='Eliminar posición' aria-label='Eliminar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg text-red-500 border border-red-300 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30' onClick={() => requestDelete(position)}><FaTrashAlt /></button>
 								</div>
@@ -481,22 +471,6 @@ function Portfolio() {
 					</div>
 				)}
 				closeModal={() => setVerifyTarget(null)}
-			/>
-
-			<GenericModal
-				show={Boolean(snapshotTarget)}
-				component={() => (
-					<div className='text-white pr-8'>
-						<div className='w-12 h-12 rounded-full bg-purple-500/15 text-purple-400 flex items-center justify-center mb-4'><FaCamera /></div>
-						<h2 className='text-xl font-bold'>Guardar snapshot</h2>
-						<p className='mt-2 text-sm text-gray-300'>Se guardará el saldo actual de <strong>{snapshotTarget?.name}</strong> ({snapshotTarget ? money(snapshotTarget.balance, snapshotTarget.currency) : ''}) para construir el gráfico histórico. No modifica el saldo.</p>
-						<div className='grid grid-cols-2 gap-2 mt-5'>
-							<button type='button' onClick={() => setSnapshotTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
-							<button type='button' onClick={snapshot} className='py-2.5 rounded-lg bg-primary text-white font-semibold'>Guardar snapshot</button>
-						</div>
-					</div>
-				)}
-				closeModal={() => setSnapshotTarget(null)}
 			/>
 
 			<GenericModal
