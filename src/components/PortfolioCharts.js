@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AreaChart, BarList, Card, Flex, Text, Title, Bold } from '@tremor/react';
+import { AreaChart, Card } from '@tremor/react';
 
 const formatMoney = (value, currency) =>
 	new Intl.NumberFormat('es-AR', {
@@ -98,7 +98,7 @@ const PortfolioCharts = ({ positions, snapshots }) => {
 				</div>
 				{view === 'history' && history.length >= 2 && <AreaChart className='mt-4 h-48 sm:h-56' data={history} index='date' categories={['Saldo']} colors={['indigo']} valueFormatter={(value) => formatMoney(value, currency)} showLegend={false} yAxisWidth={50} />}
 				{view === 'history' && history.length < 2 && <div className='rounded-xl border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40 px-4 py-5 text-center'><p className='font-bold text-slate-900 dark:text-white'>Histórico todavía sin datos suficientes</p><p className='mt-1 text-sm font-medium text-slate-600 dark:text-slate-300'>{history.length} de 2 verificaciones registradas. Confirmá los saldos nuevamente en otra fecha para empezar a ver la evolución.</p></div>}
-				{view === 'allocation' && <><Flex className='mt-2'><Text><Bold>Posición</Bold></Text><Text><Bold>Saldo</Bold></Text></Flex><BarList data={allocation} className='mt-3' valueFormatter={(value) => formatMoney(value, currency)} color='indigo' /></>}
+				{view === 'allocation' && <div className='mt-3 space-y-3'><div className='flex justify-between gap-3 px-1 text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-300'><span>Posición</span><span>Saldo</span></div>{allocation.map((item) => { const max = allocation[0]?.value || 1; const width = Math.max(6, (item.value / max) * 100); return <div key={item.name} className='relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50'><div className='absolute inset-y-0 left-0 bg-indigo-100 dark:bg-indigo-500/25' style={{ width: `${width}%` }} /><div className='relative flex items-center justify-between gap-3 px-3 py-3'><span className='min-w-0 font-bold text-slate-900 dark:text-white break-words'>{item.name}</span><span className='shrink-0 font-extrabold text-slate-900 dark:text-white'>{formatMoney(item.value, currency)}</span></div></div>; })}</div>}
 			</Card>
 
 			<Card className='dark:bg-slate-800 dark:border-slate-700 overflow-hidden'>
