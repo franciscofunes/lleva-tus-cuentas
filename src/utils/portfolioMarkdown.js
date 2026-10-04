@@ -1,3 +1,12 @@
+const CANONICAL_FIELDS = [
+	'institution', 'name', 'category', 'currency', 'balance', 'annualRate', 'rateType',
+	'liquidity', 'fees', 'principal', 'realizedEarnings', 'lastEarning', 'effectiveRate',
+	'startDate', 'maturityDate', 'notes', 'trackingMode', 'appUrl', 'webUrl',
+	'ticker', 'shares', 'nav', 'navDate', 'redemptionPeriod', 'minimumInvestment',
+	'performance1D', 'performance1W', 'performance1M', 'performanceYTD', 'performance1Y',
+	'fundType', 'investmentHorizon', 'fundStartDate', 'rating', 'volatility21dAnnualized',
+];
+
 const FIELD_MAP = {
 	'institucion': 'institution', 'institución': 'institution', 'plataforma': 'institution',
 	'producto': 'name', 'cuenta': 'name', 'nombre': 'name',
@@ -5,7 +14,8 @@ const FIELD_MAP = {
 	'capital actual': 'balance', 'saldo': 'balance', 'balance': 'balance',
 	'tasa anual': 'annualRate', 'tasa anual %': 'annualRate', 'tasa': 'annualRate',
 	'tipo de tasa': 'rateType', 'tracking': 'trackingMode', 'modo de tracking': 'trackingMode',
-	'liquidez': 'liquidity', 'comisiones': 'fees',
+	'liquidez': 'liquidity', 'comisiones': 'fees', 'principal': 'principal',
+	'ganancias realizadas': 'realizedEarnings', 'ultimo rendimiento': 'lastEarning', 'último rendimiento': 'lastEarning', 'tasa efectiva': 'effectiveRate',
 	'fecha inicio': 'startDate', 'fecha de inicio': 'startDate',
 	'vencimiento': 'maturityDate', 'fecha vencimiento': 'maturityDate',
 	'notas': 'notes', 'acceso app/web': 'appUrl', 'acceso app': 'appUrl', 'app url': 'appUrl', 'deep link': 'appUrl', 'url': 'appUrl',
@@ -48,9 +58,10 @@ export const parsePortfolioMarkdown = (markdown) => {
 		if (separator < 1) return;
 		const rawKey = strip(line.slice(0, separator)).toLowerCase();
 		const value = strip(line.slice(separator + 1));
-		const field = FIELD_MAP[rawKey];
+		const canonicalField = CANONICAL_FIELDS.find((item) => item.toLowerCase() === rawKey);
+		const field = canonicalField || FIELD_MAP[rawKey];
 		if (!field) { unknown.push(rawKey); return; }
-		if (['balance', 'annualRate', 'fees', 'shares', 'nav', 'minimumInvestment', 'performance1D', 'performance1W', 'performance1M', 'performanceYTD', 'performance1Y', 'volatility21dAnnualized'].includes(field)) parsed[field] = normalizeNumber(value);
+		if (['balance', 'annualRate', 'fees', 'principal', 'realizedEarnings', 'lastEarning', 'effectiveRate', 'shares', 'nav', 'minimumInvestment', 'performance1D', 'performance1W', 'performance1M', 'performanceYTD', 'performance1Y', 'volatility21dAnnualized'].includes(field)) parsed[field] = normalizeNumber(value);
 		else if (['startDate', 'maturityDate', 'navDate', 'fundStartDate'].includes(field)) parsed[field] = normalizeDate(value);
 		else if (field === 'currency') parsed[field] = value.toUpperCase();
 		else if (field === 'rateType') parsed[field] = value.toUpperCase();
