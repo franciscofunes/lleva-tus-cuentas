@@ -67,14 +67,12 @@ const PortfolioCharts = ({ positions, snapshots }) => {
 		<section className='mb-7 space-y-6'>
 			<div className='mb-3'><h2 className='text-xl font-extrabold text-slate-900 dark:text-white'>Composición del portfolio</h2><p className='text-sm font-medium text-slate-600 dark:text-slate-300'>Distribución por posición y moneda.</p></div>
 			<Card className='dark:bg-slate-800 dark:border-slate-700 overflow-hidden'>
-				<div className='flex items-center gap-3'>
-					<button type='button' onClick={() => setAllocationOpen((v) => !v)} aria-expanded={allocationOpen} className='min-w-0 flex flex-1 items-center justify-between gap-3 text-left'>
-						<h3 className='min-w-0 break-words text-lg font-extrabold text-slate-900 dark:text-white'>Distribución por posición</h3>
-						<FaChevronDown className={`shrink-0 transition-transform ${allocationOpen ? 'rotate-180' : ''}`} />
-					</button>
-					<div className='flex shrink-0 gap-2'>
-						{currencies.map((item) => <button key={item} type='button' onClick={() => setCurrency(item)} className={`px-3 py-1.5 rounded-full text-xs font-semibold border dark:border-slate-600 ${currency === item ? 'bg-ltc-green text-white border-ltc-green' : 'bg-white dark:bg-slate-800'}`}>{item}</button>)}
-					</div>
+				<button type='button' onClick={() => setAllocationOpen((v) => !v)} aria-expanded={allocationOpen} className='w-full flex items-center justify-between gap-3 text-left'>
+					<h3 className='min-w-0 break-words text-lg font-extrabold text-slate-900 dark:text-white'>Distribución por posición</h3>
+					<FaChevronDown className={`shrink-0 transition-transform ${allocationOpen ? 'rotate-180' : ''}`} />
+				</button>
+				<div className='mt-3 flex flex-wrap gap-2'>
+					{currencies.map((item) => <button key={item} type='button' onClick={() => setCurrency(item)} className={`px-3 py-1.5 rounded-full text-xs font-semibold border dark:border-slate-600 ${currency === item ? 'bg-ltc-green text-white border-ltc-green' : 'bg-white dark:bg-slate-800'}`}>{item}</button>)}
 				</div>
 				{allocationOpen && <div className='mt-4 space-y-3'>
 					<div className='flex justify-between gap-3 px-1 text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-300'><span>Posición</span><span>Saldo</span></div>
