@@ -27,7 +27,7 @@ import bars from "../imgs/bars.svg";
 import eyeHide from "../imgs/eyeHide.svg";
 import closeEye from "../imgs/closeEye.svg";
 
-import wavesFooter from "../imgs/waves.svg";
+import AppFooter from "../components/AppFooter";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
 import {
   currencyFormater,
@@ -273,7 +273,7 @@ function Dashboard() {
         initial={{ opacity: 0 }}
         transition={{ duration: 1 }}
         id="dashboard"
-        className="container lg:px-6 max-w-full grid lg:grid-cols-3 overflow-y-auto lg:overflow-hidden dark:bg-gray-900"
+        className="container lg:px-6 max-w-full grid lg:grid-cols-3 dark:bg-gray-900"
       >
         <div
           id="left"
@@ -438,7 +438,7 @@ function Dashboard() {
           initial={{ opacity: 0 }}
           transition={{ duration: 0.7, type: "tween" }}
           id="right"
-          className="lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500 h-screen lg:h-auto"
+          className="lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500 lg:h-auto"
         >
           <div>
             <h1 className="font-Nunito font-bold text-3xl mb-2 ml-1 dark:text-zinc-100">
@@ -509,10 +509,9 @@ function Dashboard() {
           </div>
         </motion.div>
 
-        <div className="absolute bottom-0 left-0 w-full block lg:hidden">
-          <img src={wavesFooter} alt="purple waves footer" className="w-full" />
-        </div>
       </motion.div>
+
+      <AppFooter />
 
       <motion.div
         animate={{ opacity: 1 }}
