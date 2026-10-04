@@ -23,6 +23,7 @@ const PortfolioCharts = ({ positions, snapshots }) => {
 		[positions]
 	);
 	const [currency, setCurrency] = React.useState(currencies[0] || 'USD');
+	const [allocationOpen, setAllocationOpen] = React.useState(true);
 	const [performanceOpen, setPerformanceOpen] = React.useState(true);
 	const [selectedPositionId, setSelectedPositionId] = React.useState('');
 
@@ -65,19 +66,20 @@ const PortfolioCharts = ({ positions, snapshots }) => {
 	return (
 		<section className='mb-7 space-y-6'>
 			<div className='mb-3'><h2 className='text-xl font-extrabold text-slate-900 dark:text-white'>Composición del portfolio</h2><p className='text-sm font-medium text-slate-600 dark:text-slate-300'>Distribución por posición y moneda.</p></div>
-			<div className='flex flex-wrap items-center justify-end gap-3 mb-3'>
-				<div className='flex gap-2'>
-					{currencies.map((item) => <button key={item} type='button' onClick={() => setCurrency(item)} className={`px-3 py-1.5 rounded-full text-xs font-semibold border dark:border-slate-600 ${currency === item ? 'bg-ltc-green text-white border-ltc-green' : 'bg-white dark:bg-slate-800'}`}>{item}</button>)}
-				</div>
-			</div>
 			<Card className='dark:bg-slate-800 dark:border-slate-700 overflow-hidden'>
-				<div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4'>
-					<h3 className='min-w-0 break-words text-lg font-extrabold text-slate-900 dark:text-white'>Distribución por posición · {currency}</h3>
-					
+				<div className='flex items-center gap-3'>
+					<button type='button' onClick={() => setAllocationOpen((v) => !v)} aria-expanded={allocationOpen} className='min-w-0 flex flex-1 items-center justify-between gap-3 text-left'>
+						<h3 className='min-w-0 break-words text-lg font-extrabold text-slate-900 dark:text-white'>Distribución por posición</h3>
+						<FaChevronDown className={`shrink-0 transition-transform ${allocationOpen ? 'rotate-180' : ''}`} />
+					</button>
+					<div className='flex shrink-0 gap-2'>
+						{currencies.map((item) => <button key={item} type='button' onClick={() => setCurrency(item)} className={`px-3 py-1.5 rounded-full text-xs font-semibold border dark:border-slate-600 ${currency === item ? 'bg-ltc-green text-white border-ltc-green' : 'bg-white dark:bg-slate-800'}`}>{item}</button>)}
+					</div>
 				</div>
-				
-				
-				<div className='mt-3 space-y-3'><div className='flex justify-between gap-3 px-1 text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-300'><span>Posición</span><span>Saldo</span></div>{allocation.map((item) => { const max = allocation[0]?.value || 1; const width = Math.max(6, (item.value / max) * 100); return <div key={item.name} className='relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50'><div className='absolute inset-y-0 left-0 bg-indigo-100 dark:bg-indigo-500/25' style={{ width: `${width}%` }} /><div className='relative flex items-center justify-between gap-3 px-3 py-3'><span className='min-w-0 font-bold text-slate-900 dark:text-white break-words'>{item.name}</span><span className='shrink-0 font-extrabold text-slate-900 dark:text-white'>{formatMoney(item.value, currency)}</span></div></div>; })}</div>
+				{allocationOpen && <div className='mt-4 space-y-3'>
+					<div className='flex justify-between gap-3 px-1 text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-300'><span>Posición</span><span>Saldo</span></div>
+					{allocation.map((item) => { const max = allocation[0]?.value || 1; const width = Math.max(6, (item.value / max) * 100); return <div key={item.name} className='relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50'><div className='absolute inset-y-0 left-0 bg-indigo-100 dark:bg-indigo-500/25' style={{ width: `${width}%` }} /><div className='relative flex items-center justify-between gap-3 px-3 py-3'><span className='min-w-0 font-bold text-slate-900 dark:text-white break-words'>{item.name}</span><span className='shrink-0 font-extrabold text-slate-900 dark:text-white'>{formatMoney(item.value, currency)}</span></div></div>; })}
+				</div>}
 			</Card>
 			<Card className='dark:bg-slate-800 dark:border-slate-700 overflow-hidden'>
 				<button type='button' onClick={() => setPerformanceOpen((v) => !v)} aria-expanded={performanceOpen} className='w-full flex items-center justify-between gap-3 text-left'><div><h3 className='text-xl font-extrabold text-slate-900 dark:text-white'>Rendimiento por activo</h3><p className='text-sm font-medium text-slate-600 dark:text-slate-300'>Evolución real y simulación con la tasa cargada.</p></div><FaChevronDown className={`shrink-0 transition-transform ${performanceOpen ? 'rotate-180' : ''}`} /></button>
