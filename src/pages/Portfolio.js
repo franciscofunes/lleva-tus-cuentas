@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -324,7 +324,7 @@ function Portfolio() {
 	};
 
 
-	const PortfolioForm = useCallback(() => (
+	const portfolioFormContent = (
 		<form onSubmit={submit} className='space-y-2 text-white max-h-[78dvh] overflow-y-auto pr-4 mr-1 [scrollbar-gutter:stable]'>
 										<h2 className='text-lg font-bold pr-10 mb-2'>{editingId ? 'Editar posición' : 'Nueva posición'}</h2>
 										<div className='mb-2'>
@@ -391,7 +391,7 @@ function Portfolio() {
 											<button className='w-full mt-2 py-2.5 rounded-lg bg-primary text-white font-semibold' type='submit'>{editingId ? 'Guardar cambios' : 'Agregar al portfolio'}</button>
 											{editingId && <button className='w-full mt-2 py-2 text-sm' type='button' onClick={reset}>Cancelar edición</button>}
 										</form>
-	), [editingId, form, showMarkdownImport, markdownImport, importPreview, monthlySimpleTotal, monthlyCompoundTotal]);
+	);
 
 	return (
 		<main className='relative min-h-[calc(100dvh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 pb-0 lg:pb-8'>
@@ -511,7 +511,7 @@ function Portfolio() {
 
 			<GenericModal
 				show={showForm}
-				component={PortfolioForm}
+				component={portfolioFormContent}
 				closeModal={reset}
 			/>
 
