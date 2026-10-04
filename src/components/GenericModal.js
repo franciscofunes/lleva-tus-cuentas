@@ -3,7 +3,7 @@ import { IoMdClose } from 'react-icons/io';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
-	const content = React.isValidElement(Component) ? Component : {content};
+	const content = React.isValidElement(Component) ? Component : <Component {...props} />;
 	return (
 		<AnimatePresence>
 			{show && (
@@ -25,7 +25,7 @@ const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
 						transition={{ duration: 0.3 }}
 					>
 						<div className='relative'>
-							<Component {...props} />
+							{content}
 							<button
 								className='absolute top-0 right-0 p-2 text-black hover:text-white dark:text-white'
 								onClick={closeModal}
