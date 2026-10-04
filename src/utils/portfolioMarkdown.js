@@ -24,9 +24,9 @@ const FIELD_MAP = {
 	'info': 'infoUrl', 'informacion': 'infoUrl', 'información': 'infoUrl', 'pagina de informacion': 'infoUrl', 'página de información': 'infoUrl',
 	'fuente': 'sourceUrl', 'fuente oficial': 'sourceUrl', 'source url': 'sourceUrl',
 	'verificado': 'sourceCheckedAt', 'fecha verificacion': 'sourceCheckedAt', 'fecha verificación': 'sourceCheckedAt', 'checked at': 'sourceCheckedAt',
-	'tasa verificada': 'rateVerifiedAt', 'rate verified at': 'rateVerifiedAt',
-	'base de calculo': 'interestCalculationBasis', 'base de cálculo': 'interestCalculationBasis',
-	'acreditacion': 'interestAccrual', 'acreditación': 'interestAccrual', 'devengamiento': 'interestAccrual',
+	'tasa verificada': 'rateVerifiedAt', 'fecha tasa verificada': 'rateVerifiedAt', 'rate verified at': 'rateVerifiedAt',
+	'base de calculo': 'interestCalculationBasis', 'base de cálculo': 'interestCalculationBasis', 'metodologia de calculo': 'interestCalculationBasis', 'metodología de cálculo': 'interestCalculationBasis',
+	'acreditacion': 'interestAccrual', 'acreditación': 'interestAccrual', 'devengamiento': 'interestAccrual', 'interest accrual': 'interestAccrual',
 	'saldo maximo remunerado': 'maxInterestBearingBalance', 'saldo máximo remunerado': 'maxInterestBearingBalance',
 	'ticker': 'ticker', 'clase': 'ticker', 'cuotapartes': 'shares', 'shares': 'shares',
 	'nav': 'nav', 'valor cuotaparte': 'nav', 'valor de cuotaparte': 'nav', 'fecha nav': 'navDate', 'fecha valuacion': 'navDate', 'fecha valuación': 'navDate',
@@ -70,7 +70,7 @@ export const parsePortfolioMarkdown = (markdown) => {
 		const canonicalField = CANONICAL_FIELDS.find((item) => item.toLowerCase() === rawKey);
 		const field = canonicalField || FIELD_MAP[rawKey];
 		if (!field) { unknown.push(rawKey); return; }
-		if (['balance', 'annualRate', 'fees', 'principal', 'realizedEarnings', 'lastEarning', 'effectiveRate', 'shares', 'nav', 'minimumInvestment', 'performance1D', 'performance1W', 'performance1M', 'performanceYTD', 'performance1Y', 'volatility21dAnnualized', 'publishedYtdReturn', 'interestCalculationBasis', 'maxInterestBearingBalance'].includes(field)) parsed[field] = normalizeNumber(value);
+		if (['balance', 'annualRate', 'fees', 'principal', 'realizedEarnings', 'lastEarning', 'effectiveRate', 'shares', 'nav', 'minimumInvestment', 'performance1D', 'performance1W', 'performance1M', 'performanceYTD', 'performance1Y', 'volatility21dAnnualized', 'publishedYtdReturn', 'maxInterestBearingBalance'].includes(field)) parsed[field] = normalizeNumber(value);
 		else if (['startDate', 'maturityDate', 'navDate', 'fundStartDate', 'sourceCheckedAt', 'rateVerifiedAt'].includes(field)) parsed[field] = normalizeDate(value);
 		else if (field === 'currency') parsed[field] = value.toUpperCase();
 		else if (field === 'rateType') parsed[field] = value.toUpperCase();
