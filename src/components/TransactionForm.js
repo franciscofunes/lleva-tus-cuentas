@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useDispatch, useSelector } from "react-redux";
@@ -47,6 +47,7 @@ const TransactionForm = ({
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const isDataFetching = useSelector((state) => state.database.isDataFetching);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
@@ -54,9 +55,12 @@ const TransactionForm = ({
     formState: { errors },
   } = useForm();
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
     if (!edit) {
-      dispatch(
+      await dispatch(
         storeDataAction({
           userId: user?.uid,
           name,
@@ -85,7 +89,7 @@ const TransactionForm = ({
       setIsCurrencyIncomeCategory(false);
       setIsOpen(false);
     } else {
-      dispatch(
+      await dispatch(
         updateDataAction(
           {
             userId: user.uid,
@@ -117,6 +121,9 @@ const TransactionForm = ({
       setIsCreditCardCategory(false);
       setIsCurrencyIncomeCategory(false);
       setIsOpen(false);
+    }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -591,9 +598,10 @@ const TransactionForm = ({
 
         <button
           type="submit"
-          className="w-full py-3  border border-transparent shadow-sm bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md "
+          disabled={isSubmitting}
+          className="w-full py-3 disabled:opacity-60 disabled:cursor-wait border border-transparent shadow-sm bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md "
         >
-          {edit ? "Guardar" : "Añadir"}
+          {isSubmitting ? (<span className="inline-flex items-center justify-center gap-2"><span className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />{edit ? "Guardando…" : "Añadiendo…"}</span>) : (edit ? "Guardar" : "Añadir")}
         </button>
       </form>
     </>

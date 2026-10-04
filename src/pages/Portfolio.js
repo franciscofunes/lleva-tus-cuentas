@@ -86,7 +86,8 @@ function Portfolio() {
 	const [verifyTarget, setVerifyTarget] = useState(null);
 	const [verifyBalance, setVerifyBalance] = useState('');
 	const [rateTarget, setRateTarget] = useState(null);
-	const [quickRate, setQuickRate] = useState('');
+		const [quickRate, setQuickRate] = useState('');
+	const [pendingAction, setPendingAction] = useState('');
 	
 
 	useEffect(() => {
@@ -212,6 +213,8 @@ function Portfolio() {
 
 	const submit = async (event) => {
 		event.preventDefault();
+		if (pendingAction) return;
+		setPendingAction('save');
 		try {
 			if (editingId) {
 				await updatePortfolioPosition(user.uid, editingId, form);
@@ -223,6 +226,8 @@ function Portfolio() {
 			reset();
 		} catch (error) {
 			toast.error('No se pudo guardar la posición');
+		} finally {
+			setPendingAction('');
 		}
 	};
 
@@ -256,13 +261,16 @@ function Portfolio() {
 	const requestDelete = (position) => setDeleteTarget(position);
 
 	const remove = async () => {
-		if (!deleteTarget) return;
+		if (!deleteTarget || pendingAction) return;
+		setPendingAction('delete');
 		try {
 			await deletePortfolioPosition(user.uid, deleteTarget.id);
 			toast.warn('Posición eliminada');
 			setDeleteTarget(null);
 		} catch (error) {
 			toast.error('No se pudo eliminar');
+		} finally {
+			setPendingAction('');
 		}
 	};
 
@@ -272,7 +280,8 @@ function Portfolio() {
 	};
 
 	const verify = async () => {
-		if (!verifyTarget || verifyBalance === '') return;
+		if (!verifyTarget || verifyBalance === '' || pendingAction) return;
+		setPendingAction('verify');
 		try {
 			await verifyPortfolioPosition(user.uid, verifyTarget, verifyBalance);
 			toast.success('Saldo verificado y snapshot guardado');
@@ -280,11 +289,13 @@ function Portfolio() {
 			setVerifyBalance('');
 		} catch (error) {
 			toast.error('No se pudo verificar el saldo');
+		} finally {
+			setPendingAction('');
 		}
 	};
 
 	const requestRateUpdate = (position) => { setRateTarget(position); setQuickRate(String(position.annualRate ?? '')); };
-	const saveQuickRate = async () => { if (!rateTarget || quickRate === '') return; try { await updatePortfolioPosition(user.uid, rateTarget.id, { ...rateTarget, annualRate: quickRate }); toast.success(`Tasa de ${rateTarget.institution} actualizada a ${Number(quickRate).toFixed(2)}%`); setRateTarget(null); setQuickRate(''); } catch (error) { toast.error('No se pudo actualizar la tasa'); } };
+	const saveQuickRate = async () => { if (!rateTarget || quickRate === '' || pendingAction) return; setPendingAction('rate'); try { await updatePortfolioPosition(user.uid, rateTarget.id, { ...rateTarget, annualRate: quickRate }); toast.success(`Tasa de ${rateTarget.institution} actualizada a ${Number(quickRate).toFixed(2)}%`); setRateTarget(null); setQuickRate(''); } catch (error) { toast.error('No se pudo actualizar la tasa'); } finally { setPendingAction(''); } };
 	const copyLlmPrompt = async () => {
 		try {
 			await navigator.clipboard.writeText(buildPortfolioLlmMarkdown(positions, snapshots));
@@ -502,13 +513,13 @@ function Portfolio() {
 										)}
 									</div>
 								</div>
-								<div className='flex flex-wrap items-center gap-2 mt-4'>
-									<button className='px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => requestVerify(position)}>Verificar saldo</button>
+								<div className='grid grid-cols-4 sm:flex sm:flex-wrap items-center gap-2 mt-4'>
+									<button className='col-span-3 sm:col-auto px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => requestVerify(position)}>Verificar saldo</button>
 									{position.infoUrl && <button title='Información oficial del activo' aria-label='Información oficial del activo' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-blue-400' onClick={() => openInfo(position)}><FaBookOpen /></button>}
 									{(position.category === 'Cuenta remunerada' || /earn\s*vault/i.test(`${position.name || ''} ${position.category || ''}`)) && <button title='Actualizar tasa rápidamente' aria-label='Actualizar tasa rápidamente' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-green-400' onClick={() => requestRateUpdate(position)}><FaPercent /></button>}
 									{(position.appUrl || position.webUrl) && <button title='Abrir app / web' aria-label='Abrir app o web' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' onClick={() => openInstitution(position)}><FaExternalLinkAlt /></button>}
 									<button title='Editar posición' aria-label='Editar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-purple-500' onClick={() => edit(position)}><FaPencilAlt /></button>
-									<button title='Eliminar posición' aria-label='Eliminar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg text-red-500 border border-red-300 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30' onClick={() => requestDelete(position)}><FaTrashAlt /></button>
+									<button title='Eliminar posición' aria-label='Eliminar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg text-red-500 border border-red-300 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30 sm:ml-auto' onClick={() => requestDelete(position)}><FaTrashAlt /></button>
 								</div>
 							</article>
 						))}
@@ -532,14 +543,14 @@ function Portfolio() {
 						<input autoFocus className='portfolio-input mt-4' type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo actual' />
 						<div className='grid grid-cols-2 gap-2 mt-5'>
 							<button type='button' onClick={() => setVerifyTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
-							<button type='button' disabled={verifyBalance === ''} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold'>Confirmar saldo</button>
+							<button type='button' disabled={verifyBalance === '' || pendingAction === 'verify'} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold'>Confirmar saldo</button>
 						</div>
 					</div>
 				)}
 				closeModal={() => setVerifyTarget(null)}
 			/>
 
-			<GenericModal show={Boolean(rateTarget)} component={() => (<div className='text-white pr-8'><div className='w-12 h-12 rounded-full bg-green-500/15 text-green-400 flex items-center justify-center mb-4'><FaPercent /></div><h2 className='text-xl font-bold'>Actualizar tasa</h2><p className='mt-2 text-sm text-gray-300'><strong>{rateTarget?.institution}</strong> · {rateTarget?.name}</p><p className='mt-1 text-xs text-gray-400'>Actualizá solamente la tasa. El resto de la posición no cambia.</p><div className='relative mt-4'><input autoFocus className='portfolio-input pr-10 text-xl font-bold' type='number' step='0.01' min='0' value={quickRate} onChange={(event) => setQuickRate(event.target.value)} placeholder='Tasa anual' /><span className='absolute right-3 top-2.5 font-bold text-gray-400'>%</span></div><div className='grid grid-cols-2 gap-2 mt-5'><button type='button' onClick={() => setRateTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button><button type='button' disabled={quickRate === ''} onClick={saveQuickRate} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold'>Guardar tasa</button></div></div>)} closeModal={() => setRateTarget(null)} />
+			<GenericModal show={Boolean(rateTarget)} component={() => (<div className='text-white pr-8'><div className='w-12 h-12 rounded-full bg-green-500/15 text-green-400 flex items-center justify-center mb-4'><FaPercent /></div><h2 className='text-xl font-bold'>Actualizar tasa</h2><p className='mt-2 text-sm text-gray-300'><strong>{rateTarget?.institution}</strong> · {rateTarget?.name}</p><p className='mt-1 text-xs text-gray-400'>Actualizá solamente la tasa. El resto de la posición no cambia.</p><div className='relative mt-4'><input autoFocus className='portfolio-input pr-10 text-xl font-bold' type='number' step='0.01' min='0' value={quickRate} onChange={(event) => setQuickRate(event.target.value)} placeholder='Tasa anual' /><span className='absolute right-3 top-2.5 font-bold text-gray-400'>%</span></div><div className='grid grid-cols-2 gap-2 mt-5'><button type='button' onClick={() => setRateTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button><button type='button' disabled={quickRate === '' || pendingAction === 'rate'} onClick={saveQuickRate} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'rate' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'rate' ? 'Guardando…' : 'Guardar tasa'}</button></div></div>)} closeModal={() => setRateTarget(null)} />
 
 			<GenericModal
 				show={Boolean(deleteTarget)}
@@ -550,7 +561,7 @@ function Portfolio() {
 						<p className='mt-2 text-sm text-gray-300'>¿Seguro que querés eliminar <strong>{deleteTarget?.name}</strong> de {deleteTarget?.institution}? Esta acción no se puede deshacer.</p>
 						<div className='grid grid-cols-2 gap-2 mt-5'>
 							<button type='button' onClick={() => setDeleteTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
-							<button type='button' onClick={remove} className='py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold'>Eliminar</button>
+							<button type='button' disabled={pendingAction === 'delete'} onClick={remove} className='py-2.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'delete' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'delete' ? 'Eliminando…' : 'Eliminar'}</button>
 						</div>
 					</div>
 				)}
