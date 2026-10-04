@@ -158,7 +158,7 @@ function Portfolio() {
 		}, {});
 	}, [totals]);
 
-	if (isFetching) return <div className='p-8 text-center dark:text-white'>Cargando...</div>;
+	if (isFetching) return <main className='min-h-[calc(100dvh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 px-4 pt-4 pb-28 lg:p-8'><div className='max-w-7xl mx-auto w-full space-y-6 animate-pulse' aria-label='Cargando portfolio'><div className='space-y-2'><div className='h-9 w-72 max-w-[80%] rounded-lg bg-slate-200 dark:bg-slate-800' /><div className='h-5 w-full max-w-2xl rounded bg-slate-200 dark:bg-slate-800' /></div><section className='grid grid-cols-3 gap-2 sm:gap-4'>{[0,1,2].map((item) => <div key={item} className='h-28 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700' />)}</section><div className='space-y-3'><div className='h-7 w-44 rounded bg-slate-200 dark:bg-slate-800' /><div className='h-36 rounded-2xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700' /></div><div className='space-y-3'><div className='h-7 w-36 rounded bg-slate-200 dark:bg-slate-800' /><div className='h-64 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700' /></div></div></main>;
 	if (!user) return <Navigate to='/' />;
 
 	const onChange = (event) =>
