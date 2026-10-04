@@ -4,10 +4,11 @@ import { Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
+import AppFooter from '../components/AppFooter';
 import PortfolioCharts from '../components/PortfolioCharts';
 import GenericModal from '../components/GenericModal';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
-import { exportPortfolioXlsx, downloadPortfolioMarkdown } from '../utils/portfolioExport';
+import { exportPortfolioXlsx, buildPortfolioLlmMarkdown } from '../utils/portfolioExport';
 import {
 	createPortfolioPosition,
 	deletePortfolioPosition,
@@ -284,6 +285,14 @@ function Portfolio() {
 
 	const requestRateUpdate = (position) => { setRateTarget(position); setQuickRate(String(position.annualRate ?? '')); };
 	const saveQuickRate = async () => { if (!rateTarget || quickRate === '') return; try { await updatePortfolioPosition(user.uid, rateTarget.id, { ...rateTarget, annualRate: quickRate }); toast.success(`Tasa de ${rateTarget.institution} actualizada a ${Number(quickRate).toFixed(2)}%`); setRateTarget(null); setQuickRate(''); } catch (error) { toast.error('No se pudo actualizar la tasa'); } };
+	const copyLlmPrompt = async () => {
+		try {
+			await navigator.clipboard.writeText(buildPortfolioLlmMarkdown(positions, snapshots));
+			toast.success('Prompt LLM copiado al portapapeles');
+		} catch (error) {
+			toast.error('No se pudo copiar el prompt al portapapeles');
+		}
+	};
 	const openInfo = (position) => { if (!position.infoUrl) { toast.info('Todavía no configuraste una página de información para este activo'); return; } window.open(position.infoUrl, '_blank', 'noopener,noreferrer'); };
 
 	const openInstitution = (position) => {
@@ -325,7 +334,7 @@ function Portfolio() {
 					</div>
 					{!loading && positions.length > 0 && <div className='flex flex-wrap gap-2'>
 						<button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>
-						<button type='button' onClick={() => downloadPortfolioMarkdown(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Prompt LLM</button>
+						<button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>
 					</div>}
 				</div>
 
@@ -429,6 +438,7 @@ function Portfolio() {
 					</section>
 				</>}
 			</div>
+			{!loading && <AppFooter />}
 
 			<GenericModal
 				show={showForm}
