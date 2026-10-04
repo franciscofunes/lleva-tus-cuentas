@@ -513,13 +513,15 @@ function Portfolio() {
 										)}
 									</div>
 								</div>
-								<div className='grid grid-cols-4 sm:flex sm:flex-wrap items-center gap-2 mt-4'>
-									<button className='col-span-3 sm:col-auto px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => requestVerify(position)}>Verificar saldo</button>
+								<div className='flex flex-col gap-3 mt-4'>
+									<button className='w-full px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => requestVerify(position)}>Verificar saldo</button>
+									<div className='flex items-center justify-between gap-2 w-full'>
 									{position.infoUrl && <button title='Información oficial del activo' aria-label='Información oficial del activo' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-blue-400' onClick={() => openInfo(position)}><FaBookOpen /></button>}
 									{(position.category === 'Cuenta remunerada' || /earn\s*vault/i.test(`${position.name || ''} ${position.category || ''}`)) && <button title='Actualizar tasa rápidamente' aria-label='Actualizar tasa rápidamente' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-green-400' onClick={() => requestRateUpdate(position)}><FaPercent /></button>}
 									{(position.appUrl || position.webUrl) && <button title='Abrir app / web' aria-label='Abrir app o web' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' onClick={() => openInstitution(position)}><FaExternalLinkAlt /></button>}
 									<button title='Editar posición' aria-label='Editar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-purple-500' onClick={() => edit(position)}><FaPencilAlt /></button>
-									<button title='Eliminar posición' aria-label='Eliminar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg text-red-500 border border-red-300 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30 sm:ml-auto' onClick={() => requestDelete(position)}><FaTrashAlt /></button>
+									<button title='Eliminar posición' aria-label='Eliminar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg text-red-500 border border-red-300 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30' onClick={() => requestDelete(position)}><FaTrashAlt /></button>
+									</div>
 								</div>
 							</article>
 						))}
