@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import AppFooter from '../components/AppFooter';
+import InfoTooltip from '../components/InfoTooltip';
 import PortfolioCharts from '../components/PortfolioCharts';
 import GenericModal from '../components/GenericModal';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
@@ -486,14 +487,7 @@ function Portfolio() {
 										<p className='text-sm font-bold uppercase tracking-wide text-purple-500'>{position.institution}</p>
 										<div className='flex items-center gap-2 mt-1'>
 											<h3 className='text-xl sm:text-2xl font-bold leading-tight'>{position.name}</h3>
-											{position.notes && (
-												<span className='relative group inline-flex shrink-0'>
-													<button type='button' aria-label='Ver descripción de la posición' className='w-6 h-6 rounded-full border border-slate-300 dark:border-slate-600 text-xs font-bold text-gray-500 dark:text-gray-300 hover:text-purple-500 hover:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500'>i</button>
-													<span role='tooltip' className='pointer-events-none absolute left-0 top-8 z-20 hidden group-hover:block group-focus-within:block w-64 max-w-[75vw] rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-950 p-3 text-left text-xs normal-case font-normal tracking-normal leading-relaxed text-slate-700 dark:text-slate-200 shadow-xl'>
-														{position.notes}
-													</span>
-												</span>
-											)}
+											{position.notes && <InfoTooltip placement='top' content={position.notes} />}
 										</div>
 										<p className='text-xs uppercase text-gray-400 mt-1'>{position.category}</p>
 										<p className='text-3xl font-bold mt-3'>{money(position.balance, position.currency)}</p>
