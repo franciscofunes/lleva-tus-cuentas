@@ -1,7 +1,7 @@
 const CANONICAL_FIELDS = [
 	'institution', 'name', 'category', 'currency', 'balance', 'annualRate', 'rateType',
 	'liquidity', 'fees', 'principal', 'realizedEarnings', 'lastEarning', 'effectiveRate',
-	'startDate', 'maturityDate', 'notes', 'trackingMode', 'appUrl', 'webUrl',
+	'startDate', 'maturityDate', 'notes', 'trackingMode', 'appUrl', 'webUrl', 'infoUrl',
 	'ticker', 'shares', 'nav', 'navDate', 'redemptionPeriod', 'minimumInvestment',
 	'performance1D', 'performance1W', 'performance1M', 'performanceYTD', 'performance1Y',
 	'fundType', 'investmentHorizon', 'fundStartDate', 'rating', 'volatility21dAnnualized', 'publishedYtdReturn',
