@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -324,6 +324,75 @@ function Portfolio() {
 	};
 
 
+	const PortfolioForm = useCallback(() => (
+		<form onSubmit={submit} className='space-y-2 text-white max-h-[78dvh] overflow-y-auto pr-4 mr-1 [scrollbar-gutter:stable]'>
+										<h2 className='text-lg font-bold pr-10 mb-2'>{editingId ? 'Editar posición' : 'Nueva posición'}</h2>
+										<div className='mb-2'>
+											<button type='button' onClick={() => setShowMarkdownImport((value) => !value)} className='w-full py-2 rounded-lg border border-purple-500 text-purple-300 text-sm font-semibold'>{showMarkdownImport ? 'Ocultar importador' : editingId ? 'Enriquecer con Markdown' : 'Pegar Markdown y autocompletar'}</button>
+											{showMarkdownImport && <div className='mt-2 p-3 rounded-lg border border-slate-700 bg-slate-950/30'>
+												<textarea className='portfolio-input min-h-[120px] text-sm' value={markdownImport} onChange={(event) => { setMarkdownImport(event.target.value); setImportPreview([]); }} placeholder='Pegá Markdown generado desde fuentes oficiales...' />
+												<p className='text-xs text-gray-400 mt-1'>Primero compara. Nada se modifica hasta que selecciones campos y guardes la posición.</p>
+												<button type='button' disabled={!markdownImport.trim()} onClick={importMarkdown} className='w-full mt-2 py-2 rounded-lg bg-secondary disabled:opacity-40 text-white font-semibold'>Comparar Markdown</button>
+												{importPreview.length > 0 && <div className='mt-3 space-y-2'>
+													<div className='flex flex-wrap gap-2'><button type='button' onClick={() => selectImportFields('missing')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Solo faltantes</button><button type='button' onClick={() => selectImportFields('all')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Todos los cambios</button><button type='button' onClick={() => selectImportFields('none')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Ninguno</button></div>
+													{importPreview.map((item) => <label key={item.field} className='flex gap-3 rounded-lg border border-slate-700 p-2 text-sm cursor-pointer'><input type='checkbox' checked={item.selected} onChange={() => toggleImportField(item.field)} /><span className='min-w-0'><strong>{item.field}</strong>{item.missing && <span className='ml-2 text-green-400 text-xs'>FALTANTE</span>}<span className='block text-xs text-slate-400 break-all'>{String(item.current || '—')} → <span className='text-white'>{String(item.value)}</span></span></span></label>)}
+													<button type='button' onClick={applyImportFields} className='w-full py-2 rounded-lg bg-ltc-green text-white font-bold'>Aplicar campos seleccionados</button>
+												</div>}
+											</div>}
+										</div>
+											
+											<div className='space-y-2'>
+												<input className='portfolio-input' name='institution' value={form.institution} onChange={onChange} placeholder='Institución / plataforma' required />
+												<input className='portfolio-input' name='name' value={form.name} onChange={onChange} placeholder='Producto / cuenta' required />
+												<select className='portfolio-input' name='category' value={form.category} onChange={onChange}>
+													{['Cuenta remunerada','Plazo fijo','FCI','ETF','Crypto / staking','Cash','Carry trade','Otro'].map((item) => <option key={item}>{item}</option>)}
+												</select>
+												<div className='grid grid-cols-2 gap-2'>
+													<select className='portfolio-input' name='currency' value={form.currency} onChange={onChange}>
+														<option>ARS</option><option>USD</option><option>EUR</option><option>USDT</option>
+													</select>
+													<input className='portfolio-input' type='number' step='0.01' min='0' name='balance' value={form.balance} onChange={onChange} placeholder='Capital actual' required />
+												</div>
+												<div className='grid grid-cols-2 gap-2'>
+													<input className='portfolio-input' type='number' step='0.01' min='0' name='annualRate' value={form.annualRate} onChange={onChange} placeholder='Tasa anual %' />
+													<select className='portfolio-input' name='rateType' value={form.rateType} onChange={onChange}><option>TNA</option><option>TEA</option><option>TIR</option><option>APY</option><option>Variable</option></select>
+												</div>
+												<select className='portfolio-input' name='trackingMode' value={form.trackingMode || 'MANUAL'} onChange={onChange}>
+													<option value='DAILY_RATE'>Cuenta remunerada · diario</option>
+													<option value='MATURITY'>Plazo fijo · vencimiento</option>
+													<option value='NAV'>FCI · valuación</option>
+													<option value='MANUAL'>Manual</option>
+												</select>
+												{form.category === 'FCI' && (
+													<div className='space-y-2 rounded-lg border border-slate-700 p-2'>
+														<p className='text-xs font-semibold text-purple-300'>Datos específicos del FCI</p>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' name='ticker' value={form.ticker} onChange={onChange} placeholder='Ticker / clase' /><input className='portfolio-input' name='redemptionPeriod' value={form.redemptionPeriod} onChange={onChange} placeholder='Rescate (ej. 24h)' /></div>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='number' step='any' min='0' name='shares' value={form.shares} onChange={onChange} placeholder='Cuotapartes' /><input className='portfolio-input' type='number' step='any' min='0' name='nav' value={form.nav} onChange={onChange} placeholder='Valor cuotaparte / NAV' /></div>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='date' name='navDate' value={form.navDate} onChange={onChange} /><input className='portfolio-input' type='number' step='any' min='0' name='minimumInvestment' value={form.minimumInvestment} onChange={onChange} placeholder='Inversión mínima' /></div>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='number' step='any' name='performance1D' value={form.performance1D} onChange={onChange} placeholder='Rend. 1D %' /><input className='portfolio-input' type='number' step='any' name='performance1W' value={form.performance1W} onChange={onChange} placeholder='Rend. 1S %' /></div>
+														<div className='grid grid-cols-3 gap-2'><input className='portfolio-input' type='number' step='any' name='performance1M' value={form.performance1M} onChange={onChange} placeholder='1M %' /><input className='portfolio-input' type='number' step='any' name='performanceYTD' value={form.performanceYTD} onChange={onChange} placeholder='YTD %' /><input className='portfolio-input' type='number' step='any' name='performance1Y' value={form.performance1Y} onChange={onChange} placeholder='1A %' /></div>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' name='fundType' value={form.fundType} onChange={onChange} placeholder='Tipo (ej. Renta fija)' /><input className='portfolio-input' name='investmentHorizon' value={form.investmentHorizon} onChange={onChange} placeholder='Horizonte' /></div>
+														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='date' name='fundStartDate' value={form.fundStartDate} onChange={onChange} /><input className='portfolio-input' name='rating' value={form.rating} onChange={onChange} placeholder='Calificación' /></div>
+														<input className='portfolio-input' type='number' step='any' min='0' name='volatility21dAnnualized' value={form.volatility21dAnnualized} onChange={onChange} placeholder='Volatilidad 21d anualizada %' />
+										<div className='rounded-lg border border-slate-600 p-3 space-y-3'><div><p className='text-sm font-bold text-white'>Rentabilidad mensual</p><p className='text-xs text-gray-300'>Cargá los porcentajes publicados por el fondo. LTC conserva el total publicado y calcula también el acumulado compuesto.</p></div><div className='grid grid-cols-3 gap-2'>{monthKeys.map(([key,label]) => <label key={key} className='text-xs font-semibold text-gray-200'>{label}<input className='portfolio-input mt-1' type='number' step='0.01' value={form.monthlyReturns?.[key] ?? ''} onChange={(event) => onMonthlyReturnChange(key, event.target.value)} placeholder='0.00' /></label>)}</div><div className='grid grid-cols-2 gap-2'><div className='rounded-lg bg-slate-800 p-2'><p className='text-xs text-gray-300'>Suma simple</p><p className='font-bold'>{monthlySimpleTotal.toFixed(2)}%</p></div><div className='rounded-lg bg-slate-800 p-2'><p className='text-xs text-gray-300'>Acumulado compuesto</p><p className='font-bold text-green-400'>{monthlyCompoundTotal.toFixed(2)}%</p></div></div><input className='portfolio-input' type='number' step='0.01' name='publishedYtdReturn' value={form.publishedYtdReturn || ''} onChange={onChange} placeholder='Total YTD publicado por el fondo %' /></div>
+													</div>
+												)}
+												<input className='portfolio-input' name='appUrl' value={form.appUrl || ''} onChange={onChange} placeholder='Acceso app / deep link (opcional)' />
+												<input className='portfolio-input' name='webUrl' value={form.webUrl || ''} onChange={onChange} placeholder='Web fallback oficial (opcional)' />
+												<input className='portfolio-input' type='url' name='infoUrl' value={form.infoUrl || ''} onChange={onChange} placeholder='Página oficial de información / rendimiento' />
+												<input className='portfolio-input' name='liquidity' value={form.liquidity} onChange={onChange} placeholder='Liquidez (ej. inmediata / 24 h)' />
+												<input className='portfolio-input' type='number' step='0.01' min='0' name='fees' value={form.fees} onChange={onChange} placeholder='Comisiones estimadas' />
+												<div className='grid grid-cols-2 gap-2'>
+													<input className='portfolio-input' type='date' name='startDate' value={form.startDate || ''} onChange={onChange} />
+													<input className='portfolio-input' type='date' name='maturityDate' value={form.maturityDate || ''} onChange={onChange} />
+												</div>
+												<textarea className='portfolio-input' name='notes' value={form.notes} onChange={onChange} placeholder='Notas' rows='2' />
+											</div>
+											<button className='w-full mt-2 py-2.5 rounded-lg bg-primary text-white font-semibold' type='submit'>{editingId ? 'Guardar cambios' : 'Agregar al portfolio'}</button>
+											{editingId && <button className='w-full mt-2 py-2 text-sm' type='button' onClick={reset}>Cancelar edición</button>}
+										</form>
+	), [editingId, form, showMarkdownImport, markdownImport, importPreview, monthlySimpleTotal, monthlyCompoundTotal]);
+
 	return (
 		<main className='relative min-h-[calc(100dvh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 pb-0 lg:pb-8'>
 			<div className='max-w-7xl mx-auto px-4 pt-4 lg:px-0 lg:pt-0 w-full'>
@@ -442,74 +511,7 @@ function Portfolio() {
 
 			<GenericModal
 				show={showForm}
-				component={() => (
-					<form onSubmit={submit} className='space-y-2 text-white max-h-[78dvh] overflow-y-auto pr-4 mr-1 [scrollbar-gutter:stable]'>
-										<h2 className='text-lg font-bold pr-10 mb-2'>{editingId ? 'Editar posición' : 'Nueva posición'}</h2>
-										<div className='mb-2'>
-											<button type='button' onClick={() => setShowMarkdownImport((value) => !value)} className='w-full py-2 rounded-lg border border-purple-500 text-purple-300 text-sm font-semibold'>{showMarkdownImport ? 'Ocultar importador' : editingId ? 'Enriquecer con Markdown' : 'Pegar Markdown y autocompletar'}</button>
-											{showMarkdownImport && <div className='mt-2 p-3 rounded-lg border border-slate-700 bg-slate-950/30'>
-												<textarea className='portfolio-input min-h-[120px] text-sm' value={markdownImport} onChange={(event) => { setMarkdownImport(event.target.value); setImportPreview([]); }} placeholder='Pegá Markdown generado desde fuentes oficiales...' />
-												<p className='text-xs text-gray-400 mt-1'>Primero compara. Nada se modifica hasta que selecciones campos y guardes la posición.</p>
-												<button type='button' disabled={!markdownImport.trim()} onClick={importMarkdown} className='w-full mt-2 py-2 rounded-lg bg-secondary disabled:opacity-40 text-white font-semibold'>Comparar Markdown</button>
-												{importPreview.length > 0 && <div className='mt-3 space-y-2'>
-													<div className='flex flex-wrap gap-2'><button type='button' onClick={() => selectImportFields('missing')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Solo faltantes</button><button type='button' onClick={() => selectImportFields('all')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Todos los cambios</button><button type='button' onClick={() => selectImportFields('none')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Ninguno</button></div>
-													{importPreview.map((item) => <label key={item.field} className='flex gap-3 rounded-lg border border-slate-700 p-2 text-sm cursor-pointer'><input type='checkbox' checked={item.selected} onChange={() => toggleImportField(item.field)} /><span className='min-w-0'><strong>{item.field}</strong>{item.missing && <span className='ml-2 text-green-400 text-xs'>FALTANTE</span>}<span className='block text-xs text-slate-400 break-all'>{String(item.current || '—')} → <span className='text-white'>{String(item.value)}</span></span></span></label>)}
-													<button type='button' onClick={applyImportFields} className='w-full py-2 rounded-lg bg-ltc-green text-white font-bold'>Aplicar campos seleccionados</button>
-												</div>}
-											</div>}
-										</div>
-											
-											<div className='space-y-2'>
-												<input className='portfolio-input' name='institution' value={form.institution} onChange={onChange} placeholder='Institución / plataforma' required />
-												<input className='portfolio-input' name='name' value={form.name} onChange={onChange} placeholder='Producto / cuenta' required />
-												<select className='portfolio-input' name='category' value={form.category} onChange={onChange}>
-													{['Cuenta remunerada','Plazo fijo','FCI','ETF','Crypto / staking','Cash','Carry trade','Otro'].map((item) => <option key={item}>{item}</option>)}
-												</select>
-												<div className='grid grid-cols-2 gap-2'>
-													<select className='portfolio-input' name='currency' value={form.currency} onChange={onChange}>
-														<option>ARS</option><option>USD</option><option>EUR</option><option>USDT</option>
-													</select>
-													<input className='portfolio-input' type='number' step='0.01' min='0' name='balance' value={form.balance} onChange={onChange} placeholder='Capital actual' required />
-												</div>
-												<div className='grid grid-cols-2 gap-2'>
-													<input className='portfolio-input' type='number' step='0.01' min='0' name='annualRate' value={form.annualRate} onChange={onChange} placeholder='Tasa anual %' />
-													<select className='portfolio-input' name='rateType' value={form.rateType} onChange={onChange}><option>TNA</option><option>TEA</option><option>TIR</option><option>APY</option><option>Variable</option></select>
-												</div>
-												<select className='portfolio-input' name='trackingMode' value={form.trackingMode || 'MANUAL'} onChange={onChange}>
-													<option value='DAILY_RATE'>Cuenta remunerada · diario</option>
-													<option value='MATURITY'>Plazo fijo · vencimiento</option>
-													<option value='NAV'>FCI · valuación</option>
-													<option value='MANUAL'>Manual</option>
-												</select>
-												{form.category === 'FCI' && (
-													<div className='space-y-2 rounded-lg border border-slate-700 p-2'>
-														<p className='text-xs font-semibold text-purple-300'>Datos específicos del FCI</p>
-														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' name='ticker' value={form.ticker} onChange={onChange} placeholder='Ticker / clase' /><input className='portfolio-input' name='redemptionPeriod' value={form.redemptionPeriod} onChange={onChange} placeholder='Rescate (ej. 24h)' /></div>
-														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='number' step='any' min='0' name='shares' value={form.shares} onChange={onChange} placeholder='Cuotapartes' /><input className='portfolio-input' type='number' step='any' min='0' name='nav' value={form.nav} onChange={onChange} placeholder='Valor cuotaparte / NAV' /></div>
-														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='date' name='navDate' value={form.navDate} onChange={onChange} /><input className='portfolio-input' type='number' step='any' min='0' name='minimumInvestment' value={form.minimumInvestment} onChange={onChange} placeholder='Inversión mínima' /></div>
-														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='number' step='any' name='performance1D' value={form.performance1D} onChange={onChange} placeholder='Rend. 1D %' /><input className='portfolio-input' type='number' step='any' name='performance1W' value={form.performance1W} onChange={onChange} placeholder='Rend. 1S %' /></div>
-														<div className='grid grid-cols-3 gap-2'><input className='portfolio-input' type='number' step='any' name='performance1M' value={form.performance1M} onChange={onChange} placeholder='1M %' /><input className='portfolio-input' type='number' step='any' name='performanceYTD' value={form.performanceYTD} onChange={onChange} placeholder='YTD %' /><input className='portfolio-input' type='number' step='any' name='performance1Y' value={form.performance1Y} onChange={onChange} placeholder='1A %' /></div>
-														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' name='fundType' value={form.fundType} onChange={onChange} placeholder='Tipo (ej. Renta fija)' /><input className='portfolio-input' name='investmentHorizon' value={form.investmentHorizon} onChange={onChange} placeholder='Horizonte' /></div>
-														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='date' name='fundStartDate' value={form.fundStartDate} onChange={onChange} /><input className='portfolio-input' name='rating' value={form.rating} onChange={onChange} placeholder='Calificación' /></div>
-														<input className='portfolio-input' type='number' step='any' min='0' name='volatility21dAnnualized' value={form.volatility21dAnnualized} onChange={onChange} placeholder='Volatilidad 21d anualizada %' />
-										<div className='rounded-lg border border-slate-600 p-3 space-y-3'><div><p className='text-sm font-bold text-white'>Rentabilidad mensual</p><p className='text-xs text-gray-300'>Cargá los porcentajes publicados por el fondo. LTC conserva el total publicado y calcula también el acumulado compuesto.</p></div><div className='grid grid-cols-3 gap-2'>{monthKeys.map(([key,label]) => <label key={key} className='text-xs font-semibold text-gray-200'>{label}<input className='portfolio-input mt-1' type='number' step='0.01' value={form.monthlyReturns?.[key] ?? ''} onChange={(event) => onMonthlyReturnChange(key, event.target.value)} placeholder='0.00' /></label>)}</div><div className='grid grid-cols-2 gap-2'><div className='rounded-lg bg-slate-800 p-2'><p className='text-xs text-gray-300'>Suma simple</p><p className='font-bold'>{monthlySimpleTotal.toFixed(2)}%</p></div><div className='rounded-lg bg-slate-800 p-2'><p className='text-xs text-gray-300'>Acumulado compuesto</p><p className='font-bold text-green-400'>{monthlyCompoundTotal.toFixed(2)}%</p></div></div><input className='portfolio-input' type='number' step='0.01' name='publishedYtdReturn' value={form.publishedYtdReturn || ''} onChange={onChange} placeholder='Total YTD publicado por el fondo %' /></div>
-													</div>
-												)}
-												<input className='portfolio-input' name='appUrl' value={form.appUrl || ''} onChange={onChange} placeholder='Acceso app / deep link (opcional)' />
-												<input className='portfolio-input' name='webUrl' value={form.webUrl || ''} onChange={onChange} placeholder='Web fallback oficial (opcional)' />
-												<input className='portfolio-input' type='url' name='infoUrl' value={form.infoUrl || ''} onChange={onChange} placeholder='Página oficial de información / rendimiento' />
-												<input className='portfolio-input' name='liquidity' value={form.liquidity} onChange={onChange} placeholder='Liquidez (ej. inmediata / 24 h)' />
-												<input className='portfolio-input' type='number' step='0.01' min='0' name='fees' value={form.fees} onChange={onChange} placeholder='Comisiones estimadas' />
-												<div className='grid grid-cols-2 gap-2'>
-													<input className='portfolio-input' type='date' name='startDate' value={form.startDate || ''} onChange={onChange} />
-													<input className='portfolio-input' type='date' name='maturityDate' value={form.maturityDate || ''} onChange={onChange} />
-												</div>
-												<textarea className='portfolio-input' name='notes' value={form.notes} onChange={onChange} placeholder='Notas' rows='2' />
-											</div>
-											<button className='w-full mt-2 py-2.5 rounded-lg bg-primary text-white font-semibold' type='submit'>{editingId ? 'Guardar cambios' : 'Agregar al portfolio'}</button>
-											{editingId && <button className='w-full mt-2 py-2 text-sm' type='button' onClick={reset}>Cancelar edición</button>}
-										</form>
-				)}
+				component={PortfolioForm}
 				closeModal={reset}
 			/>
 
