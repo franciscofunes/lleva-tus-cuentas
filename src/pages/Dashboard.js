@@ -101,6 +101,8 @@ function Dashboard() {
   };
 
   const advertisements = [kavakAd, cocacolaAd, cbseAd, lotoAd, cotoAd];
+  const adFreeUsers = (process.env.REACT_APP_AD_FREE_USERS || "").toLowerCase().split(",").map((value) => value.trim()).filter(Boolean);
+  const shouldShowAds = !paymentData && !adFreeUsers.includes(user?.email?.toLowerCase());
 
   const chartComponents = {
     expenses: BarChartWrapper,
@@ -426,7 +428,7 @@ function Dashboard() {
               )
             )}
           </motion.div>
-          {!paymentData ? (
+          {!paymentData && user?.email?.toLowerCase() !== "ffunes90@gmail.com" ? (
             <AdvertisementContainer advertisements={advertisements} />
           ) : (
             ""
