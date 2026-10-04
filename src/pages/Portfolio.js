@@ -411,7 +411,7 @@ function Portfolio() {
 			<GenericModal
 				show={showForm}
 				component={() => (
-					<form onSubmit={submit} className='space-y-2 text-white max-h-[78dvh] overflow-y-auto pr-1'>
+					<form onSubmit={submit} className='space-y-2 text-white max-h-[78dvh] overflow-y-auto pr-4 mr-1 [scrollbar-gutter:stable]'>
 										<h2 className='text-lg font-bold pr-10 mb-2'>{editingId ? 'Editar posición' : 'Nueva posición'}</h2>
 										{!editingId && (
 											<div className='mb-2'>
