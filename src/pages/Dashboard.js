@@ -426,7 +426,7 @@ function Dashboard() {
               )
             )}
           </motion.div>
-          {!paymentData ? (
+          {!paymentData && user?.email?.toLowerCase() !== "ffunes90@gmail.com" ? (
             <AdvertisementContainer advertisements={advertisements} />
           ) : (
             ""
