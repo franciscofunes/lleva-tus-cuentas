@@ -4,7 +4,6 @@ import { Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
-import wavesFooter from '../imgs/waves.svg';
 import PortfolioCharts from '../components/PortfolioCharts';
 import GenericModal from '../components/GenericModal';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
@@ -73,6 +72,8 @@ function Portfolio() {
 	const [form, setForm] = useState(emptyForm);
 	const [editingId, setEditingId] = useState(null);
 	const [loading, setLoading] = useState(true);
+	const [positionsLoaded, setPositionsLoaded] = useState(false);
+	const [snapshotsLoaded, setSnapshotsLoaded] = useState(false);
 	const [showForm, setShowForm] = useState(false);
 	const [markdownImport, setMarkdownImport] = useState('');
 	const [showMarkdownImport, setShowMarkdownImport] = useState(false);
@@ -87,11 +88,11 @@ function Portfolio() {
 			user.uid,
 			(data) => {
 				setPositions(data);
-				setLoading(false);
+				setPositionsLoaded(true);
 			},
 			() => {
 				toast.error('No se pudo cargar el portfolio');
-				setLoading(false);
+				setPositionsLoaded(true);
 			}
 		);
 	}, [user]);
@@ -100,10 +101,14 @@ function Portfolio() {
 		if (!user) return undefined;
 		return subscribePortfolioSnapshots(
 			user.uid,
-			setSnapshots,
-			() => toast.error('No se pudo cargar el historial del portfolio')
+			(data) => { setSnapshots(data); setSnapshotsLoaded(true); },
+			() => { setSnapshotsLoaded(true); toast.error('No se pudo cargar el historial del portfolio'); }
 		);
 	}, [user]);
+
+	useEffect(() => {
+		if (positionsLoaded && snapshotsLoaded) setLoading(false);
+	}, [positionsLoaded, snapshotsLoaded]);
 
 	const performanceByPosition = useMemo(() => {
 		const grouped = snapshots.reduce((acc, item) => {
@@ -286,14 +291,16 @@ function Portfolio() {
 
 
 	return (
-		<main className='relative min-h-[calc(100vh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 flex flex-col pb-0 lg:pb-8'>
-			<div className='max-w-7xl mx-auto px-4 pt-4 lg:px-0 lg:pt-0 w-full flex-1'>
+		<main className='relative min-h-[calc(100dvh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 pb-28 lg:pb-8'>
+			<div className='max-w-7xl mx-auto px-4 pt-4 lg:px-0 lg:pt-0 w-full'>
 				<div className='flex flex-wrap justify-between items-end gap-4 mb-6'>
 					<div>
 						<h1 className='text-3xl font-bold'>Cuentas e inversiones</h1>
 						<p className='text-gray-500 dark:text-gray-400 max-w-2xl'>Tu patrimonio financiero en un solo lugar. Los totales y rendimientos se mantienen separados por moneda.</p>
 					</div>
 				</div>
+
+				{loading ? <div className='space-y-6 animate-pulse' aria-label='Cargando portfolio'><section className='grid grid-cols-3 gap-2 sm:gap-4'>{[0,1,2].map((item) => <div key={item} className='h-28 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' />)}</section><div className='h-36 rounded-2xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /><div className='space-y-3'><div className='h-7 w-36 rounded bg-slate-200 dark:bg-slate-800' /><div className='h-64 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /></div></div> : <>
 
 				<section className='grid grid-cols-3 gap-2 sm:gap-4 mb-6'>
 					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
@@ -389,12 +396,8 @@ function Portfolio() {
 							</article>
 						))}
 					</section>
+				</>}
 			</div>
-
-			<div className='relative z-0 mt-auto block w-full lg:hidden pointer-events-none leading-none' aria-hidden='true'>
-				<img src={wavesFooter} alt='' className='block w-full h-auto' />
-			</div>
-			<div className='h-24 lg:hidden shrink-0' aria-hidden='true' />
 
 			<GenericModal
 				show={showForm}
@@ -501,7 +504,7 @@ function Portfolio() {
 				closeModal={() => setDeleteTarget(null)}
 			/>
 
-			{!showForm && (
+			{!loading && !showForm && (
 				<PrimaryFab onClick={() => setShowForm(true)} ariaLabel='Agregar posición' />
 			)}
 
