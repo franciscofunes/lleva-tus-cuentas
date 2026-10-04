@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaWallet, FaChartLine, FaRegClock } from 'react-icons/fa';
+import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaCamera } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import wavesFooter from '../imgs/waves.svg';
 import PortfolioCharts from '../components/PortfolioCharts';
@@ -75,6 +75,7 @@ function Portfolio() {
 	const [showForm, setShowForm] = useState(false);
 	const [markdownImport, setMarkdownImport] = useState('');
 	const [showMarkdownImport, setShowMarkdownImport] = useState(false);
+	const [deleteTarget, setDeleteTarget] = useState(null);
 
 	useEffect(() => {
 		if (!user) return undefined;
@@ -213,11 +214,14 @@ function Portfolio() {
 		setShowForm(true);
 	};
 
-	const remove = async (positionId) => {
-		if (!window.confirm('¿Eliminar esta posición del portfolio?')) return;
+	const requestDelete = (position) => setDeleteTarget(position);
+
+	const remove = async () => {
+		if (!deleteTarget) return;
 		try {
-			await deletePortfolioPosition(user.uid, positionId);
+			await deletePortfolioPosition(user.uid, deleteTarget.id);
 			toast.warn('Posición eliminada');
+			setDeleteTarget(null);
 		} catch (error) {
 			toast.error('No se pudo eliminar');
 		}
@@ -363,12 +367,12 @@ function Portfolio() {
 										)}
 									</div>
 								</div>
-								<div className='flex flex-wrap gap-2 mt-4'>
+								<div className='flex flex-wrap items-center gap-2 mt-4'>
 									<button className='px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => verify(position)}>Verificar saldo</button>
-									{position.appUrl && <button className='px-3 py-2 rounded-lg border dark:border-slate-600' onClick={() => openInstitution(position)}>Abrir app / web</button>}
-									<button className='px-3 py-2 rounded-lg border dark:border-slate-600' onClick={() => snapshot(position)}>Guardar snapshot</button>
-									<button className='px-3 py-2 rounded-lg border dark:border-slate-600' onClick={() => edit(position)}>Editar</button>
-									<button className='px-3 py-2 rounded-lg text-red-600 border border-red-200' onClick={() => remove(position.id)}>Eliminar</button>
+									{position.appUrl && <button title='Abrir app / web' aria-label='Abrir app o web' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' onClick={() => openInstitution(position)}><FaExternalLinkAlt /></button>}
+									<button title='Guardar snapshot' aria-label='Guardar snapshot' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' onClick={() => snapshot(position)}><FaCamera /></button>
+									<button title='Editar posición' aria-label='Editar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-purple-500' onClick={() => edit(position)}><FaPencilAlt /></button>
+									<button title='Eliminar posición' aria-label='Eliminar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg text-red-500 border border-red-300 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30' onClick={() => requestDelete(position)}><FaTrashAlt /></button>
 								</div>
 							</article>
 						))}
@@ -449,6 +453,22 @@ function Portfolio() {
 										</form>
 				)}
 				closeModal={reset}
+			/>
+
+			<GenericModal
+				show={Boolean(deleteTarget)}
+				component={() => (
+					<div className='text-white pr-8'>
+						<div className='w-12 h-12 rounded-full bg-red-500/15 text-red-400 flex items-center justify-center mb-4'><FaTrashAlt /></div>
+						<h2 className='text-xl font-bold'>Eliminar posición</h2>
+						<p className='mt-2 text-sm text-gray-300'>¿Seguro que querés eliminar <strong>{deleteTarget?.name}</strong> de {deleteTarget?.institution}? Esta acción no se puede deshacer.</p>
+						<div className='grid grid-cols-2 gap-2 mt-5'>
+							<button type='button' onClick={() => setDeleteTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
+							<button type='button' onClick={remove} className='py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold'>Eliminar</button>
+						</div>
+					</div>
+				)}
+				closeModal={() => setDeleteTarget(null)}
 			/>
 
 			{!showForm && (
