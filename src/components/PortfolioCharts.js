@@ -23,10 +23,32 @@ const PortfolioCharts = ({ positions, snapshots }) => {
 	);
 	const [currency, setCurrency] = React.useState(currencies[0] || 'USD');
 	const [view, setView] = React.useState('history');
+	const [selectedPositionId, setSelectedPositionId] = React.useState('');
 
 	React.useEffect(() => {
 		if (currencies.length && !currencies.includes(currency)) setCurrency(currencies[0]);
 	}, [currencies, currency]);
+
+	const currencyPositions = useMemo(() => positions.filter((p) => (p.currency || 'ARS') === currency), [positions, currency]);
+
+	React.useEffect(() => {
+		if (!currencyPositions.length) return setSelectedPositionId('');
+		if (!currencyPositions.some((p) => p.id === selectedPositionId)) setSelectedPositionId(currencyPositions[0].id);
+	}, [currencyPositions, selectedPositionId]);
+
+	const selectedPosition = currencyPositions.find((p) => p.id === selectedPositionId);
+
+	const assetHistory = useMemo(() => snapshots.filter((item) => item.positionId === selectedPositionId).map((item) => {
+		const date = snapshotDate(item.capturedAt);
+		return date ? { date: new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short' }).format(date), Saldo: Number(item.balance || 0) } : null;
+	}).filter(Boolean), [snapshots, selectedPositionId]);
+
+	const simulation = useMemo(() => {
+		if (!selectedPosition) return [];
+		const principal = Number(selectedPosition.balance || 0);
+		const rate = Number(selectedPosition.annualRate || 0) / 100;
+		return [1, 3, 6, 12].map((months) => ({ period: `${months}m`, Proyectado: principal * Math.pow(1 + rate / 12, months) }));
+	}, [selectedPosition]);
 
 	const positionIds = useMemo(
 		() => new Set(positions.filter((p) => (p.currency || 'ARS') === currency).map((p) => p.id)),
@@ -59,7 +81,7 @@ const PortfolioCharts = ({ positions, snapshots }) => {
 	if (!positions.length) return null;
 
 	return (
-		<section className='mb-7'>
+		<section className='mb-7 space-y-6'>
 			<div className='flex flex-wrap items-center justify-between gap-3 mb-3'>
 				<div><h2 className='text-lg font-bold'>Evolución del portfolio</h2><p className='text-xs text-gray-500'>Cada moneda se analiza por separado.</p></div>
 				<div className='flex gap-2'>
@@ -77,6 +99,18 @@ const PortfolioCharts = ({ positions, snapshots }) => {
 				{view === 'history' && history.length >= 2 && <AreaChart className='mt-4 h-48 sm:h-56' data={history} index='date' categories={['Saldo']} colors={['indigo']} valueFormatter={(value) => formatMoney(value, currency)} showLegend={false} yAxisWidth={50} />}
 				{view === 'history' && history.length < 2 && <div className='py-10 text-center text-sm text-gray-500'>Guardá al menos dos snapshots para ver la evolución histórica.</div>}
 				{view === 'allocation' && <><Flex className='mt-2'><Text><Bold>Posición</Bold></Text><Text><Bold>Saldo</Bold></Text></Flex><BarList data={allocation} className='mt-3' valueFormatter={(value) => formatMoney(value, currency)} color='indigo' /></>}
+			</Card>
+
+			<Card className='dark:bg-slate-800 dark:border-slate-700 overflow-hidden'>
+				<div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
+					<div><Title>Rendimiento por activo</Title><Text>Histórico real y simulación con la tasa cargada.</Text></div>
+					<select className='portfolio-input sm:max-w-xs' value={selectedPositionId} onChange={(event) => setSelectedPositionId(event.target.value)}>
+						{currencyPositions.map((item) => <option key={item.id} value={item.id}>{item.institution} · {item.name}</option>)}
+					</select>
+				</div>
+				{selectedPosition && <div className='grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-sm'><div><Text>Saldo</Text><Bold>{formatMoney(selectedPosition.balance, currency)}</Bold></div><div><Text>Tasa cargada</Text><Bold>{Number(selectedPosition.annualRate || 0).toFixed(2)}% {selectedPosition.rateType || ''}</Bold></div><div><Text>Ganado informado</Text><Bold>{formatMoney(selectedPosition.realizedEarnings, currency)}</Bold></div><div><Text>Último cambio</Text><Bold>{formatMoney(selectedPosition.lastEarning, currency)}</Bold></div></div>}
+				<div className='mt-6'><Text><Bold>Evolución real del saldo</Bold></Text>{assetHistory.length >= 2 ? <AreaChart className='mt-2 h-48' data={assetHistory} index='date' categories={['Saldo']} colors={['indigo']} valueFormatter={(value) => formatMoney(value, currency)} showLegend={false} yAxisWidth={50} /> : <div className='py-6 text-center text-sm text-gray-500'>Confirmá el saldo en distintas fechas para construir este histórico.</div>}</div>
+				<div className='mt-6'><Text><Bold>Simulación de crecimiento</Bold></Text><Text>Proyección matemática manteniendo constante la tasa actual; no es rendimiento garantizado.</Text>{simulation.length > 0 && <AreaChart className='mt-2 h-48' data={simulation} index='period' categories={['Proyectado']} colors={['indigo']} valueFormatter={(value) => formatMoney(value, currency)} showLegend={false} yAxisWidth={50} />}</div>
 			</Card>
 		</section>
 	);
