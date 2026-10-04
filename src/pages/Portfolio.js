@@ -76,6 +76,9 @@ function Portfolio() {
 	const [markdownImport, setMarkdownImport] = useState('');
 	const [showMarkdownImport, setShowMarkdownImport] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState(null);
+	const [verifyTarget, setVerifyTarget] = useState(null);
+	const [verifyBalance, setVerifyBalance] = useState('');
+	const [snapshotTarget, setSnapshotTarget] = useState(null);
 
 	useEffect(() => {
 		if (!user) return undefined;
@@ -227,24 +230,30 @@ function Portfolio() {
 		}
 	};
 
-	const verify = async (position) => {
-		const value = window.prompt('Saldo actual para verificar', String(position.balance || ''));
-		if (value === null || value === '') return;
+	const requestVerify = (position) => {
+		setVerifyTarget(position);
+		setVerifyBalance(String(position.balance || ''));
+	};
+
+	const verify = async () => {
+		if (!verifyTarget || verifyBalance === '') return;
 		try {
-			await verifyPortfolioPosition(user.uid, position, value);
+			await verifyPortfolioPosition(user.uid, verifyTarget, verifyBalance);
 			toast.success('Saldo verificado y snapshot guardado');
+			setVerifyTarget(null);
+			setVerifyBalance('');
 		} catch (error) {
 			toast.error('No se pudo verificar el saldo');
 		}
 	};
 
 	const openInstitution = (position) => {
-		if (!position.appUrl) {
+		if (!position.appUrl && !position.webUrl) {
 			toast.info('Todavía no configuraste un acceso para esta institución');
 			return;
 		}
 
-		const target = position.appUrl.trim();
+		const target = (position.appUrl || position.webUrl).trim();
 		const fallbackUrl = position.webUrl?.trim();
 		const isWebUrl = /^https?:\/\//i.test(target);
 
@@ -266,10 +275,12 @@ function Portfolio() {
 		}
 	};
 
-	const snapshot = async (position) => {
+	const snapshot = async () => {
+		if (!snapshotTarget) return;
 		try {
-			await createPortfolioSnapshot(user.uid, position);
+			await createPortfolioSnapshot(user.uid, snapshotTarget);
 			toast.success('Snapshot guardado');
+			setSnapshotTarget(null);
 		} catch (error) {
 			toast.error('No se pudo guardar el snapshot');
 		}
@@ -323,6 +334,8 @@ function Portfolio() {
 					</div>
 				</section>
 
+				<PortfolioCharts positions={positions} snapshots={snapshots} />
+
 				<section className='space-y-3 pb-6 lg:pb-8'>
 						<div className='flex items-center justify-between'><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-gray-500'>{positions.length} activas</span></div>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
@@ -366,9 +379,9 @@ function Portfolio() {
 									</div>
 								</div>
 								<div className='flex flex-wrap items-center gap-2 mt-4'>
-									<button className='px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => verify(position)}>Verificar saldo</button>
-									{position.appUrl && <button title='Abrir app / web' aria-label='Abrir app o web' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' onClick={() => openInstitution(position)}><FaExternalLinkAlt /></button>}
-									<button title='Guardar snapshot' aria-label='Guardar snapshot' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' onClick={() => snapshot(position)}><FaCamera /></button>
+									<button className='px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => requestVerify(position)}>Verificar saldo</button>
+									{(position.appUrl || position.webUrl) && <button title='Abrir app / web' aria-label='Abrir app o web' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' onClick={() => openInstitution(position)}><FaExternalLinkAlt /></button>}
+									<button title='Guardar snapshot' aria-label='Guardar snapshot' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' onClick={() => setSnapshotTarget(position)}><FaCamera /></button>
 									<button title='Editar posición' aria-label='Editar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-purple-500' onClick={() => edit(position)}><FaPencilAlt /></button>
 									<button title='Eliminar posición' aria-label='Eliminar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg text-red-500 border border-red-300 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30' onClick={() => requestDelete(position)}><FaTrashAlt /></button>
 								</div>
@@ -452,6 +465,38 @@ function Portfolio() {
 										</form>
 				)}
 				closeModal={reset}
+			/>
+
+			<GenericModal
+				show={Boolean(verifyTarget)}
+				component={() => (
+					<div className='text-white pr-8'>
+						<h2 className='text-xl font-bold'>Confirmar saldo</h2>
+						<p className='mt-2 text-sm text-gray-300'>Ingresá el saldo actual de <strong>{verifyTarget?.name}</strong>. Al confirmar también se guardará un snapshot para el histórico.</p>
+						<input autoFocus className='portfolio-input mt-4' type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo actual' />
+						<div className='grid grid-cols-2 gap-2 mt-5'>
+							<button type='button' onClick={() => setVerifyTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
+							<button type='button' disabled={verifyBalance === ''} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold'>Confirmar saldo</button>
+						</div>
+					</div>
+				)}
+				closeModal={() => setVerifyTarget(null)}
+			/>
+
+			<GenericModal
+				show={Boolean(snapshotTarget)}
+				component={() => (
+					<div className='text-white pr-8'>
+						<div className='w-12 h-12 rounded-full bg-purple-500/15 text-purple-400 flex items-center justify-center mb-4'><FaCamera /></div>
+						<h2 className='text-xl font-bold'>Guardar snapshot</h2>
+						<p className='mt-2 text-sm text-gray-300'>Se guardará el saldo actual de <strong>{snapshotTarget?.name}</strong> ({snapshotTarget ? money(snapshotTarget.balance, snapshotTarget.currency) : ''}) para construir el gráfico histórico. No modifica el saldo.</p>
+						<div className='grid grid-cols-2 gap-2 mt-5'>
+							<button type='button' onClick={() => setSnapshotTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
+							<button type='button' onClick={snapshot} className='py-2.5 rounded-lg bg-primary text-white font-semibold'>Guardar snapshot</button>
+						</div>
+					</div>
+				)}
+				closeModal={() => setSnapshotTarget(null)}
 			/>
 
 			<GenericModal
