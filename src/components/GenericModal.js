@@ -3,6 +3,7 @@ import { IoMdClose } from 'react-icons/io';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
+	const content = React.isValidElement(Component) ? Component : {content};
 	return (
 		<AnimatePresence>
 			{show && (
