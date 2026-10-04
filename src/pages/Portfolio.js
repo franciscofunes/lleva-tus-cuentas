@@ -325,7 +325,7 @@ function Portfolio() {
 
 
 	return (
-		<main className='relative min-h-[calc(100dvh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 pb-28 lg:pb-8'>
+		<main className='relative min-h-[calc(100dvh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 pb-0 lg:pb-8'>
 			<div className='max-w-7xl mx-auto px-4 pt-4 lg:px-0 lg:pt-0 w-full'>
 				<div className='flex flex-wrap justify-between items-end gap-4 mb-6'>
 					<div>
