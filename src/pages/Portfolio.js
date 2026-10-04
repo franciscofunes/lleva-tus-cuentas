@@ -310,7 +310,7 @@ function Portfolio() {
 						<div key={currency} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-2xl p-4 sm:p-5 shadow-sm'>
 							<p className='text-sm text-gray-500'>{currency}</p>
 							<p className='text-2xl font-bold'>{money(total.balance, currency)}</p>
-							<p className='text-sm text-green-600 mt-2'>Estimado anual: {money(total.annual, currency)}</p>
+							<p className='text-sm text-green-600 dark:text-green-500 mt-2'>Estimado anual: {money(total.annual, currency)}</p>
 							<p className='text-xs text-gray-400'>Estimado mensual: {money(total.annual / 12, currency)}</p>
 							<p className='text-xs text-gray-400'>Tasa ponderada: {weightedRates[currency].toFixed(2)}%</p>
 						</div>
@@ -329,7 +329,7 @@ function Portfolio() {
 								<div className='w-12 h-12 mx-auto mb-3 rounded-full bg-purple-100 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center'><FaWallet /></div>
 								<h3 className='font-semibold'>Tu portfolio está vacío</h3>
 								<p className='text-sm text-gray-500 mt-1'>Agregá tu primera cuenta o inversión desde el botón +.</p>
-								<button type='button' onClick={() => setShowForm(true)} className='mt-4 px-4 py-2 rounded-lg bg-[#16a34a] hover:bg-[#15803d] text-white font-semibold transition-colors'>Agregar posición</button>
+								<button type='button' onClick={() => setShowForm(true)} className='mt-4 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors'>Agregar posición</button>
 							</div>
 						)}
 						{!loading && positions.map((position) => (
@@ -349,13 +349,13 @@ function Portfolio() {
 										<p className='text-xs text-gray-400'>Tracking: {position.trackingMode || 'MANUAL'}</p>
 										{position.category === 'FCI' && position.ticker && <p className='text-xs text-gray-400'>Ticker: {position.ticker}</p>}
 										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
-										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-emerald-600'>Rend. 1A: {Number(position.performance1Y).toFixed(2)}%</p>}
-										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-emerald-600 mt-1'>Ganado: {money(position.realizedEarnings, position.currency)}</p>}
+										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-green-600 dark:text-green-500'>Rend. 1A: {Number(position.performance1Y).toFixed(2)}%</p>}
+										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-green-600 dark:text-green-500 mt-1'>Ganado: {money(position.realizedEarnings, position.currency)}</p>}
 										{Number(position.lastEarning || 0) !== 0 && <p className='text-xs text-gray-400'>Último rendimiento: {money(position.lastEarning, position.currency)}</p>}
 										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {Number(position.effectiveRate).toFixed(2)}%</p>}
 										{performanceByPosition[position.id] && (
 											<div className='mt-2 text-sm'>
-												<p className={performanceByPosition[position.id].change >= 0 ? 'text-green-600' : 'text-red-500'}>
+												<p className={performanceByPosition[position.id].change >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500'}>
 													Cambio observado: {money(performanceByPosition[position.id].change, position.currency)} ({performanceByPosition[position.id].percent.toFixed(2)}%)
 												</p>
 												<p className='text-xs text-gray-400'>{performanceByPosition[position.id].count} snapshots</p>
@@ -364,7 +364,7 @@ function Portfolio() {
 									</div>
 								</div>
 								<div className='flex flex-wrap gap-2 mt-4'>
-									<button className='px-3 py-2 rounded-lg bg-[#16a34a] hover:bg-[#15803d] text-white font-semibold' onClick={() => verify(position)}>Verificar saldo</button>
+									<button className='px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => verify(position)}>Verificar saldo</button>
 									{position.appUrl && <button className='px-3 py-2 rounded-lg border dark:border-slate-600' onClick={() => openInstitution(position)}>Abrir app / web</button>}
 									<button className='px-3 py-2 rounded-lg border dark:border-slate-600' onClick={() => snapshot(position)}>Guardar snapshot</button>
 									<button className='px-3 py-2 rounded-lg border dark:border-slate-600' onClick={() => edit(position)}>Editar</button>
