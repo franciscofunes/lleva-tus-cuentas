@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
+import { FaCopy } from 'react-icons/fa';
 import { subscribePortfolioPositions, subscribePortfolioSnapshots } from '../services/portfolioService';
 import AppFooter from '../components/AppFooter';
 
@@ -28,6 +30,9 @@ export default function PortfolioDetail() {
 	const history=useMemo(()=>snapshots.filter((item)=>item.positionId===positionId),[snapshots,positionId]);
 	const grouped=useMemo(()=>aggregate(history,mode),[history,mode]);
 	const total=history.reduce((sum,item)=>sum+Number(item.confirmedEarning ?? (item.changeType === 'earning' ? item.observedEarning : 0)),0);
+	const accountRows = position ? [['CBU',position.cbu],['Alias',position.alias],['Número de cuenta',position.accountNumber],['Routing',position.routingNumber],['SWIFT',position.swift]].filter(([,value])=>value) : [];
+	const hasAccountDetails = position && (accountRows.length || position.accountHolder || position.accountType || position.bankName || position.bankAddress || position.depositInstructions);
+	const copyValue = async (label,value) => { try { await navigator.clipboard.writeText(String(value)); toast.success(`${label} copiado`); } catch (error) { toast.error(`No se pudo copiar ${label.toLowerCase()}`); } };
 	if(user===null) return <Navigate to='/' />;
 	if(!position) return <main className='min-h-screen dark:bg-gray-900 p-6 dark:text-white'><Link to='/portfolio'>← Portfolio</Link><p className='mt-6 text-gray-500'>Cargando posición…</p></main>;
 	return <>
@@ -49,6 +54,17 @@ export default function PortfolioDetail() {
 					<div className='flex gap-2'>{['day','week','month'].map((item)=><button key={item} onClick={()=>setMode(item)} className={`px-3 py-2 rounded-lg text-sm font-semibold ${mode===item?'bg-purple-600 text-white':'border dark:border-slate-600'}`}>{item==='day'?'Día':item==='week'?'Semana':'Mes'}</button>)}</div></div>
 					<div className='mt-5 space-y-3'>{grouped.length===0?<p className='text-gray-500'>Todavía no hay verificaciones para graficar.</p>:grouped.map((row)=>{const max=Math.max(...grouped.map(x=>Math.abs(x.earning)),1);return <div key={row.date.toISOString()}><div className='flex justify-between text-sm'><span>{row.date.toLocaleDateString('es-AR')}</span><strong className={row.earning>=0?'text-green-500':'text-red-500'}>{money(row.earning,position.currency)}</strong></div><div className='h-2 rounded bg-slate-200 dark:bg-slate-700 mt-1 overflow-hidden'><div className='h-full bg-purple-500' style={{width:`${Math.min(100,Math.abs(row.earning)/max*100)}%`}} /></div><p className='text-xs text-gray-500 mt-1'>{row.checks} verificación(es) · esperado {money(row.expected,position.currency)}</p></div>})}</div>
 				</section>
+				{hasAccountDetails && <section className='mt-5 rounded-2xl border dark:border-slate-700 bg-white dark:bg-slate-800 p-5'>
+					<div className='flex items-start justify-between gap-3'><div><h2 className='text-xl font-bold'>Datos de cuenta</h2><p className='text-sm text-gray-500 mt-1'>Datos para recibir transferencias o fondear esta posición.</p></div></div>
+					<div className='grid md:grid-cols-2 gap-3 mt-5'>
+						{position.accountHolder && <div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Titular</p><p className='font-semibold mt-1'>{position.accountHolder}</p></div>}
+						{position.bankName && <div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Banco receptor</p><p className='font-semibold mt-1'>{position.bankName}</p></div>}
+						{position.accountType && <div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Tipo de cuenta</p><p className='font-semibold mt-1'>{position.accountType}</p></div>}
+						{accountRows.map(([label,value]) => <div key={label} className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3 flex items-center justify-between gap-3'><div className='min-w-0'><p className='text-xs text-gray-500'>{label}</p><p className='font-semibold mt-1 break-all'>{value}</p></div><button type='button' onClick={()=>copyValue(label,value)} title={`Copiar ${label}`} aria-label={`Copiar ${label}`} className='shrink-0 w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-600 hover:text-purple-500'><FaCopy /></button></div>)}
+					</div>
+					{position.bankAddress && <div className='mt-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Dirección del banco</p><p className='font-semibold mt-1'>{position.bankAddress}</p></div>}
+					{position.depositInstructions && <div className='mt-3 rounded-xl border border-purple-200 dark:border-purple-900/60 p-3'><p className='text-xs text-gray-500'>Instrucciones</p><p className='text-sm mt-1'>{position.depositInstructions}</p></div>}
+				</section>}
 				<section className='mt-5 rounded-2xl border dark:border-slate-700 bg-white dark:bg-slate-800 p-5'>
 					<h2 className='text-xl font-bold'>Historial de verificaciones</h2>
 					<div className='mt-4 overflow-x-auto'><table className='w-full text-sm'><thead><tr className='text-left text-gray-500'><th className='py-2'>Fecha</th><th>Saldo</th><th>Cambio</th><th>Tipo</th><th>Esperado</th></tr></thead><tbody>{[...history].reverse().map(row=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td>{money(row.balance,position.currency)}</td><td>{money(row.observedEarning,position.currency)}</td><td>{({earning:'Rendimiento',deposit:'Aporte',withdrawal:'Retiro',adjustment:'Ajuste'}[row.changeType] || 'Sin clasificar')}</td><td>{money(row.expectedEarning,position.currency)}</td></tr>)}</tbody></table></div>
