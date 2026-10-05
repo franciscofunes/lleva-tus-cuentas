@@ -56,15 +56,22 @@ export const createPortfolioSnapshot = (userId, position, overrides = {}) =>
 		shares: position.shares == null ? null : Number(position.shares),
 		expectedEarning: Number(overrides.expectedEarning || 0),
 		observedEarning: Number(overrides.observedEarning || 0),
+		changeType: overrides.changeType || 'unclassified',
+		cashFlow: Number(overrides.cashFlow || 0),
+		confirmedEarning: Number(overrides.confirmedEarning || 0),
+		note: overrides.note || '',
 		source: overrides.source || 'manual',
 		capturedAt: new Date(),
 	});
 
-export const verifyPortfolioPosition = async (userId, position, balance) => {
+export const verifyPortfolioPosition = async (userId, position, balance, metadata = {}) => {
 	const nextBalance = Number(balance);
 	const previousBalance = Number(position.balance || 0);
 	const observedEarning = nextBalance - previousBalance;
 	const annualRate = Number(position.annualRate || 0) / 100;
+	const changeType = metadata.changeType || 'unclassified';
+	const confirmedEarning = changeType === 'earning' ? observedEarning : 0;
+	const cashFlow = changeType === 'deposit' ? Math.max(observedEarning, 0) : changeType === 'withdrawal' ? Math.min(observedEarning, 0) : 0;
 	const expectedEarning = position.trackingMode === 'DAILY_RATE'
 		? previousBalance * annualRate / 365
 		: 0;
@@ -74,6 +81,10 @@ export const verifyPortfolioPosition = async (userId, position, balance) => {
 		expectedEarning,
 		observedEarning,
 		source: 'verification',
+		changeType,
+		confirmedEarning,
+		cashFlow,
+		note: metadata.note || '',
 	});
 
 	return positions(userId).doc(position.id).update({
