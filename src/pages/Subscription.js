@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { FaTimes } from 'react-icons/fa';
 import { getPaymentDataAction } from '../actionCreators/databaseActions';
 import UserSubscribed from '../imgs/userSubscribed.svg';
+import AppFooter from '../components/AppFooter';
 
 const SubscriptionCard = () => {
 	const isDevelopment = process.env.NODE_ENV === 'development';
@@ -68,6 +69,7 @@ const SubscriptionCard = () => {
 	}
 
 	return (
+		<>
 		<div className='flex items-center justify-center mt-2 p-2 dark:bg-gray-900'>
 			{user && paymentData ? (
 				// User is logged in and subscribed, show the card with remaining days
@@ -154,6 +156,8 @@ const SubscriptionCard = () => {
 				</>
 			)}
 		</div>
+		<AppFooter />
+		</>
 	);
 };
 

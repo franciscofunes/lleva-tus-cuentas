@@ -46,7 +46,7 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 				</button>
 			</div>
 			{showDropdown && (
-				<div className='origin-top-right absolute right-0 mt-2 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50'>
+				<div className='origin-top-right fixed sm:absolute right-3 sm:right-0 top-[5.25rem] sm:top-auto mt-0 sm:mt-2 w-[min(18rem,calc(100vw-1.5rem))] sm:w-52 rounded-xl shadow-2xl bg-white ring-1 ring-black/10 focus:outline-none z-[100]'>
 					<div
 						className='p-1'
 						role='menu'
@@ -54,47 +54,47 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 						aria-labelledby='options-menu'
 					>
 						<Link
-							className='block px-4 py-2 flex items-center text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
+							className='px-4 py-3 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
 							role='menuitem'
 							to='/transacciones'
 							onClick={handleDropdownToggleChangePassword}
-							style={{ minWidth: '160px' }}
+							
 						>
 							Transacciones <AiOutlineUnorderedList className='ml-2 text-base' />
 						</Link>
 						<Link
-							className='block px-4 py-2 flex items-center text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
+							className='px-4 py-3 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
 							role='menuitem'
 							to='/portfolio'
 							onClick={handleDropdownToggleChangePassword}
-							style={{ minWidth: '140px' }}
+							
 						>
 							Portfolio <AiOutlineFund className='ml-2 text-base' />
 						</Link>
 						<Link
-							className='block px-4 py-2 flex items-center text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
+							className='px-4 py-3 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
 							role='menuitem'
 							to='/subscripcion'
 							onClick={handleDropdownToggleChangePassword}
-							style={{ minWidth: '100px' }}
+							
 						>
 							subscripción <AiOutlineUser className='ml-2 text-base' />
 						</Link>
 						<Link
-							className='block px-4 py-2 flex items-center text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
+							className='px-4 py-3 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
 							role='menuitem'
 							to='/recupero'
 							onClick={handleDropdownToggleChangePassword}
-							style={{ minWidth: '100px' }}
+							
 						>
 							Cambiar contraseña{' '}
 							<RiLockPasswordFill className='ml-2 text-base' />
 						</Link>
 						<div
-							className='block px-4 py-2 flex items-center text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
+							className='px-4 py-3 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
 							role='menuitem'
 							onClick={handleLogout}
-							style={{ minWidth: '100px' }}
+							
 						>
 							Salir <MdOutlineExitToApp className='ml-2 text-base' />
 						</div>

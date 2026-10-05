@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import AccessDenied from '../imgs/accessDenied.svg';
 import PaymentFailure from '../imgs/paymentFailure.svg';
+import AppFooter from '../components/AppFooter';
 
 const PaymentFailed = () => {
 	const failureVariants = {
@@ -60,6 +61,7 @@ const PaymentFailed = () => {
 	}
 
 	return (
+		<>
 		<div className='flex items-center justify-center mt-10 p-4 lg:mt-0 dark:bg-gray-900'>
 			<motion.div
 				initial='hidden'
@@ -91,6 +93,8 @@ const PaymentFailed = () => {
 				</div>
 			</motion.div>
 		</div>
+			<AppFooter />
+		</>
 	);
 };
 
