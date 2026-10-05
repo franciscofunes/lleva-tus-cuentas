@@ -10,6 +10,7 @@ import {
 import InfoTooltip from "../components/InfoTooltip";
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from "../shared/constants/tooltip-messages.const";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
+import { parseTransactionsMarkdown } from "../utils/transactionsMarkdown";
 
 const TransactionForm = ({
   amount,
@@ -48,12 +49,47 @@ const TransactionForm = ({
   const user = useSelector((state) => state.auth.user);
   const isDataFetching = useSelector((state) => state.database.isDataFetching);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showMarkdown, setShowMarkdown] = useState(false);
+  const [markdown, setMarkdown] = useState("");
+  const [isParsingMarkdown, setIsParsingMarkdown] = useState(false);
+  const [markdownMessage, setMarkdownMessage] = useState("");
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
+
+  const applyMarkdown = () => {
+    if (!markdown.trim() || isParsingMarkdown) return;
+    setIsParsingMarkdown(true);
+    setMarkdownMessage("");
+    try {
+      const parsed = parseTransactionsMarkdown(markdown);
+      if (!parsed.length || parsed[0].errors.length) {
+        setMarkdownMessage(parsed[0]?.errors?.join(" · ") || "No se encontró una transacción válida.");
+        return;
+      }
+      const item = parsed[0];
+      setName(item.name || "");
+      setCategory(item.category || INGRESO_DIVISAS_CATEGORY);
+      setSelectedDate(item.selectedDate || "");
+      setComment(item.comment || "");
+      setCurrencyQuantity(item.currencyQuantity || "");
+      if (item.amount !== "") setAmount(item.amount);
+      const nextCategory = item.category || INGRESO_DIVISAS_CATEGORY;
+      setIsCreditCardCategory(nextCategory.includes("Resumen tarjeta"));
+      setIsBuyCurrenciesCategory(nextCategory.includes("Compra divisas"));
+      setIsCurrencyIncomeCategory(nextCategory.includes(INGRESO_DIVISAS_CATEGORY));
+      setIsSellCurrenciesCategory(nextCategory.includes("Venta divisas"));
+      setMarkdownMessage(parsed.length > 1
+        ? `Formulario completado con la primera de ${parsed.length} transacciones. Importá las restantes de a una.`
+        : "Formulario pre-rellenado. Revisá los datos antes de añadir.");
+      setShowMarkdown(false);
+    } finally {
+      setIsParsingMarkdown(false);
+    }
+  };
 
   const onSubmit = async () => {
     if (isSubmitting) return;
@@ -136,6 +172,22 @@ const TransactionForm = ({
         <h1 className="font-Nunito font-semibold text-xl dark:text-purple-500 underline">
           {edit ? "Editar transacción" : "Crear transacción"}
         </h1>
+        {!edit && (
+          <div className="rounded-lg border border-purple-500/50 bg-purple-500/5 p-3">
+            <button type="button" onClick={() => setShowMarkdown((value) => !value)} className="w-full flex items-center justify-between text-sm font-semibold text-purple-600 dark:text-purple-300">
+              <span>Pre-rellenar desde Markdown</span><span>{showMarkdown ? "−" : "+"}</span>
+            </button>
+            {showMarkdown && (
+              <div className="mt-3">
+                <textarea value={markdown} onChange={(e) => setMarkdown(e.target.value)} className="w-full min-h-[130px] rounded-lg border border-purple-600 bg-white dark:bg-slate-800 p-3 text-sm dark:text-white" placeholder={"- name: Rendimiento Prex\n  category: Ingreso divisas\n  date: 2026-09-30\n  currencyQuantity: 18.42\n  institution: Prex\n  period: 2026-09"} />
+                <button type="button" disabled={!markdown.trim() || isParsingMarkdown} onClick={applyMarkdown} className="w-full mt-2 py-2.5 rounded-lg bg-secondary text-white disabled:opacity-50 disabled:cursor-wait font-semibold">
+                  {isParsingMarkdown ? <span className="inline-flex items-center gap-2"><span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />Procesando…</span> : "Pre-rellenar formulario"}
+                </button>
+              </div>
+            )}
+            {markdownMessage && <p className="mt-2 text-xs text-gray-500 dark:text-gray-300">{markdownMessage}</p>}
+          </div>
+        )}
 
         <label
           htmlFor="name"
