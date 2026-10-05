@@ -508,7 +508,7 @@ function Portfolio() {
 						)}
 						{!loading && positions.map((position) => (
 							<article key={position.id} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5 shadow-sm'>
-								<div className='flex flex-wrap justify-between gap-4'>
+								<div className='grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start'>
 									<div>
 										<p className='text-sm font-bold uppercase tracking-wide text-purple-500'>{position.institution}</p>
 										<div className='flex items-start gap-2 mt-1'>
@@ -520,7 +520,7 @@ function Portfolio() {
 										<p className='text-xs uppercase text-gray-400 mt-1'>{position.category}</p>
 										<p className='text-3xl font-bold mt-3'>{money(position.balance, position.currency)}</p>
 									</div>
-									<div className='text-right'>
+									<div className='text-left sm:text-right sm:min-w-[14rem]'>
 										<p className='text-xs uppercase tracking-wide text-gray-400'>Rendimiento</p>
 										<p className='text-2xl font-bold text-green-600 dark:text-green-500'>{Number(position.annualRate || 0).toFixed(2)}% <span className='text-sm'>{position.rateType || ''}</span></p>
 										<p className='text-sm text-gray-500'>{position.liquidity || 'Liquidez no informada'}</p>
