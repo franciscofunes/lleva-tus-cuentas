@@ -16,7 +16,7 @@ const startOf = (date, mode) => {
 const aggregate = (rows, mode) => Object.values(rows.reduce((acc,row) => {
 	const date=startOf(asDate(row.capturedAt),mode); const key=date.toISOString();
 	if(!acc[key]) acc[key]={date, earning:0, expected:0, checks:0};
-	acc[key].earning += Number(row.observedEarning || 0); acc[key].expected += Number(row.expectedEarning || 0); acc[key].checks += 1; return acc;
+	acc[key].earning += Number(row.confirmedEarning ?? (row.changeType === 'earning' ? row.observedEarning : 0)); acc[key].expected += Number(row.expectedEarning || 0); acc[key].checks += 1; return acc;
 },{})).sort((a,b)=>a.date-b.date);
 
 export default function PortfolioDetail() {
@@ -27,7 +27,7 @@ export default function PortfolioDetail() {
 	const position=positions.find((item)=>item.id===positionId);
 	const history=useMemo(()=>snapshots.filter((item)=>item.positionId===positionId),[snapshots,positionId]);
 	const grouped=useMemo(()=>aggregate(history,mode),[history,mode]);
-	const total=history.reduce((sum,item)=>sum+Number(item.observedEarning||0),0);
+	const total=history.reduce((sum,item)=>sum+Number(item.confirmedEarning ?? (item.changeType === 'earning' ? item.observedEarning : 0)),0);
 	if(user===null) return <Navigate to='/' />;
 	if(!position) return <main className='min-h-screen dark:bg-gray-900 p-6 dark:text-white'><Link to='/portfolio'>← Portfolio</Link><p className='mt-6 text-gray-500'>Cargando posición…</p></main>;
 	return <>
@@ -40,7 +40,7 @@ export default function PortfolioDetail() {
 					<div className='grid grid-cols-2 md:grid-cols-4 gap-3 mt-5'>
 						<div><p className='text-xs text-gray-500'>Saldo</p><p className='text-xl font-bold'>{money(position.balance,position.currency)}</p></div>
 						<div><p className='text-xs text-gray-500'>Rendimiento cargado</p><p className='text-xl font-bold text-green-500'>{Number(position.annualRate||0).toFixed(2)}%</p></div>
-						<div><p className='text-xs text-gray-500'>Cambio observado</p><p className='text-xl font-bold'>{money(total,position.currency)}</p></div>
+						<div><p className='text-xs text-gray-500'>Rendimiento confirmado</p><p className='text-xl font-bold'>{money(total,position.currency)}</p></div>
 						<div><p className='text-xs text-gray-500'>Verificaciones</p><p className='text-xl font-bold'>{history.length}</p></div>
 					</div>
 				</section>
@@ -51,9 +51,9 @@ export default function PortfolioDetail() {
 				</section>
 				<section className='mt-5 rounded-2xl border dark:border-slate-700 bg-white dark:bg-slate-800 p-5'>
 					<h2 className='text-xl font-bold'>Historial de verificaciones</h2>
-					<div className='mt-4 overflow-x-auto'><table className='w-full text-sm'><thead><tr className='text-left text-gray-500'><th className='py-2'>Fecha</th><th>Saldo</th><th>Cambio</th><th>Esperado</th></tr></thead><tbody>{[...history].reverse().map(row=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td>{money(row.balance,position.currency)}</td><td>{money(row.observedEarning,position.currency)}</td><td>{money(row.expectedEarning,position.currency)}</td></tr>)}</tbody></table></div>
+					<div className='mt-4 overflow-x-auto'><table className='w-full text-sm'><thead><tr className='text-left text-gray-500'><th className='py-2'>Fecha</th><th>Saldo</th><th>Cambio</th><th>Tipo</th><th>Esperado</th></tr></thead><tbody>{[...history].reverse().map(row=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td>{money(row.balance,position.currency)}</td><td>{money(row.observedEarning,position.currency)}</td><td>{({earning:'Rendimiento',deposit:'Aporte',withdrawal:'Retiro',adjustment:'Ajuste'}[row.changeType] || 'Sin clasificar')}</td><td>{money(row.expectedEarning,position.currency)}</td></tr>)}</tbody></table></div>
 				</section>
-				<p className='mt-4 text-xs text-amber-600 dark:text-amber-400'>Importante: por ahora “cambio observado” es diferencia de saldo. No se considera rendimiento confirmado hasta separar aportes, retiros y ajustes.</p>
+				<p className='mt-4 text-xs text-amber-600 dark:text-amber-400'>Las verificaciones nuevas separan rendimiento, aporte, retiro y ajuste. Los snapshots históricos sin clasificación no se suman como rendimiento confirmado.</p>
 			</div>
 		</main><AppFooter />
 	</>;
