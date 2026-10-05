@@ -6,6 +6,9 @@ const positions = (userId) =>
 const snapshots = (userId) =>
 	firestore.collection('users').doc(userId).collection('portfolioSnapshots');
 
+const reconciliations = (userId) =>
+	firestore.collection('users').doc(userId).collection('portfolioReconciliations');
+
 export const subscribePortfolioPositions = (userId, onData, onError) =>
 	positions(userId).orderBy('updatedAt', 'desc').onSnapshot(
 		(res) => onData(res.docs.map((doc) => ({ id: doc.id, ...doc.data() }))),
@@ -113,3 +116,31 @@ export const updatePortfolioSnapshot = (userId, snapshotId, data) =>
 
 export const deletePortfolioSnapshot = (userId, snapshotId) =>
 	snapshots(userId).doc(snapshotId).delete();
+
+
+export const subscribePortfolioReconciliations = (userId, onData, onError) =>
+	reconciliations(userId).orderBy('month', 'desc').onSnapshot(
+		(res) => onData(res.docs.map((doc) => ({ id: doc.id, ...doc.data() }))),
+		onError
+	);
+
+export const savePortfolioReconciliation = (userId, position, month, snapshotRows) => {
+	const earningRows = snapshotRows.filter((row) => row.changeType === 'earning');
+	const amount = earningRows.reduce((sum, row) => sum + Number(row.confirmedEarning ?? row.observedEarning ?? 0), 0);
+	const snapshotIds = earningRows.map((row) => row.id).sort();
+	const id = `${position.id}_${month}`;
+	return reconciliations(userId).doc(id).set({
+		positionId: position.id,
+		institution: position.institution,
+		name: position.name,
+		currency: position.currency,
+		month,
+		amount,
+		snapshotIds,
+		verificationCount: earningRows.length,
+		status: 'pending_transaction',
+		transactionId: null,
+		updatedAt: new Date(),
+		createdAt: new Date(),
+	}, { merge: true });
+};
