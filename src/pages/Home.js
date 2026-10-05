@@ -3,10 +3,12 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import bank from '../imgs/bank.png';
+import AppFooter from '../components/AppFooter';
 
 function Home() {
 	const user = useSelector((state) => state.auth.user);
 	return (
+		<>
 		<>
 			<div className='max-w-screen relative lg:px-20 flex justify-center lg:flex-row flex-col items-center lg:mt-0 dark:bg-gray-900 z-40'>
 				<div className='container lg:block flex justify-center align-middle flex-col z-50 lg:mx-auto w-full lg:text-left text-center '>
@@ -60,6 +62,8 @@ function Home() {
 					className='lg:h-auto lg:relative z-auto h-full w-full top-full lg:w-hero mt-2 z-20'
 				/>
 			</div>
+		</>
+			<AppFooter />
 		</>
 	);
 }
