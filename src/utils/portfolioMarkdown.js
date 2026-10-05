@@ -6,6 +6,7 @@ const CANONICAL_FIELDS = [
 	'performance1D', 'performance1W', 'performance1M', 'performanceYTD', 'performance1Y',
 	'fundType', 'investmentHorizon', 'fundStartDate', 'rating', 'volatility21dAnnualized', 'publishedYtdReturn',
 	'sourceUrl', 'sourceCheckedAt', 'rateVerifiedAt', 'interestCalculationBasis', 'interestAccrual', 'maxInterestBearingBalance',
+	'accountHolder', 'accountNumber', 'accountType', 'cbu', 'alias', 'routingNumber', 'swift', 'bankName', 'bankAddress', 'depositInstructions',
 ];
 
 const FIELD_MAP = {
@@ -28,6 +29,13 @@ const FIELD_MAP = {
 	'base de calculo': 'interestCalculationBasis', 'base de cálculo': 'interestCalculationBasis', 'metodologia de calculo': 'interestCalculationBasis', 'metodología de cálculo': 'interestCalculationBasis',
 	'acreditacion': 'interestAccrual', 'acreditación': 'interestAccrual', 'devengamiento': 'interestAccrual', 'interest accrual': 'interestAccrual',
 	'saldo maximo remunerado': 'maxInterestBearingBalance', 'saldo máximo remunerado': 'maxInterestBearingBalance',
+	'titular': 'accountHolder', 'titular de la cuenta': 'accountHolder', 'account holder': 'accountHolder',
+	'numero de cuenta': 'accountNumber', 'número de cuenta': 'accountNumber', 'account number': 'accountNumber',
+	'tipo de cuenta': 'accountType', 'account type': 'accountType', 'cbu': 'cbu', 'alias': 'alias',
+	'routing': 'routingNumber', 'routing number': 'routingNumber', 'numero de ruta': 'routingNumber', 'número de ruta': 'routingNumber',
+	'swift': 'swift', 'banco receptor': 'bankName', 'banco': 'bankName', 'bank name': 'bankName',
+	'direccion del banco': 'bankAddress', 'dirección del banco': 'bankAddress', 'bank address': 'bankAddress',
+	'instrucciones de deposito': 'depositInstructions', 'instrucciones de depósito': 'depositInstructions', 'instrucciones de transferencia': 'depositInstructions',
 	'ticker': 'ticker', 'clase': 'ticker', 'cuotapartes': 'shares', 'shares': 'shares',
 	'nav': 'nav', 'valor cuotaparte': 'nav', 'valor de cuotaparte': 'nav', 'fecha nav': 'navDate', 'fecha valuacion': 'navDate', 'fecha valuación': 'navDate',
 	'rescate': 'redemptionPeriod', 'plazo rescate': 'redemptionPeriod', 'inversion minima': 'minimumInvestment', 'inversión mínima': 'minimumInvestment',
