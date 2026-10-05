@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaCopy } from 'react-icons/fa';
+import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import AppFooter from '../components/AppFooter';
 import InfoTooltip from '../components/InfoTooltip';
@@ -320,7 +320,6 @@ function Portfolio() {
 			toast.error('No se pudo copiar el prompt al portapapeles');
 		}
 	};
-	const copyAccountValue = async (label, value) => { if (!value) return; try { await navigator.clipboard.writeText(String(value)); toast.success(`${label} copiado`); } catch (error) { toast.error(`No se pudo copiar ${label.toLowerCase()}`); } };
 	const openInfo = (position) => { if (!position.infoUrl) { toast.info('Todavía no configuraste una página de información para este activo'); return; } window.open(position.infoUrl, '_blank', 'noopener,noreferrer'); };
 
 	const openInstitution = (position) => {
@@ -531,15 +530,6 @@ function Portfolio() {
 										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
 										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-green-600 dark:text-green-500'>Rend. 1A: {Number(position.performance1Y).toFixed(2)}%</p>}
 										{position.category === 'FCI' && position.monthlyReturns && Object.keys(position.monthlyReturns).length > 0 && <p className='text-sm font-bold text-green-600 dark:text-green-400'>YTD compuesto: {((Object.values(position.monthlyReturns).map(Number).filter(Number.isFinite).reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100).toFixed(2)}%</p>}
-										{(position.cbu || position.alias || position.accountNumber || position.routingNumber || position.swift || position.bankAddress) && <div className='mt-3 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-sm space-y-2'>
-											<p className='font-bold text-purple-500'>Datos de cuenta</p>
-											{position.accountHolder && <p><span className='text-gray-400'>Titular:</span> {position.accountHolder}</p>}
-											{position.bankName && <p><span className='text-gray-400'>Banco:</span> {position.bankName}</p>}
-											{position.accountType && <p><span className='text-gray-400'>Tipo:</span> {position.accountType}</p>}
-											{[['CBU',position.cbu],['Alias',position.alias],['Cuenta',position.accountNumber],['Routing',position.routingNumber],['SWIFT',position.swift]].filter(([,value])=>value).map(([label,value]) => <div key={label} className='flex items-center justify-between gap-2'><span className='break-all'><span className='text-gray-400'>{label}:</span> {value}</span><button type='button' title={`Copiar ${label}`} aria-label={`Copiar ${label}`} onClick={() => copyAccountValue(label,value)} className='shrink-0 w-9 h-9 inline-flex items-center justify-center rounded-lg border dark:border-slate-600'><FaCopy /></button></div>)}
-											{position.bankAddress && <p><span className='text-gray-400'>Dirección:</span> {position.bankAddress}</p>}
-											{position.depositInstructions && <p className='text-xs text-gray-400'>{position.depositInstructions}</p>}
-										</div>}
 										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-green-600 dark:text-green-500 mt-1'>Ganado: {money(position.realizedEarnings, position.currency)}</p>}
 										{Number(position.lastEarning || 0) !== 0 && <p className='text-xs text-gray-400'>Último rendimiento: {money(position.lastEarning, position.currency)}</p>}
 										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {Number(position.effectiveRate).toFixed(2)}%</p>}
