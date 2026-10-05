@@ -144,3 +144,32 @@ export const savePortfolioReconciliation = (userId, position, month, snapshotRow
 		createdAt: new Date(),
 	}, { merge: true });
 };
+
+
+export const registerReconciliationTransaction = async (userId, reconciliation) => {
+	const reconciliationRef = reconciliations(userId).doc(reconciliation.id);
+	return firestore.runTransaction(async (transaction) => {
+		const fresh = await transaction.get(reconciliationRef);
+		if (!fresh.exists) throw new Error('El cierre mensual ya no existe.');
+		const data = fresh.data();
+		if (data.transactionId) return { transactionId: data.transactionId, alreadyRegistered: true };
+		if (!Number.isFinite(Number(data.amount)) || Number(data.amount) <= 0) throw new Error('El cierre no tiene un rendimiento positivo para registrar.');
+		const expenseRef = firestore.collection('users').doc(userId).collection('expenses').doc();
+		const selectedDate = `${data.month}-01`;
+		transaction.set(expenseRef, {
+			date: new Date(),
+			expenseName: `Rendimiento ${data.institution || data.name || 'Portfolio'}`,
+			comment: `Rendimiento de ${data.name || data.institution || 'Portfolio'} correspondiente a ${data.month}`,
+			category: 'Ingreso divisas',
+			selectedDate,
+			currencyQuantity: Number(data.amount),
+			portfolioPositionId: data.positionId,
+			portfolioReconciliationId: reconciliation.id,
+			portfolioPeriod: data.month,
+			portfolioCurrency: data.currency || 'USD',
+			importSource: 'portfolio-reconciliation',
+		});
+		transaction.update(reconciliationRef, { status: 'registered', transactionId: expenseRef.id, registeredAt: new Date(), updatedAt: new Date() });
+		return { transactionId: expenseRef.id, alreadyRegistered: false };
+	});
+};
