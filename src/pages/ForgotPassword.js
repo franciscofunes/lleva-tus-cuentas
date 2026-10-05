@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { resetPassword } from '../actionCreators/authActions';
 import wallet from '../imgs/wallet.png';
 import wallet2 from '../imgs/wallet2.png';
-import wavesFooter from '../imgs/waves.svg';
+import AppFooter from '../components/AppFooter';
 
 function ForgotPassword({ history }) {
 	const dispatch = useDispatch();
@@ -113,10 +113,8 @@ function ForgotPassword({ history }) {
 						</div>
 					</motion.div>
 				</div>
-				<div className='absolute bottom-0 left-0 w-full'>
-					<img src={wavesFooter} alt='purple waves footer' className='w-full' />
-				</div>
 			</motion.div>
+			<AppFooter />
 		</>
 	);
 }
