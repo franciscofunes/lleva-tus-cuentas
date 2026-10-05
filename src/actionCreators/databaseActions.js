@@ -11,7 +11,7 @@ import {
 
 export const storeDataAction = (data) => {
 	return (dispatch) => {
-		firestore
+		return firestore
 			.collection('users')
 			.doc(data.userId)
 			.collection('expenses')
@@ -50,7 +50,7 @@ export const storeDataAction = (data) => {
 
 export const updateDataAction = (data, docId) => {
 	return (dispatch) => {
-		firestore
+		return firestore
 			.collection('users')
 			.doc(data.userId)
 			.collection('expenses')
@@ -86,6 +86,33 @@ export const updateDataAction = (data, docId) => {
 				toast.error(err.message);
 			});
 	};
+};
+
+export const importTransactionsAction = (userId, items) => async (dispatch) => {
+	const collection = firestore.collection('users').doc(userId).collection('expenses');
+	const existing = await Promise.all(items.map((item) => collection.where('importKey', '==', item.importKey).limit(1).get()));
+	const fresh = items.filter((item, index) => existing[index].empty);
+	if (!fresh.length) return { imported: 0, duplicates: items.length };
+	const batch = firestore.batch();
+	fresh.forEach((item) => {
+		const ref = collection.doc();
+		batch.set(ref, {
+			date: new Date(),
+			expenseName: item.name,
+			comment: item.comment,
+			category: item.category || 'Ingreso divisas',
+			selectedDate: item.selectedDate,
+			currencyQuantity: Number(item.currencyQuantity),
+			...(item.amount !== '' && Number.isFinite(Number(item.amount)) ? { amount: Number(item.amount) } : {}),
+			importKey: item.importKey,
+			importSource: item.source || 'markdown-import',
+			importInstitution: item.institution || '',
+			importPeriod: item.period || '',
+		});
+	});
+	await batch.commit();
+	dispatch({ type: 'IMPORT_TRANSACTIONS_SUCCESS', count: fresh.length });
+	return { imported: fresh.length, duplicates: items.length - fresh.length };
 };
 
 export const getDataAction = (userId) => {

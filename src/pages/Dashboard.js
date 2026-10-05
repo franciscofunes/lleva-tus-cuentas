@@ -17,6 +17,7 @@ import GenericModal from "../components/GenericModal";
 import LitaAssistantPanel from "../components/LitaAssitantPanel";
 import SearchBar from "../components/SearchBar";
 import TransactionForm from "../components/TransactionForm";
+import TransactionsMarkdownImport from "../components/TransactionsMarkdownImport";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import kavakAd from "../imgs/ads/kavakAd.jpg";
 import cocacolaAd from "../imgs/ads/cocaColaAd.jpg";
@@ -87,6 +88,7 @@ function Dashboard() {
   const [currencySellRate, setCurrencySellRate] = useState();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const [selectedChart, setSelectedChart] = useState("expenses");
 
@@ -443,9 +445,7 @@ function Dashboard() {
           className="lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500 lg:h-auto"
         >
           <div>
-            <h1 className="font-Nunito font-bold text-3xl mb-2 ml-1 dark:text-zinc-100">
-              Transacciones 📕
-            </h1>
+            <div className="flex items-center justify-between gap-3 mb-2 ml-1"><h1 className="font-Nunito font-bold text-3xl dark:text-zinc-100">Transacciones 📕</h1><button type="button" onClick={() => setIsImportOpen(true)} className="px-3 py-2 rounded-lg border border-purple-500 text-purple-600 dark:text-purple-300 text-sm font-semibold">Importar Markdown</button></div>
             <SearchBar />
 
             {isDataFetching ? (
@@ -523,7 +523,7 @@ function Dashboard() {
         <FloatingMenu
           openTransactionModal={openModal}
           openLitaModal={handleFloatingButtonClick}
-          isModalOpen={isOpen || showModal}
+          isModalOpen={isOpen || isImportOpen || showModal}
         />
 
         {isOpen && (
@@ -568,6 +568,14 @@ function Dashboard() {
             setCurrencySellQuantity={setCurrencySellQuantity}
             setCurrencyExchangeRate={setCurrencyExchangeRate}
             setIsOpen={setIsOpen}
+          />
+        )}
+
+        {isImportOpen && (
+          <GenericModal
+            component={TransactionsMarkdownImport}
+            closeModal={() => setIsImportOpen(false)}
+            show={isImportOpen}
           />
         )}
 
