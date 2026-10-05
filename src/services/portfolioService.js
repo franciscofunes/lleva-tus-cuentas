@@ -100,3 +100,16 @@ export const subscribePortfolioSnapshots = (userId, onData, onError) =>
 		(res) => onData(res.docs.map((doc) => ({ id: doc.id, ...doc.data() }))),
 		onError
 	);
+
+
+export const updatePortfolioSnapshot = (userId, snapshotId, data) =>
+	snapshots(userId).doc(snapshotId).update({
+		changeType: data.changeType || 'unclassified',
+		confirmedEarning: Number(data.changeType === 'earning' ? data.observedEarning : 0),
+		cashFlow: Number(data.changeType === 'deposit' ? Math.max(Number(data.observedEarning || 0), 0) : data.changeType === 'withdrawal' ? Math.min(Number(data.observedEarning || 0), 0) : 0),
+		note: data.note || '',
+		updatedAt: new Date(),
+	});
+
+export const deletePortfolioSnapshot = (userId, snapshotId) =>
+	snapshots(userId).doc(snapshotId).delete();
