@@ -14,9 +14,9 @@ export default function TransactionsMarkdownImport({ closeModal }) {
 	const run=async()=>{ if(!selected.length||loading)return; setLoading(true); try { const result=await dispatch(importTransactionsAction(user.uid,selected)); toast.success(`${result.imported} transacción(es) importadas${result.duplicates ? ` · ${result.duplicates} duplicada(s) omitidas` : ''}`); closeModal(); } catch(error){ toast.error(error.message||'No se pudieron importar las transacciones'); } finally { setLoading(false); } };
 	return <div className='text-white max-h-[78dvh] overflow-y-auto pr-3'>
 		<h2 className='text-xl font-bold pr-10'>Importar transacciones con Markdown</h2>
-		<p className='mt-2 text-sm text-gray-300'>Pegá el Markdown generado desde extractos o capturas. Primero se muestra un preview; nada se guarda hasta confirmar.</p>
+		<p className='mt-2 text-sm text-gray-300'>Pegá el Markdown generado desde extractos o capturas. LTC lo interpreta y pre-rellena las transacciones en un preview editable/seleccionable antes de guardar.</p>
 		<textarea className='w-full min-h-[180px] mt-4 rounded-lg border border-purple-600 bg-slate-800 p-3 text-sm' value={markdown} onChange={(e)=>{setMarkdown(e.target.value);setRows([]);}} placeholder={'### LTC Transactions Import\n\n- name: Rendimiento Prex\n  category: Ingreso divisas\n  date: 2026-07-31\n  currencyQuantity: 18.42\n  institution: Prex\n  period: 2026-07'} />
-		<button type='button' disabled={!markdown.trim()||loading} onClick={preview} className='w-full mt-3 py-2.5 rounded-lg bg-secondary disabled:opacity-40 font-semibold'>Comparar Markdown</button>
+		<button type='button' disabled={!markdown.trim()||loading} onClick={preview} className='w-full mt-3 py-2.5 rounded-lg bg-secondary disabled:opacity-40 font-semibold'>{loading?<span className='inline-flex items-center gap-2'><span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />Procesando…</span>:'Pre-rellenar desde Markdown'}</button>
 		{rows.length>0 && <div className='mt-4 space-y-2'>
 			<div className='flex justify-between text-sm'><strong>{selected.length} seleccionada(s)</strong><strong>Total divisas: {total.toFixed(2)}</strong></div>
 			{rows.map((row,index)=><label key={row.importKey+index} className='flex gap-3 rounded-lg border border-slate-700 p-3 cursor-pointer'>
