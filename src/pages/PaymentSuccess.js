@@ -11,6 +11,7 @@ import {
 } from '../actionCreators/databaseActions';
 import AccessDenied from '../imgs/accessDenied.svg';
 import PaymentSucceed from '../imgs/paymentSucceed.svg';
+import AppFooter from '../components/AppFooter';
 
 const PaymentSuccess = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -169,6 +170,7 @@ const PaymentSuccess = () => {
 	}
 
 	return (
+		<>
 		<div className='flex items-center justify-center mt-10 p-4 dark:bg-gray-900'>
 			<motion.div
 				initial='hidden'
@@ -227,6 +229,8 @@ const PaymentSuccess = () => {
 				</div>
 			</motion.div>
 		</div>
+			<AppFooter />
+		</>
 	);
 };
 
