@@ -46,7 +46,7 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 				</button>
 			</div>
 			{showDropdown && (
-				<div className='origin-top-right fixed sm:absolute right-3 sm:right-0 top-[5.25rem] sm:top-auto mt-0 sm:mt-2 w-[min(18rem,calc(100vw-1.5rem))] sm:w-52 rounded-xl shadow-2xl bg-white ring-1 ring-black/10 focus:outline-none z-[100]'>
+				<div className='origin-top-right fixed sm:absolute right-3 sm:right-0 top-[5.25rem] sm:top-auto mt-0 sm:mt-2 w-56 sm:w-52 rounded-xl shadow-xl bg-white ring-1 ring-black/10 focus:outline-none z-[100]'>
 					<div
 						className='p-1'
 						role='menu'
@@ -54,7 +54,7 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 						aria-labelledby='options-menu'
 					>
 						<Link
-							className='px-4 py-3 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
+							className='px-3 py-2.5 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
 							role='menuitem'
 							to='/transacciones'
 							onClick={handleDropdownToggleChangePassword}
@@ -63,7 +63,7 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 							Transacciones <AiOutlineUnorderedList className='ml-2 text-base' />
 						</Link>
 						<Link
-							className='px-4 py-3 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
+							className='px-3 py-2.5 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
 							role='menuitem'
 							to='/portfolio'
 							onClick={handleDropdownToggleChangePassword}
@@ -72,7 +72,7 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 							Portfolio <AiOutlineFund className='ml-2 text-base' />
 						</Link>
 						<Link
-							className='px-4 py-3 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
+							className='px-3 py-2.5 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
 							role='menuitem'
 							to='/subscripcion'
 							onClick={handleDropdownToggleChangePassword}
@@ -81,7 +81,7 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 							subscripción <AiOutlineUser className='ml-2 text-base' />
 						</Link>
 						<Link
-							className='px-4 py-3 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
+							className='px-3 py-2.5 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
 							role='menuitem'
 							to='/recupero'
 							onClick={handleDropdownToggleChangePassword}
@@ -91,7 +91,7 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 							<RiLockPasswordFill className='ml-2 text-base' />
 						</Link>
 						<div
-							className='px-4 py-3 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
+							className='px-3 py-2.5 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
 							role='menuitem'
 							onClick={handleLogout}
 							
