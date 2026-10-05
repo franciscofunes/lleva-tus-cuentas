@@ -86,6 +86,8 @@ function Portfolio() {
 	const [deleteTarget, setDeleteTarget] = useState(null);
 	const [verifyTarget, setVerifyTarget] = useState(null);
 	const [verifyBalance, setVerifyBalance] = useState('');
+	const [verifyChangeType, setVerifyChangeType] = useState('earning');
+	const [verifyNote, setVerifyNote] = useState('');
 	const [rateTarget, setRateTarget] = useState(null);
 		const [quickRate, setQuickRate] = useState('');
 	const [pendingAction, setPendingAction] = useState('');
@@ -278,16 +280,19 @@ function Portfolio() {
 	const requestVerify = (position) => {
 		setVerifyTarget(position);
 		setVerifyBalance(String(position.balance || ''));
+		setVerifyChangeType('earning');
+		setVerifyNote('');
 	};
 
 	const verify = async () => {
 		if (!verifyTarget || verifyBalance === '' || pendingAction) return;
 		setPendingAction('verify');
 		try {
-			await verifyPortfolioPosition(user.uid, verifyTarget, verifyBalance);
+			await verifyPortfolioPosition(user.uid, verifyTarget, verifyBalance, { changeType: verifyChangeType, note: verifyNote });
 			toast.success('Saldo verificado y snapshot guardado');
 			setVerifyTarget(null);
 			setVerifyBalance('');
+			setVerifyNote('');
 		} catch (error) {
 			toast.error('No se pudo verificar el saldo');
 		} finally {
@@ -547,6 +552,16 @@ function Portfolio() {
 						<h2 className='text-xl font-bold'>Confirmar saldo</h2>
 						<p className='mt-2 text-sm text-gray-300'>Ingresá el saldo actual de <strong>{verifyTarget?.name}</strong>. Al confirmar también se guardará un snapshot para el histórico.</p>
 						<input autoFocus className='portfolio-input mt-4' type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo actual' />
+						<label className='block mt-3 text-sm text-gray-300'>¿Qué explica el cambio de saldo?
+							<select className='portfolio-input mt-1' value={verifyChangeType} onChange={(event) => setVerifyChangeType(event.target.value)}>
+								<option value='earning'>Rendimiento</option>
+								<option value='deposit'>Aporte</option>
+								<option value='withdrawal'>Retiro</option>
+								<option value='adjustment'>Ajuste</option>
+							</select>
+						</label>
+						<textarea className='portfolio-input mt-3' rows='2' value={verifyNote} onChange={(event) => setVerifyNote(event.target.value)} placeholder='Nota opcional sobre esta verificación' />
+						<p className='mt-2 text-xs text-gray-400'>Solo “Rendimiento” se acumulará como ganancia confirmada. Aportes y retiros quedan separados para no inflar el rendimiento.</p>
 						<div className='grid grid-cols-2 gap-2 mt-5'>
 							<button type='button' onClick={() => setVerifyTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
 							<button type='button' disabled={verifyBalance === '' || pendingAction === 'verify'} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold'>Confirmar saldo</button>
