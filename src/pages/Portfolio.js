@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
@@ -486,7 +486,7 @@ function Portfolio() {
 									<div>
 										<p className='text-sm font-bold uppercase tracking-wide text-purple-500'>{position.institution}</p>
 										<div className='flex items-center gap-2 mt-1'>
-											<h3 className='text-xl sm:text-2xl font-bold leading-tight'>{position.name}</h3>
+											<h3 className='text-xl sm:text-2xl font-bold leading-tight'><Link className='hover:text-purple-400' to={`/portfolio/${position.id}`}>{position.name}</Link></h3>
 											{position.notes && <InfoTooltip placement='top' content={position.notes} />}
 										</div>
 										<p className='text-xs uppercase text-gray-400 mt-1'>{position.category}</p>

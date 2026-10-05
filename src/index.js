@@ -16,6 +16,7 @@ import SubscriptionCard from './pages/Subscription';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailed from './pages/PaymentFailed';
 import Portfolio from './pages/Portfolio';
+import PortfolioDetail from './pages/PortfolioDetail';
 
 const store = createStore(rootReducer, applyMiddleware(thunk));
 
@@ -33,6 +34,7 @@ root.render(
 					<Route path='/ingresar' element={<LogIn />} />
 					<Route path='/transacciones' element={<Dashboard />} />
 					<Route path='/portfolio' element={<Portfolio />} />
+					<Route path='/portfolio/:positionId' element={<PortfolioDetail />} />
 					<Route path='/recupero' element={<ForgotPassword />} />
 					<Route path='/subscripcion' element={<SubscriptionCard />} />
 					<Route path='/pago-exitoso' element={<PaymentSuccess />} />
