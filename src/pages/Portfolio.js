@@ -511,8 +511,10 @@ function Portfolio() {
 								<div className='flex flex-wrap justify-between gap-4'>
 									<div>
 										<p className='text-sm font-bold uppercase tracking-wide text-purple-500'>{position.institution}</p>
-										<div className='flex items-center gap-2 mt-1'>
-											<h3 className='text-xl sm:text-2xl font-bold leading-tight'><Link className='hover:text-purple-400' to={`/portfolio/${position.id}`}>{position.name}</Link></h3>
+										<div className='flex items-start gap-2 mt-1'>
+											<Link to={`/portfolio/${position.id}`} className='group flex items-center gap-2 min-w-0 rounded-lg -ml-2 px-2 py-1 hover:bg-purple-500/10 focus:outline-none focus:ring-2 focus:ring-purple-500' aria-label={`Ver detalle de ${position.name}`}>
+												<span className='min-w-0'><span className='block text-xl sm:text-2xl font-bold leading-tight group-hover:text-purple-400'>{position.name}</span><span className='block mt-1 text-xs font-semibold text-purple-500'>Ver detalles <span aria-hidden='true'>›</span></span></span>
+											</Link>
 											{position.notes && <InfoTooltip placement='top' content={position.notes} />}
 										</div>
 										<p className='text-xs uppercase text-gray-400 mt-1'>{position.category}</p>
