@@ -43,7 +43,7 @@ function Navbar() {
 				<>
 					{(location.pathname === '/' ||
 						location.pathname === '/recupero' ||
-						location.pathname === '/subscripcion') && (
+						location.pathname === '/subscripcion') && location.pathname !== '/transacciones' && (
 						<Link
 							to='/transacciones'
 							className='nav-btn flex items-center mr-3 dark:text-white'
