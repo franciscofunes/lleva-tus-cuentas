@@ -297,7 +297,9 @@ function Dashboard() {
                 <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
                   Ingresos
                 </h1>
-                {isDataFetching ? (\n                  <Skeleton height={24} width={90} />\n                ) : (
+                {isDataFetching ? (
+                  <Skeleton height={24} width={90} />
+                ) : (
                   <motion.p
                     initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
                     animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
@@ -315,7 +317,9 @@ function Dashboard() {
                 <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
                   Gastos
                 </h1>
-                {isDataFetching ? (\n                  <Skeleton height={24} width={90} />\n                ) : (
+                {isDataFetching ? (
+                  <Skeleton height={24} width={90} />
+                ) : (
                   <motion.p
                     initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
                     animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
@@ -335,7 +339,9 @@ function Dashboard() {
               <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
                 Inversión
               </h1>
-              {isDataFetching ? (\n                  <Skeleton height={24} width={90} />\n                ) : (
+              {isDataFetching ? (
+                  <Skeleton height={24} width={90} />
+                ) : (
                 <motion.p
                   initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
                   animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
@@ -374,7 +380,9 @@ function Dashboard() {
               </div>
 
               <div className="flex flex-col gap-2 justify-center items-center">
-                {isDataFetching ? (\n                  <Skeleton height={24} width={90} />\n                ) : (
+                {isDataFetching ? (
+                  <Skeleton height={24} width={90} />
+                ) : (
                   <motion.h2
                     initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
                     animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
@@ -399,7 +407,9 @@ function Dashboard() {
             id="left"
             className="container  bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 font-Nunito flex flex-col dark:bg-slate-800 dark:border-indigo-500 items-center"
           >
-            {isDataFetching ? (\n              <Skeleton height={190} width='100%' />\n            ) : (
+            {isDataFetching ? (
+              <Skeleton height={190} width='100%' />
+            ) : (
               docs && (
                 <>
                   {/* Conditionally render the appropriate chart */}
@@ -437,7 +447,9 @@ function Dashboard() {
             <div className="mb-3 ml-1"><div className="flex items-center justify-between gap-3"><h1 className="font-Nunito font-bold text-3xl dark:text-zinc-100">Transacciones 📕</h1><button type="button" onClick={() => setIsImportOpen(true)} className="shrink-0 px-3 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold shadow-sm">Importar</button></div><button type="button" onClick={() => setIsImportOpen(true)} className="mt-2 text-left text-sm font-semibold text-purple-600 dark:text-purple-300 underline underline-offset-2">Importar / pre-rellenar desde Markdown</button></div>
             <SearchBar />
 
-            {isDataFetching ? (\n              <div className='mt-4'><TransactionsSkeleton /></div>\n            ) : (
+            {isDataFetching ? (
+              <div className='mt-4'><TransactionsSkeleton /></div>
+            ) : (
               !docs ||
               (docs.length === 0 && (
                 <div className="flex">
