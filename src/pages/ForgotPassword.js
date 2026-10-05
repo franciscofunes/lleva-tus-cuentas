@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { resetPassword } from '../actionCreators/authActions';
 import wallet from '../imgs/wallet.png';
 import wallet2 from '../imgs/wallet2.png';
-import wavesFooter from '../imgs/waves.svg';
+import AppFooter from '../components/AppFooter';
 
 function ForgotPassword({ history }) {
 	const dispatch = useDispatch();
@@ -26,7 +26,7 @@ function ForgotPassword({ history }) {
 				transition={{ delay: 0.8, duration: 1, type: 'spring' }}
 				src={wallet}
 				alt='safe'
-				className='lg:h-52 lg:w-52 h-32 w-32 z-10 mt-8 top-3/4 absolute lg:top-1/2 lg:right-28 right-5'
+				className='lg:h-52 lg:w-52 h-32 w-32 z-10 mt-8 top-3/4 absolute lg:top-1/2 lg:right-28 right-5 pointer-events-none'
 			/>
 			<motion.img
 				animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
@@ -34,7 +34,7 @@ function ForgotPassword({ history }) {
 				transition={{ delay: 0.8, duration: 1, type: 'spring' }}
 				src={wallet2}
 				alt='safe'
-				className='lg:h-52 lg:w-52 h-32 w-32 z-10 mt-8 absolute lg:top-1/2 top-3/4 lg:left-28 left-5'
+				className='lg:h-52 lg:w-52 h-32 w-32 z-10 mt-8 absolute lg:top-1/2 top-3/4 lg:left-28 left-5 pointer-events-none'
 			/>
 			<motion.div
 				animate={{ opacity: 1 }}
@@ -113,10 +113,8 @@ function ForgotPassword({ history }) {
 						</div>
 					</motion.div>
 				</div>
-				<div className='absolute bottom-0 left-0 w-full'>
-					<img src={wavesFooter} alt='purple waves footer' className='w-full' />
-				</div>
 			</motion.div>
+			<AppFooter />
 		</>
 	);
 }
