@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
+import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
@@ -18,13 +19,13 @@ import LitaAssistantPanel from "../components/LitaAssitantPanel";
 import SearchBar from "../components/SearchBar";
 import TransactionForm from "../components/TransactionForm";
 import TransactionsMarkdownImport from "../components/TransactionsMarkdownImport";
+import TransactionsSkeleton from "../components/TransactionsSkeleton";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import kavakAd from "../imgs/ads/kavakAd.jpg";
 import cocacolaAd from "../imgs/ads/cocaColaAd.jpg";
 import cbseAd from "../imgs/ads/cbseAd.jpg";
 import lotoAd from "../imgs/ads/lotoAd.jpg";
 import cotoAd from "../imgs/ads/cotoAd.png";
-import bars from "../imgs/bars.svg";
 import eyeHide from "../imgs/eyeHide.svg";
 import closeEye from "../imgs/closeEye.svg";
 
@@ -195,9 +196,9 @@ function Dashboard() {
 
   if (isFetching)
     return (
-      <div className="h-screen flex flex-col items-center justify-center align-center">
-        <img className="h-20 w-20" src={bars} alt="loader" />
-      </div>
+      <main className="min-h-screen bg-slate-50 dark:bg-gray-900 p-4 lg:p-10">
+        <div className="max-w-6xl mx-auto"><TransactionsSkeleton /></div>
+      </main>
     );
 
   const handleFloatingButtonClick = () => {
@@ -296,9 +297,7 @@ function Dashboard() {
                 <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
                   Ingresos
                 </h1>
-                {isDataFetching ? (
-                  <img className="mt-2 h-6 w-6" src={bars} alt="loader" />
-                ) : (
+                {isDataFetching ? (\n                  <Skeleton height={24} width={90} />\n                ) : (
                   <motion.p
                     initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
                     animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
@@ -316,9 +315,7 @@ function Dashboard() {
                 <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
                   Gastos
                 </h1>
-                {isDataFetching ? (
-                  <img className="mt-2 h-6 w-6" src={bars} alt="loader" />
-                ) : (
+                {isDataFetching ? (\n                  <Skeleton height={24} width={90} />\n                ) : (
                   <motion.p
                     initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
                     animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
@@ -338,9 +335,7 @@ function Dashboard() {
               <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
                 Inversión
               </h1>
-              {isDataFetching ? (
-                <img className="ml-2 h-6 w-6" src={bars} alt="loader" />
-              ) : (
+              {isDataFetching ? (\n                  <Skeleton height={24} width={90} />\n                ) : (
                 <motion.p
                   initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
                   animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
@@ -379,9 +374,7 @@ function Dashboard() {
               </div>
 
               <div className="flex flex-col gap-2 justify-center items-center">
-                {isDataFetching ? (
-                  <img className="ml-2 h-6 w-6" src={bars} alt="loader" />
-                ) : (
+                {isDataFetching ? (\n                  <Skeleton height={24} width={90} />\n                ) : (
                   <motion.h2
                     initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
                     animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
@@ -406,11 +399,7 @@ function Dashboard() {
             id="left"
             className="container  bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 font-Nunito flex flex-col dark:bg-slate-800 dark:border-indigo-500 items-center"
           >
-            {isDataFetching ? (
-              <div className="flex justify-center items-center">
-                <img className="ml-2 h-5 w-5" src={bars} alt="loader" />
-              </div>
-            ) : (
+            {isDataFetching ? (\n              <Skeleton height={190} width='100%' />\n            ) : (
               docs && (
                 <>
                   {/* Conditionally render the appropriate chart */}
@@ -445,17 +434,10 @@ function Dashboard() {
           className="lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500 lg:h-auto"
         >
           <div>
-            <div className="flex items-center justify-between gap-3 mb-2 ml-1"><h1 className="font-Nunito font-bold text-3xl dark:text-zinc-100">Transacciones 📕</h1><button type="button" onClick={() => setIsImportOpen(true)} className="px-3 py-2 rounded-lg border border-purple-500 text-purple-600 dark:text-purple-300 text-sm font-semibold">Importar Markdown</button></div>
+            <div className="mb-3 ml-1"><div className="flex items-center justify-between gap-3"><h1 className="font-Nunito font-bold text-3xl dark:text-zinc-100">Transacciones 📕</h1><button type="button" onClick={() => setIsImportOpen(true)} className="shrink-0 px-3 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold shadow-sm">Importar</button></div><button type="button" onClick={() => setIsImportOpen(true)} className="mt-2 text-left text-sm font-semibold text-purple-600 dark:text-purple-300 underline underline-offset-2">Importar / pre-rellenar desde Markdown</button></div>
             <SearchBar />
 
-            {isDataFetching ? (
-              <div className="flex">
-                <p className="text-zinc-500 font-semiboldt ml-2 text-base">
-                  Estamos cargando sus transacciones
-                </p>
-                <img className="mt-1 ml-2 h-5 w-5" src={bars} alt="loader" />
-              </div>
-            ) : (
+            {isDataFetching ? (\n              <div className='mt-4'><TransactionsSkeleton /></div>\n            ) : (
               !docs ||
               (docs.length === 0 && (
                 <div className="flex">
