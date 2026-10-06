@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect } from 'react';
 import { IoMdClose } from 'react-icons/io';
 
-const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
+const GenericModal = ({ show, component: Component, closeModal, fitViewport = false, ...props }) => {
 	const content = React.isValidElement(Component) ? Component : <Component {...props} />;
 
 	useEffect(() => {
@@ -27,7 +27,7 @@ const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
 		<AnimatePresence>
 			{show && (
 				<motion.div
-					className='fixed inset-0 z-[90] overflow-y-auto overscroll-contain p-3 sm:p-6'
+					className='fixed inset-0 z-[90] overflow-hidden overscroll-contain p-2 sm:p-6'
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
@@ -41,11 +41,15 @@ const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
 						tabIndex={-1}
 					/>
 
-					<div className='relative flex min-h-full items-center justify-center'>
+					<div className='relative flex h-full min-h-0 items-start justify-center sm:items-center'>
 						<motion.div
 							role='dialog'
 							aria-modal='true'
-							className='relative flex w-full max-w-2xl max-h-[calc(100vh-1.5rem)] max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden rounded-2xl border border-purple-500/70 bg-white text-slate-900 shadow-2xl dark:bg-slate-900 dark:text-white sm:max-h-[calc(100vh-3rem)] sm:max-h-[calc(100dvh-3rem)]'
+							className={`relative flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-purple-500/70 bg-white text-slate-900 shadow-2xl dark:bg-slate-900 dark:text-white ${
+								fitViewport
+									? 'h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)] sm:h-auto sm:max-h-[calc(100dvh-3rem)]'
+									: 'max-h-[calc(100svh-1rem)] sm:max-h-[calc(100dvh-3rem)]'
+							}`}
 							initial={{ opacity: 0, y: 24, scale: 0.98 }}
 							animate={{ opacity: 1, y: 0, scale: 1 }}
 							exit={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -63,8 +67,12 @@ const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
 							</div>
 
 							<div
-								className='min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-5 pt-16 sm:px-6 sm:pb-6 sm:pt-6'
-								style={{ WebkitOverflowScrolling: 'touch' }}
+								className='min-h-0 flex-1 touch-pan-y overflow-y-scroll overscroll-contain px-4 pt-16 sm:px-6 sm:pt-6'
+								style={{
+									WebkitOverflowScrolling: 'touch',
+									paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))',
+									scrollbarGutter: 'stable',
+								}}
 							>
 								{content}
 							</div>

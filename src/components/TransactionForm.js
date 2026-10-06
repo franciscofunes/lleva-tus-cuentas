@@ -170,13 +170,13 @@ const TransactionForm = ({
   return (
     <>
       <form
-        className="mb-0 mt-0 flex flex-col gap-y-2 space-y-1"
+        className="mb-0 mt-0 flex flex-col gap-y-1.5 space-y-0.5 sm:gap-y-2 sm:space-y-1"
         onSubmit={handleSubmit(onSubmit)}
       >
-        <h1 className="font-Nunito font-semibold text-xl dark:text-purple-500 underline">
+        <h1 className="font-Nunito font-semibold text-lg sm:text-xl dark:text-purple-500 underline">
           {edit ? "Editar transacción" : "Crear transacción"}
         </h1>
-        <div className="rounded-lg border border-purple-500/50 bg-purple-500/5 p-3">
+        <div className="rounded-lg border border-purple-500/50 bg-purple-500/5 p-2.5 sm:p-3">
           <button type="button" onClick={() => setShowMarkdown((value) => !value)} className="w-full flex items-center justify-between text-sm font-semibold text-purple-600 dark:text-purple-300">
             <span>{edit ? "Actualizar desde Markdown" : "Pre-rellenar desde Markdown"}</span><span>{showMarkdown ? "−" : "+"}</span>
           </button>
@@ -285,7 +285,7 @@ const TransactionForm = ({
         )}
 
         {isCreditCardCategory && (
-          <div className="ml-3">
+          <div className="ml-0 sm:ml-3">
             <label
               htmlFor="selectedExpirationDate"
               className="relative text-sm font-medium text-gray-600 dark:text-zinc-300 block"
@@ -336,7 +336,7 @@ const TransactionForm = ({
         )}
 
         {isBuyCurrenciesCategory && (
-          <div className="ml-3">
+          <div className="ml-0 sm:ml-3">
             <label
               htmlFor="currencyQuantity"
               className="relative text-sm font-medium text-gray-700 dark:text-white block"
@@ -392,7 +392,7 @@ const TransactionForm = ({
         )}
 
         {isSellCurrenciesCategory && (
-          <div className="ml-3">
+          <div className="ml-0 sm:ml-3">
             <label
               htmlFor="currencyQuantity"
               className="relative text-sm font-medium text-gray-700 dark:text-white block"
@@ -653,7 +653,7 @@ const TransactionForm = ({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-3 disabled:opacity-60 disabled:cursor-wait border border-transparent shadow-sm bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md "
+          className="sticky bottom-0 z-10 mt-2 w-full py-3 disabled:opacity-60 disabled:cursor-wait border border-transparent shadow-lg bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md "
         >
           {isSubmitting ? (<span className="inline-flex items-center justify-center gap-2"><span className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />{edit ? "Guardando…" : "Añadiendo…"}</span>) : (edit ? "Guardar" : "Añadir")}
         </button>
