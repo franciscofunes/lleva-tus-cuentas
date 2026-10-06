@@ -94,7 +94,7 @@ const ExpenseFilter = () => {
 		<>
 			<div className='flex flex-col gap-y-5 justify-center'>
 				{isFilterChanging && (
-					<p className={isFilterChanging ? 'animate-wavy' : ''}>Cargando...</p>
+					<span className='sr-only' role='status'>Actualizando movimientos y totales…</span>
 				)}
 				<div className='flex justify-evenly gap-x-2'>
 					<button
