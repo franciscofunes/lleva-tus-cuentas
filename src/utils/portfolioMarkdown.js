@@ -41,11 +41,45 @@ const FIELD_MAP = {
 	'rescate': 'redemptionPeriod', 'plazo rescate': 'redemptionPeriod', 'inversion minima': 'minimumInvestment', 'inversión mínima': 'minimumInvestment',
 	'rendimiento 1d': 'performance1D', 'performance1d': 'performance1D', 'rendimiento 1s': 'performance1W', 'rendimiento 1w': 'performance1W', 'performance1w': 'performance1W',
 	'rendimiento 1m': 'performance1M', 'performance1m': 'performance1M', 'rendimiento ytd': 'performanceYTD', 'performanceytd': 'performanceYTD', 'rendimiento 1a': 'performance1Y', 'rendimiento 1y': 'performance1Y', 'performance1y': 'performance1Y',
-	'total ytd publicado': 'publishedYtdReturn', 'ytd publicado': 'publishedYtdReturn',
+	'total ytd publicado': 'publishedYtdReturn', 'ytd publicado': 'publishedYtdReturn', 'total publicado': 'publishedYtdReturn',
 	'tipo de fondo': 'fundType', 'horizonte': 'investmentHorizon', 'inicio del fondo': 'fundStartDate', 'calificacion': 'rating', 'calificación': 'rating', 'volatilidad 21d anualizada': 'volatility21dAnnualized',
 };
 
+const MONTH_MAP = {
+	ene: 'jan', enero: 'jan', jan: 'jan', january: 'jan',
+	feb: 'feb', febrero: 'feb', february: 'feb',
+	mar: 'mar', marzo: 'mar', march: 'mar',
+	abr: 'apr', abril: 'apr', apr: 'apr', april: 'apr',
+	may: 'may', mayo: 'may',
+	jun: 'jun', junio: 'jun', june: 'jun',
+	jul: 'jul', julio: 'jul', july: 'jul',
+	ago: 'aug', agosto: 'aug', aug: 'aug', august: 'aug',
+	sep: 'sep', sept: 'sep', septiembre: 'sep', set: 'sep', setiembre: 'sep', september: 'sep',
+	oct: 'oct', octubre: 'oct', october: 'oct',
+	nov: 'nov', noviembre: 'nov', november: 'nov',
+	dic: 'dec', diciembre: 'dec', dec: 'dec', december: 'dec',
+};
+
+const NUMBER_FIELDS = [
+	'balance', 'annualRate', 'fees', 'principal', 'realizedEarnings', 'lastEarning',
+	'effectiveRate', 'shares', 'nav', 'minimumInvestment', 'performance1D',
+	'performance1W', 'performance1M', 'performanceYTD', 'performance1Y',
+	'volatility21dAnnualized', 'publishedYtdReturn', 'maxInterestBearingBalance',
+];
+
+const DATE_FIELDS = [
+	'startDate', 'maturityDate', 'navDate', 'fundStartDate',
+	'sourceCheckedAt', 'rateVerifiedAt',
+];
+
 const strip = (value) => value.replace(/^\*\*|\*\*$/g, '').trim();
+
+const normalizeKey = (value) =>
+	strip(value)
+		.toLowerCase()
+		.replace(/[_-]+/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
 
 const normalizeDate = (value) => {
 	const clean = strip(value);
@@ -56,7 +90,10 @@ const normalizeDate = (value) => {
 };
 
 const normalizeNumber = (value) => {
-	let clean = strip(value).replace(/[%$]/g, '').replace(/\s/g, '');
+	let clean = strip(value)
+		.replace(/(?:US\$|U\$S|USD|ARS|EUR|USDT)/gi, '')
+		.replace(/[%$]/g, '')
+		.replace(/\s/g, '');
 	if (clean.includes(',') && clean.includes('.')) {
 		clean = clean.lastIndexOf(',') > clean.lastIndexOf('.')
 			? clean.replace(/\./g, '').replace(',', '.')
@@ -65,26 +102,106 @@ const normalizeNumber = (value) => {
 	return clean;
 };
 
+const assignField = (parsed, field, value) => {
+	if (field.startsWith('monthlyReturns.')) {
+		const month = field.split('.')[1];
+		parsed.monthlyReturns = {
+			...(parsed.monthlyReturns || {}),
+			[month]: normalizeNumber(value),
+		};
+		return;
+	}
+
+	if (NUMBER_FIELDS.includes(field)) parsed[field] = normalizeNumber(value);
+	else if (DATE_FIELDS.includes(field)) parsed[field] = normalizeDate(value);
+	else if (field === 'currency') parsed[field] = strip(value).toUpperCase();
+	else if (field === 'rateType') parsed[field] = strip(value).toUpperCase();
+	else if (field === 'trackingMode') parsed[field] = strip(value).toUpperCase().replace(/[ -]+/g, '_');
+	else parsed[field] = strip(value);
+};
+
+const canonicalOrMappedField = (rawKey) => {
+	const normalized = normalizeKey(rawKey);
+	const canonicalField = CANONICAL_FIELDS.find(
+		(item) => item.toLowerCase() === normalized.replace(/\s/g, '')
+			|| item.toLowerCase() === normalized
+	);
+	if (canonicalField) return canonicalField;
+	return FIELD_MAP[normalized];
+};
+
+const directMonthlyField = (rawKey) => {
+	const clean = strip(rawKey).toLowerCase().trim();
+	const dottedMatch = clean.match(/^monthlyreturns[.\s_-]+([a-záéíóú]+)$/i);
+	if (dottedMatch) {
+		const month = MONTH_MAP[normalizeKey(dottedMatch[1])] || dottedMatch[1].toLowerCase();
+		if (Object.values(MONTH_MAP).includes(month)) return `monthlyReturns.${month}`;
+	}
+
+	const monthlyMatch = clean.match(/^(?:rentabilidad|rendimiento)?\s*(?:mensual\s*)?([a-záéíóú]+)$/i);
+	if (monthlyMatch) {
+		const month = MONTH_MAP[normalizeKey(monthlyMatch[1])];
+		if (month) return `monthlyReturns.${month}`;
+	}
+
+	return null;
+};
+
 export const parsePortfolioMarkdown = (markdown) => {
 	const parsed = {};
 	const unknown = [];
+	let section = null;
+
 	markdown.split(/\r?\n/).forEach((rawLine) => {
-		const line = rawLine.trim().replace(/^[-*]\s*/, '');
+		const trimmed = rawLine.trim();
+		if (!trimmed) return;
+
+		const heading = trimmed.replace(/^#+\s*/, '');
+		if (/^rentabilidad mensual(?:\s+\d{4})?\s*:?s*$/i.test(heading)) {
+			section = 'monthlyReturns';
+			return;
+		}
+
+		const line = trimmed.replace(/^[-*]\s*/, '');
 		if (!line || line.startsWith('#')) return;
+
 		const separator = line.indexOf(':');
 		if (separator < 1) return;
-		const rawKey = strip(line.slice(0, separator)).toLowerCase();
+
+		const rawKey = strip(line.slice(0, separator));
 		const value = strip(line.slice(separator + 1));
-		const canonicalField = CANONICAL_FIELDS.find((item) => item.toLowerCase() === rawKey);
-		const field = canonicalField || FIELD_MAP[rawKey];
-		if (!field) { unknown.push(rawKey); return; }
-		if (['balance', 'annualRate', 'fees', 'principal', 'realizedEarnings', 'lastEarning', 'effectiveRate', 'shares', 'nav', 'minimumInvestment', 'performance1D', 'performance1W', 'performance1M', 'performanceYTD', 'performance1Y', 'volatility21dAnnualized', 'publishedYtdReturn', 'maxInterestBearingBalance'].includes(field)) parsed[field] = normalizeNumber(value);
-		else if (['startDate', 'maturityDate', 'navDate', 'fundStartDate', 'sourceCheckedAt', 'rateVerifiedAt'].includes(field)) parsed[field] = normalizeDate(value);
-		else if (field === 'currency') parsed[field] = value.toUpperCase();
-		else if (field === 'rateType') parsed[field] = value.toUpperCase();
-		else if (field === 'trackingMode') parsed[field] = value.toUpperCase().replace(/[ -]+/g, '_');
-		else parsed[field] = value;
+
+		if (!value && /^rentabilidad mensual(?:\s+\d{4})?$/i.test(rawKey)) {
+			section = 'monthlyReturns';
+			return;
+		}
+
+		const monthlyField =
+			directMonthlyField(rawKey) ||
+			(section === 'monthlyReturns'
+				? (() => {
+					const month = MONTH_MAP[normalizeKey(rawKey)];
+					return month ? `monthlyReturns.${month}` : null;
+				})()
+				: null);
+
+		if (monthlyField) {
+			assignField(parsed, monthlyField, value);
+			return;
+		}
+
+		const field = canonicalOrMappedField(rawKey);
+		if (!field) {
+			unknown.push(normalizeKey(rawKey));
+			return;
+		}
+
+		assignField(parsed, field, value);
 	});
-	if (!Object.keys(parsed).length) throw new Error('No se reconocieron campos del portfolio');
+
+	if (!Object.keys(parsed).length) {
+		throw new Error('No se reconocieron campos del portfolio');
+	}
+
 	return { parsed, unknown };
 };
