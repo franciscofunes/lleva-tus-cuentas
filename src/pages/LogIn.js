@@ -6,11 +6,9 @@ import { Navigate } from 'react-router';
 import { Link } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
 import { logInAction } from '../actionCreators/authActions';
+import AppFooter from '../components/AppFooter';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 import bars from '../imgs/bars.svg';
-import money from '../imgs/money.png';
-import money2 from '../imgs/money2.png';
-import wavesFooter from '../imgs/waves.svg';
 
 function Login() {
 	const [email, setEmail] = useState('');
@@ -33,130 +31,117 @@ function Login() {
 
 	if (isFetching)
 		return (
-			<div className='h-screen flex flex-col items-center justify-center'>
-				<img className='h-20 w-20' src={bars} alt='loader' />
+			<div className='min-h-[calc(100dvh-6rem)] flex flex-col items-center justify-center bg-slate-50 dark:bg-gray-900'>
+				<img className='h-16 w-16' src={bars} alt='Cargando' />
 			</div>
 		);
 
 	if (user) {
-		return <Navigate to='/transacciones'></Navigate>;
+		return <Navigate to='/transacciones' />;
 	}
 
 	return (
-		<>
-			<motion.img
-				animate={{ opacity: 1, rotate: 350 }}
-				initial={{ opacity: 0, rotate: 0 }}
-				transition={{ delay: 1, duration: 2, type: 'spring' }}
-				src={money}
-				alt='money'
-				className='lg:h-52 lg:w-52 h-25 w-25 z-10 mb-5 absolute lg:top-1/2 top-3/4 lg:left-28 left-5 '
-			/>
-			<motion.img
-				animate={{ opacity: 1, rotate: 10 }}
-				initial={{ opacity: 0, rotate: 360 }}
-				transition={{ delay: 1, duration: 2, type: 'spring' }}
-				src={money2}
-				alt='money'
-				className='lg:h-52 lg:w-52 h-25 w-25 z-10 mb-5 top-3/4 absolute lg:top-1/2 lg:right-28 right-5 '
-			/>
-			<motion.div
-				animate={{ opacity: 1 }}
-				initial={{ opacity: 0 }}
-				transition={{ duration: 0.5, type: 'tween' }}
-				className='dark:bg-gray-900'
-			>
-				<div className='z-50 container flex flex-col justify-center h-hero mx-auto items-center'>
-					<motion.h1
-						animate={{
-							x: 0,
-							opacity: 1,
-						}}
-						initial={{ x: -100, opacity: 0 }}
-						transition={{ duration: 1, type: 'tween' }}
-						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-2xl text-1xl mb-6 italic dark:text-white'
-					>
-						Una nueva forma de administrarse
-					</motion.h1>
+		<div className='min-h-[calc(100dvh-6rem)] bg-slate-50 dark:bg-gray-900 dark:text-white flex flex-col'>
+			<main className='flex-1 px-4 py-10 sm:py-14 lg:py-16'>
+				<div className='mx-auto w-full max-w-md'>
 					<motion.div
-						animate={{ opacity: 1 }}
-						initial={{ opacity: 0 }}
-						transition={{ delay: 0.2, duration: 1 }}
-						className='bg-white z-50 lg:w-96 w-80 pt-10 pb-8 px-10 shadow-2xl mb-10 rounded-lg dark:bg-slate-800'
+						animate={{ opacity: 1, y: 0 }}
+						initial={{ opacity: 0, y: 12 }}
+						transition={{ duration: 0.4, type: 'tween' }}
+						className='mb-6 text-center'
 					>
-						<form className='mb-0 space-y-6' onSubmit={handleSubmit(onSubmit)}>
+						<p className='text-sm font-bold uppercase tracking-[0.2em] text-purple-500'>
+							Lleva Tus Cuentas
+						</p>
+						<h1 className='mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white'>
+							Ingresá a tu cuenta
+						</h1>
+						<p className='mt-3 text-sm sm:text-base text-slate-500 dark:text-slate-400'>
+							Continuá con tus movimientos, balance e inversiones desde un solo lugar.
+						</p>
+					</motion.div>
+
+					<motion.section
+						animate={{ opacity: 1, y: 0 }}
+						initial={{ opacity: 0, y: 18 }}
+						transition={{ delay: 0.08, duration: 0.45, type: 'tween' }}
+						className='rounded-2xl border border-slate-200 bg-white p-5 sm:p-7 shadow-sm dark:border-slate-700 dark:bg-slate-800'
+					>
+						<form className='space-y-5' onSubmit={handleSubmit(onSubmit)}>
 							<div>
-								<label
-									htmlFor='email'
-									className='block text-sm font-medium text-gray-700 dark:text-white'
-								>
+								<label htmlFor='email' className='block text-sm font-bold text-slate-700 dark:text-slate-200'>
 									Correo electrónico
 								</label>
 								<input
-									className='w-full mt-1 border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
+									id='email'
+									className='mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-slate-900 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-white'
 									type='email'
+									autoComplete='email'
 									{...register('email', {
 										required: true,
 										pattern: /^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[A-Za-z]+$/,
-										onChange: (e) => {
-											setEmail(e.target.value);
-										},
+										onChange: (event) => setEmail(event.target.value),
 									})}
-									placeholder='Ingrese su correo electrónico'
+									placeholder='tu@email.com'
 								/>
 								{errors.email && (
-									<p className='text-red-500 text-sm mb-1'>
-										Ingrese un correo electrónico válido
-									</p>
-								)}
-								<label
-									htmlFor='password'
-									className='block text-sm font-medium text-gray-700 dark:text-white'
-								>
-									Contraseña
-								</label>
-								<input
-									className='w-full mt-1 border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1'
-									type='password'
-									{...register('password', {
-										onChange: (e) => {
-											setPassword(e.target.value);
-										},
-										required: true,
-										// pattern: /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,32}$/,
-									})}
-									placeholder='Ingrese su contraseña'
-								/>
-								{errors.password && (
-									<p className='text-red-500 text-sm mb-1'>
-										Ingrese su password correctamente
-									</p>
+									<p className='mt-1.5 text-sm text-red-500'>Ingresá un correo electrónico válido.</p>
 								)}
 							</div>
+
+							<div>
+								<div className='flex items-center justify-between gap-3'>
+									<label htmlFor='password' className='block text-sm font-bold text-slate-700 dark:text-slate-200'>
+										Contraseña
+									</label>
+									<Link to='/recupero' className='text-xs font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400'>
+										¿La olvidaste?
+									</Link>
+								</div>
+								<input
+									id='password'
+									className='mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-slate-900 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-white'
+									type='password'
+									autoComplete='current-password'
+									{...register('password', {
+										onChange: (event) => setPassword(event.target.value),
+										required: true,
+									})}
+									placeholder='Ingresá tu contraseña'
+								/>
+								{errors.password && (
+									<p className='mt-1.5 text-sm text-red-500'>Ingresá tu contraseña.</p>
+								)}
+							</div>
+
 							<button
 								type='submit'
-								className='w-full flex justify-center py-2 px-2 border border-transparent shadow-sm bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md '
+								className='w-full rounded-xl bg-purple-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800'
 							>
 								Ingresar
 							</button>
 						</form>
+
+						<div className='my-5 flex items-center gap-3' aria-hidden='true'>
+							<div className='h-px flex-1 bg-slate-200 dark:bg-slate-700' />
+							<span className='text-xs font-semibold uppercase tracking-wide text-slate-400'>o</span>
+							<div className='h-px flex-1 bg-slate-200 dark:bg-slate-700' />
+						</div>
+
 						<GoogleLoginButton />
-						<div className='flex justify-center dark:text-white mt-5 italic text-sm  underline'>
-							<Link className='mr-2 hover:text-indigo-200' to='/registrarse'>
+
+						<p className='mt-6 text-center text-sm text-slate-500 dark:text-slate-400'>
+							¿Todavía no tenés cuenta?{' '}
+							<Link className='font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400' to='/registrarse'>
 								Registrarme
 							</Link>
-							<span className=' dark:text-white  '>|</span>
-							<Link className='ml-2 hover:text-indigo-300' to='/recupero'>
-								Olvide mi contraseña
-							</Link>
-						</div>
-					</motion.div>
+						</p>
+					</motion.section>
 				</div>
-				<div className='absolute bottom-0 left-0 w-full'>
-					<img src={wavesFooter} alt='purple waves footer' className='w-full' />
-				</div>
-			</motion.div>
-		</>
+			</main>
+
+			<AppFooter />
+		</div>
 	);
 }
 
