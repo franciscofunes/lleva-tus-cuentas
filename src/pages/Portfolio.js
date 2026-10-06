@@ -555,6 +555,7 @@ function Portfolio() {
 					collapsed={collapsedSections.positions}
 					onToggle={() => togglePortfolioSection('positions')}
 					className='mb-6 lg:mb-8'
+					contentClassName='space-y-4'
 				>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
 						{!loading && !positions.length && (
