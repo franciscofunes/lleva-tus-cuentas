@@ -60,4 +60,57 @@ publishedYtdReturn: 3.75%
 		});
 		expect(parsed.publishedYtdReturn).toBe('3.75');
 	});
+	it('parses the screenshot-style Balanz markdown table with annualized monthly heading', () => {
+		const markdown = `
+### Rentabilidad mensual anualizada
+
+| Mes | Rentabilidad | Mes | Rentabilidad |
+| --- | ---: | --- | ---: |
+| Ene | 0,62% | Jul | 0,33% |
+| Feb | 0,29% | Ago | 0,28% |
+| Mar | 0,95% | Sep | 0,14% |
+| Abr | 0,34% | Oct | 0,04% |
+| May | 0,18% |   |   |
+| Jun | 0,53% |   |   |
+| Total | 3,75% |
+`;
+
+		const { parsed } = parsePortfolioMarkdown(markdown);
+
+		expect(parsed.monthlyReturns).toEqual({
+			jan: '0.62',
+			feb: '0.29',
+			mar: '0.95',
+			apr: '0.34',
+			may: '0.18',
+			jun: '0.53',
+			jul: '0.33',
+			aug: '0.28',
+			sep: '0.14',
+			oct: '0.04',
+		});
+		expect(parsed.publishedYtdReturn).toBe('3.75');
+	});
+
+	it('parses compact OCR/LLM text without markdown colons', () => {
+		const markdown = `
+Inversión mínima u$s 100
+Rentabilidad mensual anualizada
+Ene 0,62% Jul 0,33%
+Feb 0,29% Ago 0,28%
+Mar 0,95% Sep 0,14%
+Abr 0,34% Oct 0,04%
+May 0,18%
+Jun 0,53%
+Total 3,75%
+`;
+
+		const { parsed } = parsePortfolioMarkdown(markdown);
+
+		expect(parsed.minimumInvestment).toBe('100');
+		expect(parsed.monthlyReturns.jan).toBe('0.62');
+		expect(parsed.monthlyReturns.oct).toBe('0.04');
+		expect(parsed.publishedYtdReturn).toBe('3.75');
+	});
+
 });
