@@ -304,6 +304,7 @@ function Portfolio() {
 		try {
 			await verifyPortfolioPosition(user.uid, verifyTarget, verifyBalance, { changeType: verifyChangeType, note: verifyNote, nav: verifyNav, reportedEarnings: verifyReportedEarnings });
 			toast.success('Saldo verificado y snapshot guardado');
+			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 			setVerifyTarget(null);
 			setVerifyBalance('');
 			setVerifyNote('');
@@ -540,8 +541,7 @@ function Portfolio() {
 										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
 										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-green-600 dark:text-green-500'>Rend. 1A: {Number(position.performance1Y).toFixed(2)}%</p>}
 										{position.category === 'FCI' && position.monthlyReturns && Object.keys(position.monthlyReturns).length > 0 && <p className='text-sm font-bold text-green-600 dark:text-green-400'>YTD compuesto: {((Object.values(position.monthlyReturns).map(Number).filter(Number.isFinite).reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100).toFixed(2)}%</p>}
-										{Number(position.realizedEarnings || position.lastEarning || 0) !== 0 && <p className='text-sm font-semibold text-green-600 dark:text-green-500 mt-1'>Ganado: {money(position.trackingMode === 'NAV' ? (position.lastEarning ?? position.realizedEarnings) : position.realizedEarnings, position.currency)}</p>}
-										{position.trackingMode !== 'NAV' && Number(position.lastEarning || 0) !== 0 && <p className='text-xs text-gray-400'>Último rendimiento: {money(position.lastEarning, position.currency)}</p>}
+										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-green-600 dark:text-green-500 mt-1'>Ganado: {money(position.realizedEarnings, position.currency)}</p>}
 										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {Number(position.effectiveRate).toFixed(2)}%</p>}
 										{performanceByPosition[position.id] && (
 											<div className='mt-2 text-sm'>
@@ -578,7 +578,7 @@ function Portfolio() {
 
 			<GenericModal
 				show={Boolean(verifyTarget)}
-				component={() => (
+				component={(
 					<div className='text-white pr-8'>
 						<h2 className='text-xl font-bold'>Confirmar saldo</h2>
 						<p className='mt-2 text-sm text-gray-300'>Ingresá el saldo actual de <strong>{verifyTarget?.name}</strong>. Al confirmar también se guardará un snapshot para el histórico.</p>
@@ -592,7 +592,7 @@ function Portfolio() {
 						</div>
 					</div>
 				)}
-				closeModal={() => setVerifyTarget(null)}
+				closeModal={() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); setVerifyTarget(null); }}
 			/>
 
 			<GenericModal show={Boolean(rateTarget)} component={() => (<div className='text-white pr-8'><div className='w-12 h-12 rounded-full bg-green-500/15 text-green-400 flex items-center justify-center mb-4'><FaPercent /></div><h2 className='text-xl font-bold'>Actualizar tasa</h2><p className='mt-2 text-sm text-gray-300'><strong>{rateTarget?.institution}</strong> · {rateTarget?.name}</p><p className='mt-1 text-xs text-gray-400'>Actualizá solamente la tasa. El resto de la posición no cambia.</p><div className='relative mt-4'><input autoFocus className='portfolio-input pr-10 text-xl font-bold' type='number' step='0.01' min='0' value={quickRate} onChange={(event) => setQuickRate(event.target.value)} placeholder='Tasa anual' /><span className='absolute right-3 top-2.5 font-bold text-gray-400'>%</span></div><div className='grid grid-cols-2 gap-2 mt-5'><button type='button' onClick={() => setRateTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button><button type='button' disabled={quickRate === '' || pendingAction === 'rate'} onClick={saveQuickRate} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'rate' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'rate' ? 'Guardando…' : 'Guardar tasa'}</button></div></div>)} closeModal={() => setRateTarget(null)} />
