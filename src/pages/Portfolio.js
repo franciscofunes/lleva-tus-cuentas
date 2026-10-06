@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaEye, FaEyeSlash, FaBars, FaPlus, FaExchangeAlt } from 'react-icons/fa';
+import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaEye, FaEyeSlash, FaPlus, FaExchangeAlt } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import QuickAccessCard from '../components/QuickAccessCard';
 import AppFooter from '../components/AppFooter';
@@ -109,7 +109,6 @@ function Portfolio() {
 		try { return JSON.parse(localStorage.getItem('ltc:portfolio:view:guest') || '{}').hideValues || false; } catch { return false; }
 	});
 	const [collapsedSections, setCollapsedSections] = useState({ summary:false, charts:false, positions:false });
-	const [showQuickMenu, setShowQuickMenu] = useState(false);
 	
 
 	useEffect(() => {
@@ -486,16 +485,9 @@ function Portfolio() {
 					<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}>{hideValues ? <FaEye /> : <FaEyeSlash />} <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
 				</QuickAccessCard>
 				{!loading && positions.length > 0 && <div className='mb-6 flex flex-wrap gap-2'>
-					<button type='button' onClick={() => setShowQuickMenu((value) => !value)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaBars /> Navegar</button>
 					<button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>
 					<button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>
 				</div>}
-				{showQuickMenu && <nav className='mb-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 flex flex-wrap gap-2' aria-label='Accesos rápidos del portfolio'>
-					<button type='button' onClick={() => document.getElementById('portfolio-summary')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Resumen</button>
-					<button type='button' onClick={() => document.getElementById('portfolio-charts')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Gráficos</button>
-					<button type='button' onClick={() => document.getElementById('portfolio-positions')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Posiciones</button>
-					<button type='button' onClick={() => setHideValues((value) => !value)} className='px-3 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold'>{hideValues ? 'Mostrar valores' : 'Ocultar valores'}</button>
-				</nav>}
 
 				{loading ? <div className='space-y-6 animate-pulse' aria-label='Cargando portfolio'><section className='grid grid-cols-3 gap-2 sm:gap-4'>{[0,1,2].map((item) => <div key={item} className='h-28 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' />)}</section><div className='h-36 rounded-2xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /><div className='space-y-3'><div className='h-7 w-36 rounded bg-slate-200 dark:bg-slate-800' /><div className='h-64 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /></div></div> : <>
 
