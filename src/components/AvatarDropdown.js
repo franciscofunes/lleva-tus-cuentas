@@ -1,103 +1,155 @@
 import React, { useEffect, useRef, useState } from 'react';
+import {
+	AiOutlineFund,
+	AiOutlineUnorderedList,
+	AiOutlineUser,
+} from 'react-icons/ai';
 import { MdOutlineExitToApp } from 'react-icons/md';
 import { RiLockPasswordFill } from 'react-icons/ri';
-import { AiOutlineUser, AiOutlineFund, AiOutlineUnorderedList } from 'react-icons/ai';
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
+
+const itemClass = ({ isActive }) =>
+	[
+		'flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors',
+		isActive
+			? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300'
+			: 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800',
+	].join(' ');
 
 const AvatarDropdown = ({ user, handleLogout }) => {
 	const [showDropdown, setShowDropdown] = useState(false);
 	const dropdownRef = useRef(null);
 
-	const handleDropdownToggle = () => {
-		setShowDropdown(!showDropdown);
-	};
-
-	const handleHideDropdown = (event) => {
-		if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-			setShowDropdown(false);
-		}
-	};
-
-	const handleDropdownToggleChangePassword = () => {
-		setShowDropdown(false);
-	};
+	const closeDropdown = () => setShowDropdown(false);
 
 	useEffect(() => {
-		document.addEventListener('click', handleHideDropdown);
+		const handleOutsideClick = (event) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+				closeDropdown();
+			}
+		};
+
+		const handleEscape = (event) => {
+			if (event.key === 'Escape') closeDropdown();
+		};
+
+		document.addEventListener('pointerdown', handleOutsideClick);
+		document.addEventListener('keydown', handleEscape);
 
 		return () => {
-			document.removeEventListener('click', handleHideDropdown);
+			document.removeEventListener('pointerdown', handleOutsideClick);
+			document.removeEventListener('keydown', handleEscape);
 		};
 	}, []);
 
+	const photoUrl = user?.providerData?.find((provider) => provider?.photoURL)?.photoURL;
+	const displayName =
+		user?.displayName ||
+		user?.providerData?.find((provider) => provider?.displayName)?.displayName ||
+		'Mi cuenta';
+	const email = user?.email || user?.providerData?.find((provider) => provider?.email)?.email;
+	const initial = (displayName || email || 'U').trim().charAt(0).toUpperCase();
+	const canResetPassword = user?.providerData?.some(
+		(provider) => provider?.providerId === 'password'
+	);
+
 	return (
 		<div className='relative inline-block text-left' ref={dropdownRef}>
-			<div>
-				<button
-					type='button'
-					className='flex items-center focus:outline-none'
-					onClick={handleDropdownToggle}
-				>
+			<button
+				type='button'
+				className='inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 text-sm font-extrabold text-slate-700 shadow-sm transition hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white'
+				onClick={() => setShowDropdown((value) => !value)}
+				aria-haspopup='menu'
+				aria-expanded={showDropdown}
+				aria-label='Abrir menú de cuenta'
+			>
+				{photoUrl ? (
 					<img
-						className='w-10 h-10 rounded-full object-cover'
-						src={user?.providerData[0]?.photoURL}
-						alt='Avatar'
+						className='h-full w-full object-cover'
+						src={photoUrl}
+						alt=''
+						referrerPolicy='no-referrer'
 					/>
-				</button>
-			</div>
+				) : (
+					<span aria-hidden='true'>{initial}</span>
+				)}
+			</button>
+
 			{showDropdown && (
-				<div className='origin-top-right fixed sm:absolute right-3 sm:right-0 top-[5.25rem] sm:top-auto mt-0 sm:mt-2 w-56 sm:w-52 rounded-xl shadow-xl bg-white ring-1 ring-black/10 focus:outline-none z-[100]'>
-					<div
-						className='p-1'
-						role='menu'
-						aria-orientation='vertical'
-						aria-labelledby='options-menu'
-					>
-						<Link
-							className='px-3 py-2.5 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
+				<div
+					className='fixed right-3 top-[4.75rem] z-[100] w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-slate-700 dark:bg-slate-900 sm:absolute sm:right-0 sm:top-auto sm:mt-2 sm:w-72'
+					role='menu'
+					aria-label='Menú de cuenta'
+				>
+					<div className='border-b border-slate-200 px-3 py-3 dark:border-slate-700'>
+						<p className='truncate text-sm font-extrabold text-slate-900 dark:text-white'>
+							{displayName}
+						</p>
+						{email && (
+							<p className='mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400'>
+								{email}
+							</p>
+						)}
+					</div>
+
+					<div className='mt-2 space-y-1 lg:hidden'>
+						<NavLink
+							className={itemClass}
 							role='menuitem'
 							to='/transacciones'
-							onClick={handleDropdownToggleChangePassword}
-							
+							onClick={closeDropdown}
 						>
-							Transacciones <AiOutlineUnorderedList className='ml-2 text-base' />
-						</Link>
-						<Link
-							className='px-3 py-2.5 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
+							<span>Transacciones</span>
+							<AiOutlineUnorderedList className='text-lg' />
+						</NavLink>
+						<NavLink
+							className={itemClass}
 							role='menuitem'
 							to='/portfolio'
-							onClick={handleDropdownToggleChangePassword}
-							
+							onClick={closeDropdown}
 						>
-							Portfolio <AiOutlineFund className='ml-2 text-base' />
-						</Link>
-						<Link
-							className='px-3 py-2.5 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
+							<span>Portfolio</span>
+							<AiOutlineFund className='text-lg' />
+						</NavLink>
+					</div>
+
+					<div className='my-2 border-t border-slate-200 dark:border-slate-700 lg:mt-0' />
+
+					<div className='space-y-1'>
+						<NavLink
+							className={itemClass}
 							role='menuitem'
 							to='/subscripcion'
-							onClick={handleDropdownToggleChangePassword}
-							
+							onClick={closeDropdown}
 						>
-							subscripción <AiOutlineUser className='ml-2 text-base' />
-						</Link>
-						<Link
-							className='px-3 py-2.5 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
+							<span>Plan y suscripción</span>
+							<AiOutlineUser className='text-lg' />
+						</NavLink>
+
+						{canResetPassword && (
+							<NavLink
+								className={itemClass}
+								role='menuitem'
+								to='/recupero'
+								onClick={closeDropdown}
+							>
+								<span>Cambiar contraseña</span>
+								<RiLockPasswordFill className='text-lg' />
+							</NavLink>
+						)}
+
+						<button
+							type='button'
+							className='flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30'
 							role='menuitem'
-							to='/recupero'
-							onClick={handleDropdownToggleChangePassword}
-							
+							onClick={() => {
+								closeDropdown();
+								handleLogout();
+							}}
 						>
-							Cambiar contraseña{' '}
-							<RiLockPasswordFill className='ml-2 text-base' />
-						</Link>
-						<div
-							className='px-3 py-2.5 flex items-center justify-between gap-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer whitespace-nowrap'
-							role='menuitem'
-							onClick={handleLogout}
-							
-						>
-							Salir <MdOutlineExitToApp className='ml-2 text-base' />
-						</div>
+							<span>Salir</span>
+							<MdOutlineExitToApp className='text-lg' />
+						</button>
 					</div>
 				</div>
 			)}
