@@ -647,6 +647,7 @@ function Dashboard() {
         {isOpen && (
           <GenericModal
             component={TransactionForm}
+            fitViewport
             name={name}
             amount={amount}
             edit={edit}
