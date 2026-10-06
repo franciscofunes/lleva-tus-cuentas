@@ -140,6 +140,8 @@ const ExpenseFilter = () => {
 					<DatePicker
 						className='text-center cursor-pointer rounded-xl py-2.5 px-4 bg-white text-slate-900 border border-slate-300 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-slate-900 dark:text-white dark:border-slate-600'
 						selected={selectedDate}
+						readOnly
+						onFocus={(event) => event.target.blur()}
 						onChange={(date) => handleDateChange(date, dispatch)}
 						value={getFormattedDate(selectedDate)}
 						locale='es'
