@@ -275,18 +275,18 @@ function Dashboard() {
         initial={{ opacity: 0 }}
         transition={{ duration: 1 }}
         id="dashboard"
-        className="container lg:px-6 max-w-full grid lg:grid-cols-3 dark:bg-gray-900"
+        className="min-h-screen max-w-full grid lg:grid-cols-3 gap-0 lg:gap-6 lg:px-6 bg-slate-50 dark:bg-gray-900"
       >
         <div
           id="left"
-          className="container flex lg:py-5 mx-auto w-full flex-col justify-between items-center"
+          className="container flex lg:py-8 mx-auto w-full flex-col justify-start items-center px-3 sm:px-4"
         >
           <motion.div
             animate={{ opacity: 1 }}
             initial={{ opacity: 0 }}
             transition={{ duration: 0.7, type: "tween" }}
             id="info"
-            className="container p-4 bg-white lg:w-3/4 w-full border rounded-md shadow-md mb-6 mt-6 font-Nunito dark:bg-slate-800 dark:border-indigo-500"
+            className="container p-5 sm:p-6 bg-white lg:w-full w-full border border-slate-200 rounded-2xl shadow-sm mb-5 mt-5 lg:mt-0 font-Nunito dark:bg-slate-800 dark:border-slate-700"
           >
             <div className="flex items-center mb-5">
               {/* Ingresos */}
@@ -402,7 +402,7 @@ function Dashboard() {
             initial={{ opacity: 0 }}
             transition={{ duration: 0.7, type: "tween" }}
             id="left"
-            className="container  bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 font-Nunito flex flex-col dark:bg-slate-800 dark:border-indigo-500 items-center"
+            className="container bg-white p-5 sm:p-6 lg:w-full w-full border border-slate-200 rounded-2xl shadow-sm mb-5 font-Nunito flex flex-col dark:bg-slate-800 dark:border-slate-700 items-center"
           >
             {isDataFetching ? (
               <div className="flex justify-center items-center">
@@ -428,7 +428,7 @@ function Dashboard() {
               )
             )}
           </motion.div>
-          {!paymentData && user?.email?.toLowerCase() !== "ffunes90@gmail.com" ? (
+          {shouldShowAds ? (
             <AdvertisementContainer advertisements={advertisements} />
           ) : (
             ""
@@ -440,7 +440,7 @@ function Dashboard() {
           initial={{ opacity: 0 }}
           transition={{ duration: 0.7, type: "tween" }}
           id="right"
-          className="lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500 lg:h-auto"
+          className="lg:col-span-2 container bg-white flex flex-col justify-start lg:py-7 lg:px-8 px-4 py-5 lg:my-8 shadow-sm mx-auto items-stretch w-full border-y lg:border border-slate-200 lg:rounded-2xl dark:bg-slate-800 dark:border-slate-700 lg:h-auto"
         >
           <div>
             <h1 className="font-Nunito font-bold text-3xl mb-2 ml-1 dark:text-zinc-100">Transacciones 📕</h1>
