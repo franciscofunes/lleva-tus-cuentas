@@ -5,99 +5,93 @@ import { Link } from 'react-router-dom';
 import { resetPassword } from '../actionCreators/authActions';
 import AppFooter from '../components/AppFooter';
 
-function ForgotPassword({ history }) {
+function ForgotPassword() {
 	const dispatch = useDispatch();
-
 	const [email, setEmail] = useState('');
 
-	const handleSubmit = (e) => {
-		e.preventDefault();
+	const handleSubmit = (event) => {
+		event.preventDefault();
 		dispatch(resetPassword({ email }));
 		setEmail('');
 	};
 
 	return (
-		<>
-			<motion.div
-				animate={{ opacity: 1 }}
-				initial={{ opacity: 0 }}
-				transition={{ duration: 0.5, type: 'tween' }}
-				className='dark:bg-gray-900 mt-3'
-			>
-				<div className='container flex flex-col justify-center h-hero mx-auto items-center'>
-					<motion.h1
-						animate={{ opacity: 1, x: 0 }}
-						initial={{ opacity: 0, x: 100 }}
-						transition={{ duration: 1, type: 'tween' }}
-						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-4xl text-3xl mb-6 dark:text-white'
-					>
-						Resetea tu contraseña
-					</motion.h1>
-					<motion.span
-						animate={{ opacity: 1, x: 0 }}
-						initial={{ opacity: 0, x: 100 }}
-						transition={{ duration: 1, type: 'tween' }}
-						className='font-Roboto text-center text-gray-600 z-50 lg:text-2xl text-xl italic mb-1 dark:text-white'
-					>
-						Solicitar un link de reseteo
-					</motion.span>
-					<motion.span
-						animate={{ opacity: 1, x: 0 }}
-						initial={{ opacity: 0, x: 100 }}
-						transition={{ duration: 1, type: 'tween' }}
-						className='font-Roboto font-semibold text-center text-gray-600 z-50 lg:text-1xl text-base text-zinc-400 italic mb-6 dark:text-zinc'
-					>
-						(Recorda revisar tu casilla de spam)
-					</motion.span>
+		<div className='min-h-[calc(100dvh-6rem)] bg-slate-50 dark:bg-gray-900 dark:text-white flex flex-col'>
+			<main className='flex-1 px-4 py-10 sm:py-14 lg:py-16'>
+				<div className='mx-auto w-full max-w-md'>
 					<motion.div
-						animate={{ opacity: 1 }}
-						initial={{ opacity: 0 }}
-						transition={{ delay: 0.2, duration: 1 }}
-						className='bg-white z-50 lg:w-96 w-80 pt-10 pb-8 mb-20 px-10 shadow-2xl rounded-lg dark:bg-slate-800'
+						animate={{ opacity: 1, y: 0 }}
+						initial={{ opacity: 0, y: 12 }}
+						transition={{ duration: 0.4, type: 'tween' }}
+						className='mb-6 text-center'
 					>
-						<form className='mb-0 space-y-6 ' onSubmit={handleSubmit}>
+						<p className='text-sm font-bold uppercase tracking-[0.2em] text-purple-500'>
+							Lleva Tus Cuentas
+						</p>
+						<h1 className='mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white'>
+							Recuperá tu contraseña
+						</h1>
+						<p className='mt-3 text-sm sm:text-base text-slate-500 dark:text-slate-400'>
+							Ingresá el correo de tu cuenta y te enviaremos un enlace para crear una nueva contraseña.
+						</p>
+					</motion.div>
+
+					<motion.section
+						animate={{ opacity: 1, y: 0 }}
+						initial={{ opacity: 0, y: 18 }}
+						transition={{ delay: 0.08, duration: 0.45, type: 'tween' }}
+						className='rounded-2xl border border-slate-200 bg-white p-5 sm:p-7 shadow-sm dark:border-slate-700 dark:bg-slate-800'
+					>
+						<form className='space-y-5' onSubmit={handleSubmit}>
 							<div>
-								<div className='mb-2'>
-									<label
-										htmlFor='email'
-										className='block text-sm font-medium text-gray-700 dark:text-white'
-									>
-										Correo electrónico
-									</label>
-									<div className='mt-2 mb-2'>
-										<input
-											value={email}
-											onChange={(e) => setEmail(e.target.value)}
-											type='email'
-											placeholder='johndoe@gmail.com'
-											id='email'
-											required
-											className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 mb-5'
-										/>
-										<button
-											type='submit'
-											className='w-full flex justify-center py-3 px-4 border border-transparent shadow-sm bg-primary hover:opacity-80 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md'
-										>
-											Enviar Link
-										</button>
-									</div>
-								</div>
+								<label htmlFor='email' className='block text-sm font-bold text-slate-700 dark:text-slate-200'>
+									Correo electrónico
+								</label>
+								<input
+									id='email'
+									value={email}
+									onChange={(event) => setEmail(event.target.value)}
+									type='email'
+									autoComplete='email'
+									required
+									placeholder='tu@email.com'
+									className='mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-slate-900 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-white'
+								/>
+								<p className='mt-2 text-xs text-slate-400'>
+									Revisá también Spam o Correo no deseado si no encontrás el mensaje.
+								</p>
 							</div>
+
+							<button
+								type='submit'
+								className='w-full rounded-xl bg-purple-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800'
+							>
+								Enviar enlace
+							</button>
 						</form>
-						<div className='flex justify-center gap-y-2 dark:text-white mb-2 mt-3 text-sm hover:text-indigo-200'>
-							<Link className='italic underline' to='/registrarse'>
+
+						<div className='my-5 h-px bg-slate-200 dark:bg-slate-700' aria-hidden='true' />
+
+						<div className='grid grid-cols-2 gap-3'>
+							<Link
+								to='/registrarse'
+								className='inline-flex items-center justify-center rounded-xl border border-purple-500 px-4 py-3 text-sm font-bold text-purple-600 transition hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-950/30'
+							>
 								Registrarme
 							</Link>
-							<span className='mr-2 ml-2'>&#124;</span>
-							<Link className='italic underline' to='/ingresar'>
+							<Link
+								to='/ingresar'
+								className='inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-900'
+							>
 								Ingresar
 							</Link>
 						</div>
-					</motion.div>
+					</motion.section>
 				</div>
-			</motion.div>
+			</main>
+
 			<AppFooter />
-		</>
+		</div>
 	);
 }
 
