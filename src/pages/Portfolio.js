@@ -2,12 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaEye, FaEyeSlash, FaBars } from 'react-icons/fa';
+import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaChartPie, FaPlus } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import AppFooter from '../components/AppFooter';
 import InfoTooltip from '../components/InfoTooltip';
 import PortfolioCharts from '../components/PortfolioCharts';
 import GenericModal from '../components/GenericModal';
+import eyeHide from '../imgs/eyeHide.svg';
+import closeEye from '../imgs/closeEye.svg';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
 import { exportPortfolioXlsx, buildPortfolioLlmMarkdown } from '../utils/portfolioExport';
 import {
@@ -108,7 +110,6 @@ function Portfolio() {
 		try { return JSON.parse(localStorage.getItem('ltc:portfolio:view:guest') || '{}').hideValues || false; } catch { return false; }
 	});
 	const [collapsedSections, setCollapsedSections] = useState({ summary:false, charts:false, positions:false });
-	const [showQuickMenu, setShowQuickMenu] = useState(false);
 	
 
 	useEffect(() => {
@@ -475,24 +476,25 @@ function Portfolio() {
 	return (
 		<main className='relative min-h-[calc(100dvh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 pb-0 lg:pb-8'>
 			<div className='max-w-7xl mx-auto px-4 pt-4 lg:px-0 lg:pt-0 w-full'>
-				<div className='flex flex-wrap justify-between items-end gap-4 mb-6'>
-					<div>
-						<h1 className='text-3xl font-bold'>Cuentas e inversiones</h1>
-						<p className='text-gray-500 dark:text-gray-400 max-w-2xl'>Tu patrimonio financiero en un solo lugar. Los totales y rendimientos se mantienen separados por moneda.</p>
+				<section className='mb-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-sm'>
+					<p className='text-sm font-bold uppercase tracking-wider text-purple-500'>Tu dinero, en un solo lugar</p>
+					<div className='mt-2 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4'>
+						<div><h1 className='text-2xl sm:text-3xl font-extrabold'>Cuentas e inversiones</h1><p className='mt-1 text-sm text-slate-500 dark:text-slate-400'>Saldos, rendimientos y posiciones con acceso rápido a lo que más usás.</p></div>
+						<div className='grid grid-cols-3 gap-2 sm:flex'>
+							<button type='button' onClick={() => setShowForm(true)} className='inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 text-sm font-bold'><FaPlus /> <span className='hidden sm:inline'>Posición</span></button>
+							<button type='button' onClick={() => document.getElementById('portfolio-positions')?.scrollIntoView({ behavior:'smooth' })} className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaChartPie /> <span className='hidden sm:inline'>Posiciones</span></button>
+							<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}><img className='h-5 w-5' src={hideValues ? closeEye : eyeHide} alt='' /> <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
+						</div>
 					</div>
-					{!loading && positions.length > 0 && <div className='flex flex-wrap gap-2'>
-						<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800' aria-pressed={hideValues}>{hideValues ? <FaEye /> : <FaEyeSlash />} {hideValues ? 'Mostrar valores' : 'Ocultar valores'}</button>
-						<button type='button' onClick={() => setShowQuickMenu((value) => !value)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaBars /> Navegar</button>
-						<button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>
-						<button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>
+					{!loading && positions.length > 0 && <div className='mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-wrap gap-2'>
+						<button type='button' onClick={() => document.getElementById('portfolio-summary')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Resumen</button>
+						<button type='button' onClick={() => document.getElementById('portfolio-charts')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Gráficos</button>
+						<button type='button' onClick={() => document.getElementById('portfolio-positions')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Posiciones</button>
+						<span className='flex-1' />
+						<button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold'><FaFileExcel /> Excel</button>
+						<button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold'><FaFileAlt /> LLM</button>
 					</div>}
-				</div>
-				{showQuickMenu && <nav className='mb-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 flex flex-wrap gap-2' aria-label='Accesos rápidos del portfolio'>
-					<button type='button' onClick={() => document.getElementById('portfolio-summary')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Resumen</button>
-					<button type='button' onClick={() => document.getElementById('portfolio-charts')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Gráficos</button>
-					<button type='button' onClick={() => document.getElementById('portfolio-positions')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Posiciones</button>
-					<button type='button' onClick={() => setHideValues((value) => !value)} className='px-3 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold'>{hideValues ? 'Mostrar valores' : 'Ocultar valores'}</button>
-				</nav>}
+				</section>
 
 				{loading ? <div className='space-y-6 animate-pulse' aria-label='Cargando portfolio'><section className='grid grid-cols-3 gap-2 sm:gap-4'>{[0,1,2].map((item) => <div key={item} className='h-28 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' />)}</section><div className='h-36 rounded-2xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /><div className='space-y-3'><div className='h-7 w-36 rounded bg-slate-200 dark:bg-slate-800' /><div className='h-64 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /></div></div> : <>
 
