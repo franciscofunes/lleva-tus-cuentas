@@ -14,6 +14,7 @@ function SearchBar() {
 
 	const user = useSelector((state) => state.auth.user);
 	const categories = useSelector((state) => state.database.categories);
+	const isDataFetching = useSelector((state) => state.database.isDataFetching);
 
 	const handleSubmit = (event) => {
 		event.preventDefault();
@@ -41,6 +42,7 @@ function SearchBar() {
 					value={searchTerm}
 					placeholder='Busca por categoría'
 					onChange={(e) => setSearchTerm(e.target.value)}
+					disabled={isDataFetching}
 				/>
 				<datalist id='expense-names'>
 					{categoriesNames
@@ -50,12 +52,13 @@ function SearchBar() {
 						))}
 				</datalist>
 				<div className='absolute top-0 right-0 flex justify-center items-center mt-1'>
-					<button type='submit' className='p-2 text-gray-400'>
+					<button type='submit' disabled={isDataFetching || !searchTerm.trim()} className='p-2 text-gray-400 disabled:cursor-wait disabled:opacity-50'>
 						<FaSearch />
 					</button>
 					<button
 						type='button'
-						className='p-2 text-gray-400'
+						disabled={isDataFetching}
+						className='p-2 text-gray-400 disabled:cursor-wait disabled:opacity-50'
 						onClick={handleClearSearch}
 					>
 						<FaTrash />
