@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaEye, FaEyeSlash, FaBars } from 'react-icons/fa';
+import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaEye, FaEyeSlash, FaBars, FaPlus, FaExchangeAlt } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
+import QuickAccessCard from '../components/QuickAccessCard';
 import AppFooter from '../components/AppFooter';
 import InfoTooltip from '../components/InfoTooltip';
 import PortfolioCharts from '../components/PortfolioCharts';
@@ -475,18 +476,20 @@ function Portfolio() {
 	return (
 		<main className='relative min-h-[calc(100dvh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 pb-0 lg:pb-8'>
 			<div className='max-w-7xl mx-auto px-4 pt-4 lg:px-0 lg:pt-0 w-full'>
-				<div className='flex flex-wrap justify-between items-end gap-4 mb-6'>
-					<div>
-						<h1 className='text-3xl font-bold'>Cuentas e inversiones</h1>
-						<p className='text-gray-500 dark:text-gray-400 max-w-2xl'>Tu patrimonio financiero en un solo lugar. Los totales y rendimientos se mantienen separados por moneda.</p>
-					</div>
-					{!loading && positions.length > 0 && <div className='flex flex-wrap gap-2'>
-						<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800' aria-pressed={hideValues}>{hideValues ? <FaEye /> : <FaEyeSlash />} {hideValues ? 'Mostrar valores' : 'Ocultar valores'}</button>
-						<button type='button' onClick={() => setShowQuickMenu((value) => !value)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaBars /> Navegar</button>
-						<button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>
-						<button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>
-					</div>}
-				</div>
+				<QuickAccessCard
+					eyebrow='Tu patrimonio, en un solo lugar'
+					title='Cuentas e inversiones'
+					description='Saldos, rendimientos y vencimientos con el mismo acceso rápido que usás en Movimientos.'
+				>
+					<button type='button' onClick={() => setShowForm(true)} className='inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 text-sm font-bold'><FaPlus /> <span className='hidden sm:inline'>Posición</span></button>
+					<Link to='/transacciones' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaExchangeAlt /> <span className='hidden sm:inline'>Movimientos</span></Link>
+					<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}>{hideValues ? <FaEye /> : <FaEyeSlash />} <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
+				</QuickAccessCard>
+				{!loading && positions.length > 0 && <div className='mb-6 flex flex-wrap gap-2'>
+					<button type='button' onClick={() => setShowQuickMenu((value) => !value)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaBars /> Navegar</button>
+					<button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>
+					<button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>
+				</div>}
 				{showQuickMenu && <nav className='mb-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 flex flex-wrap gap-2' aria-label='Accesos rápidos del portfolio'>
 					<button type='button' onClick={() => document.getElementById('portfolio-summary')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Resumen</button>
 					<button type='button' onClick={() => document.getElementById('portfolio-charts')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Gráficos</button>
