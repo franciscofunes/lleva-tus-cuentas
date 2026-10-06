@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt, FaRobot } from 'react-icons/fa';
-import PrimaryFab from '../components/PrimaryFab';
+import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt } from 'react-icons/fa';
 import QuickAccessCard from '../components/QuickAccessCard';
 import CollapsibleSection from '../components/CollapsibleSection';
 import AppFooter from '../components/AppFooter';
@@ -11,6 +10,7 @@ import InfoTooltip from '../components/InfoTooltip';
 import PortfolioCharts from '../components/PortfolioCharts';
 import GenericModal from '../components/GenericModal';
 import LitaAssistantPanel from '../components/LitaAssitantPanel';
+import FloatingMenu from '../components/FloatingMenu';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
 import { exportPortfolioXlsx, buildPortfolioLlmMarkdown } from '../utils/portfolioExport';
 import eyeHide from '../imgs/eyeHide.svg';
@@ -525,10 +525,9 @@ function Portfolio() {
 					<Link to='/transacciones' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaExchangeAlt /> <span className='hidden sm:inline'>Movimientos</span></Link>
 					<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}><img className='h-5 w-5' src={hideValues ? closeEye : eyeHide} alt='' /> <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
 				</QuickAccessCard>
-				{!loading && <div className='mb-6 flex flex-wrap gap-2'>
-					{positions.length > 0 && <button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>}
-					{positions.length > 0 && <button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>}
-					<button type='button' onClick={() => setShowLita(true)} className='inline-flex items-center gap-2 rounded-lg border border-purple-500 px-3 py-2 text-sm font-bold text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800'><FaRobot /> Preguntar a LITA</button>
+				{!loading && positions.length > 0 && <div className='mb-6 flex flex-wrap gap-2'>
+					<button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>
+					<button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>
 				</div>}
 
 				{loading ? <div className='space-y-6 animate-pulse' aria-label='Cargando portfolio'><section className='grid grid-cols-3 gap-2 sm:gap-4'>{[0,1,2].map((item) => <div key={item} className='h-28 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' />)}</section><div className='h-36 rounded-2xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /><div className='space-y-3'><div className='h-7 w-36 rounded bg-slate-200 dark:bg-slate-800' /><div className='h-64 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /></div></div> : <>
@@ -702,6 +701,21 @@ function Portfolio() {
 				closeModal={() => setDeleteTarget(null)}
 			/>
 
+			{!loading && (
+				<FloatingMenu
+					openTransactionModal={() => setShowForm(true)}
+					openLitaModal={() => setShowLita(true)}
+					primaryMessage='Posición'
+					isModalOpen={
+						showForm ||
+						showLita ||
+						Boolean(verifyTarget) ||
+						Boolean(rateTarget) ||
+						Boolean(deleteTarget)
+					}
+				/>
+			)}
+
 			{showLita && (
 				<LitaAssistantPanel
 					isOpen={showLita}
@@ -709,10 +723,6 @@ function Portfolio() {
 					section='portfolio'
 					context={litaPortfolioContext}
 				/>
-			)}
-
-			{!loading && !showForm && !showLita && (
-				<PrimaryFab onClick={() => setShowForm(true)} ariaLabel='Agregar posición' />
 			)}
 
 		</main>
