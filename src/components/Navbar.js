@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { FiUserPlus } from 'react-icons/fi';
-import { MdDashboardCustomize } from 'react-icons/md';
 import { ImEnter } from 'react-icons/im';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router';
@@ -41,16 +40,6 @@ function Navbar() {
 		if (user) {
 			return (
 				<>
-					{(location.pathname === '/' ||
-						location.pathname === '/recupero' ||
-						location.pathname === '/subscripcion') && location.pathname !== '/transacciones' && (
-						<Link
-							to='/transacciones'
-							className='nav-btn flex items-center mr-3 dark:text-white'
-						>
-							Panel <MdDashboardCustomize className='ml-1' />
-						</Link>
-					)}
 					<div
 						onClick={handleDropdownToggle}
 						className='flex items-center cursor-pointer gap-x-4'
