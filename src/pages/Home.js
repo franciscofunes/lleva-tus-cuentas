@@ -17,7 +17,7 @@ function Home() {
 						<h1 className='mt-3 text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold leading-tight'>Tus finanzas, claras y en un solo lugar.</h1>
 						<p className='mt-5 text-lg sm:text-xl text-slate-600 dark:text-slate-300'>Registrá movimientos, seguí tu balance y controlá tus inversiones desde una experiencia simple, consistente y pensada para usar todos los días.</p>
 						<div className='mt-7 flex flex-col sm:flex-row gap-3 sm:items-center'>
-							<Link to={user ? '/ingresar' : '/registrarse'} className='inline-flex items-center justify-center rounded-xl bg-purple-600 hover:bg-purple-700 px-6 py-3 font-bold text-white sm:w-auto'>{user ? 'Abrir panel' : 'Comenzar'} <FaArrowRight className='ml-2' /></Link>
+							<Link to={user ? '/transacciones' : '/registrarse'} className='inline-flex items-center justify-center rounded-xl bg-purple-600 hover:bg-purple-700 px-6 py-3 font-bold text-white sm:w-auto'>{user ? 'Abrir panel' : 'Comenzar'} <FaArrowRight className='ml-2' /></Link>
 							{user && <Link to='/portfolio' className='inline-flex items-center justify-center rounded-xl border border-slate-300 dark:border-slate-600 px-6 py-3 font-bold sm:w-auto'>Ver portfolio</Link>}
 						</div>
 					</motion.div>
