@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate } from "react-router-dom";
 import "tippy.js/dist/tippy.css";
-import { FaArrowRight, FaChartPie, FaChevronDown, FaExchangeAlt, FaPlus } from "react-icons/fa";
+import { FaArrowRight, FaChartPie, FaExchangeAlt, FaPlus } from "react-icons/fa";
 import {
   getCategoriesDataAction,
   getDataAction,
@@ -19,6 +19,7 @@ import SearchBar from "../components/SearchBar";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
+import CollapsibleSection from "../components/CollapsibleSection";
 import kavakAd from "../imgs/ads/kavakAd.jpg";
 import cocacolaAd from "../imgs/ads/cocaColaAd.jpg";
 import cbseAd from "../imgs/ads/cbseAd.jpg";
@@ -419,32 +420,15 @@ function Dashboard() {
           id="left"
           className="w-full flex flex-col items-stretch"
         >
-          <motion.div
-            animate={{ opacity: 1 }}
-            initial={{ opacity: 0 }}
-            transition={{ duration: 0.7, type: "tween" }}
-            id="info"
-            className="p-5 bg-white w-full border border-slate-200 rounded-2xl shadow-sm mb-5 font-Nunito dark:bg-slate-800 dark:border-slate-700"
+          <CollapsibleSection
+            id="transactions-summary"
+            eyebrow="Resumen"
+            title="Balance y movimientos"
+            description="Ingresos, gastos, inversión, balance y filtros del período."
+            collapsed={collapsedSections.summary}
+            onToggle={() => toggleDashboardSection("summary")}
+            className="mb-5 font-Nunito"
           >
-            <button
-              type="button"
-              onClick={() => toggleDashboardSection("summary")}
-              aria-expanded={!collapsedSections.summary}
-              className="w-full flex items-center justify-between gap-3 text-left"
-            >
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-purple-500">
-                  Resumen
-                </p>
-                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  Balance y movimientos
-                </h2>
-              </div>
-              <FaChevronDown
-                className={`shrink-0 transition-transform ${collapsedSections.summary ? "" : "rotate-180"}`}
-              />
-            </button>
-            <div className={collapsedSections.summary ? "hidden" : "mt-5"}>
             <div className="flex items-center mb-5">
               {/* Ingresos */}
               <div className="flex flex-col justify-center items-center flex-grow">
@@ -553,34 +537,16 @@ function Dashboard() {
               </div>
             </div>
             <ExpenseFilter />
-            </div>
-          </motion.div>
-          <motion.div
-            animate={{ opacity: 1 }}
-            initial={{ opacity: 0 }}
-            transition={{ duration: 0.7, type: "tween" }}
-            id="left"
-            className="bg-white p-5 w-full border border-slate-200 rounded-2xl shadow-sm mb-5 font-Nunito flex flex-col dark:bg-slate-800 dark:border-slate-700 items-stretch"
+          </CollapsibleSection>
+          <CollapsibleSection
+            id="transactions-charts"
+            eyebrow="Visualización"
+            title="Gráficos"
+            description="Analizá tus movimientos con la visualización que prefieras."
+            collapsed={collapsedSections.charts}
+            onToggle={() => toggleDashboardSection("charts")}
+            className="mb-5 font-Nunito"
           >
-            <button
-              type="button"
-              onClick={() => toggleDashboardSection("charts")}
-              aria-expanded={!collapsedSections.charts}
-              className="w-full flex items-center justify-between gap-3 text-left"
-            >
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-purple-500">
-                  Visualización
-                </p>
-                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  Gráficos
-                </h2>
-              </div>
-              <FaChevronDown
-                className={`shrink-0 transition-transform ${collapsedSections.charts ? "" : "rotate-180"}`}
-              />
-            </button>
-            {!collapsedSections.charts && <div className="w-full mt-4">
             {isDataFetching ? (
               <ChartSkeleton />
             ) : (
@@ -602,8 +568,7 @@ function Dashboard() {
                 </>
               )
             )}
-            </div>}
-          </motion.div>
+          </CollapsibleSection>
           {!paymentData && user?.email?.toLowerCase() !== "ffunes90@gmail.com" ? (
             <AdvertisementContainer advertisements={advertisements} />
           ) : (
@@ -611,38 +576,20 @@ function Dashboard() {
           )}
         </div>
 
-        <motion.div
-          animate={{ opacity: 1 }}
-          initial={{ opacity: 0 }}
-          transition={{ duration: 0.7, type: "tween" }}
-          id="right"
-          className="lg:col-span-2 bg-white flex flex-col justify-start p-4 sm:p-6 shadow-sm items-stretch w-full border border-slate-200 rounded-2xl dark:bg-slate-800 dark:border-slate-700"
+        <CollapsibleSection
+          id="transactions-list"
+          eyebrow="Actividad"
+          title="Transacciones"
+          description="Buscá, revisá y editá tus movimientos."
+          collapsed={collapsedSections.transactions}
+          onToggle={() => toggleDashboardSection("transactions")}
+          className="lg:col-span-2"
+          action={
+            <Link to="/portfolio" className="hidden sm:inline-flex items-center gap-2 text-sm font-bold text-purple-500">
+              Ver portfolio <FaArrowRight />
+            </Link>
+          }
         >
-          <div>
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <button
-                type="button"
-                onClick={() => toggleDashboardSection("transactions")}
-                aria-expanded={!collapsedSections.transactions}
-                className="min-w-0 flex flex-1 items-center justify-between gap-3 text-left"
-              >
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-purple-500">
-                    Actividad
-                  </p>
-                  <h2 className="font-Nunito font-bold text-2xl sm:text-3xl dark:text-zinc-100">
-                    Transacciones
-                  </h2>
-                </div>
-                <FaChevronDown
-                  className={`shrink-0 transition-transform ${collapsedSections.transactions ? "" : "rotate-180"}`}
-                />
-              </button>
-              <Link to="/portfolio" className="hidden sm:inline-flex items-center gap-2 text-sm font-bold text-purple-500">
-                Ver portfolio <FaArrowRight />
-              </Link>
-            </div>
-            <div className={collapsedSections.transactions ? "hidden" : ""}>
             <SearchBar />
 
             {isDataFetching ? (
@@ -700,9 +647,7 @@ function Dashboard() {
                 </div>
               );
             })}
-            </div>
-          </div>
-        </motion.div>
+        </CollapsibleSection>
 
           </div>
         </div>
