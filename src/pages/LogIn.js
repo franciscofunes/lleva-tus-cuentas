@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate } from 'react-router';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
 import { logInAction } from '../actionCreators/authActions';
 import AppFooter from '../components/AppFooter';
@@ -15,6 +15,7 @@ function Login() {
 	const [password, setPassword] = useState('');
 
 	const dispatch = useDispatch();
+	const location = useLocation();
 
 	const user = useSelector((state) => state.auth.user);
 	const isFetching = useSelector((state) => state.auth.isFetching);
@@ -37,7 +38,12 @@ function Login() {
 		);
 
 	if (user) {
-		return <Navigate to='/transacciones' />;
+		const requestedLocation = location.state?.from;
+		const requestedPath = requestedLocation?.pathname
+			? `${requestedLocation.pathname}${requestedLocation.search || ''}${requestedLocation.hash || ''}`
+			: '/transacciones';
+
+		return <Navigate to={requestedPath} replace />;
 	}
 
 	return (

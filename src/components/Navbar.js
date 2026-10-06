@@ -1,12 +1,10 @@
 import { motion } from 'framer-motion';
-import { useEffect } from 'react';
 import { FaChartPie, FaExchangeAlt } from 'react-icons/fa';
 import { FiUserPlus } from 'react-icons/fi';
 import { ImEnter } from 'react-icons/im';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { logOutAction } from '../actionCreators/authActions';
-import { auth } from '../shared/config/firebase/firebase.config';
 import AvatarDropdown from './AvatarDropdown';
 import DarkModeToggle from './DarkModeToggle';
 import NotificationsDropdown from './NotificationsDropdown';
@@ -28,17 +26,6 @@ function Navbar() {
 	const handleLogout = () => {
 		dispatch(logOutAction());
 	};
-
-	useEffect(() => {
-		const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-			dispatch({
-				type: 'SET_USER',
-				payload: currentUser,
-			});
-		});
-
-		return unsubscribe;
-	}, [dispatch]);
 
 	const isLogin = location.pathname === '/ingresar';
 	const isSignUp = location.pathname === '/registrarse';
