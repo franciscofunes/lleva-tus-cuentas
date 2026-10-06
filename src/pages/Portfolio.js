@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaEye, FaEyeSlash, FaPlus, FaExchangeAlt } from 'react-icons/fa';
+import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import QuickAccessCard from '../components/QuickAccessCard';
 import AppFooter from '../components/AppFooter';
@@ -11,6 +11,8 @@ import PortfolioCharts from '../components/PortfolioCharts';
 import GenericModal from '../components/GenericModal';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
 import { exportPortfolioXlsx, buildPortfolioLlmMarkdown } from '../utils/portfolioExport';
+import eyeHide from '../imgs/eyeHide.svg';
+import closeEye from '../imgs/closeEye.svg';
 import {
 	createPortfolioPosition,
 	deletePortfolioPosition,
@@ -482,7 +484,7 @@ function Portfolio() {
 				>
 					<button type='button' onClick={() => setShowForm(true)} className='inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 text-sm font-bold'><FaPlus /> <span className='hidden sm:inline'>Posición</span></button>
 					<Link to='/transacciones' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaExchangeAlt /> <span className='hidden sm:inline'>Movimientos</span></Link>
-					<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}>{hideValues ? <FaEye /> : <FaEyeSlash />} <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
+					<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}><img className='h-5 w-5' src={hideValues ? closeEye : eyeHide} alt='' /> <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
 				</QuickAccessCard>
 				{!loading && positions.length > 0 && <div className='mb-6 flex flex-wrap gap-2'>
 					<button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>
