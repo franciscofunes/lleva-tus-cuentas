@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { FaCopy, FaPencilAlt, FaTrashAlt } from 'react-icons/fa';
+import { FaChevronDown, FaCopy, FaPencilAlt, FaTrashAlt } from 'react-icons/fa';
 import { deletePortfolioSnapshot, registerReconciliationTransaction, savePortfolioReconciliation, subscribePortfolioPositions, subscribePortfolioReconciliations, subscribePortfolioSnapshots, updatePortfolioSnapshot } from '../services/portfolioService';
 import AppFooter from '../components/AppFooter';
 
@@ -15,6 +15,16 @@ const startOf = (date, mode) => {
 	if (mode === 'month') { d.setDate(1); d.setHours(0,0,0,0); }
 	return d;
 };
+const DetailSection = ({ id, title, subtitle, open, onToggle, children }) => (
+	<section className='mt-5 rounded-2xl border dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden'>
+		<button type='button' onClick={onToggle} aria-expanded={open} aria-controls={id} className='w-full p-5 flex items-center justify-between gap-4 text-left'>
+			<div className='min-w-0'><h2 className='text-xl font-bold'>{title}</h2>{subtitle && <p className='text-sm text-gray-500 mt-1'>{subtitle}</p>}</div>
+			<FaChevronDown className={`shrink-0 text-purple-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} aria-hidden='true' />
+		</button>
+		{open && <div id={id} className='px-5 pb-5'>{children}</div>}
+	</section>
+);
+
 const aggregate = (rows, mode) => Object.values(rows.reduce((acc,row) => {
 	const date=startOf(asDate(row.capturedAt),mode); const key=date.toISOString();
 	if(!acc[key]) acc[key]={date, earning:0, expected:0, checks:0};
@@ -26,6 +36,8 @@ export default function PortfolioDetail() {
 	const user = useSelector((state) => state.auth.user);
 	const [positions,setPositions]=useState([]); const [snapshots,setSnapshots]=useState([]); const [reconciliations,setReconciliations]=useState([]); const [mode,setMode]=useState('day');
 	const [editing,setEditing]=useState(null); const [deleting,setDeleting]=useState(null); const [pendingAction,setPendingAction]=useState('');
+	const [openSections,setOpenSections]=useState({ overview:true, earnings:true, account:true, monthly:true, history:true });
+	const toggleSection=(key)=>setOpenSections((current)=>({...current,[key]:!current[key]}));
 	useEffect(() => { if(!user) return; const a=subscribePortfolioPositions(user.uid,setPositions,console.error); const b=subscribePortfolioSnapshots(user.uid,setSnapshots,console.error); const c=subscribePortfolioReconciliations(user.uid,setReconciliations,console.error); return()=>{a();b();c();}; },[user]);
 	const position=positions.find((item)=>item.id===positionId);
 	const history=useMemo(()=>snapshots.filter((item)=>item.positionId===positionId),[snapshots,positionId]);
@@ -45,7 +57,7 @@ export default function PortfolioDetail() {
 		<main className='min-h-screen bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-white px-4 py-6'>
 			<div className='max-w-5xl mx-auto'>
 				<Link to='/portfolio' className='text-purple-500 font-semibold'>← Volver al Portfolio</Link>
-				<section className='mt-5 rounded-2xl border dark:border-slate-700 bg-white dark:bg-slate-800 p-5'>
+				<DetailSection id='portfolio-overview' title={`${position.institution} · ${position.name}`} subtitle='Resumen de la posición' open={openSections.overview} onToggle={()=>toggleSection('overview')}>
 					<p className='uppercase text-sm font-bold text-purple-500'>{position.institution}</p>
 					<h1 className='text-3xl font-bold mt-1'>{position.name}</h1>
 					<div className='grid grid-cols-2 md:grid-cols-4 gap-3 mt-5'>
@@ -54,14 +66,13 @@ export default function PortfolioDetail() {
 						<div><p className='text-xs text-gray-500'>Rendimiento confirmado</p><p className='text-xl font-bold'>{money(total,position.currency)}</p></div>
 						<div><p className='text-xs text-gray-500'>Verificaciones</p><p className='text-xl font-bold'>{history.length}</p></div>
 					</div>
-				</section>
-				<section className='mt-5 rounded-2xl border dark:border-slate-700 bg-white dark:bg-slate-800 p-5'>
-					<div className='flex flex-wrap items-center justify-between gap-3'><div><h2 className='text-xl font-bold'>Ganancias observadas</h2><p className='text-sm text-gray-500'>Historial construido con las verificaciones de saldo.</p></div>
+				</DetailSection>
+				<DetailSection id='portfolio-earnings' title='Ganancias observadas' subtitle='Historial construido con las verificaciones de saldo.' open={openSections.earnings} onToggle={()=>toggleSection('earnings')}>
+					<div className='flex flex-wrap items-center justify-end gap-3'>
 					<div className='flex gap-2'>{['day','week','month'].map((item)=><button key={item} onClick={()=>setMode(item)} className={`px-3 py-2 rounded-lg text-sm font-semibold ${mode===item?'bg-purple-600 text-white':'border dark:border-slate-600'}`}>{item==='day'?'Día':item==='week'?'Semana':'Mes'}</button>)}</div></div>
-					<div className='mt-5 space-y-3'>{grouped.length===0?<p className='text-gray-500'>Todavía no hay verificaciones para graficar.</p>:grouped.map((row)=>{const max=Math.max(...grouped.map(x=>Math.abs(x.earning)),1);return <div key={row.date.toISOString()}><div className='flex justify-between text-sm'><span>{row.date.toLocaleDateString('es-AR')}</span><strong className={row.earning>=0?'text-green-500':'text-red-500'}>{money(row.earning,position.currency)}</strong></div><div className='h-2 rounded bg-slate-200 dark:bg-slate-700 mt-1 overflow-hidden'><div className='h-full bg-purple-500' style={{width:`${Math.min(100,Math.abs(row.earning)/max*100)}%`}} /></div><p className='text-xs text-gray-500 mt-1'>{row.checks} verificación(es) · esperado {money(row.expected,position.currency)}</p></div>})}</div>
-				</section>
-				{hasAccountDetails && <section className='mt-5 rounded-2xl border dark:border-slate-700 bg-white dark:bg-slate-800 p-5'>
-					<div className='flex items-start justify-between gap-3'><div><h2 className='text-xl font-bold'>Datos de cuenta</h2><p className='text-sm text-gray-500 mt-1'>Datos para recibir transferencias o fondear esta posición.</p></div></div>
+					<div className='mt-4 space-y-3'>{grouped.length===0?<p className='text-gray-500'>Todavía no hay verificaciones para graficar.</p>:grouped.map((row)=>{const max=Math.max(...grouped.map(x=>Math.abs(x.earning)),1);return <div key={row.date.toISOString()}><div className='flex justify-between text-sm'><span>{row.date.toLocaleDateString('es-AR')}</span><strong className={row.earning>=0?'text-green-500':'text-red-500'}>{money(row.earning,position.currency)}</strong></div><div className='h-2 rounded bg-slate-200 dark:bg-slate-700 mt-1 overflow-hidden'><div className='h-full bg-purple-500' style={{width:`${Math.min(100,Math.abs(row.earning)/max*100)}%`}} /></div><p className='text-xs text-gray-500 mt-1'>{row.checks} verificación(es) · esperado {money(row.expected,position.currency)}</p></div>})}</div>
+				</DetailSection>
+				{hasAccountDetails && <DetailSection id='portfolio-account' title='Datos de cuenta' subtitle='Datos para recibir transferencias o fondear esta posición.' open={openSections.account} onToggle={()=>toggleSection('account')}>
 					<div className='grid md:grid-cols-2 gap-3 mt-5'>
 						{position.accountHolder && <div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Titular</p><p className='font-semibold mt-1'>{position.accountHolder}</p></div>}
 						{position.bankName && <div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Banco receptor</p><p className='font-semibold mt-1'>{position.bankName}</p></div>}
@@ -70,16 +81,14 @@ export default function PortfolioDetail() {
 					</div>
 					{position.bankAddress && <div className='mt-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Dirección del banco</p><p className='font-semibold mt-1'>{position.bankAddress}</p></div>}
 					{position.depositInstructions && <div className='mt-3 rounded-xl border border-purple-200 dark:border-purple-900/60 p-3'><p className='text-xs text-gray-500'>Instrucciones</p><p className='text-sm mt-1'>{position.depositInstructions}</p></div>}
-				</section>}
-				<section className='mt-5 rounded-2xl border dark:border-slate-700 bg-white dark:bg-slate-800 p-5'>
-					<h2 className='text-xl font-bold'>Cierre mensual</h2><p className='text-sm text-gray-500 mt-1'>Consolida solamente verificaciones clasificadas como rendimiento. Todavía no crea una transacción.</p>
+				</DetailSection>}
+				<DetailSection id='portfolio-monthly' title='Cierre mensual' subtitle='Consolida solamente verificaciones clasificadas como rendimiento. Todavía no crea una transacción.' open={openSections.monthly} onToggle={()=>toggleSection('monthly')}>
 					<div className='mt-4 space-y-3'>{monthly.length===0?<p className='text-gray-500'>Todavía no hay meses para conciliar.</p>:monthly.map(item=>{const saved=reconciliations.find(r=>r.positionId===positionId&&r.month===item.month); const busy=pendingAction===`month-${item.month}`; return <div key={item.month} className='rounded-xl border dark:border-slate-700 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3'><div><p className='font-bold'>{new Date(`${item.month}-01T12:00:00`).toLocaleDateString('es-AR',{month:'long',year:'numeric'})}</p><p className='text-sm text-gray-500'>{money(item.amount,position.currency)} confirmados · {item.rows.filter(r=>r.changeType==='earning').length} rendimiento(s)</p><p className={`text-xs mt-1 ${saved?'text-green-500':'text-amber-500'}`}>{saved?.transactionId?'Registrado en Transacciones':saved?'Cierre guardado · pendiente de registrar en Transacciones':'Pendiente de cierre'}</p></div><div className='flex flex-col sm:flex-row gap-2'><button type='button' onClick={()=>closeMonth(item)} disabled={Boolean(pendingAction) || Boolean(saved?.transactionId)} className='min-w-[130px] rounded-lg border border-purple-500 text-purple-500 py-2 px-3 font-semibold disabled:opacity-50'>{busy?<span className='inline-block w-5 h-5 rounded-full border-2 border-purple-300 border-t-purple-600 animate-spin'/>:(saved?.transactionId?'Cierre registrado':saved?'Actualizar cierre':'Cerrar mes')}</button>{saved && <button type='button' onClick={()=>registerMonth(saved)} disabled={Boolean(pendingAction) || Boolean(saved.transactionId)} className='min-w-[170px] rounded-lg bg-green-600 text-white py-2 px-3 font-semibold disabled:opacity-50'>{pendingAction===`register-${item.month}`?<span className='inline-block w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin'/>:(saved.transactionId?'Registrado ✓':'Registrar en Transacciones')}</button>}</div></div>})}</div>
-				</section>
-				<section className='mt-5 rounded-2xl border dark:border-slate-700 bg-white dark:bg-slate-800 p-5'>
-					<h2 className='text-xl font-bold'>Historial de verificaciones</h2>
+				</DetailSection>
+				<DetailSection id='portfolio-history' title='Historial de verificaciones' open={openSections.history} onToggle={()=>toggleSection('history')}>
 					<div className='mt-4 space-y-3 md:hidden'>{[...history].reverse().map(row=><article key={row.id} className='rounded-xl border border-slate-200 dark:border-slate-700 p-4'><div className='flex items-start justify-between gap-3'><div className='min-w-0'><p className='text-xs text-gray-500'>Fecha</p><p className='font-semibold text-sm mt-0.5'>{asDate(row.capturedAt).toLocaleString('es-AR')}</p></div><div className='flex shrink-0 gap-2'><button type='button' onClick={()=>setEditing({...row})} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' aria-label='Editar verificación'><FaPencilAlt /></button><button type='button' onClick={()=>setDeleting(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border border-red-400 text-red-500' aria-label='Eliminar verificación'><FaTrashAlt /></button></div></div><div className='grid grid-cols-2 gap-x-4 gap-y-3 mt-4'><div><p className='text-xs text-gray-500'>Saldo</p><p className='font-semibold whitespace-nowrap'>{money(row.balance,position.currency)}</p></div><div><p className='text-xs text-gray-500'>Cambio</p><p className={`font-semibold whitespace-nowrap ${Number(row.observedEarning||0)>=0?'text-green-500':'text-red-500'}`}>{money(row.observedEarning,position.currency)}</p></div><div><p className='text-xs text-gray-500'>Tipo</p><p className='font-medium'>{({earning:'Rendimiento',deposit:'Aporte',withdrawal:'Retiro',adjustment:'Ajuste',valuation:'Valuación NAV'}[row.changeType] || 'Sin clasificar')}</p></div><div><p className='text-xs text-gray-500'>Esperado</p><p className='font-medium whitespace-nowrap'>{money(row.expectedEarning,position.currency)}</p></div></div>{row.note && <p className='mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-gray-500 break-words'>{row.note}</p>}</article>)}</div>
 					<div className='mt-4 hidden md:block overflow-x-auto'><table className='w-full min-w-[760px] text-sm'><thead><tr className='text-left text-gray-500'><th className='py-2 pr-4'>Fecha</th><th className='pr-4'>Saldo</th><th className='pr-4'>Cambio</th><th className='pr-4'>Tipo</th><th className='pr-4'>Esperado</th><th className='text-right'>Acciones</th></tr></thead><tbody>{[...history].reverse().map(row=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3 pr-4 whitespace-nowrap'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td className='pr-4 whitespace-nowrap'>{money(row.balance,position.currency)}</td><td className='pr-4 whitespace-nowrap'>{money(row.observedEarning,position.currency)}</td><td className='pr-4 whitespace-nowrap'>{({earning:'Rendimiento',deposit:'Aporte',withdrawal:'Retiro',adjustment:'Ajuste',valuation:'Valuación NAV'}[row.changeType] || 'Sin clasificar')}</td><td className='pr-4 whitespace-nowrap'>{money(row.expectedEarning,position.currency)}</td><td><div className='flex justify-end gap-2'><button type='button' onClick={()=>setEditing({...row})} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' aria-label='Editar verificación'><FaPencilAlt /></button><button type='button' onClick={()=>setDeleting(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border border-red-400 text-red-500' aria-label='Eliminar verificación'><FaTrashAlt /></button></div></td></tr>)}</tbody></table></div>
-				</section>
+				</DetailSection>
 				{editing && <div className='mt-4 rounded-xl border border-purple-400 p-4'><h3 className='font-bold'>Editar verificación</h3><p className='text-sm text-gray-500 mt-1'>La fecha, saldo y cambio observado permanecen como evidencia. Podés corregir su clasificación y nota.</p><select value={editing.changeType || 'unclassified'} onChange={(e)=>setEditing({...editing,changeType:e.target.value})} className='mt-3 w-full rounded-lg border p-2 bg-transparent'><option value='unclassified'>Sin clasificar</option><option value='earning'>Rendimiento</option><option value='deposit'>Aporte</option><option value='withdrawal'>Retiro</option><option value='adjustment'>Ajuste</option>{editing.changeType === 'valuation' && <option value='valuation'>Valuación NAV</option>}</select><textarea value={editing.note || ''} onChange={(e)=>setEditing({...editing,note:e.target.value})} className='mt-3 w-full rounded-lg border p-2 bg-transparent' placeholder='Nota' /><div className='flex gap-2 mt-3'><button type='button' onClick={()=>setEditing(null)} disabled={Boolean(pendingAction)} className='flex-1 border rounded-lg py-2'>Cancelar</button><button type='button' onClick={saveVerification} disabled={Boolean(pendingAction)} className='flex-1 bg-purple-600 text-white rounded-lg py-2 font-semibold'>{pendingAction==='save'?<span className='inline-block w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin'/>:'Guardar'}</button></div></div>}
 				{deleting && <div className='mt-4 rounded-xl border border-red-400 p-4'><h3 className='font-bold'>Eliminar verificación</h3><p className='text-sm text-gray-500 mt-1'>Se quitará del historial y de los cálculos de rendimiento. Esta acción todavía no afecta Transacciones.</p><div className='flex gap-2 mt-3'><button type='button' onClick={()=>setDeleting(null)} disabled={Boolean(pendingAction)} className='flex-1 border rounded-lg py-2'>Cancelar</button><button type='button' onClick={removeVerification} disabled={Boolean(pendingAction)} className='flex-1 bg-red-600 text-white rounded-lg py-2 font-semibold'>{pendingAction==='delete'?<span className='inline-block w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin'/>:'Eliminar'}</button></div></div>}
 				<p className='mt-4 text-xs text-amber-600 dark:text-amber-400'>Las verificaciones nuevas separan rendimiento, aporte, retiro y ajuste. Las variaciones NAV y los snapshots históricos sin clasificación no se suman como rendimiento confirmado ni se envían a Transacciones.</p>
