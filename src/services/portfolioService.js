@@ -97,6 +97,7 @@ export const verifyPortfolioPosition = async (userId, position, balance, metadat
 	const positionUpdate = {
 		balance: nextBalance,
 		lastEarning: isNav ? Number(metadata.reportedEarnings ?? position.lastEarning ?? 0) : (changeType === 'earning' ? observedEarning : 0),
+		...(isNav && metadata.reportedEarnings !== '' && metadata.reportedEarnings != null ? { realizedEarnings: Number(metadata.reportedEarnings) } : {}),
 		...(isNav && metadata.nav !== '' && metadata.nav != null ? { nav: Number(metadata.nav), navDate: new Date().toISOString().slice(0, 10) } : {}),
 		lastVerifiedAt: new Date(),
 		updatedAt: new Date(),
