@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt } from 'react-icons/fa';
+import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt, FaRobot } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import QuickAccessCard from '../components/QuickAccessCard';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -10,6 +10,7 @@ import AppFooter from '../components/AppFooter';
 import InfoTooltip from '../components/InfoTooltip';
 import PortfolioCharts from '../components/PortfolioCharts';
 import GenericModal from '../components/GenericModal';
+import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
 import { exportPortfolioXlsx, buildPortfolioLlmMarkdown } from '../utils/portfolioExport';
 import eyeHide from '../imgs/eyeHide.svg';
@@ -94,6 +95,7 @@ function Portfolio() {
 	const [positionsLoaded, setPositionsLoaded] = useState(false);
 	const [snapshotsLoaded, setSnapshotsLoaded] = useState(false);
 	const [showForm, setShowForm] = useState(false);
+	const [showLita, setShowLita] = useState(false);
 	const [markdownImport, setMarkdownImport] = useState('');
 	const [showMarkdownImport, setShowMarkdownImport] = useState(false);
 	const [importPreview, setImportPreview] = useState([]);
@@ -205,6 +207,41 @@ function Portfolio() {
 			return acc;
 		}, {});
 	}, [totals]);
+
+	const litaPortfolioContext = useMemo(() => ({
+		scope: 'portfolio-current-state',
+		totals,
+		weightedRates,
+		positions: positions.map((position) => ({
+			institution: position.institution || '',
+			name: position.name || '',
+			category: position.category || '',
+			currency: position.currency || '',
+			balance: Number(position.balance || 0),
+			annualRate: Number(position.annualRate || 0),
+			rateType: position.rateType || '',
+			liquidity: position.liquidity || '',
+			principal: Number(position.principal || 0),
+			realizedEarnings: Number(position.realizedEarnings || 0),
+			effectiveRate: Number(position.effectiveRate || 0),
+			trackingMode: position.trackingMode || '',
+			maturityDate: position.maturityDate || '',
+			ticker: position.ticker || '',
+			nav: Number(position.nav || 0),
+			navDate: position.navDate || '',
+			performanceYTD: Number(position.performanceYTD || 0),
+			performance1Y: Number(position.performance1Y || 0),
+			monthlyReturns: position.monthlyReturns || {},
+		})),
+		recentSnapshots: snapshots.slice(-40).map((snapshot) => ({
+			positionId: snapshot.positionId || '',
+			date: snapshot.date || snapshot.createdAt || '',
+			balance: Number(snapshot.balance || 0),
+			currency: snapshot.currency || '',
+			nav: Number(snapshot.nav || 0),
+			note: snapshot.note || '',
+		})),
+	}), [positions, snapshots, totals, weightedRates]);
 
 	if (isFetching) return <main className='min-h-[calc(100dvh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 px-4 pt-4 pb-28 lg:p-8'><div className='max-w-7xl mx-auto w-full space-y-6 animate-pulse' aria-label='Cargando portfolio'><div className='space-y-2'><div className='h-9 w-72 max-w-[80%] rounded-lg bg-slate-200 dark:bg-slate-800' /><div className='h-5 w-full max-w-2xl rounded bg-slate-200 dark:bg-slate-800' /></div><section className='grid grid-cols-3 gap-2 sm:gap-4'>{[0,1,2].map((item) => <div key={item} className='h-28 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700' />)}</section><div className='space-y-3'><div className='h-7 w-44 rounded bg-slate-200 dark:bg-slate-800' /><div className='h-36 rounded-2xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700' /></div><div className='space-y-3'><div className='h-7 w-36 rounded bg-slate-200 dark:bg-slate-800' /><div className='h-64 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700' /></div></div></main>;
 	if (!user) return <Navigate to='/' />;
@@ -488,9 +525,10 @@ function Portfolio() {
 					<Link to='/transacciones' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaExchangeAlt /> <span className='hidden sm:inline'>Movimientos</span></Link>
 					<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}><img className='h-5 w-5' src={hideValues ? closeEye : eyeHide} alt='' /> <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
 				</QuickAccessCard>
-				{!loading && positions.length > 0 && <div className='mb-6 flex flex-wrap gap-2'>
-					<button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>
-					<button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>
+				{!loading && <div className='mb-6 flex flex-wrap gap-2'>
+					{positions.length > 0 && <button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>}
+					{positions.length > 0 && <button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>}
+					<button type='button' onClick={() => setShowLita(true)} className='inline-flex items-center gap-2 rounded-lg border border-purple-500 px-3 py-2 text-sm font-bold text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800'><FaRobot /> Preguntar a LITA</button>
 				</div>}
 
 				{loading ? <div className='space-y-6 animate-pulse' aria-label='Cargando portfolio'><section className='grid grid-cols-3 gap-2 sm:gap-4'>{[0,1,2].map((item) => <div key={item} className='h-28 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' />)}</section><div className='h-36 rounded-2xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /><div className='space-y-3'><div className='h-7 w-36 rounded bg-slate-200 dark:bg-slate-800' /><div className='h-64 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /></div></div> : <>
@@ -664,7 +702,16 @@ function Portfolio() {
 				closeModal={() => setDeleteTarget(null)}
 			/>
 
-			{!loading && !showForm && (
+			{showLita && (
+				<LitaAssistantPanel
+					isOpen={showLita}
+					setIsOpen={setShowLita}
+					section='portfolio'
+					context={litaPortfolioContext}
+				/>
+			)}
+
+			{!loading && !showForm && !showLita && (
 				<PrimaryFab onClick={() => setShowForm(true)} ariaLabel='Agregar posición' />
 			)}
 

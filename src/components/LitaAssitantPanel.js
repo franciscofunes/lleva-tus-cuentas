@@ -1,98 +1,122 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { IoMdClose } from 'react-icons/io';
-import { useSelector } from 'react-redux';
 import {
 	LITA_CHAT_LOCALHOST,
 	LITA_CHAT_VERCEL_URL,
 } from '../shared/constants/urls.const';
 
-const LitaAssistantPanel = ({ isOpen, setIsOpen }) => {
+const LitaAssistantPanel = ({
+	isOpen,
+	setIsOpen,
+	section = 'transactions',
+	context = {},
+}) => {
+	const iframeRef = useRef(null);
+
 	const variants = {
 		hidden: { opacity: 0, x: '100%' },
 		visible: { opacity: 1, x: '0%', transition: { duration: 0.3 } },
 	};
 
-	const docs = useSelector((state) => state.database.docs);
+	const src =
+		process.env.NODE_ENV === 'development'
+			? LITA_CHAT_LOCALHOST
+			: LITA_CHAT_VERCEL_URL;
 
-	// Add an event listener to listen for messages from the iframe
-	window.addEventListener('message', (event) => {
-		if (event.data === 'closeLitaPanel') {
-			const closeButton = document.getElementById(
-				'lita-assistant-panel-close-button'
-			);
+	const targetOrigin = useMemo(() => {
+		try {
+			return new URL(src).origin;
+		} catch {
+			return '';
+		}
+	}, [src]);
 
-			if (closeButton) {
-				closeButton.click();
+	const financialContext = useMemo(
+		() => ({
+			section,
+			...context,
+		}),
+		[section, context]
+	);
+
+	const sendContext = useCallback(() => {
+		if (!targetOrigin || !iframeRef.current?.contentWindow) return;
+
+		iframeRef.current.contentWindow.postMessage(
+			{
+				type: 'lita:context',
+				payload: financialContext,
+			},
+			targetOrigin
+		);
+	}, [financialContext, targetOrigin]);
+
+	useEffect(() => {
+		if (!isOpen || !targetOrigin) return undefined;
+
+		const handleMessage = (event) => {
+			if (event.origin !== targetOrigin) return;
+
+			if (event.data === 'closeLitaPanel' || event.data?.type === 'lita:close') {
+				setIsOpen(false);
+				return;
 			}
-		}
-	});
 
-	window.addEventListener('message', (event) => {
-		if (event.data === 'getLastFiveUserTransactions') {
-			const baseUrl =
-				process.env.NODE_ENV === 'development'
-					? 'http://localhost:3005' // Local development URL
-					: 'https://holalita.vercel.app'; // Deployed URL
+			if (event.data?.type === 'lita:ready') {
+				sendContext();
+			}
+		};
 
-			// Add fetch request to send user context data to the Next.js API
-			fetch(`${baseUrl}/api/user-transactions`, {
-				method: 'POST',
-				mode: 'no-cors',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(docs.slice(0, 5)),
-			})
-				.then((response) => {
-					if (response.ok) {
-						console.log('User transactions sent successfully to Next.js API');
-					} else {
-						console.error('Failed to send user transactions to Next.js API');
-					}
-				})
-				.catch((error) => {
-					console.error(
-						'Error sending user transactions to Next.js API',
-						error
-					);
-				});
-		}
-	});
+		window.addEventListener('message', handleMessage);
+
+		return () => {
+			window.removeEventListener('message', handleMessage);
+		};
+	}, [isOpen, sendContext, setIsOpen, targetOrigin]);
+
+	useEffect(() => {
+		if (isOpen) sendContext();
+	}, [isOpen, sendContext]);
 
 	return (
 		<AnimatePresence>
 			{isOpen && (
-				<motion.div
-					key='panel' // Add a unique key to enable animations during re-renders
-					className='fixed right-0 bottom-0 w-[90%] md:w-[300px] lg:w-[400px] xl:w-[500px] 2xl:w-[600px] bg-white shadow-lg dark:bg-slate-900 flex flex-col h-full'
+				<motion.aside
+					key='lita-panel'
+					className='fixed right-0 bottom-0 z-[80] w-[94%] sm:w-[430px] lg:w-[480px] bg-white shadow-2xl dark:bg-slate-900 flex flex-col h-[100dvh] border-l border-slate-200 dark:border-slate-700'
 					initial='hidden'
 					animate='visible'
 					exit='hidden'
 					variants={variants}
+					aria-label='LITA, asistente financiero'
 				>
-					<div className='flex justify-between items-center bg-gray-100 rounded-tl-3xl p-4 dark:dark:bg-slate-900'>
-						<h2 className='text-lg font-bold dark:text-white'>LITA 🤖</h2>
+					<div className='flex justify-between items-center bg-slate-100 p-4 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700'>
+						<div>
+							<h2 className='text-lg font-bold dark:text-white'>LITA 🤖</h2>
+							<p className='text-xs text-slate-500 dark:text-slate-400'>
+								Contexto: {section === 'portfolio' ? 'Portfolio' : 'Transacciones'}
+							</p>
+						</div>
 						<button
+							type='button'
 							onClick={() => setIsOpen(false)}
 							id='lita-assistant-panel-close-button'
+							className='inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800'
+							aria-label='Cerrar LITA'
 						>
-							<IoMdClose className='h-6 w-6 text-gray-600 hover:text-gray-800 dark:text-white' />
+							<IoMdClose className='h-6 w-6 text-gray-600 dark:text-white' />
 						</button>
 					</div>
 
 					<iframe
-						src={
-							process.env.NODE_ENV === 'development'
-								? LITA_CHAT_LOCALHOST
-								: LITA_CHAT_VERCEL_URL
-						}
+						ref={iframeRef}
+						src={src}
 						title='Lita Assistant'
-						className='w-full h-full border-none'
-						style={{ minHeight: '500px', overflow: 'hidden' }}
-						// onLoad={handleIframeLoad}
+						className='w-full flex-1 border-none bg-white'
+						onLoad={sendContext}
 					/>
-				</motion.div>
+				</motion.aside>
 			)}
 		</AnimatePresence>
 	);

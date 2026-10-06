@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate } from "react-router-dom";
 import "tippy.js/dist/tippy.css";
@@ -322,56 +322,34 @@ function Dashboard() {
     }
   }, [docs, categories]);
 
+  const litaTransactionContext = useMemo(
+    () => ({
+      scope: "current-view",
+      summary: {
+        incomeArs: Number(income || 0),
+        expensesArs: Number(expense || 0),
+        balanceArs: Number(total || 0),
+        investmentUsd: Number(currencyIncome || 0),
+      },
+      transactions: (docs || []).slice(0, 50).map((doc) => ({
+        name: doc.expenseName || "",
+        category: doc.category || "",
+        amount: Number(doc.amount || 0),
+        selectedDate: doc.selectedDate || "",
+        comment: doc.comment || "",
+        currencyQuantity: Number(doc.currencyQuantity || 0),
+        currencyExchangeRate: Number(doc.currencyExchangeRate || 0),
+      })),
+    }),
+    [currencyIncome, docs, expense, income, total]
+  );
+
   if (user === null) return <Navigate to="/" />;
 
   if (isFetching) return <TransactionsPageSkeleton />;
 
   const handleFloatingButtonClick = () => {
     setShowModal(true);
-
-    const baseUrl =
-      process.env.NODE_ENV === "development"
-        ? "http://localhost:3005" // Local development URL
-        : "https://holalita.vercel.app"; // Deployed URL
-
-    // Add fetch request to send user context data to the Next.js API
-    fetch(`${baseUrl}/api/user-transactions`, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(docs.slice(0, 5)),
-    })
-      .then((response) => {
-        if (response.ok) {
-          console.log("User transactions sent successfully to Next.js API");
-        } else {
-          console.error("Failed to send user transactions to Next.js API");
-        }
-      })
-      .catch((error) => {
-        console.error("Error sending user transactions to Next.js API", error);
-      });
-
-    fetch(`${baseUrl}/api/user-context`, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(user),
-    })
-      .then((response) => {
-        if (response.ok) {
-          console.log("User context sent successfully to Next.js API");
-        } else {
-          console.error("Failed to send user context to Next.js API");
-        }
-      })
-      .catch((error) => {
-        console.error("Error sending user context to Next.js API", error);
-      });
   };
 
   const openModal = () => {
@@ -718,7 +696,12 @@ function Dashboard() {
             initial={{ opacity: 0 }}
             transition={{ duration: 0.5, type: "tween" }}
           >
-            <LitaAssistantPanel isOpen={showModal} setIsOpen={setShowModal} />
+            <LitaAssistantPanel
+              isOpen={showModal}
+              setIsOpen={setShowModal}
+              section="transactions"
+              context={litaTransactionContext}
+            />
           </motion.div>
         )}
       </motion.div>
