@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
-import "react-loading-skeleton/dist/skeleton.css";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate } from "react-router-dom";
 import "tippy.js/dist/tippy.css";
@@ -25,7 +24,6 @@ import cocacolaAd from "../imgs/ads/cocaColaAd.jpg";
 import cbseAd from "../imgs/ads/cbseAd.jpg";
 import lotoAd from "../imgs/ads/lotoAd.jpg";
 import cotoAd from "../imgs/ads/cotoAd.png";
-import bars from "../imgs/bars.svg";
 import eyeHide from "../imgs/eyeHide.svg";
 import closeEye from "../imgs/closeEye.svg";
 
@@ -40,6 +38,105 @@ import IncomeChartWrapper from "../components/IncomeChartWrapper";
 import DivisasChartWrapper from "../components/DivisasChartWrapper";
 import IncomeExpenseLineChart from "../components/IncomeExpenseLineChart";
 import IngresoDivisasLineChart from "../components/IngresoDivisasLineChart";
+
+const SkeletonBlock = ({ className = "" }) => (
+  <div
+    aria-hidden="true"
+    className={`rounded bg-slate-200 dark:bg-slate-700 ${className}`}
+  />
+);
+
+const ValueSkeleton = ({ wide = false }) => (
+  <SkeletonBlock className={`mt-2 h-5 animate-pulse ${wide ? "w-40" : "w-24"}`} />
+);
+
+const ChartSkeleton = () => (
+  <div className="w-full animate-pulse" aria-label="Cargando gráfico">
+    <SkeletonBlock className="h-5 w-36" />
+    <SkeletonBlock className="mt-4 h-52 w-full rounded-xl" />
+    <div className="mt-4 flex flex-wrap justify-center gap-2">
+      {[0, 1, 2, 3].map((item) => (
+        <SkeletonBlock key={item} className="h-9 w-20 rounded-lg" />
+      ))}
+    </div>
+  </div>
+);
+
+const TransactionListSkeleton = () => (
+  <div className="mt-4 space-y-3 animate-pulse" aria-label="Cargando transacciones">
+    {[0, 1, 2, 3].map((item) => (
+      <div
+        key={item}
+        className="rounded-xl border border-slate-200 dark:border-slate-700 p-4"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1 space-y-2">
+            <SkeletonBlock className="h-5 w-2/3 max-w-56" />
+            <SkeletonBlock className="h-4 w-28" />
+          </div>
+          <SkeletonBlock className="h-6 w-24 shrink-0" />
+        </div>
+        <div className="mt-4 flex gap-2">
+          <SkeletonBlock className="h-8 w-20 rounded-lg" />
+          <SkeletonBlock className="h-8 w-24 rounded-lg" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const TransactionsPageSkeleton = () => (
+  <main
+    className="min-h-screen max-w-full bg-slate-50 dark:bg-gray-900 px-3 sm:px-5 lg:px-8 py-5"
+    aria-label="Cargando panel de transacciones"
+  >
+    <div className="max-w-7xl mx-auto w-full animate-pulse">
+      <section className="mb-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-sm">
+        <SkeletonBlock className="h-4 w-48" />
+        <SkeletonBlock className="mt-3 h-8 w-72 max-w-[80%]" />
+        <SkeletonBlock className="mt-3 h-4 w-full max-w-xl" />
+        <div className="mt-5 grid grid-cols-3 gap-2 sm:flex">
+          {[0, 1, 2].map((item) => (
+            <SkeletonBlock key={item} className="h-11 sm:w-32 rounded-xl" />
+          ))}
+        </div>
+      </section>
+
+      <div className="grid lg:grid-cols-3 gap-5 items-start">
+        <div className="space-y-5">
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+            <div className="grid grid-cols-2 gap-5">
+              {[0, 1].map((item) => (
+                <div key={item} className="flex flex-col items-center">
+                  <SkeletonBlock className="h-6 w-24" />
+                  <SkeletonBlock className="mt-3 h-5 w-28" />
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 flex flex-col items-center">
+              <SkeletonBlock className="h-6 w-28" />
+              <SkeletonBlock className="mt-3 h-5 w-28" />
+              <SkeletonBlock className="mt-5 h-5 w-20" />
+              <SkeletonBlock className="mt-3 h-8 w-40" />
+            </div>
+            <SkeletonBlock className="mt-6 h-10 w-full rounded-xl" />
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+            <ChartSkeleton />
+          </section>
+        </div>
+
+        <section className="lg:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6 shadow-sm">
+          <SkeletonBlock className="h-4 w-20" />
+          <SkeletonBlock className="mt-2 h-8 w-44" />
+          <SkeletonBlock className="mt-4 h-11 w-full rounded-xl" />
+          <TransactionListSkeleton />
+        </section>
+      </div>
+    </div>
+  </main>
+);
 
 function Dashboard() {
   const dispatch = useDispatch();
@@ -193,12 +290,7 @@ function Dashboard() {
 
   if (user === null) return <Navigate to="/" />;
 
-  if (isFetching)
-    return (
-      <div className="h-screen flex flex-col items-center justify-center align-center">
-        <img className="h-20 w-20" src={bars} alt="loader" />
-      </div>
-    );
+  if (isFetching) return <TransactionsPageSkeleton />;
 
   const handleFloatingButtonClick = () => {
     setShowModal(true);
@@ -308,7 +400,7 @@ function Dashboard() {
                   Ingresos
                 </h1>
                 {isDataFetching ? (
-                  <img className="mt-2 h-6 w-6" src={bars} alt="loader" />
+                  <ValueSkeleton />
                 ) : (
                   <motion.p
                     initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
@@ -328,7 +420,7 @@ function Dashboard() {
                   Gastos
                 </h1>
                 {isDataFetching ? (
-                  <img className="mt-2 h-6 w-6" src={bars} alt="loader" />
+                  <ValueSkeleton />
                 ) : (
                   <motion.p
                     initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
@@ -350,7 +442,7 @@ function Dashboard() {
                 Inversión
               </h1>
               {isDataFetching ? (
-                <img className="ml-2 h-6 w-6" src={bars} alt="loader" />
+                <ValueSkeleton />
               ) : (
                 <motion.p
                   initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
@@ -391,7 +483,7 @@ function Dashboard() {
 
               <div className="flex flex-col gap-2 justify-center items-center">
                 {isDataFetching ? (
-                  <img className="ml-2 h-6 w-6" src={bars} alt="loader" />
+                  <ValueSkeleton />
                 ) : (
                   <motion.h2
                     initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
@@ -418,9 +510,7 @@ function Dashboard() {
             className="bg-white p-5 w-full border border-slate-200 rounded-2xl shadow-sm mb-5 font-Nunito flex flex-col dark:bg-slate-800 dark:border-slate-700 items-center"
           >
             {isDataFetching ? (
-              <div className="flex justify-center items-center">
-                <img className="ml-2 h-5 w-5" src={bars} alt="loader" />
-              </div>
+              <ChartSkeleton />
             ) : (
               docs && (
                 <>
@@ -460,12 +550,7 @@ function Dashboard() {
             <SearchBar />
 
             {isDataFetching ? (
-              <div className="flex">
-                <p className="text-zinc-500 font-semiboldt ml-2 text-base">
-                  Estamos cargando sus transacciones
-                </p>
-                <img className="mt-1 ml-2 h-5 w-5" src={bars} alt="loader" />
-              </div>
+              <TransactionListSkeleton />
             ) : (
               !docs ||
               (docs.length === 0 && (
@@ -478,7 +563,7 @@ function Dashboard() {
               ))
             )}
 
-            {docs?.map((doc) => {
+            {!isDataFetching && docs?.map((doc) => {
               return (
                 <div key={doc.id}>
                   <Card
