@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt } from 'react-icons/fa';
+import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaEye, FaEyeSlash, FaBars } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import AppFooter from '../components/AppFooter';
 import InfoTooltip from '../components/InfoTooltip';
@@ -103,7 +103,31 @@ function Portfolio() {
 	const [rateTarget, setRateTarget] = useState(null);
 		const [quickRate, setQuickRate] = useState('');
 	const [pendingAction, setPendingAction] = useState('');
+	const preferenceKey = user?.uid ? `ltc:portfolio:view:${user.uid}` : 'ltc:portfolio:view';
+	const [hideValues, setHideValues] = useState(() => {
+		try { return JSON.parse(localStorage.getItem('ltc:portfolio:view:guest') || '{}').hideValues || false; } catch { return false; }
+	});
+	const [collapsedSections, setCollapsedSections] = useState({ summary:false, charts:false, positions:false });
+	const [showQuickMenu, setShowQuickMenu] = useState(false);
 	
+
+	useEffect(() => {
+		if (!user) return;
+		try {
+			const saved = JSON.parse(localStorage.getItem(preferenceKey) || '{}');
+			setHideValues(Boolean(saved.hideValues));
+			setCollapsedSections({ summary:false, charts:false, positions:false, ...(saved.collapsedSections || {}) });
+		} catch {}
+	}, [user, preferenceKey]);
+
+	useEffect(() => {
+		if (!user) return;
+		localStorage.setItem(preferenceKey, JSON.stringify({ hideValues, collapsedSections }));
+	}, [user, preferenceKey, hideValues, collapsedSections]);
+
+	const togglePortfolioSection = (section) => setCollapsedSections((current) => ({ ...current, [section]: !current[section] }));
+	const privateMoney = (value, currency) => hideValues ? '••••••' : money(value, currency);
+	const privatePercent = (value, suffix = '%') => hideValues ? '••••' : `${Number(value || 0).toFixed(2)}${suffix}`;
 
 	useEffect(() => {
 		if (!user) return undefined;
@@ -457,10 +481,18 @@ function Portfolio() {
 						<p className='text-gray-500 dark:text-gray-400 max-w-2xl'>Tu patrimonio financiero en un solo lugar. Los totales y rendimientos se mantienen separados por moneda.</p>
 					</div>
 					{!loading && positions.length > 0 && <div className='flex flex-wrap gap-2'>
+						<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800' aria-pressed={hideValues}>{hideValues ? <FaEye /> : <FaEyeSlash />} {hideValues ? 'Mostrar valores' : 'Ocultar valores'}</button>
+						<button type='button' onClick={() => setShowQuickMenu((value) => !value)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaBars /> Navegar</button>
 						<button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>
 						<button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>
 					</div>}
 				</div>
+				{showQuickMenu && <nav className='mb-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 flex flex-wrap gap-2' aria-label='Accesos rápidos del portfolio'>
+					<button type='button' onClick={() => document.getElementById('portfolio-summary')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Resumen</button>
+					<button type='button' onClick={() => document.getElementById('portfolio-charts')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Gráficos</button>
+					<button type='button' onClick={() => document.getElementById('portfolio-positions')?.scrollIntoView({ behavior:'smooth' })} className='px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-semibold'>Posiciones</button>
+					<button type='button' onClick={() => setHideValues((value) => !value)} className='px-3 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold'>{hideValues ? 'Mostrar valores' : 'Ocultar valores'}</button>
+				</nav>}
 
 				{loading ? <div className='space-y-6 animate-pulse' aria-label='Cargando portfolio'><section className='grid grid-cols-3 gap-2 sm:gap-4'>{[0,1,2].map((item) => <div key={item} className='h-28 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' />)}</section><div className='h-36 rounded-2xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /><div className='space-y-3'><div className='h-7 w-36 rounded bg-slate-200 dark:bg-slate-800' /><div className='h-64 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /></div></div> : <>
 
@@ -482,30 +514,27 @@ function Portfolio() {
 					</div>
 				</section>
 
-				<section className='mb-7'>
-					<div className='flex items-center justify-between mb-3'>
-						<h2 className='text-lg font-bold'>Resumen por moneda</h2>
-						<span className='text-xs text-gray-500'>Sin conversión FX</span>
-					</div>
-					<div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+				<section id='portfolio-summary' className='mb-7 scroll-mt-4'>
+					<button type='button' onClick={() => togglePortfolioSection('summary')} className='w-full flex items-center justify-between mb-3 text-left' aria-expanded={!collapsedSections.summary}><h2 className='text-lg font-bold'>Resumen por moneda</h2><span className='text-xs text-purple-500'>{collapsedSections.summary ? 'Mostrar' : 'Ocultar'}</span></button>
+					{!collapsedSections.summary && <div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-4'>
 
 					{Object.entries(totals).map(([currency, total]) => (
 						<div key={currency} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-2xl p-4 sm:p-5 shadow-sm'>
 							<p className='text-sm text-gray-500'>{currency}</p>
-							<p className='text-2xl font-bold'>{money(total.balance, currency)}</p>
-							<p className='text-sm text-green-600 dark:text-green-500 mt-2'>Estimado anual: {money(total.annual, currency)}</p>
-							<p className='text-xs text-gray-400'>Estimado mensual: {money(total.annual / 12, currency)}</p>
-							<p className='text-xs text-gray-400'>Tasa ponderada: {weightedRates[currency].toFixed(2)}%</p>
+							<p className='text-2xl font-bold'>{privateMoney(total.balance, currency)}</p>
+							<p className='text-sm text-green-600 dark:text-green-500 mt-2'>Estimado anual: {privateMoney(total.annual, currency)}</p>
+							<p className='text-xs text-gray-400'>Estimado mensual: {privateMoney(total.annual / 12, currency)}</p>
+							<p className='text-xs text-gray-400'>Tasa ponderada: {privatePercent(weightedRates[currency])}</p>
 						</div>
 					))}
 					{!Object.keys(totals).length && <div className='text-gray-500'>Todavía no cargaste posiciones.</div>}
-					</div>
+					</div>}
 				</section>
 
-				<PortfolioCharts positions={positions} snapshots={snapshots} />
+				<section id='portfolio-charts' className='scroll-mt-4'><button type='button' onClick={() => togglePortfolioSection('charts')} className='w-full flex justify-end mb-2 text-xs font-semibold text-purple-500' aria-expanded={!collapsedSections.charts}>{collapsedSections.charts ? 'Mostrar gráficos' : 'Ocultar gráficos'}</button>{!collapsedSections.charts && <PortfolioCharts positions={positions} snapshots={snapshots} />}</section>
 
-				<section className='space-y-3 pb-6 lg:pb-8'>
-						<div className='flex items-center justify-between'><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-gray-500'>{positions.length} activas</span></div>
+				<section id='portfolio-positions' className='space-y-3 pb-6 lg:pb-8 scroll-mt-4'>
+						<button type='button' onClick={() => togglePortfolioSection('positions')} className='w-full flex items-center justify-between text-left' aria-expanded={!collapsedSections.positions}><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-purple-500'>{collapsedSections.positions ? 'Mostrar' : `${positions.length} activas · Ocultar`}</span></button>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
 						{!loading && !positions.length && (
 							<div className='border border-dashed dark:border-slate-700 rounded-2xl p-8 text-center'>
@@ -515,7 +544,7 @@ function Portfolio() {
 								<button type='button' onClick={() => setShowForm(true)} className='mt-4 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors'>Agregar posición</button>
 							</div>
 						)}
-						{!loading && positions.map((position) => (
+						{!loading && !collapsedSections.positions && positions.map((position) => (
 							<article key={position.id} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5 shadow-sm'>
 								<div className='grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start'>
 									<div>
@@ -527,26 +556,26 @@ function Portfolio() {
 											{position.notes && <InfoTooltip placement='top' content={position.notes} />}
 										</div>
 										<p className='text-xs uppercase text-gray-400 mt-1'>{position.category}</p>
-										<p className='text-3xl font-bold mt-3'>{money(position.balance, position.currency)}</p>
+										<p className='text-3xl font-bold mt-3'>{privateMoney(position.balance, position.currency)}</p>
 									</div>
 									<div className='text-left sm:text-right sm:min-w-[14rem]'>
 										<p className='text-xs uppercase tracking-wide text-gray-400'>Rendimiento</p>
-										<p className='text-2xl font-bold text-green-600 dark:text-green-500'>{Number(position.annualRate || 0).toFixed(2)}% <span className='text-sm'>{position.rateType || ''}</span></p>
+										<p className='text-2xl font-bold text-green-600 dark:text-green-500'>{privatePercent(position.annualRate)} <span className='text-sm'>{position.rateType || ''}</span></p>
 										<p className='text-sm text-gray-500'>{position.liquidity || 'Liquidez no informada'}</p>
-										<p className='text-sm text-green-600 mt-1'>≈ {money(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 12, position.currency)} / mes proyectado</p>
-										{position.trackingMode === 'DAILY_RATE' && <p className='text-xs text-gray-400'>Esperado hoy: {money(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 365, position.currency)}</p>}
+										<p className='text-sm text-green-600 mt-1'>≈ {privateMoney(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 12, position.currency)} / mes proyectado</p>
+										{position.trackingMode === 'DAILY_RATE' && <p className='text-xs text-gray-400'>Esperado hoy: {privateMoney(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 365, position.currency)}</p>}
 										{position.trackingMode === 'MATURITY' && position.maturityDate && <p className='text-xs text-gray-400'>Seguimiento al vencimiento: {position.maturityDate}</p>}
 										<p className='text-xs text-gray-400'>Tracking: {position.trackingMode || 'MANUAL'}</p>
 										{position.category === 'FCI' && position.ticker && <p className='text-xs text-gray-400'>Ticker: {position.ticker}</p>}
 										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
 										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-green-600 dark:text-green-500'>Rend. 1A: {Number(position.performance1Y).toFixed(2)}%</p>}
 										{position.category === 'FCI' && position.monthlyReturns && Object.keys(position.monthlyReturns).length > 0 && <p className='text-sm font-bold text-green-600 dark:text-green-400'>YTD compuesto: {((Object.values(position.monthlyReturns).map(Number).filter(Number.isFinite).reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100).toFixed(2)}%</p>}
-										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-green-600 dark:text-green-500 mt-1'>Ganado: {money(position.realizedEarnings, position.currency)}</p>}
+										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-green-600 dark:text-green-500 mt-1'>Ganado: {privateMoney(position.realizedEarnings, position.currency)}</p>}
 										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {Number(position.effectiveRate).toFixed(2)}%</p>}
 										{performanceByPosition[position.id] && (
 											<div className='mt-2 text-sm'>
 												<p className={performanceByPosition[position.id].change >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500'}>
-													Cambio observado: {money(performanceByPosition[position.id].change, position.currency)} ({performanceByPosition[position.id].percent.toFixed(2)}%)
+													Cambio observado: {privateMoney(performanceByPosition[position.id].change, position.currency)} ({performanceByPosition[position.id].percent.toFixed(2)}%)
 												</p>
 												<p className='text-xs text-gray-400'>{performanceByPosition[position.id].count} snapshots</p>
 											</div>

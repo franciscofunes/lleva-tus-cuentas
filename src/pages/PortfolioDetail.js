@@ -36,7 +36,10 @@ export default function PortfolioDetail() {
 	const user = useSelector((state) => state.auth.user);
 	const [positions,setPositions]=useState([]); const [snapshots,setSnapshots]=useState([]); const [reconciliations,setReconciliations]=useState([]); const [mode,setMode]=useState('day');
 	const [editing,setEditing]=useState(null); const [deleting,setDeleting]=useState(null); const [pendingAction,setPendingAction]=useState('');
+	const detailPreferenceKey = user?.uid ? `ltc:portfolio:detail:${user.uid}` : 'ltc:portfolio:detail';
 	const [openSections,setOpenSections]=useState({ overview:true, earnings:true, account:true, monthly:true, history:true });
+	useEffect(()=>{ if(!user) return; try { const saved=JSON.parse(localStorage.getItem(detailPreferenceKey) || '{}'); if(saved.openSections) setOpenSections((current)=>({...current,...saved.openSections})); } catch {} },[user,detailPreferenceKey]);
+	useEffect(()=>{ if(!user) return; localStorage.setItem(detailPreferenceKey,JSON.stringify({openSections})); },[user,detailPreferenceKey,openSections]);
 	const toggleSection=(key)=>setOpenSections((current)=>({...current,[key]:!current[key]}));
 	useEffect(() => { if(!user) return; const a=subscribePortfolioPositions(user.uid,setPositions,console.error); const b=subscribePortfolioSnapshots(user.uid,setSnapshots,console.error); const c=subscribePortfolioReconciliations(user.uid,setReconciliations,console.error); return()=>{a();b();c();}; },[user]);
 	const position=positions.find((item)=>item.id===positionId);
