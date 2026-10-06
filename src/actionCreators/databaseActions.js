@@ -151,16 +151,25 @@ export const getDataAction = (userId) => {
 };
 
 export const getTotalBalance = (userId) => {
-	return (dispatch) => {
-		firestore
-			.collection('users')
-			.doc(userId)
-			.collection('expenses')
-			.orderBy('date', 'desc')
-			.onSnapshot((res) => {
-				const data = res.docs.map((d) => ({ id: d.id, ...d.data() }));
-				dispatch({ type: 'GOT_DATA', data });
-			});
+	return async (dispatch) => {
+		dispatch({ type: 'SET_FETCHING', isDataFetching: true });
+		try {
+			const res = await firestore
+				.collection('users')
+				.doc(userId)
+				.collection('expenses')
+				.orderBy('date', 'desc')
+				.get();
+
+			const data = res.docs.map((d) => ({ id: d.id, ...d.data() }));
+			dispatch({ type: 'GOT_DATA', data });
+			return data;
+		} catch (error) {
+			console.error(error);
+			throw error;
+		} finally {
+			dispatch({ type: 'SET_FETCHING', isDataFetching: false });
+		}
 	};
 };
 
@@ -204,7 +213,7 @@ export const filterDataAction = (
 	week,
 	day
 ) => {
-	return (dispatch) => {
+	return async (dispatch) => {
 		let startDate, endDate;
 
 		switch (filterType) {
@@ -264,30 +273,34 @@ export const filterDataAction = (
 				break;
 		}
 
-		firestore
-			.collection('users')
-			.doc(userId)
-			.collection('expenses')
-			.where('selectedDate', '>=', startDate)
-			.where('selectedDate', '<=', endDate)
-			.orderBy('selectedDate', 'desc')
-			.get()
-			.then((snapshot) => {
-				const expenses = [];
+		dispatch({ type: 'SET_FETCHING', isDataFetching: true });
+		try {
+			const snapshot = await firestore
+				.collection('users')
+				.doc(userId)
+				.collection('expenses')
+				.where('selectedDate', '>=', startDate)
+				.where('selectedDate', '<=', endDate)
+				.orderBy('selectedDate', 'desc')
+				.get();
 
-				snapshot.forEach((doc) => {
-					expenses.push({ id: doc.id, ...doc.data() });
-				});
-
-				dispatch({ type: 'SET_EXPENSES', expenses });
-			})
-			.catch((error) => {
-				console.error(error);
+			const expenses = [];
+			snapshot.forEach((doc) => {
+				expenses.push({ id: doc.id, ...doc.data() });
 			});
+
+			dispatch({ type: 'SET_EXPENSES', expenses });
+			return expenses;
+		} catch (error) {
+			console.error(error);
+			throw error;
+		} finally {
+			dispatch({ type: 'SET_FETCHING', isDataFetching: false });
+		}
 	};
 };
 
-export const searchExpenses = (searchTerm, userId) => (dispatch) => {
+export const searchExpenses = (searchTerm, userId) => async (dispatch) => {
 	const escapedSearchTerm = searchTerm.replace('í', '\\í');
 
 	const categoryQuery = firestore
@@ -308,37 +321,47 @@ export const searchExpenses = (searchTerm, userId) => (dispatch) => {
 		.collection('expenses')
 		.where('expenseName', '==', escapedSearchTerm);
 
-	Promise.all([categoryQuery.get(), commentQuery.get(), expenseNameQuery.get()])
-		.then(([categorySnapshot, commentSnapshot, expenseNameSnapshot]) => {
-			const expenses = [];
+	dispatch({ type: 'SET_FETCHING', isDataFetching: true });
+	try {
+		const [categorySnapshot, commentSnapshot, expenseNameSnapshot] =
+			await Promise.all([
+				categoryQuery.get(),
+				commentQuery.get(),
+				expenseNameQuery.get(),
+			]);
 
-			categorySnapshot.forEach((doc) => {
-				expenses.push({ ...doc.data(), id: doc.id });
-			});
+		const expenses = [];
 
-			commentSnapshot.forEach((doc) => {
-				const existingExpense = expenses.find(
-					(expense) => expense.id === doc.id
-				);
-				if (!existingExpense) {
-					expenses.push({ ...doc.data(), id: doc.id });
-				}
-			});
-
-			expenseNameSnapshot.forEach((doc) => {
-				const existingExpense = expenses.find(
-					(expense) => expense.id === doc.id
-				);
-				if (!existingExpense) {
-					expenses.push({ ...doc.data(), id: doc.id });
-				}
-			});
-
-			dispatch({ type: 'SEARCH_EXPENSES', expenses });
-		})
-		.catch((error) => {
-			console.error('Error searching expenses: ', error);
+		categorySnapshot.forEach((doc) => {
+			expenses.push({ ...doc.data(), id: doc.id });
 		});
+
+		commentSnapshot.forEach((doc) => {
+			const existingExpense = expenses.find(
+				(expense) => expense.id === doc.id
+			);
+			if (!existingExpense) {
+				expenses.push({ ...doc.data(), id: doc.id });
+			}
+		});
+
+		expenseNameSnapshot.forEach((doc) => {
+			const existingExpense = expenses.find(
+				(expense) => expense.id === doc.id
+			);
+			if (!existingExpense) {
+				expenses.push({ ...doc.data(), id: doc.id });
+			}
+		});
+
+		dispatch({ type: 'SEARCH_EXPENSES', expenses });
+		return expenses;
+	} catch (error) {
+		console.error('Error searching expenses: ', error);
+		throw error;
+	} finally {
+		dispatch({ type: 'SET_FETCHING', isDataFetching: false });
+	}
 };
 
 export const setSelectedFilter = (filter) => ({
