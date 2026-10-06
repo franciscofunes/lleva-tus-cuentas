@@ -66,8 +66,7 @@ const PortfolioCharts = ({ positions, snapshots, hideValues = false }) => {
 	if (!positions.length) return null;
 
 	return (
-		<section className='mb-7 space-y-6'>
-			<div className='mb-3'><h2 className='text-xl font-extrabold text-slate-900 dark:text-white'>Composición del portfolio</h2><p className='text-sm font-medium text-slate-600 dark:text-slate-300'>Distribución por posición y moneda.</p></div>
+		<section className='space-y-6'>
 			<Card className='dark:bg-slate-800 dark:border-slate-700 overflow-hidden'>
 				<button type='button' onClick={() => setAllocationOpen((v) => !v)} aria-expanded={allocationOpen} className='w-full flex items-center justify-between gap-3 text-left'>
 					<h3 className='min-w-0 break-words text-lg font-extrabold text-slate-900 dark:text-white'>Distribución por posición</h3>
