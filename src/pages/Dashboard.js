@@ -2,8 +2,9 @@ import { motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useDispatch, useSelector } from "react-redux";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import "tippy.js/dist/tippy.css";
+import { FaArrowRight, FaChartPie, FaExchangeAlt, FaPlus } from "react-icons/fa";
 import {
   getCategoriesDataAction,
   getDataAction,
@@ -275,18 +276,31 @@ function Dashboard() {
         initial={{ opacity: 0 }}
         transition={{ duration: 1 }}
         id="dashboard"
-        className="container lg:px-6 max-w-full grid lg:grid-cols-3 dark:bg-gray-900"
+        className="min-h-screen max-w-full bg-slate-50 dark:bg-gray-900 dark:text-zinc-100 px-3 sm:px-5 lg:px-8 py-5"
       >
+        <div className="max-w-7xl mx-auto w-full">
+          <section className="mb-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-sm">
+            <p className="text-sm font-bold uppercase tracking-wider text-purple-500">Tu dinero, en un solo lugar</p>
+            <div className="mt-2 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+              <div><h1 className="text-2xl sm:text-3xl font-extrabold">Resumen financiero</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Movimientos, balance e inversiones con acceso rápido a lo que más usás.</p></div>
+              <div className="grid grid-cols-3 gap-2 sm:flex">
+                <button type="button" onClick={openModal} className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 text-sm font-bold"><FaPlus /> <span className="hidden sm:inline">Movimiento</span></button>
+                <Link to="/portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
+                <button type="button" onClick={toggleDataVisibility} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
+              </div>
+            </div>
+          </section>
+          <div className="grid lg:grid-cols-3 gap-5 items-start">
         <div
           id="left"
-          className="container flex lg:py-5 mx-auto w-full flex-col justify-between items-center"
+          className="w-full flex flex-col items-stretch"
         >
           <motion.div
             animate={{ opacity: 1 }}
             initial={{ opacity: 0 }}
             transition={{ duration: 0.7, type: "tween" }}
             id="info"
-            className="container p-4 bg-white lg:w-3/4 w-full border rounded-md shadow-md mb-6 mt-6 font-Nunito dark:bg-slate-800 dark:border-indigo-500"
+            className="p-5 bg-white w-full border border-slate-200 rounded-2xl shadow-sm mb-5 font-Nunito dark:bg-slate-800 dark:border-slate-700"
           >
             <div className="flex items-center mb-5">
               {/* Ingresos */}
@@ -402,7 +416,7 @@ function Dashboard() {
             initial={{ opacity: 0 }}
             transition={{ duration: 0.7, type: "tween" }}
             id="left"
-            className="container  bg-white p-10 lg:w-3/4 w-full border rounded-md shadow-md mb-6 font-Nunito flex flex-col dark:bg-slate-800 dark:border-indigo-500 items-center"
+            className="bg-white p-5 w-full border border-slate-200 rounded-2xl shadow-sm mb-5 font-Nunito flex flex-col dark:bg-slate-800 dark:border-slate-700 items-center"
           >
             {isDataFetching ? (
               <div className="flex justify-center items-center">
@@ -440,10 +454,10 @@ function Dashboard() {
           initial={{ opacity: 0 }}
           transition={{ duration: 0.7, type: "tween" }}
           id="right"
-          className="lg:col-span-2 container bg-white flex flex-col justify-start lg:py-5 lg:px-10 px-3 py-5 lg:mt-11 shadow-md mx-auto items-stretch w-full border rounded-md dark:bg-slate-800 dark:border-indigo-500 lg:h-auto"
+          className="lg:col-span-2 bg-white flex flex-col justify-start p-4 sm:p-6 shadow-sm items-stretch w-full border border-slate-200 rounded-2xl dark:bg-slate-800 dark:border-slate-700"
         >
           <div>
-            <h1 className="font-Nunito font-bold text-3xl mb-2 ml-1 dark:text-zinc-100">Transacciones 📕</h1>
+            <div className="flex items-center justify-between gap-3 mb-3"><div><p className="text-xs font-bold uppercase tracking-wider text-purple-500">Actividad</p><h2 className="font-Nunito font-bold text-2xl sm:text-3xl dark:text-zinc-100">Transacciones</h2></div><Link to="/portfolio" className="hidden sm:inline-flex items-center gap-2 text-sm font-bold text-purple-500">Ver portfolio <FaArrowRight /></Link></div>
             <SearchBar />
 
             {isDataFetching ? (
@@ -509,6 +523,8 @@ function Dashboard() {
           </div>
         </motion.div>
 
+          </div>
+        </div>
       </motion.div>
 
       <AppFooter />
