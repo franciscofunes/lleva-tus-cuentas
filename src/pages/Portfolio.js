@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt } from 'react-icons/fa';
 import PrimaryFab from '../components/PrimaryFab';
 import QuickAccessCard from '../components/QuickAccessCard';
+import CollapsibleSection from '../components/CollapsibleSection';
 import AppFooter from '../components/AppFooter';
 import InfoTooltip from '../components/InfoTooltip';
 import PortfolioCharts from '../components/PortfolioCharts';
@@ -512,12 +513,18 @@ function Portfolio() {
 					</div>
 				</section>
 
-				<section id='portfolio-summary' className='mb-7 scroll-mt-4'>
-					<button type='button' onClick={() => togglePortfolioSection('summary')} className='w-full flex items-center justify-between mb-3 text-left' aria-expanded={!collapsedSections.summary}><h2 className='text-lg font-bold'>Resumen por moneda</h2><span className='text-xs text-purple-500'>{collapsedSections.summary ? 'Mostrar' : 'Ocultar'}</span></button>
-					{!collapsedSections.summary && <div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-
+				<CollapsibleSection
+					id='portfolio-summary'
+					eyebrow='Resumen'
+					title='Resumen por moneda'
+					description='Saldos, rendimiento estimado y tasa ponderada por moneda.'
+					collapsed={collapsedSections.summary}
+					onToggle={() => togglePortfolioSection('summary')}
+					className='mb-5'
+					contentClassName='grid sm:grid-cols-2 lg:grid-cols-3 gap-4'
+				>
 					{Object.entries(totals).map(([currency, total]) => (
-						<div key={currency} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-2xl p-4 sm:p-5 shadow-sm'>
+						<div key={currency} className='bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-5'>
 							<p className='text-sm text-gray-500'>{currency}</p>
 							<p className='text-2xl font-bold'>{privateMoney(total.balance, currency)}</p>
 							<p className='text-sm text-green-600 dark:text-green-500 mt-2'>Estimado anual: {privateMoney(total.annual, currency)}</p>
@@ -526,13 +533,29 @@ function Portfolio() {
 						</div>
 					))}
 					{!Object.keys(totals).length && <div className='text-gray-500'>Todavía no cargaste posiciones.</div>}
-					</div>}
-				</section>
+				</CollapsibleSection>
 
-				<section id='portfolio-charts' className='scroll-mt-4'><button type='button' onClick={() => togglePortfolioSection('charts')} className='w-full flex justify-end mb-2 text-xs font-semibold text-purple-500' aria-expanded={!collapsedSections.charts}>{collapsedSections.charts ? 'Mostrar gráficos' : 'Ocultar gráficos'}</button>{!collapsedSections.charts && <PortfolioCharts positions={positions} snapshots={snapshots} hideValues={hideValues} />}</section>
+				<CollapsibleSection
+					id='portfolio-charts'
+					eyebrow='Visualización'
+					title='Composición del portfolio'
+					description='Distribución, evolución y simulaciones de tus posiciones.'
+					collapsed={collapsedSections.charts}
+					onToggle={() => togglePortfolioSection('charts')}
+					className='mb-5'
+				>
+					<PortfolioCharts positions={positions} snapshots={snapshots} hideValues={hideValues} />
+				</CollapsibleSection>
 
-				<section id='portfolio-positions' className='space-y-3 pb-6 lg:pb-8 scroll-mt-4'>
-						<button type='button' onClick={() => togglePortfolioSection('positions')} className='w-full flex items-center justify-between text-left' aria-expanded={!collapsedSections.positions}><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-purple-500'>{collapsedSections.positions ? 'Mostrar' : `${privateCount(positions.length)} activas · Ocultar`}</span></button>
+				<CollapsibleSection
+					id='portfolio-positions'
+					eyebrow='Actividad'
+					title='Posiciones'
+					description={`${privateCount(positions.length)} activas · cuentas e inversiones cargadas`}
+					collapsed={collapsedSections.positions}
+					onToggle={() => togglePortfolioSection('positions')}
+					className='mb-6 lg:mb-8'
+				>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
 						{!loading && !positions.length && (
 							<div className='border border-dashed dark:border-slate-700 rounded-2xl p-8 text-center'>
@@ -542,7 +565,7 @@ function Portfolio() {
 								<button type='button' onClick={() => setShowForm(true)} className='mt-4 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors'>Agregar posición</button>
 							</div>
 						)}
-						{!loading && !collapsedSections.positions && positions.map((position) => (
+						{!loading && positions.map((position) => (
 							<article key={position.id} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5 shadow-sm'>
 								<div className='grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start'>
 									<div>
@@ -592,7 +615,7 @@ function Portfolio() {
 								</div>
 							</article>
 						))}
-					</section>
+				</CollapsibleSection>
 				</>}
 			</div>
 			{!loading && <AppFooter />}
