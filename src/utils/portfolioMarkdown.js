@@ -135,16 +135,85 @@ const directMonthlyField = (rawKey) => {
 	const dottedMatch = clean.match(/^monthlyreturns[.\s_-]+([a-záéíóú]+)$/i);
 	if (dottedMatch) {
 		const month = MONTH_MAP[normalizeKey(dottedMatch[1])] || dottedMatch[1].toLowerCase();
-		if (Object.values(MONTH_MAP).includes(month)) return `monthlyReturns.${month}`;
+		if (Object.values(MONTH_MAP).includes(month)) return 'monthlyReturns.' + month;
 	}
 
 	const monthlyMatch = clean.match(/^(?:rentabilidad|rendimiento)?\s*(?:mensual\s*)?([a-záéíóú]+)$/i);
 	if (monthlyMatch) {
 		const month = MONTH_MAP[normalizeKey(monthlyMatch[1])];
-		if (month) return `monthlyReturns.${month}`;
+		if (month) return 'monthlyReturns.' + month;
 	}
 
 	return null;
+};
+
+const isPublishedTotalLabel = (rawKey, inMonthlySection) => {
+	const key = normalizeKey(rawKey);
+	if (/^(total ytd(?: publicado)?|ytd(?: publicado)?|total publicado)$/.test(key)) return true;
+	return inMonthlySection && /^total(?:\s+\d{4})?$/.test(key);
+};
+
+const parseMarkdownTableRow = (line, parsed, inMonthlySection) => {
+	if (!line.includes('|')) return false;
+
+	const cells = line
+		.split('|')
+		.map((cell) => strip(cell))
+		.filter(Boolean);
+
+	if (cells.length < 2) return false;
+	if (cells.every((cell) => /^:?-{2,}:?$/.test(cell))) return true;
+
+	let consumed = false;
+	for (let index = 0; index + 1 < cells.length; index += 2) {
+		const label = cells[index];
+		const value = cells[index + 1];
+		if (/^(mes|rentabilidad|rendimiento|valor|porcentaje|%)$/i.test(normalizeKey(label))) continue;
+		if (/^:?-{2,}:?$/.test(label) || /^:?-{2,}:?$/.test(value)) continue;
+
+		const monthlyField = directMonthlyField(label);
+		if (monthlyField) {
+			assignField(parsed, monthlyField, value);
+			consumed = true;
+			continue;
+		}
+
+		if (isPublishedTotalLabel(label, inMonthlySection)) {
+			assignField(parsed, 'publishedYtdReturn', value);
+			consumed = true;
+			continue;
+		}
+
+		const field = canonicalOrMappedField(label);
+		if (field) {
+			assignField(parsed, field, value);
+			consumed = true;
+		}
+	}
+
+	return consumed;
+};
+
+const parseInlineMonthlyPairs = (line, parsed) => {
+	const regex = /(?:^|[|,;\s])(ene(?:ro)?|feb(?:rero)?|mar(?:zo)?|abr(?:il)?|may(?:o)?|jun(?:io)?|jul(?:io)?|ago(?:sto)?|sep(?:t(?:iembre)?)?|set(?:iembre)?|oct(?:ubre)?|nov(?:iembre)?|dic(?:iembre)?|jan(?:uary)?|february|march|apr(?:il)?|june|july|aug(?:ust)?|september|october|november|december)\s*(?::|=|-)?\s*(-?\d+(?:[.,]\d+)?)\s*%?/gi;
+	let consumed = false;
+	let match;
+
+	while ((match = regex.exec(line)) !== null) {
+		const month = MONTH_MAP[normalizeKey(match[1])];
+		if (!month) continue;
+		assignField(parsed, 'monthlyReturns.' + month, match[2]);
+		consumed = true;
+	}
+
+	return consumed;
+};
+
+const parseInlinePublishedTotal = (line, parsed, inMonthlySection) => {
+	const match = strip(line).match(/^(total(?:\s+ytd)?(?:\s+publicado)?|ytd(?:\s+publicado)?)\s*(?::|=|-)?\s*(-?\d+(?:[.,]\d+)?)\s*%?$/i);
+	if (!match || !isPublishedTotalLabel(match[1], inMonthlySection)) return false;
+	assignField(parsed, 'publishedYtdReturn', match[2]);
+	return true;
 };
 
 export const parsePortfolioMarkdown = (markdown) => {
@@ -157,13 +226,17 @@ export const parsePortfolioMarkdown = (markdown) => {
 		if (!trimmed) return;
 
 		const heading = trimmed.replace(/^#+\s*/, '');
-		if (/^rentabilidad mensual(?:\s+\d{4})?\s*:?\s*$/i.test(heading)) {
+		if (/^rentabilidad mensual(?:\s+anualizada)?(?:\s+\d{4})?\s*:?\s*$/i.test(heading)) {
 			section = 'monthlyReturns';
 			return;
 		}
 
-		const line = trimmed.replace(/^[-*]\s*/, '');
+		const line = trimmed.replace(/^[-*+]\s*/, '');
 		if (!line || line.startsWith('#')) return;
+
+		if (parseMarkdownTableRow(line, parsed, section === 'monthlyReturns')) return;
+		if (parseInlineMonthlyPairs(line, parsed)) return;
+		if (parseInlinePublishedTotal(line, parsed, section === 'monthlyReturns')) return;
 
 		const separator = line.indexOf(':');
 		if (separator < 1) return;
@@ -171,7 +244,7 @@ export const parsePortfolioMarkdown = (markdown) => {
 		const rawKey = strip(line.slice(0, separator));
 		const value = strip(line.slice(separator + 1));
 
-		if (!value && /^rentabilidad mensual(?:\s+\d{4})?$/i.test(rawKey)) {
+		if (!value && /^rentabilidad mensual(?:\s+anualizada)?(?:\s+\d{4})?$/i.test(rawKey)) {
 			section = 'monthlyReturns';
 			return;
 		}
@@ -187,6 +260,11 @@ export const parsePortfolioMarkdown = (markdown) => {
 
 		if (monthlyField) {
 			assignField(parsed, monthlyField, value);
+			return;
+		}
+
+		if (isPublishedTotalLabel(rawKey, section === 'monthlyReturns')) {
+			assignField(parsed, 'publishedYtdReturn', value);
 			return;
 		}
 
