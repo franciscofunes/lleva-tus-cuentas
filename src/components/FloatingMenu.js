@@ -6,7 +6,7 @@ import 'react-tiny-fab/dist/styles.css';
 import ActionButton from './ActionButton';
 import { primaryFabStyle } from '../shared/styles/floatingAction';
 
-const FloatingMenu = ({ openTransactionModal, openLitaModal, isModalOpen }) => {
+const FloatingMenu = ({ openTransactionModal, openLitaModal, isModalOpen, primaryMessage = 'Transacción' }) => {
 
 	return (
 		<AnimatePresence>
@@ -26,7 +26,7 @@ const FloatingMenu = ({ openTransactionModal, openLitaModal, isModalOpen }) => {
 						<ActionButton
 							color='red'
 							icon='plus'
-							message='Transacción'
+							message={primaryMessage}
 							onClick={openTransactionModal}
 						/>
 						<ActionButton
