@@ -41,14 +41,14 @@ const GenericModal = ({ show, component: Component, closeModal, fitViewport = fa
 						tabIndex={-1}
 					/>
 
-					<div className='relative flex h-full min-h-0 items-start justify-center sm:items-center'>
+					<div className='relative flex h-full min-h-0 items-center justify-center'>
 						<motion.div
 							role='dialog'
 							aria-modal='true'
 							className={`relative flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-purple-500/70 bg-white text-slate-900 shadow-2xl dark:bg-slate-900 dark:text-white ${
 								fitViewport
-									? 'h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)] sm:h-auto sm:max-h-[calc(100dvh-3rem)]'
-									: 'max-h-[calc(100svh-1rem)] sm:max-h-[calc(100dvh-3rem)]'
+									? 'h-auto max-h-[calc(100svh-1rem)] sm:max-h-[calc(100dvh-3rem)]'
+									: 'h-auto max-h-[calc(100svh-1rem)] sm:max-h-[calc(100dvh-3rem)]'
 							}`}
 							initial={{ opacity: 0, y: 24, scale: 0.98 }}
 							animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -67,7 +67,7 @@ const GenericModal = ({ show, component: Component, closeModal, fitViewport = fa
 							</div>
 
 							<div
-								className='min-h-0 flex-1 touch-pan-y overflow-y-scroll overscroll-contain px-4 pt-16 sm:px-6 sm:pt-6'
+								className='min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 pt-16 sm:px-6 sm:pt-6'
 								style={{
 									WebkitOverflowScrolling: 'touch',
 									paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))',
