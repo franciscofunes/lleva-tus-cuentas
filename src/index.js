@@ -5,6 +5,8 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
 import App from './App';
+import AuthSessionBootstrap from './components/AuthSessionBootstrap';
+import ProtectedRoute from './components/ProtectedRoute';
 import './index.css';
 import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
@@ -27,19 +29,63 @@ root.render(
 	<React.StrictMode>
 		<Router>
 			<Provider store={store}>
-				<App />
-				<Routes>
-					<Route exact path='/' element={<Home />} />
-					<Route path='/registrarse' element={<SignUp />} />
-					<Route path='/ingresar' element={<LogIn />} />
-					<Route path='/transacciones' element={<Dashboard />} />
-					<Route path='/portfolio' element={<Portfolio />} />
-					<Route path='/portfolio/:positionId' element={<PortfolioDetail />} />
-					<Route path='/recupero' element={<ForgotPassword />} />
-					<Route path='/subscripcion' element={<SubscriptionCard />} />
-					<Route path='/pago-exitoso' element={<PaymentSuccess />} />
-					<Route path='/pago-fallido' element={<PaymentFailed />} />
-				</Routes>
+				<AuthSessionBootstrap>
+					<App />
+					<Routes>
+						<Route exact path='/' element={<Home />} />
+						<Route path='/registrarse' element={<SignUp />} />
+						<Route path='/ingresar' element={<LogIn />} />
+						<Route path='/recupero' element={<ForgotPassword />} />
+						<Route
+							path='/transacciones'
+							element={
+								<ProtectedRoute>
+									<Dashboard />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path='/portfolio'
+							element={
+								<ProtectedRoute>
+									<Portfolio />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path='/portfolio/:positionId'
+							element={
+								<ProtectedRoute>
+									<PortfolioDetail />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path='/subscripcion'
+							element={
+								<ProtectedRoute>
+									<SubscriptionCard />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path='/pago-exitoso'
+							element={
+								<ProtectedRoute>
+									<PaymentSuccess />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path='/pago-fallido'
+							element={
+								<ProtectedRoute>
+									<PaymentFailed />
+								</ProtectedRoute>
+							}
+						/>
+					</Routes>
+				</AuthSessionBootstrap>
 			</Provider>
 		</Router>
 	</React.StrictMode>
