@@ -216,6 +216,35 @@ const parseInlinePublishedTotal = (line, parsed, inMonthlySection) => {
 	return true;
 };
 
+const INLINE_FIELDS = [
+	['inversión mínima', 'minimumInvestment'],
+	['inversion minima', 'minimumInvestment'],
+	['institución', 'institution'],
+	['institucion', 'institution'],
+	['producto', 'name'],
+	['categoría', 'category'],
+	['categoria', 'category'],
+	['moneda', 'currency'],
+	['calificación', 'rating'],
+	['calificacion', 'rating'],
+	['volatilidad 21d anualizada', 'volatility21dAnnualized'],
+];
+
+const parseInlineKnownField = (line, parsed) => {
+	const clean = strip(line).replace(/\*\*/g, '').trim();
+	const lower = clean.toLowerCase();
+
+	for (const [label, field] of INLINE_FIELDS) {
+		if (!lower.startsWith(label + ' ')) continue;
+		const value = clean.slice(label.length).replace(/^\s*(?::|=|-)\s*/, '').trim();
+		if (!value) return false;
+		assignField(parsed, field, value);
+		return true;
+	}
+
+	return false;
+};
+
 export const parsePortfolioMarkdown = (markdown) => {
 	const parsed = {};
 	const unknown = [];
@@ -239,7 +268,10 @@ export const parsePortfolioMarkdown = (markdown) => {
 		if (parseInlinePublishedTotal(line, parsed, section === 'monthlyReturns')) return;
 
 		const separator = line.indexOf(':');
-		if (separator < 1) return;
+		if (separator < 1) {
+			parseInlineKnownField(line, parsed);
+			return;
+		}
 
 		const rawKey = strip(line.slice(0, separator));
 		const value = strip(line.slice(separator + 1));
