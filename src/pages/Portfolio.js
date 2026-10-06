@@ -294,6 +294,8 @@ function Portfolio() {
 		setVerifyBalance(String(position.balance || ''));
 		setVerifyChangeType('earning');
 		setVerifyNote('');
+		setVerifyNav(position.trackingMode === 'NAV' ? String(position.nav ?? '') : '');
+		setVerifyReportedEarnings(position.trackingMode === 'NAV' ? String(position.realizedEarnings ?? position.lastEarning ?? '') : '');
 	};
 
 	const verify = async () => {
@@ -354,6 +356,8 @@ function Portfolio() {
 		}
 	};
 
+
+		const isNavVerification = isNavVerification;
 
 	const portfolioFormContent = (
 		<form onSubmit={submit} className='space-y-2 text-white max-h-[78dvh] overflow-y-auto pr-4 mr-1 [scrollbar-gutter:stable]'>
@@ -536,8 +540,8 @@ function Portfolio() {
 										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
 										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-green-600 dark:text-green-500'>Rend. 1A: {Number(position.performance1Y).toFixed(2)}%</p>}
 										{position.category === 'FCI' && position.monthlyReturns && Object.keys(position.monthlyReturns).length > 0 && <p className='text-sm font-bold text-green-600 dark:text-green-400'>YTD compuesto: {((Object.values(position.monthlyReturns).map(Number).filter(Number.isFinite).reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100).toFixed(2)}%</p>}
-										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-green-600 dark:text-green-500 mt-1'>Ganado: {money(position.realizedEarnings, position.currency)}</p>}
-										{Number(position.lastEarning || 0) !== 0 && <p className='text-xs text-gray-400'>Último rendimiento: {money(position.lastEarning, position.currency)}</p>}
+										{Number(position.realizedEarnings || position.lastEarning || 0) !== 0 && <p className='text-sm font-semibold text-green-600 dark:text-green-500 mt-1'>Ganado: {money(position.trackingMode === 'NAV' ? (position.lastEarning ?? position.realizedEarnings) : position.realizedEarnings, position.currency)}</p>}
+										{position.trackingMode !== 'NAV' && Number(position.lastEarning || 0) !== 0 && <p className='text-xs text-gray-400'>Último rendimiento: {money(position.lastEarning, position.currency)}</p>}
 										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {Number(position.effectiveRate).toFixed(2)}%</p>}
 										{performanceByPosition[position.id] && (
 											<div className='mt-2 text-sm'>
