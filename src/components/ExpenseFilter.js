@@ -1,7 +1,7 @@
 import es from 'date-fns/locale/es';
 import moment from 'moment';
 import 'moment/locale/es';
-import { React, useState } from 'react';
+import React, { useState } from 'react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useDispatch, useSelector } from 'react-redux';
@@ -11,6 +11,18 @@ import {
 	setSelectedFilter,
 	setFilterChanging,
 } from '../actionCreators/databaseActions';
+
+const DatePickerButton = React.forwardRef(({ value, onClick }, ref) => (
+	<button
+		type='button'
+		ref={ref}
+		onClick={onClick}
+		className='w-full text-center cursor-pointer rounded-xl py-2.5 px-4 bg-white text-slate-900 border border-slate-300 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-slate-900 dark:text-white dark:border-slate-600'
+		aria-label='Elegir fecha'
+	>
+		{value || 'Elegir fecha'}
+	</button>
+));
 
 const ExpenseFilter = () => {
 	const dispatch = useDispatch();
@@ -59,9 +71,15 @@ const ExpenseFilter = () => {
 		const day = moment(selectedDate).date();
 
 		setSelectedDate(selectedDate);
-		setSelectedFilter('day');
+		dispatch(setSelectedFilter('day'));
+		dispatch(setFilterChanging(true));
+		dispatch({ type: 'SET_FETCHING', isDataFetching: true });
 
-		dispatch(filterDataAction(user.uid, 'day', year, month, week, day));
+		Promise.resolve(dispatch(filterDataAction(user.uid, 'day', year, month, week, day)))
+			.finally(() => {
+				dispatch({ type: 'SET_FETCHING', isDataFetching: false });
+				dispatch(setFilterChanging(false));
+			});
 	};
 
 	const getFormattedDate = (selectedDate) => {
@@ -138,12 +156,10 @@ const ExpenseFilter = () => {
 					</button>
 
 					<DatePicker
-						className='text-center cursor-pointer rounded-xl py-2.5 px-4 bg-white text-slate-900 border border-slate-300 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-slate-900 dark:text-white dark:border-slate-600'
 						selected={selectedDate}
-						readOnly
-						onFocus={(event) => event.target.blur()}
 						onChange={(date) => handleDateChange(date, dispatch)}
 						value={getFormattedDate(selectedDate)}
+						customInput={<DatePickerButton />}
 						locale='es'
 						showYearDropdown
 						scrollableMonthYearDropdown
