@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FaBell } from 'react-icons/fa';
-import { FaRobot } from 'react-icons/fa';
 import { RiAdvertisementLine } from 'react-icons/ri';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -8,33 +7,18 @@ import { getPaymentDataAction } from '../actionCreators/databaseActions';
 
 const NotificationDropdown = () => {
 	const [showDropdown, setShowDropdown] = useState(false);
-	const [notifications, setNotifications] = useState(['Elimina la publicidad']);
 	const [notificationRead, setNotificationRead] = useState(false);
 	const paymentData = useSelector((state) => state.database.paymentData);
+	const isPaymentDataLoading = useSelector(
+		(state) => state.database.isPaymentDataLoading
+	);
 	const user = useSelector((state) => state.auth.user);
 	const dispatch = useDispatch();
-
-	const dropdownRef = useRef(null);
 	const navigate = useNavigate();
-	const timeoutRef = useRef(null); // Use a ref to store the timeout ID
+	const dropdownRef = useRef(null);
 
-	const handleDropdownToggle = () => {
-		setShowDropdown(!showDropdown);
-		if (!notificationRead) {
-			setNotificationRead(true);
-			setNotifications([]);
-
-			// Clear the previous timeout (if any)
-			if (timeoutRef.current) {
-				clearTimeout(timeoutRef.current);
-			}
-
-			// Set a new timeout to reset notificationRead
-			timeoutRef.current = setTimeout(() => {
-				setNotificationRead(false);
-			}, 5000);
-		}
-	};
+	const hasSubscriptionNotice = !isPaymentDataLoading && !paymentData;
+	const unreadCount = hasSubscriptionNotice && !notificationRead ? 1 : 0;
 
 	useEffect(() => {
 		if (user) {
@@ -42,75 +26,90 @@ const NotificationDropdown = () => {
 		}
 	}, [dispatch, user]);
 
-	const handleHideDropdown = (event) => {
-		if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-			setShowDropdown(false);
-		}
-	};
-
 	useEffect(() => {
-		document.addEventListener('click', handleHideDropdown);
+		const handleOutsideClick = (event) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+				setShowDropdown(false);
+			}
+		};
+
+		const handleEscape = (event) => {
+			if (event.key === 'Escape') setShowDropdown(false);
+		};
+
+		document.addEventListener('pointerdown', handleOutsideClick);
+		document.addEventListener('keydown', handleEscape);
 
 		return () => {
-			document.removeEventListener('click', handleHideDropdown);
-
-			// Clear the timeout when the component unmounts
-			if (timeoutRef.current) {
-				clearTimeout(timeoutRef.current);
-			}
+			document.removeEventListener('pointerdown', handleOutsideClick);
+			document.removeEventListener('keydown', handleEscape);
 		};
 	}, []);
 
-	const handleSuscribirClick = () => {
-		let path = !paymentData ? `subscripcion` : `/transacciones`;
-		navigate(path);
-		setShowDropdown(false);
+	const handleDropdownToggle = () => {
+		setShowDropdown((value) => !value);
+		if (hasSubscriptionNotice) setNotificationRead(true);
 	};
 
 	return (
 		<div className='relative inline-block text-left' ref={dropdownRef}>
-			<div>
-				<button
-					type='button'
-					className='flex items-center focus:outline-none'
-					onClick={handleDropdownToggle}
-				>
-					<div className='relative'>
-						<FaBell className='text-xl text-gray-600 dark:text-white' />
-						{notifications.length > 0 && (
-							<div
-								className={`absolute -top-1/2 left-full transform -translate-y-1/2 -ml-2 bg-red-500 text-white w-4 h-4 rounded-full flex items-center justify-center text-xs ${
-									notificationRead ? 'hidden' : 'animate-pulse'
-								}`}
-							>
-								{notifications.length}
-							</div>
-						)}
-					</div>
-				</button>
-			</div>
+			<button
+				type='button'
+				className='relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-slate-200 dark:hover:bg-slate-800'
+				onClick={handleDropdownToggle}
+				aria-label={unreadCount ? `Notificaciones, ${unreadCount} sin leer` : 'Notificaciones'}
+				aria-haspopup='menu'
+				aria-expanded={showDropdown}
+			>
+				<FaBell className='text-lg' />
+				{unreadCount > 0 && (
+					<span className='absolute right-0.5 top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white'>
+						{unreadCount}
+					</span>
+				)}
+			</button>
+
 			{showDropdown && (
-				<div className='origin-top-right absolute -right-12 mt-4 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50'>
-					<div
-						className='p-1'
-						role='menu'
-						aria-orientation='vertical'
-						aria-labelledby='options-menu'
-					>
-						<button
-							className='block px-4 py-2 flex items-center text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer'
-							role='menuitem'
-							onClick={handleSuscribirClick}
-							style={{ minWidth: '100px' }}
-						>
-							{paymentData ? 'Conoce a LITA' : 'Eliminar publicidad'}
-							{paymentData ? (
-								<FaRobot className='ml-2 text-lg' />
-							) : (
-								<RiAdvertisementLine className='ml-2 text-lg' />
-							)}
-						</button>
+				<div
+					className='fixed right-3 top-[4.75rem] z-[100] w-[min(19rem,calc(100vw-1.5rem))] rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-slate-700 dark:bg-slate-900 sm:absolute sm:right-0 sm:top-auto sm:mt-2 sm:w-72'
+					role='menu'
+					aria-label='Notificaciones'
+				>
+					<div className='px-3 py-2'>
+						<p className='text-sm font-extrabold text-slate-900 dark:text-white'>
+							Notificaciones
+						</p>
 					</div>
+
+					{isPaymentDataLoading ? (
+						<div className='mx-2 my-2 h-14 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800' />
+					) : hasSubscriptionNotice ? (
+						<button
+							type='button'
+							className='flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-slate-100 dark:hover:bg-slate-800'
+							role='menuitem'
+							onClick={() => {
+								setShowDropdown(false);
+								navigate('/subscripcion');
+							}}
+						>
+							<span className='inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-950/50 dark:text-purple-300'>
+								<RiAdvertisementLine />
+							</span>
+							<span>
+								<span className='block text-sm font-bold text-slate-900 dark:text-white'>
+									Eliminar publicidad
+								</span>
+								<span className='mt-0.5 block text-xs text-slate-500 dark:text-slate-400'>
+									Conocé las opciones de suscripción.
+								</span>
+							</span>
+						</button>
+					) : (
+						<p className='px-3 py-4 text-sm text-slate-500 dark:text-slate-400'>
+							No tenés notificaciones pendientes.
+						</p>
+					)}
 				</div>
 			)}
 		</div>

@@ -27,7 +27,7 @@ function SignUp() {
 	};
 
 	if (user) {
-		return <Navigate to='/ingresar' />;
+		return <Navigate to='/transacciones' />;
 	}
 
 	return (
