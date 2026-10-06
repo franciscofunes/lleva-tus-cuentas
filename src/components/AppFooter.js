@@ -2,8 +2,8 @@ import React from 'react';
 
 export default function AppFooter() {
 	return (
-		<footer className='relative mt-4 overflow-hidden bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white' aria-label='Pie de página'>
-			<div className='h-16 sm:h-20 pointer-events-none' aria-hidden='true'>
+		<footer className='relative overflow-hidden bg-white text-slate-900 dark:bg-slate-900 dark:text-white' aria-label='Pie de página'>
+			<div className='h-12 sm:h-16 lg:h-20 pointer-events-none' aria-hidden='true'>
 				<svg className='block h-full w-full' viewBox='0 0 1440 160' preserveAspectRatio='none' focusable='false'>
 					<path d='M0 84C170 28 318 26 474 74C630 122 760 137 914 94C1072 50 1214 19 1440 58V160H0Z' fill='currentColor' className='text-purple-700/80' />
 					<path d='M0 112C192 63 354 67 522 109C690 151 839 151 1011 110C1172 72 1302 65 1440 91V160H0Z' fill='currentColor' className='text-indigo-700/70' />
