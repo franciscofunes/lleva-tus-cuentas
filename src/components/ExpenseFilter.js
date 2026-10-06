@@ -12,12 +12,13 @@ import {
 	setFilterChanging,
 } from '../actionCreators/databaseActions';
 
-const DatePickerButton = React.forwardRef(({ value, onClick }, ref) => (
+const DatePickerButton = React.forwardRef(({ value, onClick, disabled }, ref) => (
 	<button
 		type='button'
 		ref={ref}
 		onClick={onClick}
-		className='w-full text-center cursor-pointer rounded-xl py-2.5 px-4 bg-white text-slate-900 border border-slate-300 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-slate-900 dark:text-white dark:border-slate-600'
+		disabled={disabled}
+		className='w-full disabled:cursor-wait disabled:opacity-60 text-center cursor-pointer rounded-xl py-2.5 px-4 bg-white text-slate-900 border border-slate-300 hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-slate-900 dark:text-white dark:border-slate-600'
 		aria-label='Elegir fecha'
 	>
 		{value || 'Elegir fecha'}
@@ -36,18 +37,14 @@ const ExpenseFilter = () => {
 	const user = useSelector((state) => state.auth.user);
 
 	const handleFilterClick = async (filterType) => {
-		dispatch({ type: 'SET_FETCHING', isDataFetching: true });
 		dispatch(setFilterChanging(true));
+		dispatch(setSelectedFilter(filterType));
 
-		if (filterType?.includes('total')) {
-			dispatch(setSelectedFilter(filterType));
-
-			await dispatch(getTotalBalance(user.uid));
-
-			dispatch({ type: 'SET_FETCHING', isDataFetching: false });
-			dispatch(setFilterChanging(false));
-		} else {
-			dispatch(setSelectedFilter(filterType));
+		try {
+			if (filterType?.includes('total')) {
+				await dispatch(getTotalBalance(user.uid));
+				return;
+			}
 
 			const year = moment(selectedDate).year();
 			const month = moment(selectedDate).month();
@@ -57,14 +54,12 @@ const ExpenseFilter = () => {
 			await dispatch(
 				filterDataAction(user.uid, filterType, year, month, week, day)
 			);
-
-			dispatch(setSelectedFilter(filterType));
-			dispatch({ type: 'SET_FETCHING', isDataFetching: false });
+		} finally {
 			dispatch(setFilterChanging(false));
 		}
 	};
 
-	const handleDateChange = (selectedDate, dispatch) => {
+	const handleDateChange = async (selectedDate, dispatch) => {
 		const year = moment(selectedDate).year();
 		const month = moment(selectedDate).month();
 		const week = moment(selectedDate).week();
@@ -73,13 +68,14 @@ const ExpenseFilter = () => {
 		setSelectedDate(selectedDate);
 		dispatch(setSelectedFilter('day'));
 		dispatch(setFilterChanging(true));
-		dispatch({ type: 'SET_FETCHING', isDataFetching: true });
 
-		Promise.resolve(dispatch(filterDataAction(user.uid, 'day', year, month, week, day)))
-			.finally(() => {
-				dispatch({ type: 'SET_FETCHING', isDataFetching: false });
-				dispatch(setFilterChanging(false));
-			});
+		try {
+			await dispatch(
+				filterDataAction(user.uid, 'day', year, month, week, day)
+			);
+		} finally {
+			dispatch(setFilterChanging(false));
+		}
 	};
 
 	const getFormattedDate = (selectedDate) => {
@@ -106,7 +102,8 @@ const ExpenseFilter = () => {
 							selectedFilter === 'year'
 								? 'bg-indigo-500 text-white'
 								: 'bg-gray-200 text-black'
-						} hover:scale-105 hover:opacity-75`}
+						} hover:scale-105 hover:opacity-75 disabled:cursor-wait disabled:opacity-60 disabled:hover:scale-100`}
+						disabled={isFilterChanging}
 						onClick={() => handleFilterClick('year')}
 					>
 						Año
@@ -116,7 +113,8 @@ const ExpenseFilter = () => {
 							selectedFilter === 'month'
 								? 'bg-indigo-500 text-white'
 								: 'bg-gray-200 text-black'
-						} hover:scale-105 hover:opacity-75`}
+						} hover:scale-105 hover:opacity-75 disabled:cursor-wait disabled:opacity-60 disabled:hover:scale-100`}
+						disabled={isFilterChanging}
 						onClick={() => handleFilterClick('month')}
 					>
 						Mes
@@ -126,7 +124,8 @@ const ExpenseFilter = () => {
 							selectedFilter === 'week'
 								? 'bg-indigo-500 text-white'
 								: 'bg-gray-200 text-black'
-						} hover:scale-105 hover:opacity-75`}
+						} hover:scale-105 hover:opacity-75 disabled:cursor-wait disabled:opacity-60 disabled:hover:scale-100`}
+						disabled={isFilterChanging}
 						onClick={() => handleFilterClick('week')}
 					>
 						Semana
@@ -136,7 +135,8 @@ const ExpenseFilter = () => {
 							selectedFilter === 'day'
 								? 'bg-indigo-500 text-white'
 								: 'bg-gray-200 text-black'
-						} hover:scale-105 hover:opacity-75`}
+						} hover:scale-105 hover:opacity-75 disabled:cursor-wait disabled:opacity-60 disabled:hover:scale-100`}
+						disabled={isFilterChanging}
 						onClick={() => handleFilterClick('day')}
 					>
 						Día
@@ -149,7 +149,8 @@ const ExpenseFilter = () => {
 							selectedFilter === 'total'
 								? 'bg-indigo-500 text-white'
 								: 'bg-gray-200 text-black'
-						} hover:scale-105 hover:opacity-75`}
+						} hover:scale-105 hover:opacity-75 disabled:cursor-wait disabled:opacity-60 disabled:hover:scale-100`}
+						disabled={isFilterChanging}
 						onClick={() => handleFilterClick('total')}
 					>
 						Balance Total
@@ -157,6 +158,7 @@ const ExpenseFilter = () => {
 
 					<DatePicker
 						selected={selectedDate}
+						disabled={isFilterChanging}
 						onChange={(date) => handleDateChange(date, dispatch)}
 						value={getFormattedDate(selectedDate)}
 						customInput={<DatePickerButton />}
