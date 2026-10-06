@@ -19,6 +19,7 @@ import LitaAssistantPanel from "../components/LitaAssitantPanel";
 import SearchBar from "../components/SearchBar";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
+import QuickAccessCard from "../components/QuickAccessCard";
 import kavakAd from "../imgs/ads/kavakAd.jpg";
 import cocacolaAd from "../imgs/ads/cocaColaAd.jpg";
 import cbseAd from "../imgs/ads/cbseAd.jpg";
@@ -279,17 +280,15 @@ function Dashboard() {
         className="min-h-screen max-w-full bg-slate-50 dark:bg-gray-900 dark:text-zinc-100 px-3 sm:px-5 lg:px-8 py-5"
       >
         <div className="max-w-7xl mx-auto w-full">
-          <section className="mb-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-sm">
-            <p className="text-sm font-bold uppercase tracking-wider text-purple-500">Tu dinero, en un solo lugar</p>
-            <div className="mt-2 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-              <div><h1 className="text-2xl sm:text-3xl font-extrabold">Resumen financiero</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Movimientos, balance e inversiones con acceso rápido a lo que más usás.</p></div>
-              <div className="grid grid-cols-3 gap-2 sm:flex">
-                <button type="button" onClick={openModal} className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 text-sm font-bold"><FaPlus /> <span className="hidden sm:inline">Movimiento</span></button>
-                <Link to="/portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
-                <button type="button" onClick={toggleDataVisibility} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
-              </div>
-            </div>
-          </section>
+          <QuickAccessCard
+            eyebrow="Tu dinero, en un solo lugar"
+            title="Resumen financiero"
+            description="Movimientos, balance e inversiones con acceso rápido a lo que más usás."
+          >
+            <button type="button" onClick={openModal} className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 text-sm font-bold"><FaPlus /> <span className="hidden sm:inline">Movimiento</span></button>
+            <Link to="/portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
+            <button type="button" onClick={toggleDataVisibility} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
+          </QuickAccessCard>
           <div className="grid lg:grid-cols-3 gap-5 items-start">
         <div
           id="left"
