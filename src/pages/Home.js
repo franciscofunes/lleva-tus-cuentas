@@ -8,6 +8,7 @@ import AppFooter from '../components/AppFooter';
 function Home() {
 	const user = useSelector((state) => state.auth.user);
 	return (
+		<>
 		<main className='min-h-[calc(100vh-5rem)] bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-white'>
 			<section className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 lg:py-20'>
 				<div className='grid lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-12 items-center'>
