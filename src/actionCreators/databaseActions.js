@@ -166,7 +166,7 @@ export const getTotalBalance = (userId) => {
 			return data;
 		} catch (error) {
 			console.error(error);
-			throw error;
+			return null;
 		} finally {
 			dispatch({ type: 'SET_FETCHING', isDataFetching: false });
 		}
@@ -293,7 +293,7 @@ export const filterDataAction = (
 			return expenses;
 		} catch (error) {
 			console.error(error);
-			throw error;
+			return null;
 		} finally {
 			dispatch({ type: 'SET_FETCHING', isDataFetching: false });
 		}
@@ -358,7 +358,7 @@ export const searchExpenses = (searchTerm, userId) => async (dispatch) => {
 		return expenses;
 	} catch (error) {
 		console.error('Error searching expenses: ', error);
-		throw error;
+		return [];
 	} finally {
 		dispatch({ type: 'SET_FETCHING', isDataFetching: false });
 	}
