@@ -19,7 +19,7 @@ export const databaseReducer = (state = initState, action) => {
 		case 'GOT_DATA':
 			return { ...state, docs: action.data, isDataFetching: false };
 		case 'GOT_CATEGORY_DATA':
-			return { ...state, categories: action.data, isDataFetching: false };
+			return { ...state, categories: action.data };
 		case 'STORE_ERROR':
 			return { ...state, error: action.err.message };
 		case 'DELETE_DOC':
