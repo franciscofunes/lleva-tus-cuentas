@@ -130,6 +130,7 @@ function Portfolio() {
 	const togglePortfolioSection = (section) => setCollapsedSections((current) => ({ ...current, [section]: !current[section] }));
 	const privateMoney = (value, currency) => hideValues ? '••••••' : money(value, currency);
 	const privatePercent = (value, suffix = '%') => hideValues ? '••••' : `${Number(value || 0).toFixed(2)}${suffix}`;
+	const privateCount = (value) => hideValues ? '••' : value;
 
 	useEffect(() => {
 		if (!user) return undefined;
@@ -496,17 +497,17 @@ function Portfolio() {
 				<section className='grid grid-cols-3 gap-2 sm:gap-4 mb-6'>
 					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
 						<FaWallet className='text-purple-500 mb-2' />
-						<p className='text-xl sm:text-2xl font-bold'>{portfolioMeta.positions}</p>
+						<p className='text-xl sm:text-2xl font-bold'>{privateCount(portfolioMeta.positions)}</p>
 						<p className='text-xs text-gray-500'>Posiciones</p>
 					</div>
 					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
 						<FaChartLine className='text-purple-500 mb-2' />
-						<p className='text-xl sm:text-2xl font-bold'>{portfolioMeta.currencies}</p>
+						<p className='text-xl sm:text-2xl font-bold'>{privateCount(portfolioMeta.currencies)}</p>
 						<p className='text-xs text-gray-500'>Monedas</p>
 					</div>
 					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
 						<FaRegClock className='text-purple-500 mb-2' />
-						<p className='text-xl sm:text-2xl font-bold'>{positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length}</p>
+						<p className='text-xl sm:text-2xl font-bold'>{privateCount(positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length)}</p>
 						<p className='text-xs text-gray-500'>Con ganancias</p>
 					</div>
 				</section>
@@ -528,10 +529,10 @@ function Portfolio() {
 					</div>}
 				</section>
 
-				<section id='portfolio-charts' className='scroll-mt-4'><button type='button' onClick={() => togglePortfolioSection('charts')} className='w-full flex justify-end mb-2 text-xs font-semibold text-purple-500' aria-expanded={!collapsedSections.charts}>{collapsedSections.charts ? 'Mostrar gráficos' : 'Ocultar gráficos'}</button>{!collapsedSections.charts && <PortfolioCharts positions={positions} snapshots={snapshots} />}</section>
+				<section id='portfolio-charts' className='scroll-mt-4'><button type='button' onClick={() => togglePortfolioSection('charts')} className='w-full flex justify-end mb-2 text-xs font-semibold text-purple-500' aria-expanded={!collapsedSections.charts}>{collapsedSections.charts ? 'Mostrar gráficos' : 'Ocultar gráficos'}</button>{!collapsedSections.charts && <PortfolioCharts positions={positions} snapshots={snapshots} hideValues={hideValues} />}</section>
 
 				<section id='portfolio-positions' className='space-y-3 pb-6 lg:pb-8 scroll-mt-4'>
-						<button type='button' onClick={() => togglePortfolioSection('positions')} className='w-full flex items-center justify-between text-left' aria-expanded={!collapsedSections.positions}><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-purple-500'>{collapsedSections.positions ? 'Mostrar' : `${positions.length} activas · Ocultar`}</span></button>
+						<button type='button' onClick={() => togglePortfolioSection('positions')} className='w-full flex items-center justify-between text-left' aria-expanded={!collapsedSections.positions}><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-purple-500'>{collapsedSections.positions ? 'Mostrar' : `${privateCount(positions.length)} activas · Ocultar`}</span></button>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
 						{!loading && !positions.length && (
 							<div className='border border-dashed dark:border-slate-700 rounded-2xl p-8 text-center'>
@@ -564,17 +565,17 @@ function Portfolio() {
 										{position.trackingMode === 'MATURITY' && position.maturityDate && <p className='text-xs text-gray-400'>Seguimiento al vencimiento: {position.maturityDate}</p>}
 										<p className='text-xs text-gray-400'>Tracking: {position.trackingMode || 'MANUAL'}</p>
 										{position.category === 'FCI' && position.ticker && <p className='text-xs text-gray-400'>Ticker: {position.ticker}</p>}
-										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
-										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-green-600 dark:text-green-500'>Rend. 1A: {Number(position.performance1Y).toFixed(2)}%</p>}
-										{position.category === 'FCI' && position.monthlyReturns && Object.keys(position.monthlyReturns).length > 0 && <p className='text-sm font-bold text-green-600 dark:text-green-400'>YTD compuesto: {((Object.values(position.monthlyReturns).map(Number).filter(Number.isFinite).reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100).toFixed(2)}%</p>}
+										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {hideValues ? '••••••' : Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
+										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-green-600 dark:text-green-500'>Rend. 1A: {privatePercent(position.performance1Y)}</p>}
+										{position.category === 'FCI' && position.monthlyReturns && Object.keys(position.monthlyReturns).length > 0 && <p className='text-sm font-bold text-green-600 dark:text-green-400'>YTD compuesto: {hideValues ? '••••' : `${((Object.values(position.monthlyReturns).map(Number).filter(Number.isFinite).reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100).toFixed(2)}%`}</p>}
 										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-green-600 dark:text-green-500 mt-1'>Ganado: {privateMoney(position.realizedEarnings, position.currency)}</p>}
-										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {Number(position.effectiveRate).toFixed(2)}%</p>}
+										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {privatePercent(position.effectiveRate)}</p>}
 										{performanceByPosition[position.id] && (
 											<div className='mt-2 text-sm'>
 												<p className={performanceByPosition[position.id].change >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500'}>
-													Cambio observado: {privateMoney(performanceByPosition[position.id].change, position.currency)} ({performanceByPosition[position.id].percent.toFixed(2)}%)
+													Cambio observado: {privateMoney(performanceByPosition[position.id].change, position.currency)} ({privatePercent(performanceByPosition[position.id].percent)})
 												</p>
-												<p className='text-xs text-gray-400'>{performanceByPosition[position.id].count} snapshots</p>
+												<p className='text-xs text-gray-400'>{privateCount(performanceByPosition[position.id].count)} snapshots</p>
 											</div>
 										)}
 									</div>
