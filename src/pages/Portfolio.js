@@ -98,6 +98,8 @@ function Portfolio() {
 	const [verifyBalance, setVerifyBalance] = useState('');
 	const [verifyChangeType, setVerifyChangeType] = useState('earning');
 	const [verifyNote, setVerifyNote] = useState('');
+	const [verifyNav, setVerifyNav] = useState('');
+	const [verifyReportedEarnings, setVerifyReportedEarnings] = useState('');
 	const [rateTarget, setRateTarget] = useState(null);
 		const [quickRate, setQuickRate] = useState('');
 	const [pendingAction, setPendingAction] = useState('');
@@ -298,11 +300,13 @@ function Portfolio() {
 		if (!verifyTarget || verifyBalance === '' || pendingAction) return;
 		setPendingAction('verify');
 		try {
-			await verifyPortfolioPosition(user.uid, verifyTarget, verifyBalance, { changeType: verifyChangeType, note: verifyNote });
+			await verifyPortfolioPosition(user.uid, verifyTarget, verifyBalance, { changeType: verifyChangeType, note: verifyNote, nav: verifyNav, reportedEarnings: verifyReportedEarnings });
 			toast.success('Saldo verificado y snapshot guardado');
 			setVerifyTarget(null);
 			setVerifyBalance('');
 			setVerifyNote('');
+			setVerifyNav('');
+			setVerifyReportedEarnings('');
 		} catch (error) {
 			toast.error('No se pudo verificar el saldo');
 		} finally {
@@ -575,19 +579,12 @@ function Portfolio() {
 						<h2 className='text-xl font-bold'>Confirmar saldo</h2>
 						<p className='mt-2 text-sm text-gray-300'>Ingresá el saldo actual de <strong>{verifyTarget?.name}</strong>. Al confirmar también se guardará un snapshot para el histórico.</p>
 						<input autoFocus className='portfolio-input mt-4' type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo actual' />
-						<label className='block mt-3 text-sm text-gray-300'>¿Qué explica el cambio de saldo?
-							<select className='portfolio-input mt-1' value={verifyChangeType} onChange={(event) => setVerifyChangeType(event.target.value)}>
-								<option value='earning'>Rendimiento</option>
-								<option value='deposit'>Aporte</option>
-								<option value='withdrawal'>Retiro</option>
-								<option value='adjustment'>Ajuste</option>
-							</select>
-						</label>
+						{verifyTarget?.trackingMode === 'NAV' ? <div className='mt-3 space-y-3'><div className='rounded-lg border border-blue-400/40 bg-blue-500/10 p-3 text-sm text-blue-100'>Esta posición se valúa por NAV. El cambio de saldo se guardará como <strong>variación de valuación</strong>, no como rendimiento confirmado ni como movimiento para Transacciones.</div><input className='portfolio-input' type='number' step='0.000001' min='0' value={verifyNav} onChange={(event) => setVerifyNav(event.target.value)} placeholder='NAV / valor cuotaparte (opcional)' /><input className='portfolio-input' type='number' step='0.01' value={verifyReportedEarnings} onChange={(event) => setVerifyReportedEarnings(event.target.value)} placeholder='Rendimiento acumulado informado (opcional)' /></div> : <label className='block mt-3 text-sm text-gray-300'>¿Qué explica el cambio de saldo?<select className='portfolio-input mt-1' value={verifyChangeType} onChange={(event) => setVerifyChangeType(event.target.value)}><option value='earning'>Rendimiento</option><option value='deposit'>Aporte</option><option value='withdrawal'>Retiro</option><option value='adjustment'>Ajuste</option></select></label>}
 						<textarea className='portfolio-input mt-3' rows='2' value={verifyNote} onChange={(event) => setVerifyNote(event.target.value)} placeholder='Nota opcional sobre esta verificación' />
-						<p className='mt-2 text-xs text-gray-400'>Solo “Rendimiento” se acumulará como ganancia confirmada. Aportes y retiros quedan separados para no inflar el rendimiento.</p>
+						<p className='mt-2 text-xs text-gray-400'>{verifyTarget?.trackingMode === 'NAV' ? 'Las variaciones NAV quedan fuera del cierre mensual y de Transacciones hasta que exista una ganancia realizada.' : 'Solo “Rendimiento” se acumulará como ganancia confirmada. Aportes y retiros quedan separados para no inflar el rendimiento.'}</p>
 						<div className='grid grid-cols-2 gap-2 mt-5'>
 							<button type='button' onClick={() => setVerifyTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
-							<button type='button' disabled={verifyBalance === '' || pendingAction === 'verify'} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold'>Confirmar saldo</button>
+							<button type='button' disabled={verifyBalance === '' || pendingAction === 'verify'} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'verify' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'verify' ? 'Verificando…' : 'Confirmar saldo'}</button>
 						</div>
 					</div>
 				)}

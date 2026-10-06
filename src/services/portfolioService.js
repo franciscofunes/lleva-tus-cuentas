@@ -55,7 +55,8 @@ export const createPortfolioSnapshot = (userId, position, overrides = {}) =>
 		currency: position.currency,
 		balance: Number(overrides.balance ?? position.balance),
 		annualRate: Number(position.annualRate || 0),
-		nav: position.nav == null ? null : Number(position.nav),
+		nav: overrides.nav == null ? (position.nav == null ? null : Number(position.nav)) : Number(overrides.nav),
+		reportedEarnings: overrides.reportedEarnings == null ? null : Number(overrides.reportedEarnings),
 		shares: position.shares == null ? null : Number(position.shares),
 		expectedEarning: Number(overrides.expectedEarning || 0),
 		observedEarning: Number(overrides.observedEarning || 0),
@@ -72,7 +73,8 @@ export const verifyPortfolioPosition = async (userId, position, balance, metadat
 	const previousBalance = Number(position.balance || 0);
 	const observedEarning = nextBalance - previousBalance;
 	const annualRate = Number(position.annualRate || 0) / 100;
-	const changeType = metadata.changeType || 'unclassified';
+	const isNav = position.trackingMode === 'NAV';
+	const changeType = isNav ? 'valuation' : (metadata.changeType || 'unclassified');
 	const confirmedEarning = changeType === 'earning' ? observedEarning : 0;
 	const cashFlow = changeType === 'deposit' ? Math.max(observedEarning, 0) : changeType === 'withdrawal' ? Math.min(observedEarning, 0) : 0;
 	const expectedEarning = position.trackingMode === 'DAILY_RATE'
@@ -88,14 +90,18 @@ export const verifyPortfolioPosition = async (userId, position, balance, metadat
 		confirmedEarning,
 		cashFlow,
 		note: metadata.note || '',
+		nav: metadata.nav,
+		reportedEarnings: metadata.reportedEarnings,
 	});
 
-	return positions(userId).doc(position.id).update({
+	const positionUpdate = {
 		balance: nextBalance,
-		lastEarning: observedEarning,
+		lastEarning: isNav ? Number(metadata.reportedEarnings ?? position.lastEarning ?? 0) : (changeType === 'earning' ? observedEarning : 0),
+		...(isNav && metadata.nav !== '' && metadata.nav != null ? { nav: Number(metadata.nav), navDate: new Date().toISOString().slice(0, 10) } : {}),
 		lastVerifiedAt: new Date(),
 		updatedAt: new Date(),
-	});
+	};
+	return positions(userId).doc(position.id).update(positionUpdate);
 };
 
 export const subscribePortfolioSnapshots = (userId, onData, onError) =>
