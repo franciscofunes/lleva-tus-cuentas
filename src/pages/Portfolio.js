@@ -130,6 +130,7 @@ function Portfolio() {
 	const togglePortfolioSection = (section) => setCollapsedSections((current) => ({ ...current, [section]: !current[section] }));
 	const privateMoney = (value, currency) => hideValues ? '••••••' : money(value, currency);
 	const privatePercent = (value, suffix = '%') => hideValues ? '••••' : `${Number(value || 0).toFixed(2)}${suffix}`;
+	const privateCount = (value) => hideValues ? '••' : value;
 
 	useEffect(() => {
 		if (!user) return undefined;
@@ -496,17 +497,17 @@ function Portfolio() {
 				<section className='grid grid-cols-3 gap-2 sm:gap-4 mb-6'>
 					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
 						<FaWallet className='text-purple-500 mb-2' />
-						<p className='text-xl sm:text-2xl font-bold'>{portfolioMeta.positions}</p>
+						<p className='text-xl sm:text-2xl font-bold'>{privateCount(portfolioMeta.positions)}</p>
 						<p className='text-xs text-gray-500'>Posiciones</p>
 					</div>
 					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
 						<FaChartLine className='text-purple-500 mb-2' />
-						<p className='text-xl sm:text-2xl font-bold'>{portfolioMeta.currencies}</p>
+						<p className='text-xl sm:text-2xl font-bold'>{privateCount(portfolioMeta.currencies)}</p>
 						<p className='text-xs text-gray-500'>Monedas</p>
 					</div>
 					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
 						<FaRegClock className='text-purple-500 mb-2' />
-						<p className='text-xl sm:text-2xl font-bold'>{positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length}</p>
+						<p className='text-xl sm:text-2xl font-bold'>{privateCount(positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length)}</p>
 						<p className='text-xs text-gray-500'>Con ganancias</p>
 					</div>
 				</section>
@@ -531,7 +532,7 @@ function Portfolio() {
 				<section id='portfolio-charts' className='scroll-mt-4'><button type='button' onClick={() => togglePortfolioSection('charts')} className='w-full flex justify-end mb-2 text-xs font-semibold text-purple-500' aria-expanded={!collapsedSections.charts}>{collapsedSections.charts ? 'Mostrar gráficos' : 'Ocultar gráficos'}</button>{!collapsedSections.charts && <PortfolioCharts positions={positions} snapshots={snapshots} hideValues={hideValues} />}</section>
 
 				<section id='portfolio-positions' className='space-y-3 pb-6 lg:pb-8 scroll-mt-4'>
-						<button type='button' onClick={() => togglePortfolioSection('positions')} className='w-full flex items-center justify-between text-left' aria-expanded={!collapsedSections.positions}><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-purple-500'>{collapsedSections.positions ? 'Mostrar' : `${positions.length} activas · Ocultar`}</span></button>
+						<button type='button' onClick={() => togglePortfolioSection('positions')} className='w-full flex items-center justify-between text-left' aria-expanded={!collapsedSections.positions}><h2 className='text-xl font-bold'>Posiciones</h2><span className='text-xs text-purple-500'>{collapsedSections.positions ? 'Mostrar' : `${privateCount(positions.length)} activas · Ocultar`}</span></button>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
 						{!loading && !positions.length && (
 							<div className='border border-dashed dark:border-slate-700 rounded-2xl p-8 text-center'>
@@ -574,7 +575,7 @@ function Portfolio() {
 												<p className={performanceByPosition[position.id].change >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500'}>
 													Cambio observado: {privateMoney(performanceByPosition[position.id].change, position.currency)} ({privatePercent(performanceByPosition[position.id].percent)})
 												</p>
-												<p className='text-xs text-gray-400'>{performanceByPosition[position.id].count} snapshots</p>
+												<p className='text-xs text-gray-400'>{privateCount(performanceByPosition[position.id].count)} snapshots</p>
 											</div>
 										)}
 									</div>
