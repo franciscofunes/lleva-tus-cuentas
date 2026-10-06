@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect } from 'react';
 import { IoMdClose } from 'react-icons/io';
 
-const GenericModal = ({ show, component: Component, closeModal, fitViewport = false, ...props }) => {
+const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
 	const content = React.isValidElement(Component) ? Component : <Component {...props} />;
 
 	useEffect(() => {
@@ -45,11 +45,7 @@ const GenericModal = ({ show, component: Component, closeModal, fitViewport = fa
 						<motion.div
 							role='dialog'
 							aria-modal='true'
-							className={`relative flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-purple-500/70 bg-white text-slate-900 shadow-2xl dark:bg-slate-900 dark:text-white ${
-								fitViewport
-									? 'h-auto max-h-[calc(100svh-1rem)] sm:max-h-[calc(100dvh-3rem)]'
-									: 'h-auto max-h-[calc(100svh-1rem)] sm:max-h-[calc(100dvh-3rem)]'
-							}`}
+							className='relative flex h-auto w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-purple-500/70 bg-white text-slate-900 shadow-2xl max-h-[calc(100svh-1rem)] dark:bg-slate-900 dark:text-white sm:max-h-[calc(100dvh-3rem)]'
 							initial={{ opacity: 0, y: 24, scale: 0.98 }}
 							animate={{ opacity: 1, y: 0, scale: 1 }}
 							exit={{ opacity: 0, y: 24, scale: 0.98 }}
