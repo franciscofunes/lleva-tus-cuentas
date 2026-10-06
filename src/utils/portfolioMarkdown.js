@@ -157,7 +157,7 @@ export const parsePortfolioMarkdown = (markdown) => {
 		if (!trimmed) return;
 
 		const heading = trimmed.replace(/^#+\s*/, '');
-		if (/^rentabilidad mensual(?:\s+\d{4})?\s*:?s*$/i.test(heading)) {
+		if (/^rentabilidad mensual(?:\s+\d{4})?\s*:?\s*$/i.test(heading)) {
 			section = 'monthlyReturns';
 			return;
 		}
