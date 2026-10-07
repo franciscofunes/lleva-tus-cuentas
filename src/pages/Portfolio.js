@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { Reorder } from 'framer-motion';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt } from 'react-icons/fa';
 import QuickAccessCard from '../components/QuickAccessCard';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -11,6 +12,7 @@ import PortfolioCharts from '../components/PortfolioCharts';
 import GenericModal from '../components/GenericModal';
 import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import FloatingMenu from '../components/FloatingMenu';
+import SortablePortfolioPositionCard from '../components/SortablePortfolioPositionCard';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
 import { exportPortfolioXlsx, buildPortfolioLlmMarkdown } from '../utils/portfolioExport';
 import eyeHide from '../imgs/eyeHide.svg';
@@ -20,6 +22,7 @@ import {
 	deletePortfolioPosition,
 	subscribePortfolioPositions,
 	subscribePortfolioSnapshots,
+	reorderPortfolioPositions,
 	updatePortfolioPosition,
 	verifyPortfolioPosition,
 } from '../services/portfolioService';
@@ -88,6 +91,7 @@ function Portfolio() {
 	const user = useSelector((state) => state.auth.user);
 	const isFetching = useSelector((state) => state.auth.isFetching);
 	const [positions, setPositions] = useState([]);
+	const positionsRef = useRef([]);
 	const [snapshots, setSnapshots] = useState([]);
 	const [form, setForm] = useState(emptyForm);
 	const [editingId, setEditingId] = useState(null);
@@ -139,6 +143,7 @@ function Portfolio() {
 		return subscribePortfolioPositions(
 			user.uid,
 			(data) => {
+				positionsRef.current = data;
 				setPositions(data);
 				setPositionsLoaded(true);
 			},
@@ -148,6 +153,37 @@ function Portfolio() {
 			}
 		);
 	}, [user]);
+
+	useEffect(() => {
+		positionsRef.current = positions;
+	}, [positions]);
+
+	const handleReorderPositions = (nextPositions) => {
+		positionsRef.current = nextPositions;
+		setPositions(nextPositions);
+	};
+
+	const persistPositionOrder = async () => {
+		if (!user?.uid || positionsRef.current.length < 2) return;
+		try {
+			await reorderPortfolioPositions(user.uid, positionsRef.current);
+		} catch (error) {
+			toast.error('No se pudo guardar el orden del portfolio');
+		}
+	};
+
+	const movePositionWithKeyboard = async (positionId, direction) => {
+		const current = positionsRef.current;
+		const index = current.findIndex((position) => position.id === positionId);
+		const targetIndex = index + direction;
+		if (index < 0 || targetIndex < 0 || targetIndex >= current.length) return;
+
+		const next = [...current];
+		const [moved] = next.splice(index, 1);
+		next.splice(targetIndex, 0, moved);
+		handleReorderPositions(next);
+		await persistPositionOrder();
+	};
 
 	useEffect(() => {
 		if (!user) return undefined;
@@ -657,8 +693,20 @@ function Portfolio() {
 								<button type='button' onClick={() => setShowForm(true)} className='mt-4 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors'>Agregar posición</button>
 							</div>
 						)}
-						{!loading && positions.map((position) => (
-							<article key={position.id} className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-5 shadow-sm'>
+						{!loading && positions.length > 0 && (
+							<Reorder.Group
+								axis='y'
+								values={positions}
+								onReorder={handleReorderPositions}
+								className='space-y-4'
+							>
+								{positions.map((position) => (
+									<SortablePortfolioPositionCard
+										key={position.id}
+										position={position}
+										onDragEnd={persistPositionOrder}
+										onKeyboardMove={movePositionWithKeyboard}
+									>
 								<div className='grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start'>
 									<div>
 										<p className='text-sm font-bold uppercase tracking-wide text-purple-500'>{position.institution}</p>
@@ -705,8 +753,10 @@ function Portfolio() {
 										<button title='Eliminar posición' aria-label='Eliminar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg text-red-500 border border-red-300 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30' onClick={() => requestDelete(position)}><FaTrashAlt /></button>
 									</div>
 								</div>
-							</article>
-						))}
+									</SortablePortfolioPositionCard>
+								))}
+							</Reorder.Group>
+						)}
 				</CollapsibleSection>
 				</>}
 			</div>
