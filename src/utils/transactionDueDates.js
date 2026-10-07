@@ -5,16 +5,15 @@ const normalizeCategoryName = (value = '') =>
 		.toLowerCase()
 		.trim();
 
-const PUBLIC_SERVICE_HINTS = [
-	'servicio publico',
-	'servicios publicos',
-	'luz',
-	'electricidad',
-	'gas',
-	'agua',
-	'internet',
-	'telefono',
-	'telefonia',
+const PUBLIC_SERVICE_PATTERNS = [
+	/\bservicios? publicos?\b/,
+	/\bluz\b/,
+	/\belectricidad\b/,
+	/\bgas\b/,
+	/\bagua\b/,
+	/\binternet\b/,
+	/\btelefono\b/,
+	/\btelefonia\b/,
 ];
 
 export const getCategoryDefinition = (categoryName, categories = []) =>
@@ -22,7 +21,7 @@ export const getCategoryDefinition = (categoryName, categories = []) =>
 
 export const isPublicServiceCategory = (categoryName) => {
 	const normalized = normalizeCategoryName(categoryName);
-	return PUBLIC_SERVICE_HINTS.some((hint) => normalized.includes(hint));
+	return PUBLIC_SERVICE_PATTERNS.some((pattern) => pattern.test(normalized));
 };
 
 export const usesSelectedDateAsDueDate = (categoryName, categories = []) => {
