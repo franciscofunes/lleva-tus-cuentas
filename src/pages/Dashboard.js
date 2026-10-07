@@ -480,19 +480,8 @@ function Dashboard() {
 
             {/* Balance */}
             <div className="flex flex-col mb-4">
-              <div className="flex justify-center items-center mb-2">
+              <div className="mb-2">
                 <p className="text-gray-400 text-center text-lg">Balance</p>
-                <button onClick={toggleDataVisibility} className="ml-2">
-                  <motion.img
-                    className="mb-1 h-5 w-5"
-                    src={isDataVisible ? eyeHide : closeEye}
-                    alt={isDataVisible ? "open eye" : "close eye"}
-                    key={isDataVisible ? "open-eye" : "close-eye"} // Key for animation
-                    initial={{ scale: 0.5, rotate: -180 }} // Initial state
-                    animate={{ scale: 1, rotate: 0 }} // End state
-                    transition={{ duration: 0.5, ease: "easeOut" }} // Animation properties
-                  />
-                </button>
               </div>
 
               <div className="flex flex-col gap-2 justify-center items-center">
