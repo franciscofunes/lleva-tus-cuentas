@@ -528,7 +528,23 @@ function Portfolio() {
 												</div>
 												<textarea className='portfolio-input' name='notes' value={form.notes} onChange={onChange} placeholder='Notas' rows='2' />
 											</div>
-											<button className='w-full mt-2 py-2.5 rounded-lg bg-primary text-white font-semibold' type='submit'>{editingId ? 'Guardar cambios' : 'Agregar al portfolio'}</button>
+											<button
+												type='submit'
+												disabled={pendingAction === 'save'}
+												aria-busy={pendingAction === 'save'}
+												className='w-full mt-2 py-2.5 rounded-lg bg-primary text-white font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-wait'
+											>
+												{pendingAction === 'save' && (
+													<span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' aria-hidden='true' />
+												)}
+												{pendingAction === 'save'
+													? editingId
+														? 'Guardando cambios…'
+														: 'Agregando…'
+													: editingId
+														? 'Guardar cambios'
+														: 'Agregar al portfolio'}
+											</button>
 											{editingId && <button className='w-full mt-2 py-2 text-sm' type='button' onClick={reset}>Cancelar edición</button>}
 										</form>
 	);
