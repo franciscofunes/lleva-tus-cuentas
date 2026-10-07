@@ -250,6 +250,7 @@ function Portfolio() {
 		setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
 
 	const monthKeys = [['jan','Ene'],['feb','Feb'],['mar','Mar'],['apr','Abr'],['may','May'],['jun','Jun'],['jul','Jul'],['aug','Ago'],['sep','Sep'],['oct','Oct'],['nov','Nov'],['dec','Dic']];
+	const monthLabelByKey = Object.fromEntries(monthKeys);
 	const monthlyValues = Object.values(form.monthlyReturns || {}).map(Number).filter(Number.isFinite);
 	const monthlySimpleTotal = monthlyValues.reduce((sum, value) => sum + value, 0);
 	const monthlyCompoundTotal = (monthlyValues.reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100;
@@ -267,8 +268,15 @@ function Portfolio() {
 	const importMarkdown = () => {
 		try {
 			const { parsed, unknown } = parsePortfolioMarkdown(markdownImport);
-			const preview = Object.entries(parsed).map(([field, value]) => {
-				const current = form[field];
+			const flatEntries = Object.entries(parsed).flatMap(([field, value]) => {
+				if (field !== 'monthlyReturns' || !value || typeof value !== 'object') {
+					return [[field, value]];
+				}
+				return Object.entries(value).map(([month, monthValue]) => [`monthlyReturns.${month}`, monthValue]);
+			});
+			const preview = flatEntries.map(([field, value]) => {
+				const month = field.startsWith('monthlyReturns.') ? field.split('.')[1] : null;
+				const current = month ? form.monthlyReturns?.[month] : form[field];
 				const missing = current === '' || current == null;
 				return { field, value, current, missing, changed: String(current ?? '') !== String(value ?? ''), selected: missing };
 			}).filter((item) => item.changed);
@@ -285,7 +293,19 @@ function Portfolio() {
 	const applyImportFields = () => {
 		const selected = importPreview.filter((item) => item.selected);
 		if (!selected.length) return toast.info('Seleccioná al menos un campo.');
-		setForm((current) => selected.reduce((next, item) => ({ ...next, [item.field]: item.value }), current));
+		setForm((current) => selected.reduce((next, item) => {
+			if (item.field.startsWith('monthlyReturns.')) {
+				const month = item.field.split('.')[1];
+				return {
+					...next,
+					monthlyReturns: {
+						...(next.monthlyReturns || {}),
+						[month]: item.value,
+					},
+				};
+			}
+			return { ...next, [item.field]: item.value };
+		}, current));
 		setImportPreview([]);
 		setShowMarkdownImport(false);
 		toast.success(`${selected.length} campo(s) aplicados. Revisá y guardá la posición.`);
@@ -431,12 +451,12 @@ function Portfolio() {
 										<div className='mb-2'>
 											<button type='button' onClick={() => setShowMarkdownImport((value) => !value)} className='w-full py-2 rounded-lg border border-purple-500 text-purple-300 text-sm font-semibold'>{showMarkdownImport ? 'Ocultar importador' : editingId ? 'Enriquecer con Markdown' : 'Pegar Markdown y autocompletar'}</button>
 											{showMarkdownImport && <div className='mt-2 p-3 rounded-lg border border-slate-700 bg-slate-950/30'>
-												<textarea className='portfolio-input min-h-[120px] text-sm' value={markdownImport} onChange={(event) => { setMarkdownImport(event.target.value); setImportPreview([]); }} placeholder='Pegá Markdown generado desde fuentes oficiales...' />
+												<textarea className='portfolio-input min-h-[120px] text-sm' value={markdownImport} onChange={(event) => { setMarkdownImport(event.target.value); setImportPreview([]); }} placeholder={'Pegá Markdown generado desde fuentes oficiales...\n\nEjemplo FCI:\nRentabilidad mensual 2026:\n- Ene: 0,62%\n- Feb: 0,29%\n- Mar: 0,95%\nTotal YTD publicado: 3,75%'} />
 												<p className='text-xs text-gray-400 mt-1'>Primero compara. Nada se modifica hasta que selecciones campos y guardes la posición.</p>
 												<button type='button' disabled={!markdownImport.trim()} onClick={importMarkdown} className='w-full mt-2 py-2 rounded-lg bg-secondary disabled:opacity-40 text-white font-semibold'>Comparar Markdown</button>
 												{importPreview.length > 0 && <div className='mt-3 space-y-2'>
 													<div className='flex flex-wrap gap-2'><button type='button' onClick={() => selectImportFields('missing')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Solo faltantes</button><button type='button' onClick={() => selectImportFields('all')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Todos los cambios</button><button type='button' onClick={() => selectImportFields('none')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Ninguno</button></div>
-													{importPreview.map((item) => <label key={item.field} className='flex gap-3 rounded-lg border border-slate-700 p-2 text-sm cursor-pointer'><input type='checkbox' checked={item.selected} onChange={() => toggleImportField(item.field)} /><span className='min-w-0'><strong>{item.field}</strong>{item.missing && <span className='ml-2 text-green-400 text-xs'>FALTANTE</span>}<span className='block text-xs text-slate-400 break-all'>{String(item.current || '—')} → <span className='text-white'>{String(item.value)}</span></span></span></label>)}
+													{importPreview.map((item) => <label key={item.field} className='flex gap-3 rounded-lg border border-slate-700 p-2 text-sm cursor-pointer'><input type='checkbox' checked={item.selected} onChange={() => toggleImportField(item.field)} /><span className='min-w-0'><strong>{item.field.startsWith('monthlyReturns.') ? `Rentabilidad ${monthLabelByKey[item.field.split('.')[1]] || item.field.split('.')[1].toUpperCase()}` : item.field}</strong>{item.missing && <span className='ml-2 text-green-400 text-xs'>FALTANTE</span>}<span className='block text-xs text-slate-400 break-all'>{String(item.current || '—')} → <span className='text-white'>{String(item.value)}</span></span></span></label>)}
 													<button type='button' onClick={applyImportFields} className='w-full py-2 rounded-lg bg-ltc-green text-white font-bold'>Aplicar campos seleccionados</button>
 												</div>}
 											</div>}
