@@ -3,6 +3,7 @@ import React from 'react';
 import { useDispatch } from 'react-redux';
 import { deleteCardAction } from '../actionCreators/databaseActions';
 import { motion } from 'framer-motion';
+import { FaCheckCircle } from 'react-icons/fa';
 import InfoTooltip from '../components/InfoTooltip';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 import { usesSelectedDateAsDueDate } from '../utils/transactionDueDates';
@@ -39,6 +40,13 @@ function Card({
 }) {
 	const dispatch = useDispatch();
 	const selectedDateIsDueDate = usesSelectedDateAsDueDate(category, categories);
+	const isPaidBill = paymentStatus === 'paid';
+	const paidAtDate =
+		paidAt && typeof paidAt.toDate === 'function'
+			? paidAt.toDate()
+			: paidAt
+				? new Date(paidAt)
+				: null;
 
 	const handleDelete = () => {
 		dispatch(deleteCardAction(id));
@@ -138,6 +146,17 @@ function Card({
 					</span>
 					{moment(selectedDate).format('DD/MM/YYYY')}
 				</p>
+
+				{isPaidBill && (
+					<div className='mt-1 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300'>
+						<FaCheckCircle className='h-3.5 w-3.5' aria-hidden='true' />
+						<span>Pagado</span>
+						{paidDueDate && <span className='font-medium opacity-80'>Vencía {moment(paidDueDate).format('DD/MM/YYYY')}</span>}
+						{paidAtDate && !Number.isNaN(paidAtDate.getTime()) && (
+							<span className='font-medium opacity-80'>Pagado {moment(paidAtDate).format('DD/MM/YYYY')}</span>
+						)}
+					</div>
+				)}
 				<div className='flex flex-row gap-x-2 lg:justify-between items-stretch'>
 					<h1
 						className={`font-Nunito font-medium text-lg ${
