@@ -448,8 +448,6 @@ function Portfolio() {
 	};
 
 
-		const isNavVerification = isNavVerification;
-
 	const isNavVerification = Boolean(
 		verifyTarget && (verifyTarget.trackingMode === 'NAV' || verifyTarget.category === 'FCI')
 	);
