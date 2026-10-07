@@ -1,6 +1,7 @@
 import moment from 'moment';
 import { toast } from 'react-toastify';
 import { firestore } from '../shared/config/firebase/firebase.config';
+import { getNotificationSettings, resolveTransactionDueDate } from '../utils/transactionDueDates';
 import {
 	CREATE_SUBSCRIPTION_SUCCESS_MESSAGE,
 	CREATE_TRANSACTION_SUCCESS_MESSAGE,
@@ -9,93 +10,148 @@ import {
 	UPDATE_TRANSACTION_SUCCESS_MESSAGE,
 } from '../shared/constants/toast-messages.const';
 
-export const storeDataAction = (data) => {
-	return (dispatch) => {
-		return firestore
-			.collection('users')
-			.doc(data.userId)
-			.collection('expenses')
-			.add({
-				date: new Date(),
-				expenseName: data.name,
-				comment: data.comment,
-				category: data.category,
-				...(data?.amount && {
-					amount: data?.amount,
-				}),
-				selectedDate: data.selectedDate,
-				...(data?.selectedExpirationDate && {
-					selectedExpirationDate: data?.selectedExpirationDate,
-				}),
-				...(data?.selectedCloseDate && {
-					selectedCloseDate: data?.selectedCloseDate,
-				}),
-				...(data?.currencyQuantity && {
-					currencyQuantity: data?.currencyQuantity,
-				}),
-				...(data?.currencyExchangeRate && {
-					currencyExchangeRate: data?.currencyExchangeRate,
-				}),
-			})
-			.then((res) => {
-				toast.success(CREATE_TRANSACTION_SUCCESS_MESSAGE);
+const notificationPayload = (data, sourceId, includeCreatedAt = false) => ({
+	sourceType: 'expense',
+	sourceId,
+	title: data.name || 'Vencimiento',
+	category: data.category || '',
+	dueDate: data.dueDate,
+	amount: Number.isFinite(Number(data.amount)) ? Number(data.amount) : null,
+	leadDays: Number.isFinite(Number(data.notificationLeadDays))
+		? Number(data.notificationLeadDays)
+		: 5,
+	status: 'active',
+	readAt: null,
+	...(includeCreatedAt ? { createdAt: new Date() } : {}),
+	updatedAt: new Date(),
+});
 
-				dispatch({ type: 'STORE_DATA', res });
-			})
-			.catch((err) => {
-				dispatch({ type: 'STORE_ERROR', err });
-			});
+export const storeDataAction = (data) => {
+	return async (dispatch) => {
+		const userRef = firestore.collection('users').doc(data.userId);
+		const expenseRef = userRef.collection('expenses').doc();
+		const notificationRef = userRef.collection('notifications').doc(expenseRef.id);
+		const batch = firestore.batch();
+
+		batch.set(expenseRef, {
+			date: new Date(),
+			expenseName: data.name,
+			comment: data.comment,
+			category: data.category,
+			...(data?.amount && {
+				amount: data?.amount,
+			}),
+			selectedDate: data.selectedDate,
+			...(data?.selectedExpirationDate && {
+				selectedExpirationDate: data?.selectedExpirationDate,
+			}),
+			...(data?.selectedCloseDate && {
+				selectedCloseDate: data?.selectedCloseDate,
+			}),
+			...(data?.currencyQuantity && {
+				currencyQuantity: data?.currencyQuantity,
+			}),
+			...(data?.currencyExchangeRate && {
+				currencyExchangeRate: data?.currencyExchangeRate,
+			}),
+			dueDate: data.dueDate || null,
+			notificationEnabled: Boolean(data.notificationEnabled),
+			notificationLeadDays: Number(data.notificationLeadDays || 5),
+		});
+
+		if (data.notificationEnabled && data.dueDate) {
+			batch.set(
+				notificationRef,
+				notificationPayload(data, expenseRef.id, true)
+			);
+		}
+
+		try {
+			await batch.commit();
+			toast.success(CREATE_TRANSACTION_SUCCESS_MESSAGE);
+			dispatch({ type: 'STORE_DATA', res: { id: expenseRef.id } });
+			return expenseRef.id;
+		} catch (err) {
+			dispatch({ type: 'STORE_ERROR', err });
+			throw err;
+		}
 	};
 };
 
 export const updateDataAction = (data, docId) => {
-	return (dispatch) => {
-		return firestore
-			.collection('users')
-			.doc(data.userId)
-			.collection('expenses')
-			.doc(docId)
-			.update({
-				date: new Date(),
-				expenseName: data.name,
-				comment: data.comment,
-				category: data.category,
-				...(data?.amount && {
-					amount: data?.amount,
-				}),
-				selectedDate: data.selectedDate,
-				...(data?.selectedExpirationDate && {
-					selectedExpirationDate: data?.selectedExpirationDate,
-				}),
-				...(data?.selectedCloseDate && {
-					selectedCloseDate: data?.selectedCloseDate,
-				}),
-				...(data?.currencyQuantity && {
-					currencyQuantity: data?.currencyQuantity,
-				}),
-				...(data?.currencyExchangeRate && {
-					currencyExchangeRate: data?.currencyExchangeRate,
-				}),
-			})
-			.then((res) => {
-				toast.success(UPDATE_TRANSACTION_SUCCESS_MESSAGE);
+	return async (dispatch) => {
+		const userRef = firestore.collection('users').doc(data.userId);
+		const expenseRef = userRef.collection('expenses').doc(docId);
+		const notificationRef = userRef.collection('notifications').doc(docId);
+		const batch = firestore.batch();
 
-				dispatch({ type: 'UPDATE_DATA', res });
-			})
-			.catch((err) => {
-				toast.error(err.message);
-			});
+		batch.update(expenseRef, {
+			date: new Date(),
+			expenseName: data.name,
+			comment: data.comment,
+			category: data.category,
+			...(data?.amount && {
+				amount: data?.amount,
+			}),
+			selectedDate: data.selectedDate,
+			...(data?.selectedExpirationDate && {
+				selectedExpirationDate: data?.selectedExpirationDate,
+			}),
+			...(data?.selectedCloseDate && {
+				selectedCloseDate: data?.selectedCloseDate,
+			}),
+			...(data?.currencyQuantity && {
+				currencyQuantity: data?.currencyQuantity,
+			}),
+			...(data?.currencyExchangeRate && {
+				currencyExchangeRate: data?.currencyExchangeRate,
+			}),
+			dueDate: data.dueDate || null,
+			notificationEnabled: Boolean(data.notificationEnabled),
+			notificationLeadDays: Number(data.notificationLeadDays || 5),
+		});
+
+		if (data.notificationEnabled && data.dueDate) {
+			batch.set(
+				notificationRef,
+				notificationPayload(data, docId, false),
+				{ merge: true }
+			);
+		} else {
+			batch.delete(notificationRef);
+		}
+
+		try {
+			await batch.commit();
+			toast.success(UPDATE_TRANSACTION_SUCCESS_MESSAGE);
+			dispatch({ type: 'UPDATE_DATA', res: { id: docId } });
+			return docId;
+		} catch (err) {
+			toast.error(err.message);
+			throw err;
+		}
 	};
 };
 
 export const importTransactionsAction = (userId, items) => async (dispatch) => {
-	const collection = firestore.collection('users').doc(userId).collection('expenses');
+	const userRef = firestore.collection('users').doc(userId);
+	const collection = userRef.collection('expenses');
+	const notifications = userRef.collection('notifications');
 	const existing = await Promise.all(items.map((item) => collection.where('importKey', '==', item.importKey).limit(1).get()));
 	const fresh = items.filter((item, index) => existing[index].empty);
 	if (!fresh.length) return { imported: 0, duplicates: items.length };
 	const batch = firestore.batch();
+
 	fresh.forEach((item) => {
 		const ref = collection.doc();
+		const settings = getNotificationSettings(item.category, []);
+		const dueDate = resolveTransactionDueDate({
+			category: item.category,
+			selectedDate: item.selectedDate,
+			selectedExpirationDate: item.selectedExpirationDate,
+		});
+		const notificationEnabled = Boolean(dueDate) && settings.enabled;
+
 		batch.set(ref, {
 			date: new Date(),
 			expenseName: item.name,
@@ -108,7 +164,21 @@ export const importTransactionsAction = (userId, items) => async (dispatch) => {
 			importSource: item.source || 'markdown-import',
 			importInstitution: item.institution || '',
 			importPeriod: item.period || '',
+			dueDate: dueDate || null,
+			notificationEnabled,
+			notificationLeadDays: settings.leadDays,
 		});
+
+		if (notificationEnabled) {
+			batch.set(
+				notifications.doc(ref.id),
+				notificationPayload({
+					...item,
+					dueDate,
+					notificationLeadDays: settings.leadDays,
+				}, ref.id, true)
+			);
+		}
 	});
 	await batch.commit();
 	dispatch({ type: 'IMPORT_TRANSACTIONS_SUCCESS', count: fresh.length });
@@ -186,22 +256,22 @@ export const getCategoriesDataAction = () => {
 };
 
 export const deleteCardAction = (docId) => {
-	return (dispatch, getState) => {
+	return async (dispatch, getState) => {
 		const userId = getState().auth.user.uid;
-		firestore
-			.collection('users')
-			.doc(userId)
-			.collection('expenses')
-			.doc(docId)
-			.delete()
-			.then(() => {
-				toast.warn(DELETE_TRANSACTION_WARNING_MESSAGE);
+		const userRef = firestore.collection('users').doc(userId);
+		const batch = firestore.batch();
 
-				dispatch({ type: 'DELETE_DOC', docId });
-			})
-			.catch((err) => {
-				toast.error(err.message);
-			});
+		batch.delete(userRef.collection('expenses').doc(docId));
+		batch.delete(userRef.collection('notifications').doc(docId));
+
+		try {
+			await batch.commit();
+			toast.warn(DELETE_TRANSACTION_WARNING_MESSAGE);
+			dispatch({ type: 'DELETE_DOC', docId });
+		} catch (err) {
+			toast.error(err.message);
+			throw err;
+		}
 	};
 };
 
