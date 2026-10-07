@@ -20,9 +20,15 @@ const notificationPayload = (data, sourceId, includeCreatedAt = false) => ({
 	leadDays: Number.isFinite(Number(data.notificationLeadDays))
 		? Number(data.notificationLeadDays)
 		: 5,
-	status: 'active',
-	readAt: null,
-	...(includeCreatedAt ? { createdAt: new Date() } : {}),
+	...(includeCreatedAt
+		? {
+				status: 'active',
+				readAt: null,
+				paidAt: null,
+				paidDueDate: null,
+				createdAt: new Date(),
+			}
+		: {}),
 	updatedAt: new Date(),
 });
 
@@ -88,6 +94,14 @@ export const storeDataAction = (data) => {
 				dueDate: data.dueDate || null,
 				notificationEnabled: Boolean(data.notificationEnabled),
 				notificationLeadDays: Number(data.notificationLeadDays || 5),
+				...(data.notificationEnabled && data.dueDate
+					? {
+							paymentStatus: 'pending',
+							paid: false,
+							paidAt: null,
+							paidDueDate: null,
+						}
+					: {}),
 			});
 
 			await syncExpenseNotification(userRef, expenseRef.id, data, true);
@@ -184,6 +198,14 @@ export const importTransactionsAction = (userId, items) => async (dispatch) => {
 			dueDate: dueDate || null,
 			notificationEnabled,
 			notificationLeadDays: settings.leadDays,
+			...(notificationEnabled
+				? {
+						paymentStatus: 'pending',
+						paid: false,
+						paidAt: null,
+						paidDueDate: null,
+					}
+				: {}),
 		});
 
 		reminderSyncs.push({ refId: ref.id, data: normalizedItem });
