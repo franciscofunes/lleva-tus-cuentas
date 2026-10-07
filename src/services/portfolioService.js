@@ -93,7 +93,7 @@ export const verifyPortfolioPosition = async (userId, position, balance, metadat
 	const changeType = isNav ? 'valuation' : (metadata.changeType || 'unclassified');
 	const confirmedEarning = changeType === 'earning' ? observedEarning : 0;
 	const cashFlow = changeType === 'deposit' ? Math.max(observedEarning, 0) : changeType === 'withdrawal' ? Math.min(observedEarning, 0) : 0;
-	const expectedEarning = position.trackingMode === 'DAILY_RATE'
+	const expectedEarning = !isNav && position.trackingMode === 'DAILY_RATE'
 		? previousBalance * annualRate / 365
 		: 0;
 
@@ -101,7 +101,7 @@ export const verifyPortfolioPosition = async (userId, position, balance, metadat
 		balance: nextBalance,
 		expectedEarning,
 		observedEarning,
-		source: 'verification',
+		source: isNav ? 'nav-verification' : 'verification',
 		changeType,
 		confirmedEarning,
 		cashFlow,
