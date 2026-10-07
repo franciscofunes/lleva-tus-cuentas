@@ -32,6 +32,7 @@ export const backfillExpenseNotifications = async (userId, categories = []) => {
 				selectedExpirationDate: expense.selectedExpirationDate,
 			});
 		const creditCard = String(expense.category || '').includes('Resumen tarjeta');
+		const isPaid = expense.paymentStatus === 'paid' || expense.paid === true;
 		const enabled =
 			typeof expense.notificationEnabled === 'boolean'
 				? expense.notificationEnabled
@@ -50,8 +51,10 @@ export const backfillExpenseNotifications = async (userId, categories = []) => {
 					? Number(expense.amount)
 					: null,
 				leadDays: Number(expense.notificationLeadDays ?? settings.leadDays ?? 5),
-				status: 'active',
-				readAt: null,
+				status: isPaid ? 'paid' : 'active',
+				readAt: isPaid ? expense.paidAt || new Date() : null,
+				paidAt: isPaid ? expense.paidAt || new Date() : null,
+				paidDueDate: isPaid ? expense.paidDueDate || dueDate : null,
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			})
@@ -110,4 +113,61 @@ export const markNotificationUnread = (userId, notificationId) => {
 		},
 		{ merge: true }
 	);
+};
+
+export const setNotificationPaymentState = async (
+	userId,
+	notificationId,
+	dueDate,
+	isPaid = true
+) => {
+	if (!userId || !notificationId) return;
+
+	const now = new Date();
+	const userRef = firestore.collection('users').doc(userId);
+	const notificationRef = userRef.collection('notifications').doc(notificationId);
+	const expenseRef = userRef.collection('expenses').doc(notificationId);
+	const batch = firestore.batch();
+
+	if (isPaid) {
+		batch.set(
+			notificationRef,
+			{
+				status: 'paid',
+				paidAt: now,
+				paidDueDate: dueDate || null,
+				readAt: now,
+				updatedAt: now,
+			},
+			{ merge: true }
+		);
+		batch.update(expenseRef, {
+			paymentStatus: 'paid',
+			paid: true,
+			paidAt: now,
+			paidDueDate: dueDate || null,
+			paymentUpdatedAt: now,
+		});
+	} else {
+		batch.set(
+			notificationRef,
+			{
+				status: 'active',
+				paidAt: null,
+				paidDueDate: null,
+				readAt: now,
+				updatedAt: now,
+			},
+			{ merge: true }
+		);
+		batch.update(expenseRef, {
+			paymentStatus: 'pending',
+			paid: false,
+			paidAt: null,
+			paidDueDate: null,
+			paymentUpdatedAt: now,
+		});
+	}
+
+	await batch.commit();
 };
