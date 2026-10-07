@@ -1,5 +1,6 @@
 import { firestore } from '../shared/config/firebase/firebase.config';
 import { getNotificationSettings, resolveTransactionDueDate } from '../utils/transactionDueDates';
+import { isExpiredReminder } from '../utils/notificationLifecycle';
 
 const notificationsCollection = (userId) =>
 	firestore.collection('users').doc(userId).collection('notifications');
@@ -36,7 +37,7 @@ export const backfillExpenseNotifications = async (userId, categories = []) => {
 				? expense.notificationEnabled
 				: creditCard || settings.enabled;
 
-		if (!enabled || !dueDate) return;
+		if (!enabled || !dueDate || isExpiredReminder(dueDate)) return;
 
 		writes.push(
 			notificationsRef.doc(doc.id).set({
@@ -60,6 +61,20 @@ export const backfillExpenseNotifications = async (userId, categories = []) => {
 	if (!writes.length) return 0;
 	await Promise.all(writes);
 	return writes.length;
+};
+
+export const pruneExpiredNotifications = async (userId) => {
+	if (!userId) return 0;
+
+	const snapshot = await notificationsCollection(userId).get();
+	const expired = snapshot.docs.filter((doc) => isExpiredReminder(doc.data()?.dueDate));
+
+	if (!expired.length) return 0;
+
+	const batch = firestore.batch();
+	expired.forEach((doc) => batch.delete(doc.ref));
+	await batch.commit();
+	return expired.length;
 };
 
 export const subscribeNotifications = (userId, onData, onError = console.error) => {
