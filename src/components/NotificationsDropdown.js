@@ -12,32 +12,13 @@ import { getPaymentDataAction } from '../actionCreators/databaseActions';
 import {
 	backfillExpenseNotifications,
 	markNotificationRead,
+	pruneExpiredNotifications,
 	subscribeNotifications,
 } from '../services/notificationService';
-
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
-
-const asLocalDate = (value) => {
-	if (!value) return null;
-	const date = new Date(`${value}T00:00:00`);
-	return Number.isNaN(date.getTime()) ? null : date;
-};
-
-const daysUntil = (value) => {
-	const due = asLocalDate(value);
-	if (!due) return Number.POSITIVE_INFINITY;
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	return Math.round((due.getTime() - today.getTime()) / DAY_IN_MS);
-};
-
-const dueLabel = (days) => {
-	if (days < -1) return `Venció hace ${Math.abs(days)} días`;
-	if (days === -1) return 'Venció ayer';
-	if (days === 0) return 'Vence hoy';
-	if (days === 1) return 'Vence mañana';
-	return `Vence en ${days} días`;
-};
+import {
+	daysUntilDueDate,
+	isVisibleReminder,
+} from '../utils/notificationLifecycle';
 
 const money = (value) => {
 	const amount = Number(value);
@@ -50,7 +31,7 @@ const money = (value) => {
 };
 
 const ReminderItem = ({ notification, onOpen }) => {
-	const days = daysUntil(notification.dueDate);
+	const days = daysUntilDueDate(notification.dueDate);
 	const isOverdue = days < 0;
 	const isToday = days === 0;
 
@@ -125,12 +106,11 @@ const NotificationDropdown = () => {
 	const activeReminders = useMemo(
 		() =>
 			notifications
-				.map((item) => ({ ...item, days: daysUntil(item.dueDate) }))
+				.map((item) => ({ ...item, days: daysUntilDueDate(item.dueDate) }))
 				.filter(
 					(item) =>
 						item.status !== 'dismissed' &&
-						Number.isFinite(item.days) &&
-						item.days <= Number(item.leadDays ?? 5)
+						isVisibleReminder(item.dueDate, item.leadDays ?? 5)
 				)
 				.sort((a, b) => a.days - b.days),
 		[notifications]
@@ -160,9 +140,12 @@ const NotificationDropdown = () => {
 
 		setNotificationsLoading(true);
 		setNotificationsError(false);
-		backfillExpenseNotifications(user.uid, categories || []).catch((error) => {
-			console.warn('Could not backfill transaction reminders', error);
-		});
+		Promise.resolve()
+			.then(() => pruneExpiredNotifications(user.uid))
+			.then(() => backfillExpenseNotifications(user.uid, categories || []))
+			.catch((error) => {
+				console.warn('Could not reconcile transaction reminders', error);
+			});
 
 		return subscribeNotifications(
 			user.uid,
@@ -269,7 +252,7 @@ const NotificationDropdown = () => {
 								Notificaciones
 							</p>
 							<p className='text-[11px] text-slate-500 dark:text-slate-400'>
-								Vencimientos y recordatorios de tus transacciones.
+								Próximos vencimientos y hasta 10 días posteriores.
 							</p>
 						</div>
 						{activeReminders.length > 0 && (
