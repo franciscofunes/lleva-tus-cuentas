@@ -4,6 +4,7 @@ import {
 	FaCalendarAlt,
 	FaCheck,
 	FaExclamationCircle,
+	FaTimes,
 } from 'react-icons/fa';
 import { RiAdvertisementLine } from 'react-icons/ri';
 import { useDispatch, useSelector } from 'react-redux';
@@ -11,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { getPaymentDataAction } from '../actionCreators/databaseActions';
 import {
 	backfillExpenseNotifications,
+	dismissNotificationUntilTomorrow,
 	markNotificationRead,
 	subscribeNotifications,
 } from '../services/notificationService';
@@ -49,18 +51,19 @@ const money = (value) => {
 	}).format(amount);
 };
 
-const ReminderItem = ({ notification, onOpen }) => {
+const ReminderItem = ({ notification, onOpen, onDismiss }) => {
 	const days = daysUntil(notification.dueDate);
 	const isOverdue = days < 0;
 	const isToday = days === 0;
 
 	return (
-		<button
-			type='button'
-			onClick={() => onOpen(notification)}
-			className='flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:hover:bg-slate-800'
-			role='menuitem'
-		>
+		<div className='group flex w-full items-start gap-1 rounded-xl transition hover:bg-slate-100 dark:hover:bg-slate-800'>
+			<button
+				type='button'
+				onClick={() => onOpen(notification)}
+				className='flex min-w-0 flex-1 items-start gap-3 px-3 py-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500'
+				role='menuitem'
+			>
 			<span
 				className={`mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
 					isOverdue
@@ -100,7 +103,20 @@ const ReminderItem = ({ notification, onOpen }) => {
 					{money(notification.amount) ? ` · ${money(notification.amount)}` : ''}
 				</span>
 			</span>
-		</button>
+			</button>
+			<button
+				type='button'
+				onClick={(event) => {
+					event.stopPropagation();
+					onDismiss(notification);
+				}}
+				className='mr-2 mt-3 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:hover:bg-slate-700 dark:hover:text-white'
+				aria-label='Ocultar hasta mañana'
+				title='Ocultar hasta mañana'
+			>
+				<FaTimes />
+			</button>
+		</div>
 	);
 };
 
@@ -116,25 +132,39 @@ const NotificationDropdown = () => {
 	);
 	const user = useSelector((state) => state.auth.user);
 	const categories = useSelector((state) => state.database.categories);
+	const selectedDate = useSelector((state) => state.database.selectedDate);
 	const dispatch = useDispatch();
 	const navigate = useNavigate();
 	const dropdownRef = useRef(null);
 
 	const hasSubscriptionNotice = !isPaymentDataLoading && !paymentData;
 
-	const activeReminders = useMemo(
-		() =>
-			notifications
-				.map((item) => ({ ...item, days: daysUntil(item.dueDate) }))
-				.filter(
-					(item) =>
-						item.status !== 'dismissed' &&
-						Number.isFinite(item.days) &&
-						item.days <= Number(item.leadDays ?? 5)
-				)
-				.sort((a, b) => a.days - b.days),
-		[notifications]
-	);
+	const activeReminders = useMemo(() => {
+		const now = new Date();
+		const anchor = asLocalDate(selectedDate) || now;
+
+		return notifications
+			.map((item) => ({ ...item, days: daysUntil(item.dueDate), due: asLocalDate(item.dueDate) }))
+			.filter((item) => {
+				if (!item.due || !Number.isFinite(item.days)) return false;
+				if (item.status === 'dismissed') return false;
+
+				const dismissedUntil = item.dismissedUntil?.toDate
+					? item.dismissedUntil.toDate()
+					: item.dismissedUntil
+						? new Date(item.dismissedUntil)
+						: null;
+				if (dismissedUntil && dismissedUntil > now) return false;
+
+				const inSelectedMonth =
+					item.due.getFullYear() === anchor.getFullYear() &&
+					item.due.getMonth() === anchor.getMonth();
+				if (!inSelectedMonth) return false;
+
+				return item.days >= -10 && item.days <= Number(item.leadDays ?? 5);
+			})
+			.sort((a, b) => a.days - b.days);
+	}, [notifications, selectedDate]);
 
 	const overdue = activeReminders.filter((item) => item.days < 0);
 	const today = activeReminders.filter((item) => item.days === 0);
@@ -203,6 +233,14 @@ const NotificationDropdown = () => {
 		if (hasSubscriptionNotice) setSubscriptionNoticeRead(true);
 	};
 
+	const dismissReminder = async (notification) => {
+		try {
+			await dismissNotificationUntilTomorrow(user.uid, notification.id);
+		} catch (error) {
+			console.error('Could not dismiss notification', error);
+		}
+	};
+
 	const openReminder = async (notification) => {
 		try {
 			if (!notification.readAt) {
@@ -269,7 +307,7 @@ const NotificationDropdown = () => {
 								Notificaciones
 							</p>
 							<p className='text-[11px] text-slate-500 dark:text-slate-400'>
-								Vencimientos y recordatorios de tus transacciones.
+								Vencimientos del mes seleccionado. Se ocultan 10 días después de vencer.
 							</p>
 						</div>
 						{activeReminders.length > 0 && (
