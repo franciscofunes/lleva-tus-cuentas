@@ -98,7 +98,7 @@ const LitaAssistantPanel = ({
 
 					<motion.aside
 						key='lita-panel'
-						className='fixed bottom-3 right-3 z-[80] flex h-[76dvh] max-h-[720px] w-[calc(100%-1.5rem)] flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-2xl shadow-slate-950/25 dark:border-slate-700/90 dark:bg-slate-900 sm:bottom-5 sm:right-5 sm:h-[72dvh] sm:w-[420px] lg:w-[440px]'
+						className='fixed bottom-3 left-3 right-3 z-[80] flex h-[76dvh] max-h-[720px] flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-2xl shadow-slate-950/25 dark:border-slate-700/90 dark:bg-slate-900 sm:bottom-5 sm:left-auto sm:right-5 sm:h-[72dvh] sm:w-[420px] lg:w-[440px]'
 						initial={{ opacity: 0, y: 24, scale: 0.98 }}
 						animate={{ opacity: 1, y: 0, scale: 1 }}
 						exit={{ opacity: 0, y: 18, scale: 0.98 }}
