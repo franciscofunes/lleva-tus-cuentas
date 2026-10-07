@@ -69,15 +69,31 @@ export const createPortfolioSnapshot = (userId, position, overrides = {}) =>
 	});
 
 export const verifyPortfolioPosition = async (userId, position, balance, metadata = {}) => {
-	const nextBalance = Number(balance);
 	const previousBalance = Number(position.balance || 0);
-	const observedEarning = nextBalance - previousBalance;
 	const annualRate = Number(position.annualRate || 0) / 100;
-	const isNav = position.trackingMode === 'NAV';
+	const isNav = position.trackingMode === 'NAV' || position.category === 'FCI';
+	const navValue = metadata.nav === '' || metadata.nav == null ? null : Number(metadata.nav);
+	const shares = position.shares == null || position.shares === '' ? null : Number(position.shares);
+	const canCalculateNavValuation =
+		isNav &&
+		Number.isFinite(navValue) &&
+		navValue > 0 &&
+		Number.isFinite(shares) &&
+		shares > 0;
+	const nextBalance = canCalculateNavValuation ? shares * navValue : Number(balance);
+
+	if (!Number.isFinite(nextBalance) || nextBalance < 0) {
+		throw new Error('La valuación ingresada no es válida.');
+	}
+	if (isNav && (!Number.isFinite(navValue) || navValue <= 0)) {
+		throw new Error('Ingresá un valor de cuotaparte válido.');
+	}
+
+	const observedEarning = nextBalance - previousBalance;
 	const changeType = isNav ? 'valuation' : (metadata.changeType || 'unclassified');
 	const confirmedEarning = changeType === 'earning' ? observedEarning : 0;
 	const cashFlow = changeType === 'deposit' ? Math.max(observedEarning, 0) : changeType === 'withdrawal' ? Math.min(observedEarning, 0) : 0;
-	const expectedEarning = position.trackingMode === 'DAILY_RATE'
+	const expectedEarning = !isNav && position.trackingMode === 'DAILY_RATE'
 		? previousBalance * annualRate / 365
 		: 0;
 
@@ -85,21 +101,19 @@ export const verifyPortfolioPosition = async (userId, position, balance, metadat
 		balance: nextBalance,
 		expectedEarning,
 		observedEarning,
-		source: 'verification',
+		source: isNav ? 'nav-verification' : 'verification',
 		changeType,
 		confirmedEarning,
 		cashFlow,
 		note: metadata.note || '',
-		nav: metadata.nav,
-		reportedEarnings: metadata.reportedEarnings,
+		nav: navValue,
 	});
 
 	const positionUpdate = {
 		balance: nextBalance,
-		lastEarning: isNav ? Number(metadata.reportedEarnings ?? position.realizedEarnings ?? 0) : (changeType === 'earning' ? observedEarning : 0),
-		...(isNav && metadata.reportedEarnings !== '' && metadata.reportedEarnings != null ? { realizedEarnings: Number(metadata.reportedEarnings) } : {}),
+		lastEarning: isNav ? Number(position.lastEarning || 0) : (changeType === 'earning' ? observedEarning : 0),
 		...(!isNav && changeType === 'earning' ? { realizedEarnings: Number(position.realizedEarnings || 0) + observedEarning } : {}),
-		...(isNav && metadata.nav !== '' && metadata.nav != null ? { nav: Number(metadata.nav), navDate: new Date().toISOString().slice(0, 10) } : {}),
+		...(isNav ? { nav: navValue, navDate: new Date().toISOString().slice(0, 10) } : {}),
 		lastVerifiedAt: new Date(),
 		updatedAt: new Date(),
 	};
