@@ -59,7 +59,7 @@ const FloatingMenu = ({
 						{isOpen && (
 							<motion.div
 								id='ltc-floating-actions'
-								className='w-[min(15.5rem,calc(100vw-2rem))] rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-xl shadow-slate-950/10 backdrop-blur-xl dark:border-slate-700/90 dark:bg-slate-900/95 dark:shadow-black/25'
+								className='w-60 max-w-[90vw] rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-xl shadow-slate-950/10 backdrop-blur-xl dark:border-slate-700/90 dark:bg-slate-900/95 dark:shadow-black/25'
 								initial={{ opacity: 0, y: 8, scale: 0.98 }}
 								animate={{ opacity: 1, y: 0, scale: 1 }}
 								exit={{ opacity: 0, y: 6, scale: 0.98 }}
