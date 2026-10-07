@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { getPaymentDataAction } from '../actionCreators/databaseActions';
 import {
+	backfillExpenseNotifications,
 	markNotificationRead,
 	subscribeNotifications,
 } from '../services/notificationService';
@@ -114,6 +115,7 @@ const NotificationDropdown = () => {
 		(state) => state.database.isPaymentDataLoading
 	);
 	const user = useSelector((state) => state.auth.user);
+	const categories = useSelector((state) => state.database.categories);
 	const dispatch = useDispatch();
 	const navigate = useNavigate();
 	const dropdownRef = useRef(null);
@@ -158,6 +160,10 @@ const NotificationDropdown = () => {
 
 		setNotificationsLoading(true);
 		setNotificationsError(false);
+		backfillExpenseNotifications(user.uid, categories || []).catch((error) => {
+			console.warn('Could not backfill transaction reminders', error);
+		});
+
 		return subscribeNotifications(
 			user.uid,
 			(items) => {
@@ -170,7 +176,7 @@ const NotificationDropdown = () => {
 				setNotificationsLoading(false);
 			}
 		);
-	}, [user?.uid]);
+	}, [categories, user?.uid]);
 
 	useEffect(() => {
 		const handleOutsideClick = (event) => {
