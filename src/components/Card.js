@@ -5,6 +5,7 @@ import { deleteCardAction } from '../actionCreators/databaseActions';
 import { motion } from 'framer-motion';
 import InfoTooltip from '../components/InfoTooltip';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
+import { usesSelectedDateAsDueDate } from '../utils/transactionDueDates';
 
 function Card({
 	id,
@@ -37,6 +38,7 @@ function Card({
 	openModal,
 }) {
 	const dispatch = useDispatch();
+	const selectedDateIsDueDate = usesSelectedDateAsDueDate(category, categories);
 
 	const handleDelete = () => {
 		dispatch(deleteCardAction(id));
@@ -132,7 +134,7 @@ function Card({
 
 				<p className='font-semibold text-base text-gray-400'>
 					<span className='text-indigo-600 dark:text-indigo-300'>
-						Fecha transacción:{' '}
+						{selectedDateIsDueDate ? 'Fecha de vencimiento' : 'Fecha transacción'}:{' '}
 					</span>
 					{moment(selectedDate).format('DD/MM/YYYY')}
 				</p>
