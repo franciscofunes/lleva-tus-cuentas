@@ -49,41 +49,41 @@ const FloatingMenu = ({
 			{!isModalOpen && (
 				<motion.div
 					ref={menuRef}
-					className='fixed bottom-5 right-5 z-[60] flex flex-col items-end gap-3'
-					initial={{ opacity: 0, y: 10 }}
+					className='fixed bottom-4 right-4 z-[60] flex flex-col items-end gap-2.5 sm:bottom-5 sm:right-5'
+					initial={{ opacity: 0, y: 8 }}
 					animate={{ opacity: 1, y: 0 }}
-					exit={{ opacity: 0, y: 10 }}
-					transition={{ duration: 0.2 }}
+					exit={{ opacity: 0, y: 8 }}
+					transition={{ duration: 0.18, ease: 'easeOut' }}
 				>
 					<AnimatePresence>
 						{isOpen && (
 							<motion.div
 								id='ltc-floating-actions'
-								className='w-[min(17rem,calc(100vw-2.5rem))] rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-2xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95'
-								initial={{ opacity: 0, y: 12, scale: 0.97 }}
+								className='w-[min(15.5rem,calc(100vw-2rem))] rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-xl shadow-slate-950/10 backdrop-blur-xl dark:border-slate-700/90 dark:bg-slate-900/95 dark:shadow-black/25'
+								initial={{ opacity: 0, y: 8, scale: 0.98 }}
 								animate={{ opacity: 1, y: 0, scale: 1 }}
-								exit={{ opacity: 0, y: 10, scale: 0.97 }}
-								transition={{ duration: 0.18 }}
+								exit={{ opacity: 0, y: 6, scale: 0.98 }}
+								transition={{ duration: 0.16, ease: 'easeOut' }}
 							>
-								<p className='px-2 pb-2 pt-1 text-xs font-bold uppercase tracking-[0.14em] text-slate-400'>
+								<p className='px-2.5 pb-1.5 pt-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400'>
 									Acciones rápidas
 								</p>
 
-								<div className='space-y-1.5'>
+								<div className='space-y-1'>
 									<button
 										type='button'
 										onClick={() => runAction(openTransactionModal)}
-										className='group flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left transition hover:border-purple-200 hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:hover:border-purple-500/30 dark:hover:bg-purple-950/30'
+										className='group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:hover:bg-purple-500/10'
 									>
-										<span className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-300'>
-											<FaPlus className='h-4 w-4' />
+										<span className='inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-300'>
+											<FaPlus className='h-3.5 w-3.5' />
 										</span>
 										<span className='min-w-0'>
 											<span className='block text-sm font-extrabold text-slate-900 dark:text-white'>
 												{primaryLabel}
 											</span>
-											<span className='mt-0.5 block text-xs text-slate-500 dark:text-slate-400'>
-												Crear un nuevo registro
+											<span className='block text-[11px] text-slate-500 dark:text-slate-400'>
+												Nuevo registro
 											</span>
 										</span>
 									</button>
@@ -91,17 +91,17 @@ const FloatingMenu = ({
 									<button
 										type='button'
 										onClick={() => runAction(openLitaModal)}
-										className='group flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left transition hover:border-purple-200 hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:hover:border-purple-500/30 dark:hover:bg-purple-950/30'
+										className='group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:hover:bg-purple-500/10'
 									>
-										<span className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-300'>
-											<FaRobot className='h-4 w-4' />
+										<span className='inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-300'>
+											<FaRobot className='h-3.5 w-3.5' />
 										</span>
 										<span className='min-w-0'>
 											<span className='block text-sm font-extrabold text-slate-900 dark:text-white'>
 												Preguntar a LITA
 											</span>
-											<span className='mt-0.5 block text-xs text-slate-500 dark:text-slate-400'>
-												Analizar con el asistente
+											<span className='block text-[11px] text-slate-500 dark:text-slate-400'>
+												Analizar con IA
 											</span>
 										</span>
 									</button>
@@ -116,15 +116,16 @@ const FloatingMenu = ({
 						aria-label={isOpen ? 'Cerrar acciones rápidas' : 'Abrir acciones rápidas'}
 						aria-expanded={isOpen}
 						aria-controls='ltc-floating-actions'
-						className='inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-600 text-white shadow-xl shadow-purple-950/30 transition-colors hover:bg-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900'
-						whileTap={{ scale: 0.94 }}
+						className='inline-flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-purple-400/30 bg-purple-600/95 text-white shadow-lg shadow-purple-950/20 backdrop-blur transition-colors hover:bg-purple-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900'
+						whileTap={{ scale: 0.95 }}
+						transition={{ type: 'spring', stiffness: 420, damping: 28 }}
 					>
 						<motion.span
 							animate={{ rotate: isOpen ? 45 : 0 }}
-							transition={{ duration: 0.18 }}
+							transition={{ duration: 0.16, ease: 'easeOut' }}
 							className='inline-flex'
 						>
-							<FaPlus className='h-6 w-6' />
+							<FaPlus className='h-5 w-5' />
 						</motion.span>
 					</motion.button>
 				</motion.div>
