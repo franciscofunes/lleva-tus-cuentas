@@ -48,18 +48,23 @@ export default function PortfolioDetail() {
 	const monthly=useMemo(()=>Object.values(history.reduce((acc,row)=>{ const d=asDate(row.capturedAt); const month=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; if(!acc[month]) acc[month]={month,rows:[],amount:0}; acc[month].rows.push(row); if(row.changeType==='earning') acc[month].amount += Number(row.confirmedEarning ?? row.observedEarning ?? 0); return acc; },{})).sort((a,b)=>b.month.localeCompare(a.month)),[history]);
 	const total=history.reduce((sum,item)=>sum+Number(item.confirmedEarning ?? (item.changeType === 'earning' ? item.observedEarning : 0)),0);
 	const isFci = Boolean(position && (position.category === 'FCI' || position.trackingMode === 'NAV'));
-	const navHistory = useMemo(() => {
+	const valuationHistory = useMemo(() => {
 		const rows = history
-			.filter((row) => Number(row.nav || 0) > 0)
-			.map((row) => ({ ...row, navValue: Number(row.nav) }));
-		return rows.map((row, index) => {
-			const previousNav = index > 0 ? rows[index - 1].navValue : null;
-			const navChangePercent = previousNav > 0
-				? ((row.navValue / previousNav) - 1) * 100
+			.filter((row) => row.changeType === 'valuation' || Number(row.nav || 0) > 0)
+			.map((row) => ({ ...row, navValue: Number(row.nav || 0) }));
+		let previousValidNav = null;
+		return rows.map((row) => {
+			const navChangePercent = previousValidNav > 0 && row.navValue > 0
+				? ((row.navValue / previousValidNav) - 1) * 100
 				: null;
-			return { ...row, previousNav, navChangePercent };
+			if (row.navValue > 0) previousValidNav = row.navValue;
+			return { ...row, navChangePercent };
 		});
 	}, [history]);
+	const navHistory = useMemo(
+		() => valuationHistory.filter((row) => row.navValue > 0),
+		[valuationHistory]
+	);
 	const monthLabels = { jan:'Ene', feb:'Feb', mar:'Mar', apr:'Abr', may:'May', jun:'Jun', jul:'Jul', aug:'Ago', sep:'Sep', oct:'Oct', nov:'Nov', dec:'Dic' };
 	const orderedMonths = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 	const publishedMonthlyReturns = position?.monthlyReturns || {};
@@ -181,25 +186,25 @@ export default function PortfolioDetail() {
 					{isFci ? (
 						<>
 							<div className='mt-4 space-y-3 md:hidden'>
-								{[...navHistory].reverse().map((row)=><article key={row.id} className='rounded-xl border border-slate-200 dark:border-slate-700 p-4'>
+								{[...valuationHistory].reverse().map((row)=><article key={row.id} className='rounded-xl border border-slate-200 dark:border-slate-700 p-4'>
 									<div className='flex items-start justify-between gap-3'>
 										<div className='min-w-0'><p className='text-xs text-gray-500'>Fecha</p><p className='font-semibold text-sm mt-0.5'>{asDate(row.capturedAt).toLocaleString('es-AR')}</p></div>
 										<div className='flex shrink-0 gap-2'><button type='button' onClick={()=>setEditing({...row})} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' aria-label='Editar valuación'><FaPencilAlt /></button><button type='button' onClick={()=>setDeleting(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border border-red-400 text-red-500' aria-label='Eliminar valuación'><FaTrashAlt /></button></div>
 									</div>
 									<div className='grid grid-cols-2 gap-x-4 gap-y-3 mt-4'>
-										<div><p className='text-xs text-gray-500'>Valor cuotaparte</p><p className='font-semibold'>{row.navValue.toLocaleString('es-AR',{maximumFractionDigits:6})}</p></div>
+										<div><p className='text-xs text-gray-500'>Valor cuotaparte</p><p className='font-semibold'>{row.navValue > 0 ? row.navValue.toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</p></div>
 										<div><p className='text-xs text-gray-500'>Variación NAV</p><p className={`font-semibold ${row.navChangePercent == null ? 'text-gray-400' : row.navChangePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>{row.navChangePercent == null ? 'Inicial' : `${row.navChangePercent >= 0 ? '+' : ''}${row.navChangePercent.toFixed(3)}%`}</p></div>
 										<div><p className='text-xs text-gray-500'>Cuotapartes</p><p className='font-medium'>{Number(row.shares || position.shares || 0) > 0 ? Number(row.shares || position.shares).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</p></div>
 										<div><p className='text-xs text-gray-500'>Valuación</p><p className='font-medium whitespace-nowrap'>{money(row.balance,position.currency)}</p></div>
 									</div>
 									{row.note && <p className='mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-gray-500 break-words'>{row.note}</p>}
 								</article>)}
-								{navHistory.length===0 && <p className='text-gray-500'>Todavía no hay valuaciones NAV guardadas.</p>}
+								{valuationHistory.length===0 && <p className='text-gray-500'>Todavía no hay valuaciones NAV guardadas.</p>}
 							</div>
 							<div className='mt-4 hidden md:block overflow-x-auto'>
 								<table className='w-full min-w-[760px] text-sm'>
 									<thead><tr className='text-left text-gray-500'><th className='py-2 pr-4'>Fecha</th><th className='pr-4'>Cuotaparte</th><th className='pr-4'>Variación NAV</th><th className='pr-4'>Cuotapartes</th><th className='pr-4'>Valuación</th><th className='text-right'>Acciones</th></tr></thead>
-									<tbody>{[...navHistory].reverse().map((row)=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3 pr-4 whitespace-nowrap'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td className='pr-4 whitespace-nowrap'>{row.navValue.toLocaleString('es-AR',{maximumFractionDigits:6})}</td><td className={`pr-4 whitespace-nowrap ${row.navChangePercent == null ? 'text-gray-400' : row.navChangePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>{row.navChangePercent == null ? 'Inicial' : `${row.navChangePercent >= 0 ? '+' : ''}${row.navChangePercent.toFixed(3)}%`}</td><td className='pr-4 whitespace-nowrap'>{Number(row.shares || position.shares || 0) > 0 ? Number(row.shares || position.shares).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</td><td className='pr-4 whitespace-nowrap'>{money(row.balance,position.currency)}</td><td><div className='flex justify-end gap-2'><button type='button' onClick={()=>setEditing({...row})} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' aria-label='Editar valuación'><FaPencilAlt /></button><button type='button' onClick={()=>setDeleting(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border border-red-400 text-red-500' aria-label='Eliminar valuación'><FaTrashAlt /></button></div></td></tr>)}</tbody>
+									<tbody>{[...valuationHistory].reverse().map((row)=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3 pr-4 whitespace-nowrap'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td className='pr-4 whitespace-nowrap'>{row.navValue > 0 ? row.navValue.toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</td><td className={`pr-4 whitespace-nowrap ${row.navChangePercent == null ? 'text-gray-400' : row.navChangePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>{row.navChangePercent == null ? 'Inicial' : `${row.navChangePercent >= 0 ? '+' : ''}${row.navChangePercent.toFixed(3)}%`}</td><td className='pr-4 whitespace-nowrap'>{Number(row.shares || position.shares || 0) > 0 ? Number(row.shares || position.shares).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</td><td className='pr-4 whitespace-nowrap'>{money(row.balance,position.currency)}</td><td><div className='flex justify-end gap-2'><button type='button' onClick={()=>setEditing({...row})} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' aria-label='Editar valuación'><FaPencilAlt /></button><button type='button' onClick={()=>setDeleting(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border border-red-400 text-red-500' aria-label='Eliminar valuación'><FaTrashAlt /></button></div></td></tr>)}</tbody>
 								</table>
 							</div>
 						</>
@@ -211,7 +216,7 @@ export default function PortfolioDetail() {
 					)}
 				</DetailSection>
 				{editing && <div className='mt-4 rounded-xl border border-purple-400 p-4'><h3 className='font-bold'>{isFci ? 'Editar nota de valuación' : 'Editar verificación'}</h3><p className='text-sm text-gray-500 mt-1'>{isFci ? 'El NAV, las cuotapartes y la valuación quedan como evidencia histórica. Podés corregir solamente la nota.' : 'La fecha, saldo y cambio observado permanecen como evidencia. Podés corregir su clasificación y nota.'}</p>{!isFci && <select value={editing.changeType || 'unclassified'} onChange={(e)=>setEditing({...editing,changeType:e.target.value})} className='mt-3 w-full rounded-lg border p-2 bg-transparent'><option value='unclassified'>Sin clasificar</option><option value='earning'>Rendimiento</option><option value='deposit'>Aporte</option><option value='withdrawal'>Retiro</option><option value='adjustment'>Ajuste</option>{editing.changeType === 'valuation' && <option value='valuation'>Valuación NAV</option>}</select>}<textarea value={editing.note || ''} onChange={(e)=>setEditing({...editing,note:e.target.value})} className='mt-3 w-full rounded-lg border p-2 bg-transparent' placeholder='Nota' /><div className='flex gap-2 mt-3'><button type='button' onClick={()=>setEditing(null)} disabled={Boolean(pendingAction)} className='flex-1 border rounded-lg py-2'>Cancelar</button><button type='button' onClick={saveVerification} disabled={Boolean(pendingAction)} className='flex-1 bg-purple-600 text-white rounded-lg py-2 font-semibold'>{pendingAction==='save'?<span className='inline-block w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin'/>:'Guardar'}</button></div></div>}
-				{deleting && <div className='mt-4 rounded-xl border border-red-400 p-4'><h3 className='font-bold'>Eliminar verificación</h3><p className='text-sm text-gray-500 mt-1'>{isFci ? 'Se quitará esta valuación NAV del historial. No genera ni elimina movimientos de Transacciones.' : 'Se quitará del historial y de los cálculos de rendimiento. Esta acción todavía no afecta Transacciones.'}</p><div className='flex gap-2 mt-3'><button type='button' onClick={()=>setDeleting(null)} disabled={Boolean(pendingAction)} className='flex-1 border rounded-lg py-2'>Cancelar</button><button type='button' onClick={removeVerification} disabled={Boolean(pendingAction)} className='flex-1 bg-red-600 text-white rounded-lg py-2 font-semibold'>{pendingAction==='delete'?<span className='inline-block w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin'/>:'Eliminar'}</button></div></div>}
+				{deleting && <div className='mt-4 rounded-xl border border-red-400 p-4'><h3 className='font-bold'>{isFci ? 'Eliminar valuación' : 'Eliminar verificación'}</h3><p className='text-sm text-gray-500 mt-1'>{isFci ? 'Se quitará esta valuación NAV del historial. No genera ni elimina movimientos de Transacciones.' : 'Se quitará del historial y de los cálculos de rendimiento. Esta acción todavía no afecta Transacciones.'}</p><div className='flex gap-2 mt-3'><button type='button' onClick={()=>setDeleting(null)} disabled={Boolean(pendingAction)} className='flex-1 border rounded-lg py-2'>Cancelar</button><button type='button' onClick={removeVerification} disabled={Boolean(pendingAction)} className='flex-1 bg-red-600 text-white rounded-lg py-2 font-semibold'>{pendingAction==='delete'?<span className='inline-block w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin'/>:'Eliminar'}</button></div></div>}
 				<p className='mt-4 text-xs text-amber-600 dark:text-amber-400'>{isFci ? 'En FCI, la variación del valor de cuotaparte modifica la valuación de la posición, pero no se considera ganancia realizada hasta que exista un rescate/venta.' : 'Las verificaciones nuevas separan rendimiento, aporte, retiro y ajuste. Los snapshots históricos sin clasificación no se suman como rendimiento confirmado ni se envían a Transacciones.'}</p>
 			</div>
 		</main><AppFooter />
