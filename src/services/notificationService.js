@@ -32,6 +32,7 @@ export const backfillExpenseNotifications = async (userId, categories = []) => {
 				selectedExpirationDate: expense.selectedExpirationDate,
 			});
 		const creditCard = String(expense.category || '').includes('Resumen tarjeta');
+		const isPaid = expense.paymentStatus === 'paid' || expense.paid === true;
 		const enabled =
 			typeof expense.notificationEnabled === 'boolean'
 				? expense.notificationEnabled
@@ -50,8 +51,10 @@ export const backfillExpenseNotifications = async (userId, categories = []) => {
 					? Number(expense.amount)
 					: null,
 				leadDays: Number(expense.notificationLeadDays ?? settings.leadDays ?? 5),
-				status: 'active',
-				readAt: null,
+				status: isPaid ? 'paid' : 'active',
+				readAt: isPaid ? expense.paidAt || new Date() : null,
+				paidAt: isPaid ? expense.paidAt || new Date() : null,
+				paidDueDate: isPaid ? expense.paidDueDate || dueDate : null,
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			})
