@@ -105,7 +105,6 @@ function Portfolio() {
 	const [verifyChangeType, setVerifyChangeType] = useState('earning');
 	const [verifyNote, setVerifyNote] = useState('');
 	const [verifyNav, setVerifyNav] = useState('');
-	const [verifyReportedEarnings, setVerifyReportedEarnings] = useState('');
 	const [rateTarget, setRateTarget] = useState(null);
 		const [quickRate, setQuickRate] = useState('');
 	const [pendingAction, setPendingAction] = useState('');
@@ -375,28 +374,34 @@ function Portfolio() {
 	};
 
 	const requestVerify = (position) => {
+		const isNav = position.trackingMode === 'NAV' || position.category === 'FCI';
 		setVerifyTarget(position);
 		setVerifyBalance(String(position.balance || ''));
 		setVerifyChangeType('earning');
 		setVerifyNote('');
-		setVerifyNav(position.trackingMode === 'NAV' ? String(position.nav ?? '') : '');
-		setVerifyReportedEarnings(position.trackingMode === 'NAV' ? String(position.realizedEarnings ?? position.lastEarning ?? '') : '');
+		setVerifyNav(isNav ? String(position.nav ?? '') : '');
 	};
 
 	const verify = async () => {
-		if (!verifyTarget || verifyBalance === '' || pendingAction) return;
+		if (!verifyTarget || pendingAction) return;
+		const isNav = verifyTarget.trackingMode === 'NAV' || verifyTarget.category === 'FCI';
+		const hasShares = Number(verifyTarget.shares || 0) > 0;
+		if (isNav ? (verifyNav === '' || (!hasShares && verifyBalance === '')) : verifyBalance === '') return;
 		setPendingAction('verify');
 		try {
-			await verifyPortfolioPosition(user.uid, verifyTarget, verifyBalance, { changeType: verifyChangeType, note: verifyNote, nav: verifyNav, reportedEarnings: verifyReportedEarnings });
-			toast.success('Saldo verificado y snapshot guardado');
+			await verifyPortfolioPosition(user.uid, verifyTarget, verifyBalance, {
+				changeType: verifyChangeType,
+				note: verifyNote,
+				nav: verifyNav,
+			});
+			toast.success(isNav ? 'Cuotaparte actualizada y valuación guardada' : 'Saldo verificado y snapshot guardado');
 			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 			setVerifyTarget(null);
 			setVerifyBalance('');
 			setVerifyNote('');
 			setVerifyNav('');
-			setVerifyReportedEarnings('');
 		} catch (error) {
-			toast.error('No se pudo verificar el saldo');
+			toast.error(error.message || (isNav ? 'No se pudo actualizar la cuotaparte' : 'No se pudo verificar el saldo'));
 		} finally {
 			setPendingAction('');
 		}
@@ -444,6 +449,21 @@ function Portfolio() {
 
 
 		const isNavVerification = isNavVerification;
+
+	const isNavVerification = Boolean(
+		verifyTarget && (verifyTarget.trackingMode === 'NAV' || verifyTarget.category === 'FCI')
+	);
+	const verifyShares = Number(verifyTarget?.shares || 0);
+	const verifyNavNumber = Number(verifyNav || 0);
+	const calculatedNavBalance =
+		isNavVerification && verifyShares > 0 && verifyNavNumber > 0
+			? verifyShares * verifyNavNumber
+			: null;
+	const currentNav = Number(verifyTarget?.nav || 0);
+	const navVariationPercent =
+		isNavVerification && currentNav > 0 && verifyNavNumber > 0
+			? ((verifyNavNumber / currentNav) - 1) * 100
+			: null;
 
 	const portfolioFormContent = (
 		<form onSubmit={submit} className='space-y-2 text-white max-h-[78dvh] overflow-y-auto pr-4 mr-1 [scrollbar-gutter:stable]'>
@@ -670,7 +690,7 @@ function Portfolio() {
 										{performanceByPosition[position.id] && (
 											<div className='mt-2 text-sm'>
 												<p className={performanceByPosition[position.id].change >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500'}>
-													Cambio observado: {privateMoney(performanceByPosition[position.id].change, position.currency)} ({privatePercent(performanceByPosition[position.id].percent)})
+													{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'Variación de valuación' : 'Cambio observado'}: {privateMoney(performanceByPosition[position.id].change, position.currency)} ({privatePercent(performanceByPosition[position.id].percent)})
 												</p>
 												<p className='text-xs text-gray-400'>{privateCount(performanceByPosition[position.id].count)} snapshots</p>
 											</div>
@@ -678,7 +698,7 @@ function Portfolio() {
 									</div>
 								</div>
 								<div className='flex flex-col gap-3 mt-4'>
-									<button className='w-full px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => requestVerify(position)}>Verificar saldo</button>
+									<button className='w-full px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => requestVerify(position)}>{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'Actualizar cuotaparte' : 'Verificar saldo'}</button>
 									<div className='flex items-center gap-3 w-full'>
 										{position.infoUrl && <button title='Información oficial del activo' aria-label='Información oficial del activo' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-blue-400' onClick={() => openInfo(position)}><FaBookOpen /></button>}
 										{(position.category === 'Cuenta remunerada' || /earn\s*vault/i.test(`${position.name || ''} ${position.category || ''}`)) && <button title='Actualizar tasa rápidamente' aria-label='Actualizar tasa rápidamente' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-green-400' onClick={() => requestRateUpdate(position)}><FaPercent /></button>}
@@ -704,15 +724,52 @@ function Portfolio() {
 				show={Boolean(verifyTarget)}
 				component={(
 					<div className='text-white pr-8'>
-						<h2 className='text-xl font-bold'>Confirmar saldo</h2>
-						<p className='mt-2 text-sm text-gray-300'>Ingresá el saldo actual de <strong>{verifyTarget?.name}</strong>. Al confirmar también se guardará un snapshot para el histórico.</p>
-						<input autoFocus className='portfolio-input mt-4' type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo actual' />
-						{verifyTarget?.trackingMode === 'NAV' ? <div className='mt-3 space-y-3'><div className='rounded-lg border border-blue-400/40 bg-blue-500/10 p-3 text-sm text-blue-100'>Esta posición se valúa por NAV. El cambio de saldo se guardará como <strong>variación de valuación</strong>, no como rendimiento confirmado ni como movimiento para Transacciones.</div><input className='portfolio-input' type='number' step='0.000001' min='0' value={verifyNav} onChange={(event) => setVerifyNav(event.target.value)} placeholder='NAV / valor cuotaparte (opcional)' /><input className='portfolio-input' type='number' step='0.01' value={verifyReportedEarnings} onChange={(event) => setVerifyReportedEarnings(event.target.value)} placeholder='Rendimiento acumulado informado (opcional)' /></div> : <label className='block mt-3 text-sm text-gray-300'>¿Qué explica el cambio de saldo?<select className='portfolio-input mt-1' value={verifyChangeType} onChange={(event) => setVerifyChangeType(event.target.value)}><option value='earning'>Rendimiento</option><option value='deposit'>Aporte</option><option value='withdrawal'>Retiro</option><option value='adjustment'>Ajuste</option></select></label>}
-						<textarea className='portfolio-input mt-3' rows='2' value={verifyNote} onChange={(event) => setVerifyNote(event.target.value)} placeholder='Nota opcional sobre esta verificación' />
-						<p className='mt-2 text-xs text-gray-400'>{verifyTarget?.trackingMode === 'NAV' ? 'Las variaciones NAV quedan fuera del cierre mensual y de Transacciones hasta que exista una ganancia realizada.' : 'Solo “Rendimiento” se acumulará como ganancia confirmada. Aportes y retiros quedan separados para no inflar el rendimiento.'}</p>
+						<h2 className='text-xl font-bold'>{isNavVerification ? 'Actualizar cuotaparte' : 'Confirmar saldo'}</h2>
+						<p className='mt-2 text-sm text-gray-300'>
+							{isNavVerification
+								? <>Ingresá el <strong>valor de la cuotaparte</strong> actual de <strong>{verifyTarget?.name}</strong>. LTC guardará una valuación NAV, no un rendimiento realizado.</>
+								: <>Ingresá el saldo actual de <strong>{verifyTarget?.name}</strong>. Al confirmar también se guardará un snapshot para el histórico.</>}
+						</p>
+
+						{isNavVerification ? (
+							<div className='mt-4 space-y-3'>
+								<div className='rounded-xl border border-purple-500/30 bg-purple-500/10 p-3'>
+									<div className='grid grid-cols-2 gap-3 text-sm'>
+										<div><p className='text-xs text-gray-400'>Cuotapartes</p><p className='font-bold'>{verifyShares > 0 ? verifyShares.toLocaleString('es-AR', { maximumFractionDigits: 6 }) : 'No cargadas'}</p></div>
+										<div><p className='text-xs text-gray-400'>NAV anterior</p><p className='font-bold'>{currentNav > 0 ? currentNav.toLocaleString('es-AR', { maximumFractionDigits: 6 }) : 'Sin dato'}</p></div>
+									</div>
+								</div>
+								<label className='block text-sm font-semibold text-gray-200'>
+									Valor cuotaparte / NAV actual
+									<input autoFocus className='portfolio-input mt-1' type='number' step='0.000001' min='0' value={verifyNav} onChange={(event) => setVerifyNav(event.target.value)} placeholder='Ej. 1.168245' />
+								</label>
+								{verifyShares > 0 ? (
+									<div className='rounded-xl border border-slate-700 bg-slate-900/50 p-3'>
+										<p className='text-xs text-gray-400'>Valuación calculada · cuotapartes × NAV</p>
+										<p className='mt-1 text-xl font-bold'>{calculatedNavBalance == null ? '—' : money(calculatedNavBalance, verifyTarget?.currency)}</p>
+										{navVariationPercent != null && <p className={`mt-1 text-sm font-semibold ${navVariationPercent >= 0 ? 'text-green-400' : 'text-red-400'}`}>Variación NAV: {navVariationPercent >= 0 ? '+' : ''}{navVariationPercent.toFixed(3)}%</p>}
+									</div>
+								) : (
+									<label className='block text-sm font-semibold text-gray-200'>
+										Valuación total
+										<input className='portfolio-input mt-1' type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo / valuación actual' />
+										<span className='mt-1 block text-xs font-normal text-amber-300'>Cargá las cuotapartes en la posición para que LTC calcule automáticamente la valuación desde el NAV.</span>
+									</label>
+								)}
+								<div className='rounded-lg border border-blue-400/30 bg-blue-500/10 p-3 text-xs text-blue-100'>La suba o baja de la cuotaparte se registra como <strong>variación de valuación</strong>. No se suma a ganancias realizadas ni genera una transacción.</div>
+							</div>
+						) : (
+							<>
+								<input autoFocus className='portfolio-input mt-4' type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo actual' />
+								<label className='block mt-3 text-sm text-gray-300'>¿Qué explica el cambio de saldo?<select className='portfolio-input mt-1' value={verifyChangeType} onChange={(event) => setVerifyChangeType(event.target.value)}><option value='earning'>Rendimiento</option><option value='deposit'>Aporte</option><option value='withdrawal'>Retiro</option><option value='adjustment'>Ajuste</option></select></label>
+							</>
+						)}
+
+						<textarea className='portfolio-input mt-3' rows='2' value={verifyNote} onChange={(event) => setVerifyNote(event.target.value)} placeholder={isNavVerification ? 'Nota opcional sobre esta valuación' : 'Nota opcional sobre esta verificación'} />
+						{!isNavVerification && <p className='mt-2 text-xs text-gray-400'>Solo “Rendimiento” se acumulará como ganancia confirmada. Aportes y retiros quedan separados para no inflar el rendimiento.</p>}
 						<div className='grid grid-cols-2 gap-2 mt-5'>
 							<button type='button' onClick={() => setVerifyTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
-							<button type='button' disabled={verifyBalance === '' || pendingAction === 'verify'} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'verify' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'verify' ? 'Verificando…' : 'Confirmar saldo'}</button>
+							<button type='button' disabled={(isNavVerification ? (verifyNav === '' || (verifyShares <= 0 && verifyBalance === '')) : verifyBalance === '') || pendingAction === 'verify'} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'verify' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'verify' ? (isNavVerification ? 'Actualizando…' : 'Verificando…') : (isNavVerification ? 'Guardar cuotaparte' : 'Confirmar saldo')}</button>
 						</div>
 					</div>
 				)}
