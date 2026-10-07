@@ -96,3 +96,20 @@ export const markNotificationUnread = (userId, notificationId) => {
 		{ merge: true }
 	);
 };
+
+
+export const dismissNotificationUntilTomorrow = (userId, notificationId) => {
+	if (!userId || !notificationId) return Promise.resolve();
+
+	const dismissedUntil = new Date();
+	dismissedUntil.setDate(dismissedUntil.getDate() + 1);
+	dismissedUntil.setHours(0, 0, 0, 0);
+
+	return notificationsCollection(userId).doc(notificationId).set(
+		{
+			dismissedUntil,
+			updatedAt: new Date(),
+		},
+		{ merge: true }
+	);
+};
