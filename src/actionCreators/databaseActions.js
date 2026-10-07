@@ -26,48 +26,71 @@ const notificationPayload = (data, sourceId, includeCreatedAt = false) => ({
 	updatedAt: new Date(),
 });
 
+const syncExpenseNotification = async (
+	userRef,
+	sourceId,
+	data,
+	includeCreatedAt = false
+) => {
+	const notificationRef = userRef.collection('notifications').doc(sourceId);
+
+	try {
+		if (data.notificationEnabled && data.dueDate) {
+			await notificationRef.set(
+				notificationPayload(data, sourceId, includeCreatedAt),
+				{ merge: !includeCreatedAt }
+			);
+		} else {
+			await notificationRef.delete();
+		}
+	} catch (error) {
+		// Reminders are supplementary: a missing notification permission must never
+		// block the user's transaction create/update flow.
+		console.warn('Could not sync transaction reminder', error);
+	}
+};
+
+const removeExpenseNotification = async (userRef, sourceId) => {
+	try {
+		await userRef.collection('notifications').doc(sourceId).delete();
+	} catch (error) {
+		console.warn('Could not remove transaction reminder', error);
+	}
+};
+
 export const storeDataAction = (data) => {
 	return async (dispatch) => {
 		const userRef = firestore.collection('users').doc(data.userId);
 		const expenseRef = userRef.collection('expenses').doc();
-		const notificationRef = userRef.collection('notifications').doc(expenseRef.id);
-		const batch = firestore.batch();
-
-		batch.set(expenseRef, {
-			date: new Date(),
-			expenseName: data.name,
-			comment: data.comment,
-			category: data.category,
-			...(data?.amount && {
-				amount: data?.amount,
-			}),
-			selectedDate: data.selectedDate,
-			...(data?.selectedExpirationDate && {
-				selectedExpirationDate: data?.selectedExpirationDate,
-			}),
-			...(data?.selectedCloseDate && {
-				selectedCloseDate: data?.selectedCloseDate,
-			}),
-			...(data?.currencyQuantity && {
-				currencyQuantity: data?.currencyQuantity,
-			}),
-			...(data?.currencyExchangeRate && {
-				currencyExchangeRate: data?.currencyExchangeRate,
-			}),
-			dueDate: data.dueDate || null,
-			notificationEnabled: Boolean(data.notificationEnabled),
-			notificationLeadDays: Number(data.notificationLeadDays || 5),
-		});
-
-		if (data.notificationEnabled && data.dueDate) {
-			batch.set(
-				notificationRef,
-				notificationPayload(data, expenseRef.id, true)
-			);
-		}
 
 		try {
-			await batch.commit();
+			await expenseRef.set({
+				date: new Date(),
+				expenseName: data.name,
+				comment: data.comment,
+				category: data.category,
+				...(data?.amount && {
+					amount: data?.amount,
+				}),
+				selectedDate: data.selectedDate,
+				...(data?.selectedExpirationDate && {
+					selectedExpirationDate: data?.selectedExpirationDate,
+				}),
+				...(data?.selectedCloseDate && {
+					selectedCloseDate: data?.selectedCloseDate,
+				}),
+				...(data?.currencyQuantity && {
+					currencyQuantity: data?.currencyQuantity,
+				}),
+				...(data?.currencyExchangeRate && {
+					currencyExchangeRate: data?.currencyExchangeRate,
+				}),
+				dueDate: data.dueDate || null,
+				notificationEnabled: Boolean(data.notificationEnabled),
+				notificationLeadDays: Number(data.notificationLeadDays || 5),
+			});
+
+			await syncExpenseNotification(userRef, expenseRef.id, data, true);
 			toast.success(CREATE_TRANSACTION_SUCCESS_MESSAGE);
 			dispatch({ type: 'STORE_DATA', res: { id: expenseRef.id } });
 			return expenseRef.id;
@@ -82,47 +105,35 @@ export const updateDataAction = (data, docId) => {
 	return async (dispatch) => {
 		const userRef = firestore.collection('users').doc(data.userId);
 		const expenseRef = userRef.collection('expenses').doc(docId);
-		const notificationRef = userRef.collection('notifications').doc(docId);
-		const batch = firestore.batch();
-
-		batch.update(expenseRef, {
-			date: new Date(),
-			expenseName: data.name,
-			comment: data.comment,
-			category: data.category,
-			...(data?.amount && {
-				amount: data?.amount,
-			}),
-			selectedDate: data.selectedDate,
-			...(data?.selectedExpirationDate && {
-				selectedExpirationDate: data?.selectedExpirationDate,
-			}),
-			...(data?.selectedCloseDate && {
-				selectedCloseDate: data?.selectedCloseDate,
-			}),
-			...(data?.currencyQuantity && {
-				currencyQuantity: data?.currencyQuantity,
-			}),
-			...(data?.currencyExchangeRate && {
-				currencyExchangeRate: data?.currencyExchangeRate,
-			}),
-			dueDate: data.dueDate || null,
-			notificationEnabled: Boolean(data.notificationEnabled),
-			notificationLeadDays: Number(data.notificationLeadDays || 5),
-		});
-
-		if (data.notificationEnabled && data.dueDate) {
-			batch.set(
-				notificationRef,
-				notificationPayload(data, docId, false),
-				{ merge: true }
-			);
-		} else {
-			batch.delete(notificationRef);
-		}
 
 		try {
-			await batch.commit();
+			await expenseRef.update({
+				date: new Date(),
+				expenseName: data.name,
+				comment: data.comment,
+				category: data.category,
+				...(data?.amount && {
+					amount: data?.amount,
+				}),
+				selectedDate: data.selectedDate,
+				...(data?.selectedExpirationDate && {
+					selectedExpirationDate: data?.selectedExpirationDate,
+				}),
+				...(data?.selectedCloseDate && {
+					selectedCloseDate: data?.selectedCloseDate,
+				}),
+				...(data?.currencyQuantity && {
+					currencyQuantity: data?.currencyQuantity,
+				}),
+				...(data?.currencyExchangeRate && {
+					currencyExchangeRate: data?.currencyExchangeRate,
+				}),
+				dueDate: data.dueDate || null,
+				notificationEnabled: Boolean(data.notificationEnabled),
+				notificationLeadDays: Number(data.notificationLeadDays || 5),
+			});
+
+			await syncExpenseNotification(userRef, docId, data, false);
 			toast.success(UPDATE_TRANSACTION_SUCCESS_MESSAGE);
 			dispatch({ type: 'UPDATE_DATA', res: { id: docId } });
 			return docId;
@@ -136,11 +147,11 @@ export const updateDataAction = (data, docId) => {
 export const importTransactionsAction = (userId, items) => async (dispatch) => {
 	const userRef = firestore.collection('users').doc(userId);
 	const collection = userRef.collection('expenses');
-	const notifications = userRef.collection('notifications');
 	const existing = await Promise.all(items.map((item) => collection.where('importKey', '==', item.importKey).limit(1).get()));
 	const fresh = items.filter((item, index) => existing[index].empty);
 	if (!fresh.length) return { imported: 0, duplicates: items.length };
 	const batch = firestore.batch();
+	const reminderSyncs = [];
 
 	fresh.forEach((item) => {
 		const ref = collection.doc();
@@ -151,6 +162,12 @@ export const importTransactionsAction = (userId, items) => async (dispatch) => {
 			selectedExpirationDate: item.selectedExpirationDate,
 		});
 		const notificationEnabled = Boolean(dueDate) && settings.enabled;
+		const normalizedItem = {
+			...item,
+			dueDate,
+			notificationEnabled,
+			notificationLeadDays: settings.leadDays,
+		};
 
 		batch.set(ref, {
 			date: new Date(),
@@ -169,18 +186,14 @@ export const importTransactionsAction = (userId, items) => async (dispatch) => {
 			notificationLeadDays: settings.leadDays,
 		});
 
-		if (notificationEnabled) {
-			batch.set(
-				notifications.doc(ref.id),
-				notificationPayload({
-					...item,
-					dueDate,
-					notificationLeadDays: settings.leadDays,
-				}, ref.id, true)
-			);
-		}
+		reminderSyncs.push({ refId: ref.id, data: normalizedItem });
 	});
 	await batch.commit();
+	await Promise.all(
+		reminderSyncs.map(({ refId, data }) =>
+			syncExpenseNotification(userRef, refId, data, true)
+		)
+	);
 	dispatch({ type: 'IMPORT_TRANSACTIONS_SUCCESS', count: fresh.length });
 	return { imported: fresh.length, duplicates: items.length - fresh.length };
 };
@@ -259,13 +272,10 @@ export const deleteCardAction = (docId) => {
 	return async (dispatch, getState) => {
 		const userId = getState().auth.user.uid;
 		const userRef = firestore.collection('users').doc(userId);
-		const batch = firestore.batch();
-
-		batch.delete(userRef.collection('expenses').doc(docId));
-		batch.delete(userRef.collection('notifications').doc(docId));
 
 		try {
-			await batch.commit();
+			await userRef.collection('expenses').doc(docId).delete();
+			await removeExpenseNotification(userRef, docId);
 			toast.warn(DELETE_TRANSACTION_WARNING_MESSAGE);
 			dispatch({ type: 'DELETE_DOC', docId });
 		} catch (err) {
