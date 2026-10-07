@@ -111,3 +111,60 @@ export const markNotificationUnread = (userId, notificationId) => {
 		{ merge: true }
 	);
 };
+
+export const setNotificationPaymentState = async (
+	userId,
+	notificationId,
+	dueDate,
+	isPaid = true
+) => {
+	if (!userId || !notificationId) return;
+
+	const now = new Date();
+	const userRef = firestore.collection('users').doc(userId);
+	const notificationRef = userRef.collection('notifications').doc(notificationId);
+	const expenseRef = userRef.collection('expenses').doc(notificationId);
+	const batch = firestore.batch();
+
+	if (isPaid) {
+		batch.set(
+			notificationRef,
+			{
+				status: 'paid',
+				paidAt: now,
+				paidDueDate: dueDate || null,
+				readAt: now,
+				updatedAt: now,
+			},
+			{ merge: true }
+		);
+		batch.update(expenseRef, {
+			paymentStatus: 'paid',
+			paid: true,
+			paidAt: now,
+			paidDueDate: dueDate || null,
+			paymentUpdatedAt: now,
+		});
+	} else {
+		batch.set(
+			notificationRef,
+			{
+				status: 'active',
+				paidAt: null,
+				paidDueDate: null,
+				readAt: now,
+				updatedAt: now,
+			},
+			{ merge: true }
+		);
+		batch.update(expenseRef, {
+			paymentStatus: 'pending',
+			paid: false,
+			paidAt: null,
+			paidDueDate: null,
+			paymentUpdatedAt: now,
+		});
+	}
+
+	await batch.commit();
+};
