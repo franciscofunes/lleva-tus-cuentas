@@ -70,6 +70,32 @@ body {
 	overflow-y: auto;
 	-webkit-overflow-scrolling: touch;
 }
+
+/*
+ * Mobile browsers (especially Chromium on Android) paint a temporary tap
+ * highlight/focus overlay over buttons and links. It looks like the control
+ * remains "selected" after tapping it. Keep keyboard focus visible, but remove
+ * that touch-only overlay from tappable UI surfaces.
+ */
+@media (hover: none) and (pointer: coarse) {
+	a,
+	button,
+	[role='button'],
+	summary,
+	label[for] {
+		-webkit-tap-highlight-color: transparent;
+		touch-action: manipulation;
+	}
+
+	a:focus:not(:focus-visible),
+	button:focus:not(:focus-visible),
+	[role='button']:focus:not(:focus-visible),
+	summary:focus:not(:focus-visible) {
+		outline: none;
+		--tw-ring-offset-shadow: 0 0 #0000;
+		--tw-ring-shadow: 0 0 #0000;
+	}
+}
 #dashboard {
 	overflow-y: scroll;
 	height: 85vh;
