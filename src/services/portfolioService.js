@@ -11,7 +11,38 @@ const reconciliations = (userId) =>
 
 export const subscribePortfolioPositions = (userId, onData, onError) =>
 	positions(userId).orderBy('updatedAt', 'desc').onSnapshot(
-		(res) => onData(res.docs.map((doc) => ({ id: doc.id, ...doc.data() }))),
+		(res) => {
+			const rows = res.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+			const orderedRows = [...rows].sort((a, b) => {
+				const aOrder = Number(a.sortOrder);
+				const bOrder = Number(b.sortOrder);
+				const aHasOrder = Number.isFinite(aOrder);
+				const bHasOrder = Number.isFinite(bOrder);
+
+				if (aHasOrder && bHasOrder) return aOrder - bOrder;
+				if (aHasOrder) return -1;
+				if (bHasOrder) return 1;
+				return 0;
+			});
+
+			onData(orderedRows);
+
+			const withoutOrder = rows.filter((row) => !Number.isFinite(Number(row.sortOrder)));
+			if (!withoutOrder.length) return;
+
+			const hasPersistedOrder = rows.some((row) => Number.isFinite(Number(row.sortOrder)));
+			const maxOrder = rows.reduce((max, row) => {
+				const value = Number(row.sortOrder);
+				return Number.isFinite(value) ? Math.max(max, value) : max;
+			}, -1);
+
+			const batch = firestore.batch();
+			withoutOrder.forEach((row, index) => {
+				const order = hasPersistedOrder ? maxOrder + index + 1 : rows.indexOf(row);
+				batch.update(positions(userId).doc(row.id), { sortOrder: order });
+			});
+			batch.commit().catch((error) => console.warn('Could not initialize portfolio order', error));
+		},
 		onError
 	);
 
@@ -38,13 +69,29 @@ const normalize = (data) => ({
 });
 
 export const createPortfolioPosition = (userId, data) =>
-	positions(userId).add({ ...normalize(data), lastVerifiedAt: null, createdAt: new Date(), updatedAt: new Date() });
+	positions(userId).add({
+		...normalize(data),
+		sortOrder: Number.isFinite(Number(data.sortOrder)) ? Number(data.sortOrder) : Date.now(),
+		lastVerifiedAt: null,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	});
 
 export const updatePortfolioPosition = (userId, positionId, data) =>
 	positions(userId).doc(positionId).update({ ...normalize(data), updatedAt: new Date() });
 
 export const deletePortfolioPosition = (userId, positionId) =>
 	positions(userId).doc(positionId).delete();
+
+export const reorderPortfolioPositions = async (userId, orderedPositions) => {
+	const batch = firestore.batch();
+
+	orderedPositions.forEach((position, index) => {
+		batch.update(positions(userId).doc(position.id), { sortOrder: index });
+	});
+
+	return batch.commit();
+};
 
 export const createPortfolioSnapshot = (userId, position, overrides = {}) =>
 	snapshots(userId).add({
