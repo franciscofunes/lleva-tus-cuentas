@@ -589,6 +589,9 @@ function Dashboard() {
                     currencyExchangeRate={doc.currencyExchangeRate}
                     currencyQuantity={doc.currencyQuantity}
                     currencySellQuantity={doc.currencySellQuantity}
+                    paymentStatus={doc.paymentStatus}
+                    paidAt={doc.paidAt}
+                    paidDueDate={doc.paidDueDate}
                     setExpense={setExpense}
                     setIncome={setIncome}
                     setName={setName}
