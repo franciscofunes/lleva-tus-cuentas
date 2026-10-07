@@ -20,6 +20,14 @@ import {
 	isVisibleReminder,
 } from '../utils/notificationLifecycle';
 
+const dueLabel = (days) => {
+	if (days < -1) return `Venció hace ${Math.abs(days)} días`;
+	if (days === -1) return 'Venció ayer';
+	if (days === 0) return 'Vence hoy';
+	if (days === 1) return 'Vence mañana';
+	return `Vence en ${days} días`;
+};
+
 const money = (value) => {
 	const amount = Number(value);
 	if (!Number.isFinite(amount)) return '';
