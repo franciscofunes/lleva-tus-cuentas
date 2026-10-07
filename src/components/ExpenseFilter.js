@@ -9,6 +9,7 @@ import {
 	filterDataAction,
 	getTotalBalance,
 	setSelectedFilter,
+	setSelectedDate as setSelectedDateAction,
 	setFilterChanging,
 } from '../actionCreators/databaseActions';
 
@@ -66,6 +67,7 @@ const ExpenseFilter = () => {
 		const day = moment(selectedDate).date();
 
 		setSelectedDate(selectedDate);
+		dispatch(setSelectedDateAction(moment(selectedDate).format('YYYY-MM-DD')));
 		dispatch(setSelectedFilter('day'));
 		dispatch(setFilterChanging(true));
 
