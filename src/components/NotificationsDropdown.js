@@ -263,6 +263,7 @@ const NotificationDropdown = () => {
 	const [notificationsError, setNotificationsError] = useState(false);
 	const [selectedNotification, setSelectedNotification] = useState(null);
 	const [savingPaymentId, setSavingPaymentId] = useState('');
+	const selectedNotificationId = selectedNotification?.id;
 	const paymentData = useSelector((state) => state.database.paymentData);
 	const isPaymentDataLoading = useSelector(
 		(state) => state.database.isPaymentDataLoading
@@ -351,10 +352,10 @@ const NotificationDropdown = () => {
 	}, [categories, user?.uid]);
 
 	useEffect(() => {
-		if (!selectedNotification) return;
-		const updated = notifications.find((item) => item.id === selectedNotification.id);
+		if (!selectedNotificationId) return;
+		const updated = notifications.find((item) => item.id === selectedNotificationId);
 		if (updated) setSelectedNotification(updated);
-	}, [notifications, selectedNotification?.id]);
+	}, [notifications, selectedNotificationId]);
 
 	useEffect(() => {
 		const handleOutsideClick = (event) => {
