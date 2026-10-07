@@ -4,6 +4,7 @@ const initState = {
 	categories: null,
 	isDataFetching: true,
 	selectedFilter: 'month',
+	selectedDate: null,
 	isFilterChanging: false,
 	savedSubscription: true,
 	hasSubscription: false,
@@ -51,6 +52,11 @@ export const databaseReducer = (state = initState, action) => {
 			return {
 				...state,
 				selectedFilter: action.filter,
+			};
+		case 'SET_SELECTED_DATE':
+			return {
+				...state,
+				selectedDate: action.selectedDate,
 			};
 		case 'SET_FILTER_CHANGING':
 			return {
