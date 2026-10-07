@@ -449,6 +449,11 @@ export const setSelectedFilter = (filter) => ({
 	filter,
 });
 
+export const setSelectedDate = (selectedDate) => ({
+	type: 'SET_SELECTED_DATE',
+	selectedDate,
+});
+
 export const setFilterChanging = (isFilterChanging) => {
 	return {
 		type: 'SET_FILTER_CHANGING',
