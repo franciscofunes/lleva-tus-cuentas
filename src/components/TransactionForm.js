@@ -11,6 +11,11 @@ import InfoTooltip from "../components/InfoTooltip";
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from "../shared/constants/tooltip-messages.const";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
 import { parseTransactionsMarkdown } from "../utils/transactionsMarkdown";
+import {
+  getNotificationSettings,
+  resolveTransactionDueDate,
+  usesSelectedDateAsDueDate,
+} from "../utils/transactionDueDates";
 
 const TransactionForm = ({
   amount,
@@ -53,6 +58,18 @@ const TransactionForm = ({
   const [markdown, setMarkdown] = useState("");
   const [isParsingMarkdown, setIsParsingMarkdown] = useState(false);
   const [markdownMessage, setMarkdownMessage] = useState("");
+  const selectedDateIsDueDate = usesSelectedDateAsDueDate(category, categories);
+  const notificationSettings = getNotificationSettings(category, categories);
+  const dueDate = resolveTransactionDueDate({
+    category,
+    categories,
+    selectedDate,
+    selectedExpirationDate,
+  });
+  const notificationEnabled =
+    Boolean(dueDate) &&
+    (notificationSettings.enabled || isCreditCardCategory);
+
 
   const {
     register,
@@ -112,6 +129,9 @@ const TransactionForm = ({
           selectedCloseDate,
           currencyQuantity,
           currencyExchangeRate,
+          dueDate,
+          notificationEnabled,
+          notificationLeadDays: notificationSettings.leadDays,
         })
       );
 
@@ -142,6 +162,9 @@ const TransactionForm = ({
             selectedCloseDate,
             currencyQuantity,
             currencyExchangeRate,
+            dueDate,
+            notificationEnabled,
+            notificationLeadDays: notificationSettings.leadDays,
           },
           expenseId
         )
@@ -605,7 +628,7 @@ const TransactionForm = ({
           htmlFor="date"
           className="block text-sm font-medium text-gray-700 dark:text-white"
         >
-          Fecha
+          {selectedDateIsDueDate ? "Fecha de vencimiento" : "Fecha"}
         </label>
         <input
           className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
@@ -620,7 +643,19 @@ const TransactionForm = ({
           })}
         />
         {errors.selectedDate && (
-          <p className="text-red-500 text-sm ">Ingrese una fecha válida</p>
+          <p className="text-red-500 text-sm ">
+            {selectedDateIsDueDate
+              ? "Ingrese una fecha de vencimiento válida"
+              : "Ingrese una fecha válida"}
+          </p>
+        )}
+        {selectedDateIsDueDate && (
+          <p className="text-xs text-purple-500 dark:text-purple-300">
+            Esta categoría usa la fecha como vencimiento
+            {notificationEnabled
+              ? ` y te avisará con ${notificationSettings.leadDays} día${notificationSettings.leadDays === 1 ? "" : "s"} de anticipación.`
+              : "."}
+          </p>
         )}
 
         <label
