@@ -695,6 +695,7 @@ function Portfolio() {
 						)}
 						{!loading && positions.length > 0 && (
 							<Reorder.Group
+								as='div'
 								axis='y'
 								values={positions}
 								onReorder={handleReorderPositions}
