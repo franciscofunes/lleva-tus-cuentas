@@ -115,7 +115,7 @@ export default function BimonetarySummary({ docs, categories, userId, hideValues
     <div className='space-y-3'>
       <div className='grid grid-cols-1 gap-3'>
         <SummaryCard id='ars' title='Flujo de pesos argentinos' eyebrow='ARS · Este período'
-          value={money(flows.knownArsNet, 'ARS')} color={signedColor(flows.knownArsNet)}
+          value={money(flows.knownArsNet, 'ARS')} color={hideValues ? 'text-slate-900 dark:text-slate-100' : signedColor(flows.knownArsNet)}
           caption='Entradas y salidas en pesos' Icon={FiDollarSign}
           expanded={expanded.ars} onToggle={() => toggle('ars')}>
           <dl className='space-y-2.5 text-sm'>
@@ -131,7 +131,7 @@ export default function BimonetarySummary({ docs, categories, userId, hideValues
         </SummaryCard>
 
         <SummaryCard id='usd' title='Movimiento de dólares' eyebrow='USD · Este período'
-          value={money(flows.knownUsdMovement, 'USD')} color={signedColor(flows.knownUsdMovement)}
+          value={money(flows.knownUsdMovement, 'USD')} color={hideValues ? 'text-slate-900 dark:text-slate-100' : signedColor(flows.knownUsdMovement)}
           caption='Ingresados + comprados − vendidos' Icon={FiTrendingUp}
           expanded={expanded.usd} onToggle={() => toggle('usd')}>
           <dl className='space-y-2.5 text-sm'>
