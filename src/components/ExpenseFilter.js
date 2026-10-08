@@ -4,7 +4,8 @@ import 'moment/locale/es';
 import React, { useState } from 'react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { FiCalendar, FiChevronDown } from 'react-icons/fi';
+import '../styles/ltc-datepicker.css';
+import { FiCalendar, FiChevronDown, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   filterDataAction,
@@ -55,6 +56,52 @@ const CalendarTrigger = React.forwardRef(({ onClick, disabled }, ref) => (
 ));
 
 CalendarTrigger.displayName = 'CalendarTrigger';
+
+/** Reuses the installed react-datepicker 4.x custom-header API. */
+export function CalendarHeader({
+  date, decreaseMonth, increaseMonth, changeMonth, changeYear,
+  prevMonthButtonDisabled, nextMonthButtonDisabled,
+}) {
+  const monthNames = moment(date).locale('es').localeData().months();
+  const currentYear = new Date().getFullYear();
+  const firstYear = Math.min(1990, date.getFullYear() - 10);
+  const lastYear = Math.max(currentYear + 5, date.getFullYear() + 5);
+  const years = Array.from({ length: lastYear - firstYear + 1 }, (_, i) => firstYear + i);
+
+  return (
+    <div className='ltc-calendar__header'>
+      <button type='button' className='ltc-calendar__nav'
+        onClick={decreaseMonth} disabled={prevMonthButtonDisabled}
+        aria-label='Mes anterior' title='Mes anterior'>
+        <FiChevronLeft size={20} aria-hidden='true' />
+      </button>
+      <div className='ltc-calendar__controls'>
+        <label htmlFor='ltc-calendar-month' className='sr-only'>Mes del calendario</label>
+        <select id='ltc-calendar-month' className='ltc-calendar__select ltc-calendar__select--month'
+          aria-label='Mes del calendario' value={date.getMonth()}
+          onChange={(event) => changeMonth(Number(event.target.value))}>
+          {monthNames.map((name, month) => (
+            <option key={name} value={month}>{name}</option>
+          ))}
+        </select>
+        <label htmlFor='ltc-calendar-year' className='sr-only'>Año del calendario</label>
+        <select id='ltc-calendar-year' className='ltc-calendar__select ltc-calendar__select--year'
+          aria-label='Año del calendario' value={date.getFullYear()}
+          onChange={(event) => changeYear(Number(event.target.value))}>
+          {years.map((year) => (
+            <option key={year} value={year}>{year}</option>
+          ))}
+        </select>
+      </div>
+      <button type='button' className='ltc-calendar__nav'
+        onClick={increaseMonth} disabled={nextMonthButtonDisabled}
+        aria-label='Mes siguiente' title='Mes siguiente'>
+        <FiChevronRight size={20} aria-hidden='true' />
+      </button>
+    </div>
+  );
+}
+
 
 function ExpenseFilter() {
   const dispatch = useDispatch();
@@ -115,12 +162,10 @@ function ExpenseFilter() {
           onChange={onDateChange}
           customInput={<CalendarTrigger />}
           locale='es'
-          showYearDropdown
-          scrollableMonthYearDropdown
-          dropdownMode='scroll'
           withPortal
+          calendarClassName='ltc-calendar'
+          renderCustomHeader={(props) => <CalendarHeader {...props} />}
           dateFormat='dd/MM/yyyy'
-          disabledKeyboardNavigation
           showPopperArrow={false}
           todayButton='Hoy'
         />
