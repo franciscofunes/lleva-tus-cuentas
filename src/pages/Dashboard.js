@@ -14,6 +14,7 @@ import {
 import BarChartWrapper from "../components/BarChartWrapper";
 import Card from "../components/Card";
 import ExpenseFilter from "../components/ExpenseFilter";
+import BimonetarySummary from "../components/BimonetarySummary";
 import FloatingMenu from "../components/FloatingMenu";
 import GenericModal from "../components/GenericModal";
 import LitaAssistantPanel from "../components/LitaAssitantPanel";
@@ -34,10 +35,6 @@ import closeEye from "../imgs/closeEye.svg";
 
 import AppFooter from "../components/AppFooter";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
-import {
-  currencyFormater,
-  currencyGenericFormater,
-} from "../shared/utils/currencyFormater";
 import ChartToggleMenu from "../components/ChartToogleMenu";
 import IncomeChartWrapper from "../components/IncomeChartWrapper";
 import DivisasChartWrapper from "../components/DivisasChartWrapper";
@@ -49,10 +46,6 @@ const SkeletonBlock = ({ className = "" }) => (
     aria-hidden="true"
     className={`rounded bg-slate-200 dark:bg-slate-700 ${className}`}
   />
-);
-
-const ValueSkeleton = ({ wide = false }) => (
-  <SkeletonBlock className={`mt-2 h-5 animate-pulse ${wide ? "w-40" : "w-24"}`} />
 );
 
 const ChartSkeleton = () => (
@@ -489,108 +482,19 @@ function Dashboard() {
           <CollapsibleSection
             id="transactions-summary"
             eyebrow="Resumen"
-            title="Balance y movimientos"
-            description="Ingresos, gastos, inversión, balance y filtros del período."
+            title="Tu economía en ARS y USD"
+            description="Ingresos, conversiones y patrimonio, cada uno en su moneda."
             collapsed={collapsedSections.summary}
             onToggle={() => toggleDashboardSection("summary")}
             className="mb-5 font-Nunito"
           >
-            <div className="flex items-center mb-5">
-              {/* Ingresos */}
-              <div className="flex flex-col justify-center items-center flex-grow">
-                <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
-                  Ingresos
-                </h1>
-                {isDataFetching ? (
-                  <ValueSkeleton />
-                ) : (
-                  <motion.p
-                    initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
-                    animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
-                    exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
-                    transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
-                    key={isDataVisible ? "expense-value" : "hidden-value"}
-                    className="text-green-500 font-medium"
-                  >
-                    {isDataVisible ? `${currencyFormater(income)}` : "*******"}
-                  </motion.p>
-                )}
-              </div>
-              {/* Gastos */}
-              <div className="flex flex-col justify-center items-center ml-4 flex-grow">
-                <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
-                  Gastos
-                </h1>
-                {isDataFetching ? (
-                  <ValueSkeleton />
-                ) : (
-                  <motion.p
-                    initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
-                    animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
-                    exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
-                    transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
-                    className="text-red-500 font-medium"
-                    key={isDataVisible ? "expense-value" : "hidden-value"} // Key to trigger animation on state change
-                  >
-                    {isDataVisible ? `${currencyFormater(expense)}` : "*******"}
-                  </motion.p>
-                )}
-              </div>
-            </div>
-
-            {/* Inversión */}
-            <div className="flex flex-col justify-center items-center mb-2">
-              <h1 className="font-semibold text-2xl uppercase dark:text-zinc-100">
-                Inversión
-              </h1>
-              {isDataFetching ? (
-                <ValueSkeleton />
-              ) : (
-                <motion.p
-                  initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
-                  animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
-                  exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
-                  transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
-                  key={isDataVisible ? "expense-value" : "hidden-value"}
-                  className="text-blue-500 font-medium"
-                >
-                  {isDataVisible
-                    ? `${currencyGenericFormater(
-                        "USD",
-                        currencyIncome,
-                        "en-US",
-                        "USD"
-                      )}`
-                    : "*******"}
-                </motion.p>
-              )}
-            </div>
-
-            {/* Balance */}
-            <div className="flex flex-col mb-4">
-              <div className="mb-2">
-                <p className="text-gray-400 text-center text-lg">Balance</p>
-              </div>
-
-              <div className="flex flex-col gap-2 justify-center items-center">
-                {isDataFetching ? (
-                  <ValueSkeleton />
-                ) : (
-                  <motion.h2
-                    initial={{ opacity: 0, filter: "blur(4px)" }} // Initial state with reduced opacity and slight blur
-                    animate={{ opacity: 1, filter: "blur(0px)" }} // End state with full opacity and no blur
-                    exit={{ opacity: 0, filter: "blur(4px)" }} // Exit state with reduced opacity and slight blur
-                    transition={{ duration: 0.4, ease: "easeInOut" }} // Smooth transition with a subtle duration
-                    key={isDataVisible ? "expense-value" : "hidden-value"}
-                    className={`text-2xl font-semibold text-center ${
-                      total < 0 ? `text-red-500` : `text-green-500`
-                    }`}
-                  >
-                    {isDataVisible ? currencyFormater(total) : "*******"}
-                  </motion.h2>
-                )}
-              </div>
-            </div>
+            <BimonetarySummary
+              docs={docs}
+              categories={categories}
+              userId={user?.uid}
+              isLoading={isDataFetching}
+              hideValues={!isDataVisible}
+            />
             <ExpenseFilter />
           </CollapsibleSection>
           <CollapsibleSection
