@@ -76,4 +76,69 @@ describe('LITA iframe integration', () => {
 		expect(container.querySelector('aside').className).toContain('max-h-[720px]');
 		expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
 	});
+
+	test('sends a save result only after Firestore confirms the write', async () => {
+		const { saveLitaChat } = require('../services/litaChatService');
+		saveLitaChat.mockResolvedValueOnce(undefined);
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
+		const iframe = screen.getByTitle('Lita Assistant');
+		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
+
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message', {
+				origin,
+				source: iframe.contentWindow,
+				data: { type: 'lita:history:save', payload: { requestId: 'req1', id: 'chat1', messages: [] } },
+			}));
+		});
+
+		await waitFor(() => {
+			expect(saveLitaChat).toHaveBeenCalled();
+			expect(postMessage).toHaveBeenCalledWith({
+				type: 'lita:history:save:result',
+				payload: { requestId: 'req1', id: 'chat1', success: true },
+			}, origin);
+		});
+	});
+
+	test('sends a permission-denied save failure instead of silent success', async () => {
+		const { saveLitaChat } = require('../services/litaChatService');
+		saveLitaChat.mockRejectedValueOnce({ code: 'permission-denied' });
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
+		const iframe = screen.getByTitle('Lita Assistant');
+		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
+
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message', {
+				origin,
+				source: iframe.contentWindow,
+				data: { type: 'lita:history:save', payload: { requestId: 'req2', id: 'chat2', messages: [] } },
+			}));
+		});
+
+		await waitFor(() => {
+			expect(postMessage).toHaveBeenCalledWith({
+				type: 'lita:history:save:result',
+				payload: { requestId: 'req2', id: 'chat2', success: false, reason: 'permission-denied' },
+			}, origin);
+		});
+	});
+
+	test('reports Firestore subscription permission errors to LITA', async () => {
+		const { subscribeLitaChats } = require('../services/litaChatService');
+		subscribeLitaChats.mockImplementationOnce((uid, onData, onError) => {
+			onError({ code: 'permission-denied' });
+			return () => {};
+		});
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
+		const iframe = screen.getByTitle('Lita Assistant');
+		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
+
+		await waitFor(() => {
+			expect(postMessage).toHaveBeenCalledWith({
+				type: 'lita:history:status',
+				payload: { state: 'error', reason: 'permission-denied' },
+			}, origin);
+		});
+	});
 });
