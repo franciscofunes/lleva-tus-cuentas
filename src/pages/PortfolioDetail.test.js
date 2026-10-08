@@ -5,7 +5,7 @@ import PortfolioDetail from './PortfolioDetail';
 import { deletePortfolioSnapshot, updatePortfolioSnapshot } from '../services/portfolioService';
 
 jest.mock('react-router-dom', () => ({
-	Link: ({ to, children, ...rest }) => <a href={to} {...rest}>{children}</a>,
+	Link: ({ to, children, ...rest }) => require('react').createElement('a', { href: to, ...rest }, children),
 	Navigate: () => null,
 	useParams: () => ({ positionId: 'position-1' }),
 }));
