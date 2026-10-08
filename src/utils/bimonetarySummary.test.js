@@ -55,8 +55,9 @@ describe('bimonetary summary: transfers do not become income or consumption', ()
       { currency: 'USD', balance: 1200.25 },
       { currency: 'USD', balance: 1800 },
       { currency: 'ARS', balance: 100000 },
+      { balance: 500 }, // legacy Portfolio positions default to ARS
       { currency: 'EUR', balance: 500 },
       { currency: 'USD', balance: 'invalid' },
-    ])).toEqual({ USD: 3000.25, ARS: 100000, positions: 3 });
+    ])).toEqual({ USD: 3000.25, ARS: 100500, positions: 4 });
   });
 });
