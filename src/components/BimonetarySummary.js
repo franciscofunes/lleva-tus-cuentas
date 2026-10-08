@@ -55,6 +55,45 @@ function SummaryCard({ id, title, eyebrow, value, color, caption, Icon, expanded
   );
 }
 
+/**
+ * Mirrors the three collapsed balance cards during date-range fetches.
+ * Uses the same Tailwind skeleton palette as charts and transaction lists:
+ * no extra dependency, no financial placeholders, and no layout jump.
+ */
+export function BimonetarySummarySkeleton() {
+  return (
+    <div
+      role='status'
+      aria-label='Cargando movimientos del período'
+      aria-busy='true'
+      className='space-y-3'
+      data-testid='bimonetary-loading'
+    >
+      <span className='sr-only'>Cargando los saldos en pesos, dólares y Portfolio…</span>
+      <div aria-hidden='true' className='grid grid-cols-1 gap-3 motion-safe:animate-pulse'>
+        {['ars', 'usd', 'portfolio'].map((currency) => (
+          <div
+            key={currency}
+            data-testid='bimonetary-skeleton-card'
+            className='min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-600 dark:bg-slate-900/60'
+          >
+            <div className='flex min-h-[100px] items-start gap-3 p-4 sm:p-5'>
+              <div className='mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-200 dark:bg-slate-700' />
+              <div className='min-w-0 flex-1 space-y-2'>
+                <div className='h-3 w-28 max-w-full rounded bg-slate-200 dark:bg-slate-700' />
+                <div className='h-4 w-44 max-w-full rounded bg-slate-200 dark:bg-slate-700' />
+                <div className='h-7 w-40 max-w-full rounded bg-slate-200 dark:bg-slate-700' />
+                <div className='h-3 w-36 max-w-full rounded bg-slate-200 dark:bg-slate-700' />
+              </div>
+              <div className='mt-1 h-4 w-4 shrink-0 rounded bg-slate-200 dark:bg-slate-700' />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Period flows and current Portfolio holdings must never be added together. */
 export default function BimonetarySummary({ docs, categories, userId, hideValues, isLoading }) {
   const [portfolio, setPortfolio] = useState([]);
@@ -109,7 +148,7 @@ export default function BimonetarySummary({ docs, categories, userId, hideValues
   const toggle = (name) => setExpanded((current) => ({ ...current, [name]: !current[name] }));
   const missingCount = flows.unexplainedArsCount + flows.missingUsdCount;
 
-  if (isLoading) return <p role='status' className={'text-sm ' + muted}>Cargando movimientos del período…</p>;
+  if (isLoading) return <BimonetarySummarySkeleton />;
 
   return (
     <div className='space-y-3'>
