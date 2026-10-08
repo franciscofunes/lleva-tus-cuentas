@@ -25,6 +25,8 @@ const LitaAssistantPanel = ({
 	const iframeRef = useRef(null);
 	const user = useSelector((state) => state.auth.user);
 	const [chatHistory, setChatHistory] = useState([]);
+	const [historyStatus, setHistoryStatus] = useState({ state: 'loading' });
+	const [historyRefresh, setHistoryRefresh] = useState(0);
 	const [theme, setTheme] = useState(getPageTheme);
 	const [isExpanded, setIsExpanded] = useState(false);
 
@@ -71,6 +73,10 @@ const LitaAssistantPanel = ({
 		});
 	}, [chatHistory, postToLita]);
 
+	const sendHistoryStatus = useCallback(() => {
+		postToLita({ type: 'lita:history:status', payload: historyStatus });
+	}, [historyStatus, postToLita]);
+
 	const sendTheme = useCallback(() => {
 		postToLita({ type: 'lita:theme', payload: theme });
 	}, [postToLita, theme]);
@@ -96,13 +102,28 @@ const LitaAssistantPanel = ({
 	}, [isOpen]);
 
 	useEffect(() => {
-		if (!isOpen || !user?.uid) return undefined;
+		if (!isOpen) return undefined;
+		setChatHistory([]);
+		if (!user?.uid) {
+			setHistoryStatus({ state: 'unavailable', reason: 'unauthenticated' });
+			return undefined;
+		}
+		setHistoryStatus({ state: 'loading' });
 		return subscribeLitaChats(
 			user.uid,
-			setChatHistory,
-			(error) => console.warn('Could not load LITA chat history', error)
+			(threads) => {
+				setChatHistory(threads);
+				setHistoryStatus({ state: 'ready' });
+			},
+			(error) => {
+				console.warn('Could not load LITA chat history', error);
+				setHistoryStatus({
+					state: 'error',
+					reason: error?.code === 'permission-denied' ? 'permission-denied' : 'read-failed',
+				});
+			}
 		);
-	}, [isOpen, user?.uid]);
+	}, [isOpen, user?.uid, historyRefresh]);
 
 	useEffect(() => {
 		if (!isOpen || !targetOrigin) return undefined;
@@ -119,8 +140,14 @@ const LitaAssistantPanel = ({
 			if (event.data?.type === 'lita:ready') {
 				sendContext();
 				sendHistory();
+				sendHistoryStatus();
 				sendTheme();
 				postToLita({ type: 'lita:layout', payload: { expanded: isExpanded } });
+				return;
+			}
+
+			if (event.data?.type === 'lita:history:refresh') {
+				setHistoryRefresh((value) => value + 1);
 				return;
 			}
 
@@ -129,12 +156,22 @@ const LitaAssistantPanel = ({
 				return;
 			}
 
-			if (event.data?.type === 'lita:history:save' && user?.uid) {
-				try {
-					await saveLitaChat(user.uid, event.data.payload);
-				} catch (error) {
-					console.warn('Could not save LITA chat history', error);
+			if (event.data?.type === 'lita:history:save') {
+				const { requestId, id } = event.data.payload || {};
+				if (typeof requestId !== 'string' || !requestId || typeof id !== 'string' || !id) return;
+				let result = { type: 'lita:history:save:result', payload: { requestId, id, success: false, reason: 'write-failed' } };
+				if (!user?.uid) {
+					result.payload.reason = 'unauthenticated';
+				} else {
+					try {
+						await saveLitaChat(user.uid, event.data.payload);
+						result.payload = { requestId, id, success: true };
+					} catch (error) {
+						console.warn('Could not save LITA chat history', error);
+						result.payload.reason = error?.code === 'permission-denied' ? 'permission-denied' : 'write-failed';
+					}
 				}
+				postToLita(result);
 				return;
 			}
 
@@ -165,6 +202,7 @@ const LitaAssistantPanel = ({
 		postToLita,
 		sendContext,
 		sendHistory,
+		sendHistoryStatus,
 		sendTheme,
 		setIsOpen,
 		targetOrigin,
@@ -176,8 +214,9 @@ const LitaAssistantPanel = ({
 		if (!isOpen) return;
 		sendContext();
 		sendHistory();
+		sendHistoryStatus();
 		sendTheme();
-	}, [isOpen, sendContext, sendHistory, sendTheme]);
+	}, [isOpen, sendContext, sendHistory, sendHistoryStatus, sendTheme]);
 
 	useEffect(() => {
 		if (isOpen) postToLita({ type: 'lita:layout', payload: { expanded: isExpanded } });
@@ -243,6 +282,7 @@ const LitaAssistantPanel = ({
 							onLoad={() => {
 								sendContext();
 								sendHistory();
+								sendHistoryStatus();
 								sendTheme();
 								postToLita({ type: 'lita:layout', payload: { expanded: isExpanded } });
 							}}
