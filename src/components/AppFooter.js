@@ -3,7 +3,7 @@ import React from 'react';
 export default function AppFooter({ minimal = false }) {
 	if (minimal) {
 		return (
-			<footer className='border-t border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300' aria-label='Pie de página'>
+			<footer className='border-t border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-gray-900 dark:text-slate-300' aria-label='Pie de página'>
 				<div className='mx-auto flex max-w-7xl flex-col gap-2 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8'>
 					<p className='text-sm font-extrabold text-slate-900 dark:text-white'>LTC<span className='text-green-600'>$</span> <span className='ml-2 font-medium text-slate-500 dark:text-slate-400'>Lleva Tus Cuentas</span></p>
 					<p className='text-xs text-slate-500 dark:text-slate-400'>Movimientos, inversiones e inteligencia artificial en un solo lugar.</p>
