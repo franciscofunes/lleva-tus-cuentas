@@ -27,5 +27,11 @@ service cloud.firestore {
     match /users/{uid}/portfolioSnapshots/{snapshotId} {
       allow read, create, update, delete: if ownsUserPath(uid);
     }
+
+    // Historial de conversaciones de LITA. El iframe nunca recibe el UID;
+    // el host LTC persiste los chats usando la sesión Firebase ya autenticada.
+    match /users/{uid}/litaChats/{chatId} {
+      allow read, create, update, delete: if ownsUserPath(uid);
+    }
   }
 }

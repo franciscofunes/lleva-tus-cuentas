@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import "tippy.js/dist/tippy.css";
 import { FaArrowRight, FaChartPie, FaExchangeAlt, FaPlus } from "react-icons/fa";
 import {
@@ -141,6 +141,8 @@ const TransactionsPageSkeleton = () => (
 
 function Dashboard() {
   const dispatch = useDispatch();
+  const location = useLocation();
+  const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
   const paymentData = useSelector((state) => state.database.paymentData);
   const isFetching = useSelector((state) => state.auth.isFetching);
@@ -343,6 +345,43 @@ function Dashboard() {
     }),
     [currencyIncome, docs, expense, income, total]
   );
+
+  useEffect(() => {
+    const transactionId = location.state?.transactionId;
+    if (!location.state?.openEditor || !transactionId || !docs?.length) return;
+
+    const transaction = docs.find((doc) => doc.id === transactionId);
+    if (!transaction) return;
+
+    setName(transaction.expenseName || "");
+    setAmount(transaction.amount ?? "");
+    setComment(transaction.comment || "");
+    setCategory(transaction.category || "");
+    setSelectedDate(transaction.selectedDate || "");
+    setSelectedExpirationDate(transaction.selectedExpirationDate || "");
+    setSelectedCloseDate(transaction.selectedCloseDate || "");
+    setCurrencyQuantity(transaction.currencyQuantity ?? "");
+    setCurrencyExchangeRate(transaction.currencyExchangeRate ?? "");
+    setCurrencySellQuantity(transaction.currencySellQuantity ?? "");
+    setCurrencySellRate(transaction.currencySellRate ?? "");
+
+    const transactionCategory = transaction.category || "";
+    setIsCreditCardCategory(transactionCategory.includes("Resumen tarjeta"));
+    setIsBuyCurrenciesCategory(transactionCategory.includes("Compra divisas"));
+    setIsCurrencyIncomeCategory(
+      transactionCategory.includes(INGRESO_DIVISAS_CATEGORY)
+    );
+    setIsSellCurrenciesCategory(transactionCategory.includes("Venta divisas"));
+    setExpenseId(transaction.id);
+    setEdit(true);
+    setCollapsedSections((current) => ({
+      ...current,
+      transactions: false,
+    }));
+    setIsOpen(true);
+
+    navigate("/transacciones", { replace: true, state: null });
+  }, [docs, location.state, navigate]);
 
   if (user === null) return <Navigate to="/" />;
 

@@ -428,9 +428,16 @@ const NotificationDropdown = () => {
 	};
 
 	const openTransaction = () => {
+		const transactionId =
+			selectedNotification?.sourceId || selectedNotification?.id || '';
+
 		setShowDropdown(false);
 		setSelectedNotification(null);
-		navigate('/transacciones');
+		navigate('/transacciones', {
+			state: transactionId
+				? { transactionId, openEditor: true }
+				: undefined,
+		});
 	};
 
 	const renderReminderGroup = (label, items) => {
