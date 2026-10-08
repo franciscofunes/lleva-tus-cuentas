@@ -15,6 +15,7 @@ import ExpenseFilter from "../components/ExpenseFilter";
 import FloatingMenu from "../components/FloatingMenu";
 import GenericModal from "../components/GenericModal";
 import LitaAssistantPanel from "../components/LitaAssitantPanel";
+import { summarizeSpendingByCategory } from '../utils/litaSpendingSummary';
 import SearchBar from "../components/SearchBar";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
@@ -337,6 +338,7 @@ function Dashboard() {
   const litaTransactionContext = useMemo(
     () => ({
       scope: "current-view",
+      spendingByCategory: summarizeSpendingByCategory(docs || [], categories || []),
       summary: {
         incomeArs: Number(income || 0),
         expensesArs: Number(expense || 0),
@@ -353,7 +355,7 @@ function Dashboard() {
         currencyExchangeRate: Number(doc.currencyExchangeRate || 0),
       })),
     }),
-    [currencyIncome, docs, expense, income, total]
+    [categories, currencyIncome, docs, expense, income, total]
   );
 
   useEffect(() => {
