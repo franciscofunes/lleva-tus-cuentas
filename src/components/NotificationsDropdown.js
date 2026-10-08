@@ -65,24 +65,24 @@ const ReminderItem = ({ notification, onOpen }) => {
 
 	const tone = isPaid
 		? {
-				icon: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300',
+				icon: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300',
 				label: 'text-emerald-600 dark:text-emerald-300',
 				text: 'Pagado',
 			}
 		: isOverdue
 			? {
-					icon: 'bg-red-500/10 text-red-600 dark:bg-red-500/15 dark:text-red-300',
+					icon: 'bg-red-500/10 text-red-600 dark:bg-red-900/50 dark:text-red-300',
 					label: 'text-red-600 dark:text-red-300',
 					text: dueLabel(days),
 				}
 			: isToday
 				? {
-						icon: 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300',
+						icon: 'bg-amber-500/10 text-amber-600 dark:bg-amber-900/50 dark:text-amber-300',
 						label: 'text-amber-600 dark:text-amber-300',
 						text: dueLabel(days),
 					}
 				: {
-						icon: 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/15 dark:text-purple-300',
+						icon: 'bg-purple-500/10 text-purple-600 dark:bg-purple-900/50 dark:text-purple-300',
 						label: 'text-purple-600 dark:text-purple-300',
 						text: dueLabel(days),
 					};
@@ -91,7 +91,7 @@ const ReminderItem = ({ notification, onOpen }) => {
 		<button
 			type='button'
 			onClick={() => onOpen(notification)}
-			className='group flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-left shadow-sm transition hover:border-purple-300 hover:bg-purple-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-700 dark:bg-slate-800/55 dark:hover:border-purple-500/40 dark:hover:bg-purple-500/5'
+			className='group flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-left shadow-sm transition hover:border-purple-300 hover:bg-purple-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-700 dark:bg-slate-800 dark:shadow-none dark:hover:border-purple-500/50 dark:hover:bg-slate-700'
 			role='menuitem'
 		>
 			<span className={`mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone.icon}`}>
@@ -175,10 +175,10 @@ const NotificationDetail = ({
 					<span
 						className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-extrabold ${
 							isPaid
-								? 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+								? 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
 								: days < 0
-									? 'bg-red-500/10 text-red-700 dark:bg-red-500/15 dark:text-red-300'
-									: 'bg-purple-500/10 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300'
+									? 'bg-red-500/10 text-red-700 dark:bg-red-900/50 dark:text-red-300'
+									: 'bg-purple-500/10 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
 						}`}
 					>
 						{isPaid ? 'Pagado' : dueLabel(days)}
@@ -477,7 +477,7 @@ const NotificationDropdown = () => {
 
 			{showDropdown && (
 				<div
-					className='fixed left-3 right-3 top-[4.75rem] z-[100] max-h-[72dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-3 shadow-2xl shadow-slate-950/20 dark:border-slate-700 dark:bg-slate-900 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96'
+					className='fixed left-3 right-3 top-[4.75rem] z-[100] max-h-[72dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-3 shadow-2xl shadow-slate-950/20 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96'
 					role='menu'
 					aria-label='Notificaciones'
 				>
