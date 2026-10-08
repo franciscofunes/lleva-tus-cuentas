@@ -42,6 +42,20 @@ describe('Transactions live search interface', () => {
     expect(screen.getByText('2 de 12 movimientos')).toBeInTheDocument();
   });
 
+  it('dismisses Android search keyboard on Enter and clears search on Escape', () => {
+    render(<TestSearchBar />);
+    const input = screen.getByRole('searchbox');
+    input.focus();
+    fireEvent.change(input, { target: { value: 'Visa' } });
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+    expect(input).toHaveValue('Visa');
+    expect(input).not.toHaveFocus();
+    input.focus();
+    fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });
+    expect(input).toHaveValue('');
+    expect(input).not.toHaveFocus();
+  });
+
   it('keeps filters independent and clears them together without changing period', () => {
     render(<TestSearchBar />);
     fireEvent.change(screen.getByLabelText('Categoría'), { target: { value: 'Alimentación' } });
