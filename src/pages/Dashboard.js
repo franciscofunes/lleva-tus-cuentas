@@ -175,10 +175,7 @@ function Dashboard() {
   const [currencyExchangeRate, setCurrencyExchangeRate] = useState();
   const [currencySale, setCurrencySale] = useState(0);
 
-  const [isDataVisible, setIsDataVisible] = useState(() => {
-    const savedVisibility = sessionStorage.getItem("isDataVisible");
-    return savedVisibility ? JSON.parse(savedVisibility) : true;
-  });
+  const [isDataVisible, setIsDataVisible] = useState(true);
 
   const [isCurrencyIncomeCategory, setIsCurrencyIncomeCategory] =
     useState(false);
@@ -200,24 +197,39 @@ function Dashboard() {
     transactions: false,
   });
 
+  const [preferencesLoadedFor, setPreferencesLoadedFor] = useState(null);
   useEffect(() => {
-    if (!user) return;
+    setPreferencesLoadedFor(null);
+    if (!user?.uid) return;
     try {
       const saved = JSON.parse(localStorage.getItem(transactionPreferenceKey) || "{}");
-      setCollapsedSections((current) => ({
-        ...current,
+      setCollapsedSections({
+        summary: false,
+        charts: false,
+        transactions: false,
         ...(saved.collapsedSections || {}),
-      }));
-    } catch {}
-  }, [user, transactionPreferenceKey]);
+      });
+      setIsDataVisible(typeof saved.isDataVisible === "boolean"
+        ? saved.isDataVisible
+        : true);
+    } catch {
+      setCollapsedSections({ summary: false, charts: false, transactions: false });
+      setIsDataVisible(true);
+    }
+    setPreferencesLoadedFor(user.uid);
+  }, [user?.uid, transactionPreferenceKey]);
 
   useEffect(() => {
-    if (!user) return;
-    localStorage.setItem(
-      transactionPreferenceKey,
-      JSON.stringify({ collapsedSections })
-    );
-  }, [user, transactionPreferenceKey, collapsedSections]);
+    if (!user?.uid || preferencesLoadedFor !== user.uid) return;
+    try {
+      localStorage.setItem(
+        transactionPreferenceKey,
+        JSON.stringify({ collapsedSections, isDataVisible })
+      );
+    } catch {
+      // Browsers can disable local storage; the UI still works in memory.
+    }
+  }, [user?.uid, preferencesLoadedFor, transactionPreferenceKey, collapsedSections, isDataVisible]);
 
   const toggleDashboardSection = (section) =>
     setCollapsedSections((current) => ({
@@ -226,9 +238,7 @@ function Dashboard() {
     }));
 
   const toggleDataVisibility = () => {
-    const newVisibility = !isDataVisible;
-    setIsDataVisible(newVisibility);
-    sessionStorage.setItem("isDataVisible", JSON.stringify(newVisibility));
+    setIsDataVisible((current) => !current);
   };
 
   const handleChartToggle = (chart) => {
