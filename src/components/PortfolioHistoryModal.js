@@ -29,7 +29,9 @@ export default function PortfolioHistoryModal({
 	const modalRef = useRef(null);
 	const titleRef = useRef(null);
 	const busyRef = useRef(busy);
+	const closeRef = useRef(onClose);
 	busyRef.current = busy;
+	closeRef.current = onClose;
 
 	useEffect(() => {
 		const previouslyFocused = document.activeElement;
@@ -39,7 +41,7 @@ export default function PortfolioHistoryModal({
 		const onKeyDown = (event) => {
 			if (event.key === 'Escape') {
 				event.preventDefault();
-				if (!busyRef.current) onClose();
+				if (!busyRef.current) closeRef.current();
 				return;
 			}
 			if (event.key !== 'Tab' || !modalRef.current) return;
@@ -67,7 +69,7 @@ export default function PortfolioHistoryModal({
 				previouslyFocused.focus();
 			}
 		};
-	}, [onClose]);
+	}, []);
 
 	if (!item) return null;
 	const isDelete = mode === 'delete';
