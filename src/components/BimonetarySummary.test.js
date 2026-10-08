@@ -36,6 +36,47 @@ const mount = (props = {}) =>
 beforeEach(() => localStorage.clear());
 
 describe('Compact ARS/USD summary', () => {
+  it('uses three matching skeleton cards instead of loading text during a period change', () => {
+    mount({ isLoading: true });
+
+    const status = screen.getByRole('status', { name: 'Cargando movimientos del período' });
+    expect(status).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getAllByTestId('bimonetary-skeleton-card')).toHaveLength(3);
+    expect(status).toHaveTextContent('Cargando los saldos en pesos, dólares y Portfolio');
+    expect(status.querySelector('.motion-safe\\:animate-pulse')).toBeInTheDocument();
+    expect(status.querySelector('.dark\\:bg-slate-900\\/60')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Flujo de pesos argentinos' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ver cotizaciones del dólar/i })).not.toBeInTheDocument();
+  });
+
+  it('replaces skeletons with live ARS/USD/Portfolio cards after loading', async () => {
+    const view = mount({ isLoading: true });
+    expect(screen.getAllByTestId('bimonetary-skeleton-card')).toHaveLength(3);
+
+    view.rerender(
+      <MemoryRouter>
+        <BimonetarySummary docs={docs} categories={categories} userId='test-user'
+          isLoading={false} hideValues={false} />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByTestId('bimonetary-loading')).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Flujo de pesos argentinos' })).toHaveTextContent('370.000');
+    expect(screen.getByRole('region', { name: 'Movimiento de dólares' })).toHaveTextContent('700');
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Patrimonio en Portfolio' })).toHaveTextContent('2.500')
+    );
+  });
+
+  it('does not reveal portfolio amounts or red/green balance signs while loading', () => {
+    mount({ isLoading: true, hideValues: true });
+    const loading = screen.getByTestId('bimonetary-loading');
+    expect(loading).not.toHaveTextContent('370.000');
+    expect(loading).not.toHaveTextContent('2.500');
+    expect(loading.querySelector('.text-rose-700')).not.toBeInTheDocument();
+    expect(loading.querySelector('.text-emerald-700')).not.toBeInTheDocument();
+  });
+
   it('shows only three main values by default and all details are collapsed', async () => {
     mount();
     const ars = screen.getByRole('region', { name: 'Flujo de pesos argentinos' });
