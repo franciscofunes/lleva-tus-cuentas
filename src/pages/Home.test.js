@@ -4,10 +4,10 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Home from './Home';
 
-let currentUser = null;
+let mockCurrentUser = null;
 
 jest.mock('react-redux', () => ({
-  useSelector: (selector) => selector({ auth: { user: currentUser } }),
+  useSelector: (selector) => selector({ auth: { user: mockCurrentUser } }),
 }));
 
 const renderHome = () => render(
@@ -15,7 +15,7 @@ const renderHome = () => render(
 );
 
 describe('LTC landing', () => {
-  beforeEach(() => { currentUser = null; });
+  beforeEach(() => { mockCurrentUser = null; });
 
   it('presents LITA AI and sends guests to signup', () => {
     renderHome();
@@ -29,7 +29,7 @@ describe('LTC landing', () => {
   });
 
   it('sends authenticated users to transactions without losing the AI explanation', () => {
-    currentUser = { uid: 'example-user' };
+    mockCurrentUser = { uid: 'example-user' };
     renderHome();
     expect(screen.getByRole('link', { name: /Ir a mis movimientos/i })).toHaveAttribute('href', '/transacciones');
     expect(screen.getByRole('link', { name: /Abrir Lleva Tus Cuentas/i })).toHaveAttribute('href', '/transacciones');
