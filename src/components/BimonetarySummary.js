@@ -128,7 +128,7 @@ export default function BimonetarySummary({ docs, categories, userId, hideValues
             </dl>
             {holdings.positions === 0 && <p className={'mt-3 text-xs ' + muted}>No hay saldos válidos registrados.</p>}
             <div className='mt-3'>
-              <UsdExchangePopover usdBalance={holdings.USD} showValues={!hideValues} />
+              <UsdExchangePopover usdBalance={holdings.USD} arsBalance={holdings.ARS} showValues={!hideValues} />
             </div>
           </>
         )}
