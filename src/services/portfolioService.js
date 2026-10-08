@@ -138,6 +138,16 @@ export const verifyPortfolioPosition = async (userId, position, balance, metadat
 
 	const observedEarning = nextBalance - previousBalance;
 	const changeType = isNav ? 'valuation' : (metadata.changeType || 'unclassified');
+	const previousReportedEarnings = Number(position.realizedEarnings || 0);
+	const reportedEarnings =
+		isNav && metadata.reportedEarnings !== '' && metadata.reportedEarnings != null
+			? Number(metadata.reportedEarnings)
+			: null;
+
+	if (isNav && reportedEarnings != null && !Number.isFinite(reportedEarnings)) {
+		throw new Error('Ingresá un valor válido para lo ganado informado.');
+	}
+
 	const confirmedEarning = changeType === 'earning' ? observedEarning : 0;
 	const cashFlow = changeType === 'deposit' ? Math.max(observedEarning, 0) : changeType === 'withdrawal' ? Math.min(observedEarning, 0) : 0;
 	const expectedEarning = !isNav && position.trackingMode === 'DAILY_RATE'
@@ -154,12 +164,16 @@ export const verifyPortfolioPosition = async (userId, position, balance, metadat
 		cashFlow,
 		note: metadata.note || '',
 		nav: navValue,
+		reportedEarnings,
 	});
 
 	const positionUpdate = {
 		balance: nextBalance,
-		lastEarning: isNav ? Number(position.lastEarning || 0) : (changeType === 'earning' ? observedEarning : 0),
-		...(!isNav && changeType === 'earning' ? { realizedEarnings: Number(position.realizedEarnings || 0) + observedEarning } : {}),
+		lastEarning: isNav
+			? (reportedEarnings == null ? Number(position.lastEarning || 0) : reportedEarnings - previousReportedEarnings)
+			: (changeType === 'earning' ? observedEarning : 0),
+		...(!isNav && changeType === 'earning' ? { realizedEarnings: previousReportedEarnings + observedEarning } : {}),
+		...(isNav && reportedEarnings != null ? { realizedEarnings: reportedEarnings } : {}),
 		...(isNav ? { nav: navValue, navDate: new Date().toISOString().slice(0, 10) } : {}),
 		lastVerifiedAt: new Date(),
 		updatedAt: new Date(),

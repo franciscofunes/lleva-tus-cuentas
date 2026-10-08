@@ -109,6 +109,7 @@ function Portfolio() {
 	const [verifyChangeType, setVerifyChangeType] = useState('earning');
 	const [verifyNote, setVerifyNote] = useState('');
 	const [verifyNav, setVerifyNav] = useState('');
+	const [verifyReportedEarnings, setVerifyReportedEarnings] = useState('');
 	const [rateTarget, setRateTarget] = useState(null);
 		const [quickRate, setQuickRate] = useState('');
 	const [pendingAction, setPendingAction] = useState('');
@@ -416,6 +417,7 @@ function Portfolio() {
 		setVerifyChangeType('earning');
 		setVerifyNote('');
 		setVerifyNav(isNav ? String(position.nav ?? '') : '');
+		setVerifyReportedEarnings(isNav ? String(position.realizedEarnings ?? 0) : '');
 	};
 
 	const verify = async () => {
@@ -429,13 +431,15 @@ function Portfolio() {
 				changeType: verifyChangeType,
 				note: verifyNote,
 				nav: verifyNav,
+				reportedEarnings: isNav ? verifyReportedEarnings : undefined,
 			});
-			toast.success(isNav ? 'Cuotaparte actualizada y valuación guardada' : 'Saldo verificado y snapshot guardado');
+			toast.success(isNav ? 'Cuotaparte, valuación y ganado informado actualizados' : 'Saldo verificado y snapshot guardado');
 			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 			setVerifyTarget(null);
 			setVerifyBalance('');
 			setVerifyNote('');
 			setVerifyNav('');
+			setVerifyReportedEarnings('');
 		} catch (error) {
 			toast.error(error.message || (isNav ? 'No se pudo actualizar la cuotaparte' : 'No se pudo verificar el saldo'));
 		} finally {
@@ -805,7 +809,21 @@ function Portfolio() {
 										<span className='mt-1 block text-xs font-normal text-amber-300'>Cargá las cuotapartes en la posición para que LTC calcule automáticamente la valuación desde el NAV.</span>
 									</label>
 								)}
-								<div className='rounded-lg border border-blue-400/30 bg-blue-500/10 p-3 text-xs text-blue-100'>La suba o baja de la cuotaparte se registra como <strong>variación de valuación</strong>. No se suma a ganancias realizadas ni genera una transacción.</div>
+								<label className='block text-sm font-semibold text-gray-200'>
+									Ganado informado acumulado
+									<input
+										className='portfolio-input mt-1'
+										type='number'
+										step='0.01'
+										value={verifyReportedEarnings}
+										onChange={(event) => setVerifyReportedEarnings(event.target.value)}
+										placeholder='Ej. 70.00'
+									/>
+									<span className='mt-1 block text-xs font-normal text-gray-400'>
+										Este valor actualiza “Ganado” de la posición. Es independiente de la variación del NAV y no crea una transacción.
+									</span>
+								</label>
+								<div className='rounded-lg border border-blue-400/30 bg-blue-500/10 p-3 text-xs text-blue-100'>La suba o baja de la cuotaparte se registra como <strong>variación de valuación</strong>. El campo “Ganado informado” se guarda por separado.</div>
 							</div>
 						) : (
 							<>
@@ -817,12 +835,12 @@ function Portfolio() {
 						<textarea className='portfolio-input mt-3' rows='2' value={verifyNote} onChange={(event) => setVerifyNote(event.target.value)} placeholder={isNavVerification ? 'Nota opcional sobre esta valuación' : 'Nota opcional sobre esta verificación'} />
 						{!isNavVerification && <p className='mt-2 text-xs text-gray-400'>Solo “Rendimiento” se acumulará como ganancia confirmada. Aportes y retiros quedan separados para no inflar el rendimiento.</p>}
 						<div className='grid grid-cols-2 gap-2 mt-5'>
-							<button type='button' onClick={() => setVerifyTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
+							<button type='button' onClick={() => { setVerifyTarget(null); setVerifyReportedEarnings(''); }} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
 							<button type='button' disabled={(isNavVerification ? (verifyNav === '' || (verifyShares <= 0 && verifyBalance === '')) : verifyBalance === '') || pendingAction === 'verify'} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'verify' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'verify' ? (isNavVerification ? 'Actualizando…' : 'Verificando…') : (isNavVerification ? 'Guardar cuotaparte' : 'Confirmar saldo')}</button>
 						</div>
 					</div>
 				)}
-				closeModal={() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); setVerifyTarget(null); }}
+				closeModal={() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); setVerifyTarget(null); setVerifyReportedEarnings(''); }}
 			/>
 
 			<GenericModal show={Boolean(rateTarget)} component={() => (<div className='text-white pr-8'><div className='w-12 h-12 rounded-full bg-green-500/15 text-green-400 flex items-center justify-center mb-4'><FaPercent /></div><h2 className='text-xl font-bold'>Actualizar tasa</h2><p className='mt-2 text-sm text-gray-300'><strong>{rateTarget?.institution}</strong> · {rateTarget?.name}</p><p className='mt-1 text-xs text-gray-400'>Actualizá solamente la tasa. El resto de la posición no cambia.</p><div className='relative mt-4'><input autoFocus className='portfolio-input pr-10 text-xl font-bold' type='number' step='0.01' min='0' value={quickRate} onChange={(event) => setQuickRate(event.target.value)} placeholder='Tasa anual' /><span className='absolute right-3 top-2.5 font-bold text-gray-400'>%</span></div><div className='grid grid-cols-2 gap-2 mt-5'><button type='button' onClick={() => setRateTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button><button type='button' disabled={quickRate === '' || pendingAction === 'rate'} onClick={saveQuickRate} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'rate' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'rate' ? 'Guardando…' : 'Guardar tasa'}</button></div></div>)} closeModal={() => setRateTarget(null)} />
