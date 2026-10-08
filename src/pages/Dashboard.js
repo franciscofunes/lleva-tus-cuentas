@@ -488,6 +488,7 @@ function Dashboard() {
             onToggle={() => toggleDashboardSection("summary")}
             className="mb-5 font-Nunito"
           >
+            <ExpenseFilter />
             <BimonetarySummary
               docs={docs}
               categories={categories}
@@ -495,7 +496,6 @@ function Dashboard() {
               isLoading={isDataFetching}
               hideValues={!isDataVisible}
             />
-            <ExpenseFilter />
           </CollapsibleSection>
           <CollapsibleSection
             id="transactions-charts"
