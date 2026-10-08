@@ -8,6 +8,8 @@ import {
   getCategoriesDataAction,
   getDataAction,
   getPaymentDataAction,
+  getTotalBalance,
+  setSelectedFilter,
 } from "../actionCreators/databaseActions";
 import BarChartWrapper from "../components/BarChartWrapper";
 import Card from "../components/Card";
@@ -17,6 +19,7 @@ import GenericModal from "../components/GenericModal";
 import LitaAssistantPanel from "../components/LitaAssitantPanel";
 import { summarizeSpendingByCategory } from '../utils/litaSpendingSummary';
 import SearchBar from "../components/SearchBar";
+import { filterTransactions } from "../utils/transactionSearch";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
@@ -150,6 +153,34 @@ function Dashboard() {
   const isDataFetching = useSelector((state) => state.database.isDataFetching);
   const docs = useSelector((state) => state.database.docs);
   const categories = useSelector((state) => state.database.categories);
+  const selectedFilter = useSelector((state) => state.database.selectedFilter);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchCategory, setSearchCategory] = useState("");
+  const [searchType, setSearchType] = useState("all");
+
+  const filteredDocs = useMemo(
+    () => filterTransactions(docs || [], {
+      query: searchQuery,
+      category: searchCategory,
+      type: searchType,
+      categories: categories || [],
+    }),
+    [docs, searchQuery, searchCategory, searchType, categories]
+  );
+
+  const hasActiveSearch = Boolean(searchQuery.trim() || searchCategory || searchType !== "all");
+  const clearTransactionFilters = () => {
+    setSearchQuery("");
+    setSearchCategory("");
+    setSearchType("all");
+  };
+  const viewAllTransactions = async () => {
+    if (!user?.uid) return;
+    // The date buttons own the reporting scope. An explicit click is required
+    // before expanding the search to all historical transactions.
+    dispatch(setSelectedFilter("total"));
+    await dispatch(getTotalBalance(user.uid));
+  };
 
   const [income, setIncome] = useState(0);
   const [currencyIncome, setCurrencyIncome] = useState(0);
@@ -257,6 +288,10 @@ function Dashboard() {
     incomesVsExpenses: IncomeExpenseLineChart,
     ingresoDivisas: IngresoDivisasLineChart,
   };
+
+  useEffect(() => {
+    clearTransactionFilters();
+  }, [user?.uid]);
 
   useEffect(() => {
     if (user) {
@@ -608,23 +643,44 @@ function Dashboard() {
             </Link>
           }
         >
-            <SearchBar />
+            <SearchBar
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+              selectedCategory={searchCategory}
+              onCategoryChange={setSearchCategory}
+              transactionType={searchType}
+              onTypeChange={setSearchType}
+              categories={categories || []}
+              resultCount={filteredDocs.length}
+              totalCount={(docs || []).length}
+              selectedFilter={selectedFilter}
+              onClear={clearTransactionFilters}
+              onViewAll={viewAllTransactions}
+              disabled={isDataFetching}
+            />
 
             {isDataFetching ? (
               <TransactionListSkeleton />
-            ) : (
-              !docs ||
-              (docs.length === 0 && (
-                <div className="flex">
-                  <p className="text-zinc-500 font-semibold text-lg">
-                    Bienvenido, aún no registraste ninguna transacción. ¿Qué
-                    estás esperando? ¡Empezá a controlar tus gastos! 💪
-                  </p>
-                </div>
-              ))
-            )}
+            ) : !docs?.length ? (
+              <div className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300" role="status">
+                No hay movimientos en este período. Elegí otra fecha o consultá todo el historial.
+              </div>
+            ) : filteredDocs.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center dark:border-slate-600 dark:bg-slate-900/50" role="status">
+                <p className="font-bold text-slate-900 dark:text-slate-100">No encontramos movimientos</p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                  Probá con menos palabras, otra categoría o buscá en todo el historial.
+                </p>
+                {hasActiveSearch && (
+                  <button type="button" onClick={clearTransactionFilters}
+                    className="mt-4 min-h-[44px] rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-700">
+                    Limpiar filtros
+                  </button>
+                )}
+              </div>
+            ) : null}
 
-            {!isDataFetching && docs?.map((doc) => {
+            {!isDataFetching && filteredDocs.map((doc) => {
               return (
                 <div key={doc.id}>
                   <Card
