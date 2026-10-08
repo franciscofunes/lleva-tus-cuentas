@@ -46,7 +46,7 @@ describe('FX quotes modal on mobile', () => {
     const dialog = await openDialog();
     await within(dialog).findByText('Tu Portfolio USD, estimado en ARS');
     expect(dialog).toHaveTextContent('150.000');
-    expect(dialog).toHaveTextContent('1540');
+    expect(dialog).toHaveTextContent('1.540,00');
     expect(dialog).toHaveTextContent('154.000');
 
     fireEvent.click(within(dialog).getByRole('button', { name: /Oficial/i }));
