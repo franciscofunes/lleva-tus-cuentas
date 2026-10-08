@@ -35,10 +35,6 @@ import closeEye from "../imgs/closeEye.svg";
 
 import AppFooter from "../components/AppFooter";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
-import {
-  currencyFormater,
-  currencyGenericFormater,
-} from "../shared/utils/currencyFormater";
 import ChartToggleMenu from "../components/ChartToogleMenu";
 import IncomeChartWrapper from "../components/IncomeChartWrapper";
 import DivisasChartWrapper from "../components/DivisasChartWrapper";
@@ -50,10 +46,6 @@ const SkeletonBlock = ({ className = "" }) => (
     aria-hidden="true"
     className={`rounded bg-slate-200 dark:bg-slate-700 ${className}`}
   />
-);
-
-const ValueSkeleton = ({ wide = false }) => (
-  <SkeletonBlock className={`mt-2 h-5 animate-pulse ${wide ? "w-40" : "w-24"}`} />
 );
 
 const ChartSkeleton = () => (
