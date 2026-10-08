@@ -433,7 +433,7 @@ function Portfolio() {
 				nav: verifyNav,
 				reportedEarnings: isNav ? verifyReportedEarnings : undefined,
 			});
-			toast.success(isNav ? 'Cuotaparte actualizada y valuación guardada' : 'Saldo verificado y snapshot guardado');
+			toast.success(isNav ? 'Cuotaparte, valuación y ganado informado actualizados' : 'Saldo verificado y snapshot guardado');
 			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 			setVerifyTarget(null);
 			setVerifyBalance('');
@@ -835,7 +835,7 @@ function Portfolio() {
 						<textarea className='portfolio-input mt-3' rows='2' value={verifyNote} onChange={(event) => setVerifyNote(event.target.value)} placeholder={isNavVerification ? 'Nota opcional sobre esta valuación' : 'Nota opcional sobre esta verificación'} />
 						{!isNavVerification && <p className='mt-2 text-xs text-gray-400'>Solo “Rendimiento” se acumulará como ganancia confirmada. Aportes y retiros quedan separados para no inflar el rendimiento.</p>}
 						<div className='grid grid-cols-2 gap-2 mt-5'>
-							<button type='button' onClick={() => setVerifyTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
+							<button type='button' onClick={() => { setVerifyTarget(null); setVerifyReportedEarnings(''); }} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
 							<button type='button' disabled={(isNavVerification ? (verifyNav === '' || (verifyShares <= 0 && verifyBalance === '')) : verifyBalance === '') || pendingAction === 'verify'} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'verify' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'verify' ? (isNavVerification ? 'Actualizando…' : 'Verificando…') : (isNavVerification ? 'Guardar cuotaparte' : 'Confirmar saldo')}</button>
 						</div>
 					</div>
