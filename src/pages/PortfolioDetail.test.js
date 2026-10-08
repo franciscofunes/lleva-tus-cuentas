@@ -9,9 +9,10 @@ jest.mock('react-router-dom', () => ({
 	Navigate: () => null,
 	useParams: () => ({ positionId: 'position-1' }),
 }));
-jest.mock('react-redux', () => ({
-	useSelector: (selector) => selector({ auth: { user: { uid: 'user-1' } } }),
-}));
+jest.mock('react-redux', () => {
+	const stableState = { auth: { user: { uid: 'user-1' } } };
+	return { useSelector: (selector) => selector(stableState) };
+});
 jest.mock('react-toastify', () => ({
 	toast: { success: jest.fn(), error: jest.fn() },
 }));
