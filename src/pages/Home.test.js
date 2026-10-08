@@ -36,6 +36,22 @@ describe('LTC landing', () => {
     expect(screen.getByRole('heading', { name: 'Tus números también pueden darte respuestas.' })).toBeInTheDocument();
   });
 
+  it('keeps LITA readable in light mode and matches the shared dark page palette', () => {
+    const { container } = renderHome();
+    const main = container.querySelector('main');
+    const lita = container.querySelector('#conoce-lita');
+
+    expect(main).toHaveClass('bg-slate-50', 'dark:bg-gray-900');
+    expect(lita).toHaveClass('bg-white', 'text-slate-900', 'dark:bg-gray-900', 'dark:text-slate-100');
+    expect(lita).not.toHaveClass('bg-slate-950', 'text-white');
+
+    const panel = screen.getByText('Preguntale a LITA').closest('.rounded-3xl');
+    expect(panel).toHaveClass('bg-slate-50', 'dark:bg-slate-800');
+    expect(screen.getByRole('link', { name: /Empezar a usar LTC/i }))
+      .toHaveClass('bg-purple-600', 'text-white');
+    expect(screen.getByRole('contentinfo')).toHaveClass('dark:bg-gray-900');
+  });
+
   it('does not present decorative sample charts as real account balances', () => {
     renderHome();
     expect(screen.getByText('Vista ilustrativa')).toBeInTheDocument();
