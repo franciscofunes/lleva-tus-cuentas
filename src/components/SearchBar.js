@@ -49,6 +49,16 @@ function SearchBar({
               enterKeyHint='search'
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  event.currentTarget.blur(); // dismiss the mobile keyboard without reloading.
+                }
+                if (event.key === 'Escape') {
+                  onQueryChange('');
+                  event.currentTarget.blur();
+                }
+              }}
               placeholder='Nombre, descripción, categoría, importe…'
               disabled={disabled}
               className={fieldClass + ' pl-10 pr-11'}
