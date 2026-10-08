@@ -290,7 +290,9 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    clearTransactionFilters();
+    setSearchQuery("");
+    setSearchCategory("");
+    setSearchType("all");
   }, [user?.uid]);
 
   useEffect(() => {
