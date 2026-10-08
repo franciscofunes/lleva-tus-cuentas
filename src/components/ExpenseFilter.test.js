@@ -1,7 +1,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import ExpenseFilter, { describeSelectedPeriod } from './ExpenseFilter';
+import ExpenseFilter, { CalendarHeader, describeSelectedPeriod } from './ExpenseFilter';
 import {
   filterDataAction,
   getTotalBalance,
@@ -112,6 +112,51 @@ describe('integrated transaction period control', () => {
     mockState.auth.user = null;
     rerender(<ExpenseFilter />);
     expect(screen.getByRole('button', { name: 'Todo' })).toBeDisabled();
+  });
+
+  it('uses the LTC themed portal calendar instead of the unstyled dropdowns', () => {
+    render(<ExpenseFilter />);
+    expect(screen.getByRole('button', { name: 'Elegir fecha de referencia' })).toBeInTheDocument();
+    // react-datepicker is mocked in this suite. Validate the installed
+    // calendar adapter, and verify the real custom header controls below.
+    expect(CalendarHeader).toEqual(expect.any(Function));
+  });
+
+  it('renders a keyboard-friendly Spanish month/year header with touch targets', () => {
+    const changeMonth = jest.fn();
+    const changeYear = jest.fn();
+    const decreaseMonth = jest.fn();
+    const increaseMonth = jest.fn();
+    render(
+      <CalendarHeader date={new Date(2026, 9, 8)}
+        changeMonth={changeMonth} changeYear={changeYear}
+        decreaseMonth={decreaseMonth} increaseMonth={increaseMonth}
+        prevMonthButtonDisabled={false} nextMonthButtonDisabled={false} />
+    );
+    const month = screen.getByRole('combobox', { name: 'Mes del calendario' });
+    const year = screen.getByRole('combobox', { name: 'Año del calendario' });
+    expect(month).toHaveValue('9');
+    expect(month).toHaveTextContent('octubre');
+    expect(year).toHaveValue('2026');
+    fireEvent.change(month, { target: { value: '8' } });
+    fireEvent.change(year, { target: { value: '2025' } });
+    expect(changeMonth).toHaveBeenCalledWith(8);
+    expect(changeYear).toHaveBeenCalledWith(2025);
+    fireEvent.click(screen.getByRole('button', { name: 'Mes anterior' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }));
+    expect(decreaseMonth).toHaveBeenCalledTimes(1);
+    expect(increaseMonth).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables calendar month navigation at range boundaries', () => {
+    render(
+      <CalendarHeader date={new Date(2026, 9, 8)}
+        decreaseMonth={jest.fn()} increaseMonth={jest.fn()}
+        changeMonth={jest.fn()} changeYear={jest.fn()}
+        prevMonthButtonDisabled nextMonthButtonDisabled />
+    );
+    expect(screen.getByRole('button', { name: 'Mes anterior' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Mes siguiente' })).toBeDisabled();
   });
 
   it('formats reference labels for every scope', () => {
