@@ -81,7 +81,7 @@ export const summarizeBimonetaryFlows = (docs = [], categories = []) => {
 // Reject invalid balances rather than silently introducing NaN/negative totals.
 export const sumPortfolioCurrencies = (positions = []) =>
   (positions || []).reduce((totals, position) => {
-    const currency = String(position?.currency || '').toUpperCase();
+    const currency = String(position?.currency || 'ARS').toUpperCase(); // same default as Portfolio totals
     if (currency !== 'USD' && currency !== 'ARS') return totals;
     const balance = safeAmount(position?.balance);
     if (balance === null) return totals;
