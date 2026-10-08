@@ -56,7 +56,7 @@ function ProductPreview() {
       className='relative mx-auto w-full max-w-[540px] lg:ml-auto'
       aria-label='Vista ilustrativa del panel financiero y LITA'
     >
-      <div className='overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/20'>
+      <div className='overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 dark:border-slate-700 dark:bg-slate-800 dark:shadow-black/20'>
         <div className='flex items-center justify-between border-b border-slate-200 px-4 py-3.5 dark:border-slate-800 sm:px-5'>
           <div className='flex items-center gap-2.5'>
             <span className='flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white' aria-hidden='true'>
@@ -136,8 +136,8 @@ function Home() {
 
   return (
     <>
-      <main className='overflow-x-hidden bg-white text-slate-900 dark:bg-slate-950 dark:text-white'>
-        <section className='relative isolate border-b border-slate-200/80 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-950' aria-labelledby='home-heading'>
+      <main className='overflow-x-hidden bg-slate-50 text-slate-900 dark:bg-gray-900 dark:text-slate-100'>
+        <section className='relative isolate border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-gray-900' aria-labelledby='home-heading'>
           <div className='mx-auto grid w-full max-w-7xl items-center gap-10 px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-14 lg:py-24'>
             <div className='max-w-[650px]'>
               <div className='inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-extrabold tracking-wide text-purple-700 dark:border-purple-500/30 dark:bg-purple-950/30 dark:text-purple-200'>
@@ -179,7 +179,7 @@ function Home() {
           </div>
           <div className='mt-9 grid gap-4 md:grid-cols-3'>
             {capabilities.map(({ icon: Icon, title, description, detail }) => (
-              <article key={title} className='group rounded-3xl border border-slate-200 bg-white p-6 transition-colors hover:border-purple-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-purple-700 dark:hover:bg-slate-900'>
+              <article key={title} className='group rounded-3xl border border-slate-200 bg-white p-6 transition-colors hover:border-purple-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-purple-500 dark:hover:bg-slate-800'>
                 <div className='flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300'>
                   <Icon size={23} aria-hidden='true' />
                 </div>
@@ -191,45 +191,45 @@ function Home() {
           </div>
         </section>
 
-        <section id='conoce-lita' className='scroll-mt-24 bg-slate-950 text-white' aria-labelledby='lita-heading'>
+        <section id='conoce-lita' className='scroll-mt-24 border-y border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-gray-900 dark:text-slate-100' aria-labelledby='lita-heading'>
           <div className='mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-2 lg:items-center lg:gap-20 lg:py-24'>
             <div>
-              <span className='inline-flex items-center gap-2 rounded-full border border-purple-500/40 bg-purple-500/10 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-purple-200'>
+              <span className='inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-purple-700 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-200'>
                 <HiOutlineSparkles size={17} aria-hidden='true' />
                 Conocé a LITA
               </span>
               <h2 id='lita-heading' className='mt-6 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl'>
                 Tus números también pueden darte respuestas.
               </h2>
-              <p className='mt-5 max-w-lg text-base leading-8 text-slate-300 sm:text-lg'>
+              <p className='mt-5 max-w-lg text-base leading-8 text-slate-600 dark:text-slate-300 sm:text-lg'>
                 LITA es el asistente de IA integrado en Lleva Tus Cuentas. Hacé preguntas sobre tus movimientos y tu portfolio, y obtené explicaciones basadas en la información disponible en tu cuenta.
               </p>
-              <div className='mt-7 flex flex-wrap gap-3 text-sm text-slate-300'>
-                <span className='inline-flex items-center gap-2'><FiBarChart2 className='text-purple-400' aria-hidden='true' /> Gastos por categoría</span>
-                <span className='inline-flex items-center gap-2'><FiTrendingUp className='text-purple-400' aria-hidden='true' /> Seguimiento de inversiones</span>
+              <div className='mt-7 flex flex-wrap gap-3 text-sm text-slate-700 dark:text-slate-300'>
+                <span className='inline-flex items-center gap-2'><FiBarChart2 className='text-purple-600 dark:text-purple-400' aria-hidden='true' /> Gastos por categoría</span>
+                <span className='inline-flex items-center gap-2'><FiTrendingUp className='text-purple-600 dark:text-purple-400' aria-hidden='true' /> Seguimiento de inversiones</span>
               </div>
-              <p className='mt-6 flex max-w-lg items-start gap-2 text-xs leading-6 text-slate-400'>
+              <p className='mt-6 flex max-w-lg items-start gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400'>
                 <FiLock className='mt-1 shrink-0' aria-hidden='true' />
                 Las respuestas dependen de los datos registrados y pueden requerir verificación. LITA no reemplaza asesoramiento financiero profesional.
               </p>
             </div>
-            <div className='rounded-3xl border border-slate-700 bg-slate-900 p-5 sm:p-7'>
-              <div className='flex items-center gap-3 border-b border-slate-700 pb-5'>
+            <div className='rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-7'>
+              <div className='flex items-center gap-3 border-b border-slate-200 pb-5 dark:border-slate-700'>
                 <span className='flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-600 text-white'><HiOutlineSparkles size={24} aria-hidden='true' /></span>
                 <div>
                   <p className='font-extrabold'>Preguntale a LITA</p>
-                  <p className='text-xs text-slate-400'>Ideas de consultas que podés hacer</p>
+                  <p className='text-xs text-slate-600 dark:text-slate-300'>Ideas de consultas que podés hacer</p>
                 </div>
               </div>
               <ul className='mt-5 space-y-3'>
                 {exampleQuestions.map((question) => (
-                  <li key={question} className='flex items-center justify-between gap-3 rounded-2xl border border-slate-700 bg-slate-800/80 px-4 py-4 text-sm leading-6 text-slate-100'>
+                  <li key={question} className='flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm leading-6 text-slate-800 dark:border-slate-600 dark:bg-slate-900/80 dark:text-slate-100'>
                     <span>{question}</span>
-                    <FiArrowUpRight className='shrink-0 text-purple-300' size={18} aria-hidden='true' />
+                    <FiArrowUpRight className='shrink-0 text-purple-600 dark:text-purple-300' size={18} aria-hidden='true' />
                   </li>
                 ))}
               </ul>
-              <Link to={startLink} className='mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-bold text-slate-950 transition-colors hover:bg-purple-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-purple-400/50'>
+              <Link to={startLink} className='mt-6 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-purple-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-purple-400/50'>
                 {user ? 'Abrir Lleva Tus Cuentas' : 'Empezar a usar LTC'}
                 <FiArrowRight aria-hidden='true' />
               </Link>
@@ -238,7 +238,7 @@ function Home() {
         </section>
 
         <section className='mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20' aria-labelledby='ready-heading'>
-          <div className='flex flex-col gap-6 rounded-3xl border border-slate-200 bg-slate-50 p-7 dark:border-slate-800 dark:bg-slate-900/60 sm:p-10 lg:flex-row lg:items-center lg:justify-between'>
+          <div className='flex flex-col gap-6 rounded-3xl border border-slate-200 bg-slate-50 p-7 dark:border-slate-700 dark:bg-slate-800 sm:p-10 lg:flex-row lg:items-center lg:justify-between'>
             <div>
               <p className='text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400'>Tu próximo paso</p>
               <h2 id='ready-heading' className='mt-2 text-2xl font-extrabold sm:text-3xl'>Empezá a ver el panorama completo.</h2>
