@@ -6,7 +6,7 @@ const ars = (amount) => new Intl.NumberFormat('es-AR', {
   style: 'currency', currency: 'ARS', maximumFractionDigits: 2,
 }).format(amount);
 
-export default function UsdExchangePopover({ usdBalance, showValues = true }) {
+export default function UsdExchangePopover({ usdBalance, arsBalance = 0, showValues = true }) {
   const [open, setOpen] = useState(false);
   const [rates, setRates] = useState([]);
   const [selectedMarket, setSelectedMarket] = useState('bolsa');
@@ -52,7 +52,9 @@ export default function UsdExchangePopover({ usdBalance, showValues = true }) {
   const date = chosen && new Date(chosen.updatedAt);
   const isStale = date && (Date.now() - date.getTime()) > 36 * 3600_000;
   const amount = Number(usdBalance);
+  const pesos = Number(arsBalance);
   const canEstimate = showValues && Number.isFinite(amount) && amount > 0 && chosen;
+  const canShowTotal = canEstimate && Number.isFinite(pesos) && pesos >= 0;
 
   return (
     <div className='relative'>
@@ -93,6 +95,13 @@ export default function UsdExchangePopover({ usdBalance, showValues = true }) {
                 <div className='rounded-xl border border-purple-200 bg-purple-50 p-3 dark:border-purple-500/30 dark:bg-purple-950/20'>
                   <p className='text-xs text-slate-700 dark:text-slate-300'>Portfolio USD convertido a pesos (estimación bruta)</p>
                   <p className='mt-1 break-words text-lg font-bold text-purple-800 dark:text-purple-200'>{ars(amount * chosen.compra)}</p>
+                </div>
+              )}
+              {canShowTotal && (
+                <div className='rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
+                  <p className='text-xs text-slate-600 dark:text-slate-300'>Portfolio total en ARS (estimación: posiciones ARS + posiciones USD convertidas)</p>
+                  <p className='mt-1 break-words text-base font-bold tabular-nums'>{ars(pesos + amount * chosen.compra)}</p>
+                  <p className='mt-1 text-[11px] text-slate-500 dark:text-slate-400'>No incluye otros bancos, cuentas no registradas, deudas ni movimientos del período.</p>
                 </div>
               )}
               {!canEstimate && <p className='text-xs text-slate-600 dark:text-slate-300'>{showValues ? 'No hay un saldo USD de Portfolio para estimar.' : 'Importes ocultos por tu configuración de privacidad.'}</p>}
