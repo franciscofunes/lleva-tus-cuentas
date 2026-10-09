@@ -23,5 +23,7 @@ jobs:
         run: npm ci --omit=optional --ignore-scripts --no-audit --no-fund
       - name: Test user isolation, money reconciliation, and no expense duplication
         run: CI=true npm test -- --watch=false --runInBand src/services/cardStatementService.test.js
+      - name: Restore optional browser PDF dependency for bundling
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Compile LTC
         run: npm run build
