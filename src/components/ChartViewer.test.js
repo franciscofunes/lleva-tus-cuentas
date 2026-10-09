@@ -19,46 +19,45 @@ function ChartFixture({ hideValues = false }) {
   </div>;
 }
 
-describe('modern chart viewer', () => {
-  it('replaces unlabeled dots with five accessible buttons', () => {
+describe('responsive chart viewer', () => {
+  it('shows five accessible bullets, previous/next arrows and NO mobile combobox', () => {
     render(<ChartFixture />);
     const controls = screen.getByRole('group', { name: 'Seleccionar gráfico' });
-    expect(within(controls).getAllByRole('button')).toHaveLength(5);
-    expect(within(controls).getByRole('button', { name: 'Gastos ARS' })).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(within(controls).getByRole('button', { name: 'Ingresos USD' }));
+    expect(within(controls).getAllByRole('button')).toHaveLength(7);
+    expect(within(controls).queryByRole('combobox')).not.toBeInTheDocument();
+    expect(within(controls).getByRole('button', { name: 'Ir a Gastos ARS' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(controls).getByRole('button', { name: 'Ir a Ingresos USD' }));
+    expect(within(controls).getByRole('button', { name: 'Ir a Ingresos USD' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getAllByText('Ingresos USD').length).toBeGreaterThan(1);
-    expect(within(controls).getByRole('button', { name: 'Ingresos USD' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('keeps mobile navigation in a bounded select and desktop tabs wrapping', () => {
+  it('moves through chart bullets with arrows and wraps at either end', () => {
     render(<ChartFixture />);
     const controls = screen.getByRole('group', { name: 'Seleccionar gráfico' });
-    const mobileSelect = within(controls).getByRole('combobox', { name: 'Tipo de gráfico' });
-    expect(mobileSelect).toHaveClass('w-full', 'min-w-0', 'max-w-full', 'sm:hidden');
-    expect(mobileSelect).toHaveValue('expenses');
-    expect(within(controls).getAllByRole('button')).toHaveLength(5);
-    const desktop = within(controls).getByRole('button', { name: 'Gastos ARS' }).parentElement;
-    expect(desktop).toHaveClass('flex-wrap', 'sm:flex');
-    fireEvent.change(mobileSelect, { target: { value: 'divisas' } });
-    expect(mobileSelect).toHaveValue('divisas');
-    expect(within(controls).getByRole('button', { name: 'Ingresos USD' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getAllByText('Ingresos USD').length).toBeGreaterThan(1);
-
-    const viewport = screen.getByTestId('clipped-parent').querySelector('.ltc-chart-viewport');
-    expect(viewport).toHaveClass('w-full', 'min-w-0', 'max-w-full', 'overflow-hidden');
-    expect(viewport.firstElementChild).toHaveClass('min-w-0');
+    const previous = within(controls).getByRole('button', { name: 'Gráfico anterior' });
+    const next = within(controls).getByRole('button', { name: 'Gráfico siguiente' });
+    fireEvent.click(next);
+    expect(within(controls).getByRole('button', { name: 'Ir a Ingresos ARS' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(previous);
+    expect(within(controls).getByRole('button', { name: 'Ir a Gastos ARS' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(previous);
+    expect(within(controls).getByRole('button', { name: 'Ir a Evolución USD' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(next);
+    expect(within(controls).getByRole('button', { name: 'Ir a Gastos ARS' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('offers chart selection before the graph for mobile discoverability', () => {
+  it('keeps bullet navigation inside the chart viewport below the chart', () => {
     render(<ChartFixture />);
     const viewport = screen.getByTestId('clipped-parent').querySelector('.ltc-chart-viewport');
-    const selector = screen.getByRole('combobox', { name: 'Tipo de gráfico' });
+    const controls = screen.getByRole('group', { name: 'Seleccionar gráfico' });
     const chart = screen.getByText('Gastos: 2 registros');
-    expect(viewport.contains(selector)).toBe(true);
-    expect(selector.compareDocumentPosition(chart) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(viewport).toHaveClass('w-full', 'min-w-0', 'max-w-full', 'overflow-hidden');
+    expect(viewport.contains(controls)).toBe(true);
+    expect(chart.compareDocumentPosition(controls) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(controls).toHaveClass('w-full', 'min-w-0', 'max-w-full');
   });
 
-  it('opens a fullscreen responsive modal outside clipped cards and closes via Escape', async () => {
+  it('opens a genuine full-height 100dvh mobile modal outside clipping and restores focus', async () => {
     render(<ChartFixture />);
     const trigger = screen.getByRole('button', { name: 'Ampliar gráfico: Gastos ARS' });
     trigger.focus();
@@ -66,26 +65,32 @@ describe('modern chart viewer', () => {
     const modal = screen.getByRole('dialog', { name: 'Gastos ARS' });
     expect(screen.getByTestId('clipped-parent')).not.toContainElement(modal);
     expect(modal).toHaveAttribute('aria-modal', 'true');
-    expect(document.body.style.overflow).toBe('hidden');
+    expect(modal).toHaveClass('h-[100dvh]', 'w-full', 'max-w-full', 'rounded-none', 'sm:h-auto', 'sm:max-h-[90dvh]');
+    expect(modal.parentElement).toHaveClass('h-[100dvh]', 'w-screen');
     expect(within(modal).getByText('Gastos: 2 registros')).toBeInTheDocument();
+    expect(document.body.style.overflow).toBe('hidden');
+    expect(within(modal).getByRole('button', { name: 'Cerrar gráfico ampliado' })).toHaveFocus();
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(document.body.style.overflow).not.toBe('hidden');
     expect(trigger).toHaveFocus();
   });
 
-  it('can switch charts within the expanded modal, then close via X', () => {
+  it('allows changing charts from fixed modal footer bullets, then closes by X', () => {
     render(<ChartFixture />);
     fireEvent.click(screen.getByRole('button', { name: 'Ampliar gráfico: Gastos ARS' }));
     const dialog = screen.getByRole('dialog');
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Comparativa ARS' }));
-    expect(within(dialog).getByText('Comparativa')).toBeInTheDocument();
+    const controls = within(dialog).getByRole('group', { name: 'Seleccionar gráfico' });
+    fireEvent.click(within(controls).getByRole('button', { name: 'Gráfico siguiente' }));
+    expect(within(dialog).getByText('Ingresos en pesos')).toBeInTheDocument();
+    expect(within(dialog).getByRole('heading', { name: 'Ingresos ARS' })).toBeInTheDocument();
+    fireEvent.click(within(controls).getByRole('button', { name: 'Ir a Comparativa ARS' }));
     expect(within(dialog).getByRole('heading', { name: 'Comparativa ARS' })).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cerrar gráfico ampliado' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('does not render sensitive chart data with hidden balances', () => {
+  it('prevents chart data leaking through expanded mode when balances are hidden', () => {
     render(<ChartFixture hideValues />);
     expect(screen.queryByText(/Gastos: 2 registros/)).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Los gráficos están ocultos');
@@ -93,5 +98,8 @@ describe('modern chart viewer', () => {
     const modal = screen.getByRole('dialog');
     expect(within(modal).getByRole('status')).toHaveTextContent('Los gráficos están ocultos');
     expect(within(modal).queryByText('Gastos: 2 registros')).not.toBeInTheDocument();
+    const controls = within(modal).getByRole('group', { name: 'Seleccionar gráfico' });
+    fireEvent.click(within(controls).getByRole('button', { name: 'Gráfico siguiente' }));
+    expect(within(modal).getByRole('status')).toHaveTextContent('Los gráficos están ocultos');
   });
 });
