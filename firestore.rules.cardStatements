@@ -15,7 +15,7 @@ match /users/{uid}/cardStatements/{statementId} {
     return d.keys().hasOnly([
       'schema', 'expenseId', 'fileSha256', 'institution', 'cardBrand',
       'period', 'closingDate', 'dueDate', 'totals', 'purchases',
-      'minimumPaymentArs', 'taxesArs', 'previousCreditArs', 'itemCount',
+      'minimumPaymentArs', 'taxesArs', 'feesArs', 'previousCreditArs', 'itemCount',
       'countedInCashFlow', 'approvedByUser', 'updatedAt'
     ])
     && d.schema == 'ltc.card-statement.v1'
@@ -33,6 +33,53 @@ match /users/{uid}/cardStatements/{statementId} {
     && d.totals.ARS is string && d.totals.USD is string
     && d.purchases.keys().hasAll(['ARS', 'USD'])
     && d.purchases.ARS is string && d.purchases.USD is string
+    // Optional, backward-compatible fee breakdown for Banco Ciudad.
+    // Santander documents continue to use only taxesArs.
+    && (!d.keys().hasAny(['feesArs'])
+        || (d.feesArs is string
+            && d.feesArs.matches('^[0-9]+[.][0-9]{2}
+    && d.updatedAt is timestamp
+    && exists(/databases/$(database)/documents/users/$(uid)/expenses/$(d.expenseId))
+    && get(/databases/$(database)/documents/users/$(uid)/expenses/$(d.expenseId)).data.category.matches('.*Resumen tarjeta.*');
+  }
+  allow get, list: if owner();
+  allow create: if owner() && validStatement();
+  allow update: if owner() && validStatement()
+    && request.resource.data.expenseId == resource.data.expenseId
+    && request.resource.data.fileSha256 == resource.data.fileSha256;
+  allow delete: if owner();
+
+  match /items/{itemId} {
+    function owner() {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function validItem() {
+      let i = request.resource.data;
+      return i.keys().hasOnly([
+        'date', 'merchant', 'amount', 'currency', 'category',
+        'receipt', 'installment', 'sourcePage', 'type',
+        'includeInAnalytics', 'countedInCashFlow'
+      ])
+      && i.date is string && i.date.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$')
+      && i.merchant is string && i.merchant.size() <= 90
+      && i.amount is string && i.amount.matches('^[0-9]+[.][0-9]{2}$')
+      && i.currency in ['ARS', 'USD']
+      && i.category is string && i.category.size() <= 80
+      && i.receipt is string && i.receipt.size() <= 12
+      && (i.installment == null || (i.installment is string && i.installment.size() <= 24))
+      && (i.sourcePage == null || (i.sourcePage is int && i.sourcePage >= 1 && i.sourcePage <= 12))
+      && i.type == 'purchase'
+      && i.includeInAnalytics is bool
+      && i.countedInCashFlow == false;
+    }
+    allow get, list: if owner();
+    allow create, update: if owner() && validItem()
+      && itemId.matches('^[0-9]{4}$')
+      && existsAfter(/databases/$(database)/documents/users/$(uid)/cardStatements/$(statementId));
+    allow delete: if owner();
+  }
+}
+)))
     && d.itemCount is int && d.itemCount > 0 && d.itemCount <= 400
     && d.updatedAt is timestamp
     && exists(/databases/$(database)/documents/users/$(uid)/expenses/$(d.expenseId))
