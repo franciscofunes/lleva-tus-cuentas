@@ -7,6 +7,7 @@ import { FaCheckCircle } from 'react-icons/fa';
 import InfoTooltip from '../components/InfoTooltip';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 import { usesSelectedDateAsDueDate } from '../utils/transactionDueDates';
+import CardStatementDetails from './CardStatementDetails';
 
 function Card({
 	id,
@@ -217,6 +218,7 @@ function Card({
 					</svg>
 				</div>
 			</div>
+			{category?.includes('Resumen tarjeta') && <CardStatementDetails expenseId={id} />}
 		</motion.div>
 	);
 }
