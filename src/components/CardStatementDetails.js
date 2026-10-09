@@ -51,9 +51,17 @@ export default function CardStatementDetails({ expenseId }) {
                 <span>{formatAmount(statement.totals.ARS, 'ARS')}</span>
                 <span>{formatAmount(statement.totals.USD, 'USD')}</span>
               </div>
-              <p className='mb-3 text-xs text-slate-600 dark:text-slate-300'>
+              <p className='mb-2 text-xs text-slate-600 dark:text-slate-300'>
                 {items.length} operaciones vinculadas. No se suman de nuevo a tus gastos.
               </p>
+              {statement.feesArs !== undefined && (
+                <div className='mb-3 space-y-1 rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700'>
+                  <p>Consumos ARS: {formatAmount(statement.purchases?.ARS, 'ARS')}</p>
+                  <p>Comisiones ARS: {formatAmount(statement.feesArs, 'ARS')}</p>
+                  <p>IVA / impuestos ARS: {formatAmount(statement.taxesArs, 'ARS')}</p>
+                  <p>Saldo anterior pendiente ARS: {formatAmount(statement.previousCreditArs, 'ARS')}</p>
+                </div>
+              )}
               <div className='max-h-[45dvh] space-y-2 overflow-y-auto'>
                 {items.map((item, index) => (
                   <div key={index} className='border-b border-slate-200 pb-2 dark:border-slate-700'>

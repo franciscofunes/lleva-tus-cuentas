@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react'
+import { FiUploadCloud, FiFileText, FiCheckCircle, FiRefreshCw } from 'react-icons/fi'
 import { analyzeStatementPdf } from '../services/cardStatementService'
 
 const format = (amount, currency) => new Intl.NumberFormat('es-AR', {
@@ -30,6 +31,8 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
   const [error, setError] = useState('')
   const [draft, setDraft] = useState(null)
   const [expanded, setExpanded] = useState(false)
+  const [fileInfo, setFileInfo] = useState(null)
+  const [dragging, setDragging] = useState(false)
   const fileRef = useRef(null)
   const expenseCategories = useMemo(() => (categories || [])
     .filter((c) => c.isExpense && !String(c.name).includes('Resumen tarjeta'))
@@ -39,7 +42,8 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
     setError('')
     setDraft(null)
     onDraft(null)
-    if (!file) return
+    if (!file || disabled || state === 'loading') return
+    setFileInfo({ name: file.name, size: file.size })
     setState('loading')
     try {
       const extracted = await analyzeStatementPdf(file)
@@ -64,6 +68,13 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
       if (fileRef.current) fileRef.current.value = ''
     }
   }
+  const onDropPdf = (event) => {
+    event.preventDefault()
+    setDragging(false)
+    if (disabled || state === 'loading') return
+    const file = event.dataTransfer?.files?.[0]
+    if (file) analyze(file)
+  }
   const editItem = (index, changes) => {
     const updated = { ...draft, items: draft.items.map((item, i) =>
       i === index ? { ...item, ...changes } : item) }
@@ -75,14 +86,60 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
       <h3 className='text-base font-extrabold'>Analizar resumen de tarjeta PDF</h3>
       <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>
         PDF de hasta 4 MB. Extraemos consumos, cuotas, fechas y totales; nunca creamos gastos adicionales por cada compra.
-        Por ahora se admite el formato Visa validado. Los resultados requieren tu aprobación.
+        Admite Visa Santander y Visa Gold Banco Ciudad (PDF digital). Los resultados requieren tu aprobación.
       </p>
-      <label htmlFor='card-statement-pdf' className='mt-3 block text-sm font-bold'>Elegí el PDF de tu home banking</label>
-      <input id='card-statement-pdf' ref={fileRef} type='file' accept='application/pdf,.pdf'
+      <input
+        id='card-statement-pdf'
+        ref={fileRef}
+        type='file'
+        accept='.pdf,application/pdf'
+        aria-label='Elegir resumen bancario en PDF'
         disabled={state === 'loading' || disabled}
         onChange={(event) => analyze(event.target.files?.[0])}
-        className='mt-2 block w-full min-w-0 rounded-lg border border-slate-300 p-2 text-sm dark:border-slate-600 dark:bg-slate-800'/>
-      {state === 'loading' && <p role='status' className='mt-3 text-sm'>Analizando y conciliando el resumen, esperá…</p>}
+        className='sr-only'
+      />
+      <div
+        onDragOver={(event) => { event.preventDefault(); if (!disabled && state !== 'loading') setDragging(true) }}
+        onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setDragging(false) }}
+        onDrop={onDropPdf}
+        className={'mt-3 min-w-0 rounded-xl border border-dashed bg-white/50 p-3 text-center transition-colors dark:bg-slate-900/50 sm:p-4 ' +
+          (dragging ? 'border-purple-500 bg-purple-100/70 ring-2 ring-purple-400 dark:bg-purple-500/15' : 'border-purple-400/70 dark:border-purple-400/50')}
+      >
+        <span aria-hidden='true' className='mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200'>
+          {state === 'ready' ? <FiCheckCircle size={22}/> : <FiUploadCloud size={22}/>}
+        </span>
+        <p className='text-sm font-bold'>{dragging ? 'Soltá el resumen PDF aquí' : fileInfo ? 'Resumen seleccionado' : 'Importá tu resumen desde el celular o la computadora'}</p>
+        <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>
+          {fileInfo ? 'El archivo se analiza temporalmente y después se elimina.' : 'Elegí un PDF de tu home banking o arrastralo hasta esta zona.'}
+        </p>
+        {fileInfo && (
+          <div className='mt-3 flex min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 text-left dark:border-slate-700 dark:bg-slate-800'>
+            <FiFileText className='shrink-0 text-purple-700 dark:text-purple-300' size={20}/>
+            <div className='min-w-0 flex-1'>
+              <p className='break-all text-xs font-semibold'>{fileInfo.name}</p>
+              <p className='text-xs text-slate-500 dark:text-slate-300'>{(fileInfo.size / 1024).toFixed(0)} KB · PDF</p>
+            </div>
+            {state === 'ready' && <FiCheckCircle className='shrink-0 text-emerald-600 dark:text-emerald-400' size={20}/>}
+          </div>
+        )}
+        <button
+          type='button'
+          onClick={() => fileRef.current?.click()}
+          disabled={state === 'loading' || disabled}
+          aria-controls='card-statement-pdf'
+          className='mt-3 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-purple-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-400 disabled:cursor-not-allowed disabled:opacity-60'
+        >
+          {state === 'loading' ? (
+            <><FiRefreshCw className='animate-spin' size={18}/> Analizando PDF…</>
+          ) : fileInfo ? (
+            <><FiRefreshCw size={18}/> Elegir otro PDF</>
+          ) : (
+            <><FiUploadCloud size={19}/> Seleccionar archivo PDF</>
+          )}
+        </button>
+        <p className='mt-2 text-xs text-slate-500 dark:text-slate-300'>Máximo 4 MB · Visa Santander y Visa Gold Banco Ciudad</p>
+      </div>
+      {state === 'loading' && <p role='status' aria-live='polite' className='mt-3 text-sm'>Extrayendo y conciliando consumos, esperá…</p>}
       {error && <p role='alert' className='mt-3 text-sm font-semibold text-rose-600 dark:text-rose-300'>{error}</p>}
       {draft && (
         <div className='mt-3 space-y-3'>
@@ -97,6 +154,14 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
               <strong>{draft.statement.dueDate}</strong></div>
             <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Consumos</span>
               <strong>{draft.items.length} operaciones</strong></div>
+            <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Subtotal de consumos ARS</span>
+              <strong>{format(draft.statement.purchases.ARS, 'ARS')}</strong></div>
+            <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Impuestos y percepciones ARS</span>
+              <strong>{format(draft.statement.taxesArs, 'ARS')}</strong></div>
+            {draft.statement.feesArs !== undefined && (
+              <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Comisiones y cargos ARS</span>
+                <strong>{format(draft.statement.feesArs, 'ARS')}</strong></div>
+            )}
             <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Estado</span>
               <strong className='text-emerald-600 dark:text-emerald-400'>Totales conciliados</strong></div>
           </div>

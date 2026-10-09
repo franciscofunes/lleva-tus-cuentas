@@ -1,4 +1,4 @@
-import { statementDocumentId, verifyStatementDraft, saveReviewedStatement } from './cardStatementService'
+import { statementDocumentId, verifyStatementDraft, saveReviewedStatement, analyzeStatementPdf } from './cardStatementService'
 import { auth, firestore } from '../shared/config/firebase/firebase.config'
 
 jest.mock('../shared/config/firebase/firebase.config', () => {
@@ -39,7 +39,28 @@ const sample = {
   ],
 }
 
-beforeEach(() => jest.clearAllMocks())
+beforeEach(() => {
+  jest.clearAllMocks()
+  auth.currentUser.getIdToken.mockResolvedValue('token')
+  const set = jest.fn()
+  const commit = jest.fn().mockResolvedValue(undefined)
+  const expenseRef = {
+    get: jest.fn().mockResolvedValue({
+      exists: true, data: () => ({ category: 'Resumen tarjeta 💳' }),
+    }),
+  }
+  const statementRef = {
+    get: jest.fn().mockResolvedValue({ exists: false }),
+    collection: jest.fn(() => ({ doc: jest.fn((id) => ({ path: 'items/' + id })) })),
+  }
+  const userRef = {
+    collection: jest.fn((name) => ({
+      doc: jest.fn(() => name === 'expenses' ? expenseRef : statementRef),
+    })),
+  }
+  firestore.collection.mockImplementation(() => ({ doc: jest.fn(() => userRef) }))
+  firestore.batch.mockImplementation(() => ({ set, commit }))
+})
 
 test('accepts only full document hashes and independently reconciled items', () => {
   expect(statementDocumentId('a'.repeat(64))).toHaveLength(64)
@@ -63,4 +84,42 @@ test('saves only user-owned statement metadata + items; never creates expense ro
 test('rejects cross-user writes before Firestore', async () => {
   await expect(saveReviewedStatement({ uid: 'bob', expenseId: 'expense1', draft: sample })).rejects.toThrow(/Sesión/)
   expect(firestore.batch).not.toHaveBeenCalled()
+})
+
+
+test('accepts Banco Ciudad administration fee only when it reconciles separately from IVA', () => {
+  const city = {
+    ...sample,
+    statement: {
+      ...sample.statement,
+      institution: 'Banco Ciudad',
+      feesArs: '6.00',
+      taxesArs: '1.00',
+      totals: { ARS: '107.00', USD: '20.00' },
+    },
+  }
+  expect(verifyStatementDraft(city)).toBe(true)
+  expect(() => verifyStatementDraft({
+    ...city, statement: { ...city.statement, feesArs: '5.99' },
+  })).toThrow(/total del resumen/)
+  expect(verifyStatementDraft(sample)).toBe(true)
+})
+
+
+test('Android PDF with missing MIME type uploads with Firebase token; other files are rejected', async () => {
+  const originalFetch = global.fetch
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ result: sample }) })
+  try {
+    const androidPdf = new File(['%PDF-1.7'], 'visa-banco-ciudad.PDF', { type: '' })
+    await expect(analyzeStatementPdf(androidPdf)).resolves.toEqual(sample)
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/card-statements/analyze'),
+      expect.objectContaining({ method: 'POST', headers: { Authorization: 'Bearer token' } }),
+    )
+    await expect(analyzeStatementPdf(new File(['abc'], 'other.txt', { type: 'text/plain' })))
+      .rejects.toThrow(/PDF/)
+    expect(global.fetch).toHaveBeenCalledTimes(1)
+  } finally {
+    global.fetch = originalFetch
+  }
 })
