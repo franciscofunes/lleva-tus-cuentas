@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import { toast } from "react-toastify";
+import CardStatementPdfReview from "./CardStatementPdfReview";
+import { getImportedStatement, saveReviewedStatement, verifyStatementDraft } from "../services/cardStatementService";
 import { useForm } from "react-hook-form";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useDispatch, useSelector } from "react-redux";
@@ -58,6 +61,8 @@ const TransactionForm = ({
   const [markdown, setMarkdown] = useState("");
   const [isParsingMarkdown, setIsParsingMarkdown] = useState(false);
   const [markdownMessage, setMarkdownMessage] = useState("");
+  const [statementDraft, setStatementDraft] = useState(null);
+  const [draftExpenseId, setDraftExpenseId] = useState(null);
   const selectedDateIsDueDate = usesSelectedDateAsDueDate(category, categories);
   const notificationSettings = getNotificationSettings(category, categories);
   const dueDate = resolveTransactionDueDate({
@@ -112,29 +117,50 @@ const TransactionForm = ({
     }
   };
 
+  const applyStatement = (statement) => {
+    // Explicit button: never overwrite an existing card transaction silently.
+    setName((statement.institution + " " + statement.cardBrand).slice(0, 30));
+    setAmount(statement.totals.ARS);
+    setSelectedDate(statement.dueDate);
+    setSelectedCloseDate(statement.closingDate);
+    setSelectedExpirationDate(statement.dueDate);
+    setComment(("Resumen " + statement.period + " - USD " + statement.totals.USD).slice(0, 70));
+  };
+
   const onSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    setMarkdownMessage("");
     try {
-    if (!edit) {
-      await dispatch(
-        storeDataAction({
-          userId: user?.uid,
-          name,
-          amount,
-          comment,
-          category,
-          selectedDate,
-          selectedExpirationDate,
-          selectedCloseDate,
-          currencyQuantity,
-          currencyExchangeRate,
-          dueDate,
-          notificationEnabled,
-          notificationLeadDays: notificationSettings.leadDays,
-        })
-      );
-
+      let savedId = edit ? expenseId : draftExpenseId;
+      if (statementDraft && isCreditCardCategory) {
+        verifyStatementDraft(statementDraft);
+        const existing = await getImportedStatement(user.uid, statementDraft.fileSha256);
+        // Never create a second card-payment expense for an imported PDF.
+        if (existing && existing.expenseId !== savedId) {
+          throw new Error("Este PDF ya está vinculado a otro resumen. Abrí esa transacción para revisarlo.");
+        }
+      }
+      const data = {
+        userId: user?.uid,
+        name, amount, comment, category, selectedDate,
+        selectedExpirationDate, selectedCloseDate,
+        currencyQuantity, currencyExchangeRate, dueDate,
+        notificationEnabled, notificationLeadDays: notificationSettings.leadDays,
+      };
+      if (!edit && !savedId) {
+        savedId = await dispatch(storeDataAction(data));
+        // Retain this ID if detail persistence fails. Retrying must update
+        // the existing transaction, not create another payment expense.
+        setDraftExpenseId(savedId);
+      } else {
+        await dispatch(updateDataAction(data, savedId));
+      }
+      if (statementDraft && isCreditCardCategory) {
+        await saveReviewedStatement({ uid: user.uid, expenseId: savedId, draft: statementDraft });
+      }
+      setStatementDraft(null);
+      setDraftExpenseId(null);
       setName("");
       setAmount("");
       setComment("");
@@ -147,44 +173,14 @@ const TransactionForm = ({
       setIsBuyCurrenciesCategory(false);
       setIsCreditCardCategory(false);
       setIsCurrencyIncomeCategory(false);
+      setIsSellCurrenciesCategory(false);
+      if (edit) setEdit(false);
       setIsOpen(false);
-    } else {
-      await dispatch(
-        updateDataAction(
-          {
-            userId: user.uid,
-            name,
-            amount,
-            comment,
-            category,
-            selectedDate,
-            selectedExpirationDate,
-            selectedCloseDate,
-            currencyQuantity,
-            currencyExchangeRate,
-            dueDate,
-            notificationEnabled,
-            notificationLeadDays: notificationSettings.leadDays,
-          },
-          expenseId
-        )
-      );
-
-      setEdit(false);
-      setName("");
-      setAmount("");
-      setComment("");
-      setCategory("");
-      setSelectedDate("");
-      setSelectedExpirationDate("");
-      setSelectedCloseDate("");
-      setCurrencyQuantity("");
-      setCurrencyExchangeRate("");
-      setIsBuyCurrenciesCategory(false);
-      setIsCreditCardCategory(false);
-      setIsCurrencyIncomeCategory(false);
-      setIsOpen(false);
-    }
+    } catch (error) {
+      // In particular, NEVER close the form after a failed detail save.
+      const message = error?.message || "No se pudo guardar el resumen.";
+      setMarkdownMessage(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -307,6 +303,14 @@ const TransactionForm = ({
           </p>
         )}
 
+        {isCreditCardCategory && (
+          <CardStatementPdfReview
+            categories={categories}
+            onDraft={setStatementDraft}
+            onApply={applyStatement}
+            disabled={isSubmitting}
+          />
+        )}
         {isCreditCardCategory && (
           <div className="ml-0 sm:ml-3">
             <label
