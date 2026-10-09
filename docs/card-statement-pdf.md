@@ -35,3 +35,11 @@ Never add Edge Store keys to REACT_APP_* env vars. The client sends a Firebase I
 - No duplicate transaction entries after retry and no cross-user reads.
 - The linked details can be reopened from Transacciones.
 - Rule deployment + real credentialed Edge Store upload/delete must be tested before merging to production.
+
+
+## Second bank: Banco Ciudad Visa Gold
+The 2-page digital Banco Ciudad PDF is now recognized in addition to Santander Visa. LTC shows **consumos**, **administrative fees**, and **IVA** separately: they reconcile to the ARS statement total, but no line item is added again as a transaction. The original purchase installment number is preserved.
+
+Important: Update **the live Firestore rules** before testing Banco Ciudad writes. In `firestore.rules.cardStatements`, `feesArs` is an **optional validated decimal string**, not required for old Santander records. Add it to the statement `hasOnly` allowlist and verify that the rule permits the optional field. This repository fragment does not deploy rules automatically. All reads/writes remain within the authenticated user's subcollections.
+
+For the supplied Banco Ciudad PDF, five ARS purchases total 212,929.40; fees 6,138.02 plus VAT 1,288.98 reconcile to 220,356.40 ARS. The previous payment clears the prior balance; do not double-count it. All private identifiers stay out of tests and logs.
