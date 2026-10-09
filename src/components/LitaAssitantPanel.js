@@ -7,6 +7,7 @@ import {
 	LITA_CHAT_LOCALHOST,
 	LITA_CHAT_VERCEL_URL,
 } from '../shared/constants/urls.const';
+import { queryLitaHistoricalTransactions } from '../services/litaHistoricalAnalysis';
 import {
 	deleteLitaChat,
 	saveLitaChat,
@@ -203,6 +204,31 @@ const LitaAssistantPanel = ({
 				return;
 			}
 
+			if (event.data?.type === 'lita:historical:request') {
+				const request = event.data.payload || {};
+				if (typeof request.requestId !== 'string' ||
+					!/^[a-zA-Z0-9_-]{1,70}$/.test(request.requestId)) return;
+				const response = { type: 'lita:historical:result', payload: {
+					requestId: request.requestId, success: false,
+				} };
+				if (!user?.uid || section !== 'transactions') {
+					response.payload.reason = 'La consulta requiere tu sesión de Transacciones.';
+				} else {
+					try {
+						const result = await queryLitaHistoricalTransactions({
+							userId: user.uid,
+							from: request.from,
+							to: request.to,
+						}, context?.categories || []);
+						response.payload = { requestId: request.requestId, success: true, result };
+					} catch (error) {
+						response.payload.reason = error?.message || 'No se pudo consultar el período.';
+					}
+				}
+				postToLita(response);
+				return;
+			}
+
 			if (event.data?.type === 'lita:history:refresh') {
 				setHistoryRefresh((value) => value + 1);
 				return;
@@ -264,6 +290,8 @@ const LitaAssistantPanel = ({
 		setIsOpen,
 		targetOrigin,
 		user?.uid,
+		section,
+		context?.categories,
 	]);
 
 	// Resend on initial mount and any theme/context/history updates.
