@@ -14,7 +14,10 @@ export const statementDocumentId = (sha) => {
 }
 
 export async function analyzeStatementPdf(file) {
-  if (!file || file.type !== 'application/pdf' || file.size > 4 * 1024 * 1024 || !file.size) {
+  // Android file pickers sometimes return an empty or generic MIME type.
+  // The backend checks the PDF magic bytes, size and the authenticated session.
+  const isPdf = file && (file.type === 'application/pdf' || /\.pdf$/i.test(file.name || ''))
+  if (!isPdf || file.size > 4 * 1024 * 1024 || !file.size) {
     throw new Error('Elegí un PDF de hasta 4 MB.')
   }
   const current = auth.currentUser
