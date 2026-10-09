@@ -42,6 +42,21 @@ describe('CategoryBreakdownChart', () => {
     expect(screen.queryByRole('button', { name: /Ver todas las categorías/i })).not.toBeInTheDocument();
   });
 
+  it('stacks long category labels and full money values within narrow card width', () => {
+    render(<CategoryBreakdownChart
+      title='Gastos en pesos'
+      data={[{ name: 'Categoría extremadamente extensa para móvil', value: 123456789012.12 }]}
+      currency='ARS'
+    />);
+    const card = screen.getByRole('heading', { name: 'Gastos en pesos' }).parentElement;
+    expect(card).toHaveClass('w-full', 'min-w-0', 'max-w-full', 'overflow-hidden');
+    const label = screen.getByText('Categoría extremadamente extensa para móvil');
+    const money = screen.getByText(chartMoney(123456789012.12, 'ARS'));
+    expect(label.parentElement).toHaveClass('flex-col', 'sm:flex-row', 'min-w-0');
+    expect(money).toHaveClass('w-full', 'min-w-0', 'max-w-full', 'break-words');
+    expect(money).toHaveTextContent('123.456.789.012,12');
+  });
+
   it('has a clear empty state rather than an empty white card', () => {
     render(<CategoryBreakdownChart title='Ingresos en pesos' data={[]} />);
     expect(screen.getByRole('status')).toHaveTextContent('No hay movimientos registrados');
