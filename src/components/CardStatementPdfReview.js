@@ -32,6 +32,7 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
   const [draft, setDraft] = useState(null)
   const [expanded, setExpanded] = useState(false)
   const [fileInfo, setFileInfo] = useState(null)
+  const [dragging, setDragging] = useState(false)
   const fileRef = useRef(null)
   const expenseCategories = useMemo(() => (categories || [])
     .filter((c) => c.isExpense && !String(c.name).includes('Resumen tarjeta'))
@@ -41,7 +42,7 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
     setError('')
     setDraft(null)
     onDraft(null)
-    if (!file) return
+    if (!file || disabled || state === 'loading') return
     setFileInfo({ name: file.name, size: file.size })
     setState('loading')
     try {
@@ -67,6 +68,13 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
       if (fileRef.current) fileRef.current.value = ''
     }
   }
+  const onDropPdf = (event) => {
+    event.preventDefault()
+    setDragging(false)
+    if (disabled || state === 'loading') return
+    const file = event.dataTransfer?.files?.[0]
+    if (file) analyze(file)
+  }
   const editItem = (index, changes) => {
     const updated = { ...draft, items: draft.items.map((item, i) =>
       i === index ? { ...item, ...changes } : item) }
@@ -90,13 +98,19 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
         onChange={(event) => analyze(event.target.files?.[0])}
         className='sr-only'
       />
-      <div className='mt-3 min-w-0 rounded-xl border border-dashed border-purple-400/70 bg-white/50 p-3 text-center dark:border-purple-400/50 dark:bg-slate-900/50 sm:p-4'>
+      <div
+        onDragOver={(event) => { event.preventDefault(); if (!disabled && state !== 'loading') setDragging(true) }}
+        onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setDragging(false) }}
+        onDrop={onDropPdf}
+        className={'mt-3 min-w-0 rounded-xl border border-dashed bg-white/50 p-3 text-center transition-colors dark:bg-slate-900/50 sm:p-4 ' +
+          (dragging ? 'border-purple-500 bg-purple-100/70 ring-2 ring-purple-400 dark:bg-purple-500/15' : 'border-purple-400/70 dark:border-purple-400/50')}
+      >
         <span aria-hidden='true' className='mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200'>
           {state === 'ready' ? <FiCheckCircle size={22}/> : <FiUploadCloud size={22}/>}
         </span>
-        <p className='text-sm font-bold'>{fileInfo ? 'Resumen seleccionado' : 'Importá tu resumen desde el celular'}</p>
+        <p className='text-sm font-bold'>{dragging ? 'Soltá el resumen PDF aquí' : fileInfo ? 'Resumen seleccionado' : 'Importá tu resumen desde el celular o la computadora'}</p>
         <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>
-          {fileInfo ? 'El archivo se analiza temporalmente y después se elimina.' : 'Elegí un archivo PDF descargado de tu home banking.'}
+          {fileInfo ? 'El archivo se analiza temporalmente y después se elimina.' : 'Elegí un PDF de tu home banking o arrastralo hasta esta zona.'}
         </p>
         {fileInfo && (
           <div className='mt-3 flex min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 text-left dark:border-slate-700 dark:bg-slate-800'>
