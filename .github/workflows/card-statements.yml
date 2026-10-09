@@ -1,0 +1,26 @@
+name: Card statement import checks
+on:
+  pull_request:
+    paths:
+      - 'src/services/cardStatementService*'
+      - 'src/components/CardStatement*'
+      - 'src/components/TransactionForm.js'
+      - '.github/workflows/card-statements.yml'
+  push:
+    branches:
+      - feat/card-statement-pdf-review
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Test user isolation, money reconciliation, and no expense duplication
+        run: CI=true npm test -- --watch=false --runInBand src/services/cardStatementService.test.js
+      - name: Compile LTC
+        run: npm run build
