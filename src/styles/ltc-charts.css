@@ -1,0 +1,29 @@
+/* Charts retain Tremor/Recharts for historical series. Only LTC scoped
+   presentation adjustments: dark labels/grid/tooltip; no data changes. */
+.ltc-chart-surface .recharts-responsive-container,
+.ltc-chart-surface .recharts-wrapper,
+.ltc-chart-surface svg {
+  max-width: 100%;
+}
+html.dark .ltc-chart-surface .recharts-cartesian-axis-tick text,
+html.dark .ltc-chart-surface .recharts-legend-item-text,
+html.dark .ltc-chart-surface .recharts-text {
+  fill: #e2e8f0;
+  color: #e2e8f0 !important;
+}
+html.dark .ltc-chart-surface .recharts-cartesian-grid line {
+  stroke: #475569;
+}
+html.dark .ltc-chart-surface .recharts-default-tooltip {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important;
+}
+html.dark .ltc-chart-surface .recharts-tooltip-item {
+  color: #f1f5f9;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ltc-chart-surface .recharts-surface {
+    animation: none;
+  }
+}
