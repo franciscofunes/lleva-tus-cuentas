@@ -369,6 +369,7 @@ function Dashboard() {
     () => ({
       scope: "current-view",
       spendingByCategory: summarizeSpendingByCategory(docs || [], categories || []),
+      categories: (categories || []).map(({ name, isExpense }) => ({ name, isExpense: Boolean(isExpense) })),
       summary: {
         incomeArs: Number(income || 0),
         expensesArs: Number(expense || 0),
