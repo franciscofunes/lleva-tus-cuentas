@@ -15,7 +15,7 @@ export const chartChoices = [
 export default function ChartToggleMenu({ selectedChart, handleChartToggle, chartComponents }) {
   return (
     <div role='group' aria-label='Seleccionar gráfico'
-      className='-mx-1 flex max-w-full snap-x gap-2 overflow-x-auto px-1 py-2'>
+      className='ltc-chart-tabs flex w-full min-w-0 max-w-full snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain py-2'>
       {chartChoices.filter(({ key }) => Boolean(chartComponents[key])).map(({ key, label }) => (
         <button key={key} type='button' onClick={() => handleChartToggle(key)}
           aria-pressed={selectedChart === key}
