@@ -15,6 +15,7 @@ import FloatingMenu from '../components/FloatingMenu';
 import SortablePortfolioPositionCard from '../components/SortablePortfolioPositionCard';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
 import { exportPortfolioXlsx, buildPortfolioLlmMarkdown } from '../utils/portfolioExport';
+import { auditPortfolioEarnings } from '../utils/portfolioEarningsAudit';
 import eyeHide from '../imgs/eyeHide.svg';
 import closeEye from '../imgs/closeEye.svg';
 import {
@@ -259,6 +260,7 @@ function Portfolio() {
 			liquidity: position.liquidity || '',
 			principal: Number(position.principal || 0),
 			realizedEarnings: Number(position.realizedEarnings || 0),
+			earningsAudit: auditPortfolioEarnings(position, snapshots),
 			effectiveRate: Number(position.effectiveRate || 0),
 			trackingMode: position.trackingMode || '',
 			maturityDate: position.maturityDate || '',
@@ -275,6 +277,10 @@ function Portfolio() {
 			balance: Number(snapshot.balance || 0),
 			currency: snapshot.currency || '',
 			nav: Number(snapshot.nav || 0),
+			changeType: snapshot.changeType || 'unclassified',
+			observedBalanceChange: Number(snapshot.observedEarning || 0),
+			userTaggedEarnings: Number(snapshot.confirmedEarning || 0),
+			cashFlow: Number(snapshot.cashFlow || 0),
 			note: snapshot.note || '',
 		})),
 	}), [positions, snapshots, totals, weightedRates]);
@@ -414,7 +420,7 @@ function Portfolio() {
 		const isNav = position.trackingMode === 'NAV' || position.category === 'FCI';
 		setVerifyTarget(position);
 		setVerifyBalance(String(position.balance || ''));
-		setVerifyChangeType('earning');
+		setVerifyChangeType('unclassified');
 		setVerifyNote('');
 		setVerifyNav(isNav ? String(position.nav ?? '') : '');
 		setVerifyReportedEarnings(isNav ? String(position.realizedEarnings ?? 0) : '');
@@ -736,12 +742,12 @@ function Portfolio() {
 										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {hideValues ? '••••••' : Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
 										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-green-600 dark:text-green-500'>Rend. 1A: {privatePercent(position.performance1Y)}</p>}
 										{position.category === 'FCI' && position.monthlyReturns && Object.keys(position.monthlyReturns).length > 0 && <p className='text-sm font-bold text-green-600 dark:text-green-400'>YTD compuesto: {hideValues ? '••••' : `${((Object.values(position.monthlyReturns).map(Number).filter(Number.isFinite).reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100).toFixed(2)}%`}</p>}
-										{Number(position.realizedEarnings || 0) !== 0 && <p className='text-sm font-semibold text-green-600 dark:text-green-500 mt-1'>Ganado: {privateMoney(position.realizedEarnings, position.currency)}</p>}
+										{Number(position.realizedEarnings || 0) !== 0 && <p className={`text-sm font-semibold mt-1 ${Number(position.realizedEarnings) < 0 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-500'}`}>{Number(position.realizedEarnings) < 0 ? 'Ganancias cargadas · revisar:' : 'Ganancias cargadas (sin conciliar):'} {privateMoney(position.realizedEarnings, position.currency)}</p>}
 										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {privatePercent(position.effectiveRate)}</p>}
 										{performanceByPosition[position.id] && (
 											<div className='mt-2 text-sm'>
 												<p className={performanceByPosition[position.id].change >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500'}>
-													{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'Variación de valuación' : 'Cambio observado'}: {privateMoney(performanceByPosition[position.id].change, position.currency)} ({privatePercent(performanceByPosition[position.id].percent)})
+													{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'Variación de valuación' : 'Variación del saldo (incluye transferencias)'}: {privateMoney(performanceByPosition[position.id].change, position.currency)}{(position.category === 'FCI' || position.trackingMode === 'NAV') ? ` (${privatePercent(performanceByPosition[position.id].percent)})` : ''}
 												</p>
 												<p className='text-xs text-gray-400'>{privateCount(performanceByPosition[position.id].count)} snapshots</p>
 											</div>
@@ -828,12 +834,12 @@ function Portfolio() {
 						) : (
 							<>
 								<input autoFocus className='portfolio-input mt-4' type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo actual' />
-								<label className='block mt-3 text-sm text-gray-300'>¿Qué explica el cambio de saldo?<select className='portfolio-input mt-1' value={verifyChangeType} onChange={(event) => setVerifyChangeType(event.target.value)}><option value='earning'>Rendimiento</option><option value='deposit'>Aporte</option><option value='withdrawal'>Retiro</option><option value='adjustment'>Ajuste</option></select></label>
+								<label className='block mt-3 text-sm text-gray-300'>¿Qué explica el cambio de saldo?<select className='portfolio-input mt-1' value={verifyChangeType} onChange={(event) => setVerifyChangeType(event.target.value)}><option value='unclassified'>Sin clasificar (no se suma a ganancias)</option><option value='earning'>Rendimiento acreditado</option><option value='deposit'>Aporte</option><option value='withdrawal'>Retiro</option><option value='adjustment'>Ajuste</option></select></label>
 							</>
 						)}
 
 						<textarea className='portfolio-input mt-3' rows='2' value={verifyNote} onChange={(event) => setVerifyNote(event.target.value)} placeholder={isNavVerification ? 'Nota opcional sobre esta valuación' : 'Nota opcional sobre esta verificación'} />
-						{!isNavVerification && <p className='mt-2 text-xs text-gray-400'>Solo “Rendimiento” se acumulará como ganancia confirmada. Aportes y retiros quedan separados para no inflar el rendimiento.</p>}
+						{!isNavVerification && <p className='mt-2 text-xs text-gray-400'>El saldo puede cambiar por transferencias sin que cambie la tasa. Elegí el motivo real: sin clasificar no suma ganancias. Si hubo aportes y rendimiento juntos, no atribuyas toda la diferencia a intereses.</p>}
 						<div className='grid grid-cols-2 gap-2 mt-5'>
 							<button type='button' onClick={() => { setVerifyTarget(null); setVerifyReportedEarnings(''); }} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
 							<button type='button' disabled={(isNavVerification ? (verifyNav === '' || (verifyShares <= 0 && verifyBalance === '')) : verifyBalance === '') || pendingAction === 'verify'} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'verify' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'verify' ? (isNavVerification ? 'Actualizando…' : 'Verificando…') : (isNavVerification ? 'Guardar cuotaparte' : 'Confirmar saldo')}</button>
