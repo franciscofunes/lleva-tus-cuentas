@@ -64,3 +64,22 @@ test('rejects cross-user writes before Firestore', async () => {
   await expect(saveReviewedStatement({ uid: 'bob', expenseId: 'expense1', draft: sample })).rejects.toThrow(/Sesión/)
   expect(firestore.batch).not.toHaveBeenCalled()
 })
+
+
+test('accepts Banco Ciudad administration fee only when it reconciles separately from IVA', () => {
+  const city = {
+    ...sample,
+    statement: {
+      ...sample.statement,
+      institution: 'Banco Ciudad',
+      feesArs: '6.00',
+      taxesArs: '1.00',
+      totals: { ARS: '107.00', USD: '20.00' },
+    },
+  }
+  expect(verifyStatementDraft(city)).toBe(true)
+  expect(() => verifyStatementDraft({
+    ...city, statement: { ...city.statement, feesArs: '5.99' },
+  })).toThrow(/total del resumen/)
+  expect(verifyStatementDraft(sample)).toBe(true)
+})
