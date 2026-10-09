@@ -16,6 +16,20 @@ import {
 const getPageTheme = () =>
 	document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
+// Fixed panels in Android Chrome live in the LAYOUT viewport, while the
+// keyboard occupies part of the VISUAL viewport. A fixed bottom/100dvh
+// panel can therefore leave the iframe composer behind the keyboard.
+export const visibleKeyboardLayout = (viewport, fullHeight, width) => {
+	if (!viewport || width >= 640 || viewport.scale > 1.05) return null;
+	const height = Math.round(viewport.height);
+	if (!Number.isFinite(height) || height <= 0 || fullHeight - height < 120) return null;
+	return {
+		top: Math.max(0, Math.round(viewport.offsetTop || 0)),
+		height,
+	};
+};
+
+
 const LitaAssistantPanel = ({
 	isOpen,
 	setIsOpen,
@@ -29,6 +43,8 @@ const LitaAssistantPanel = ({
 	const [historyRefresh, setHistoryRefresh] = useState(0);
 	const [theme, setTheme] = useState(getPageTheme);
 	const [isExpanded, setIsExpanded] = useState(false);
+	const [keyboardViewport, setKeyboardViewport] = useState(null);
+	const largestViewportHeightRef = useRef(0);
 
 	const src =
 		process.env.NODE_ENV === 'development'
@@ -98,6 +114,47 @@ const LitaAssistantPanel = ({
 		document.body.style.overflow = 'hidden';
 		return () => {
 			document.body.style.overflow = previousOverflow;
+		};
+	}, [isOpen]);
+
+	// Align the entire iframe to the actual visible region while the mobile
+	// keyboard is open. Do NOT scroll the host document or remount the iframe:
+	// either would lose the chat input's focus / cursor position on Android.
+	useEffect(() => {
+		if (!isOpen) {
+			setKeyboardViewport(null);
+			return undefined;
+		}
+		const viewport = window.visualViewport;
+		if (!viewport) return undefined;
+
+		largestViewportHeightRef.current = Math.max(window.innerHeight, viewport.height);
+		let currentWidth = window.innerWidth;
+		const updateViewport = () => {
+			if (window.innerWidth !== currentWidth) {
+				// Rotation / actual width change: forget the portrait baseline.
+				currentWidth = window.innerWidth;
+				largestViewportHeightRef.current = Math.max(window.innerHeight, viewport.height);
+			}
+			largestViewportHeightRef.current = Math.max(
+				largestViewportHeightRef.current, window.innerHeight, viewport.height
+			);
+			const next = visibleKeyboardLayout(
+				viewport, largestViewportHeightRef.current, window.innerWidth
+			);
+			setKeyboardViewport((previous) =>
+				previous?.top === next?.top && previous?.height === next?.height
+					? previous : next
+			);
+		};
+		updateViewport();
+		viewport.addEventListener('resize', updateViewport);
+		viewport.addEventListener('scroll', updateViewport);
+		window.addEventListener('resize', updateViewport);
+		return () => {
+			viewport.removeEventListener('resize', updateViewport);
+			viewport.removeEventListener('scroll', updateViewport);
+			window.removeEventListener('resize', updateViewport);
 		};
 	}, [isOpen]);
 
@@ -238,8 +295,18 @@ const LitaAssistantPanel = ({
 					/>
 
 					<motion.aside
-						key='lita-panel'
-						className={[
+					key='lita-panel'
+					style={keyboardViewport ? {
+						top: keyboardViewport.top,
+						bottom: 'auto',
+						left: 0,
+						right: 0,
+						width: '100%',
+						height: keyboardViewport.height,
+						maxHeight: 'none',
+						borderRadius: 0,
+					} : undefined}
+					className={[
 							'fixed z-[80] flex flex-col overflow-hidden border shadow-2xl shadow-black/40',
 							'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950',
 							isExpanded
