@@ -93,14 +93,18 @@ const TransactionForm = ({
         return;
       }
       const item = parsed[0];
+      const importedCategory = item.category || INGRESO_DIVISAS_CATEGORY;
+      // Select the configured category value even when its display name ends with an emoji.
+      const exactCategory = categories?.find((entry) => entry.name === importedCategory);
+      const prefixedCategories = categories?.filter((entry) => entry.name?.startsWith(`${importedCategory} `)) || [];
+      const nextCategory = exactCategory?.name || (prefixedCategories.length === 1 ? prefixedCategories[0].name : importedCategory);
       setName(item.name || "");
-      setCategory(item.category || INGRESO_DIVISAS_CATEGORY);
+      setCategory(nextCategory);
       setSelectedDate(item.selectedDate || "");
       setComment(item.comment || "");
       setCurrencyQuantity(item.currencyQuantity || "");
       setCurrencyExchangeRate(item.currencyExchangeRate !== "" ? item.currencyExchangeRate : "");
       if (item.amount !== "") setAmount(item.amount);
-      const nextCategory = item.category || INGRESO_DIVISAS_CATEGORY;
       setIsCreditCardCategory(nextCategory.includes("Resumen tarjeta"));
       setIsBuyCurrenciesCategory(nextCategory.includes("Compra divisas"));
       setIsCurrencyIncomeCategory(nextCategory.includes(INGRESO_DIVISAS_CATEGORY));
