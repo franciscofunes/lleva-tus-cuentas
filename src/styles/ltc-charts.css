@@ -27,3 +27,54 @@ html.dark .ltc-chart-surface .recharts-tooltip-item {
     animation: none;
   }
 }
+
+/*
+ * Mobile regression guard: chart tabs are horizontally scrollable, but their
+ * intrinsic min-content size must NOT widen the Dashboard grid/viewport.
+ * Do not apply overflow-x hidden to body (it would just mask the bug).
+ */
+#transactions-charts,
+#transactions-charts-content,
+.ltc-chart-viewport,
+.ltc-chart-surface {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#transactions-charts,
+.ltc-chart-viewport,
+.ltc-chart-surface {
+  overflow-x: hidden;
+}
+
+.ltc-chart-tabs {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+}
+
+.ltc-chart-tabs > button {
+  flex: 0 0 auto;
+}
+
+.ltc-chart-surface ol,
+.ltc-chart-surface li {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ltc-chart-surface .tabular-nums {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
