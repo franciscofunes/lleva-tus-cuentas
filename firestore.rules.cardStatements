@@ -71,7 +71,7 @@ match /users/{uid}/cardStatements/{statementId} {
     allow get, list: if owner();
     allow create, update: if owner() && validItem()
       && itemId.matches('^[0-9]{4}$')
-      && exists(/databases/$(database)/documents/users/$(uid)/cardStatements/$(statementId));
+      && existsAfter(/databases/$(database)/documents/users/$(uid)/cardStatements/$(statementId));
     allow delete: if owner();
   }
 }
