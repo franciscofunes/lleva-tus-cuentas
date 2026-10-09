@@ -93,13 +93,18 @@ const TransactionForm = ({
         return;
       }
       const item = parsed[0];
+      const importedCategory = item.category || INGRESO_DIVISAS_CATEGORY;
+      // Select the configured category value even when its display name ends with an emoji.
+      const exactCategory = categories?.find((entry) => entry.name === importedCategory);
+      const prefixedCategories = categories?.filter((entry) => entry.name?.startsWith(`${importedCategory} `)) || [];
+      const nextCategory = exactCategory?.name || (prefixedCategories.length === 1 ? prefixedCategories[0].name : importedCategory);
       setName(item.name || "");
-      setCategory(item.category || INGRESO_DIVISAS_CATEGORY);
+      setCategory(nextCategory);
       setSelectedDate(item.selectedDate || "");
       setComment(item.comment || "");
       setCurrencyQuantity(item.currencyQuantity || "");
+      setCurrencyExchangeRate(item.currencyExchangeRate !== "" ? item.currencyExchangeRate : "");
       if (item.amount !== "") setAmount(item.amount);
-      const nextCategory = item.category || INGRESO_DIVISAS_CATEGORY;
       setIsCreditCardCategory(nextCategory.includes("Resumen tarjeta"));
       setIsBuyCurrenciesCategory(nextCategory.includes("Compra divisas"));
       setIsCurrencyIncomeCategory(nextCategory.includes(INGRESO_DIVISAS_CATEGORY));
@@ -428,14 +433,19 @@ const TransactionForm = ({
               <input
                 className="w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
                 type="number"
+                step="any"
                 value={currencyQuantity}
                 id="currencyQuantity"
                 {...register("currencyQuantity", {
                   required: true,
-                  pattern: /^\d+(\.\d{1,2})?$/,
+                  pattern: /^\d+(\.\d{1,8})?$/,
                   onChange: (e) => {
                     setCurrencyQuantity(e.target.value);
-                    setAmount(e.target.value * currencyExchangeRate); // Automatically update amount
+                    // Recompute only after manual edits; a Markdown import may contain the exact ARS amount.
+                    const quantity = Number(e.target.value);
+                    const rate = Number(currencyExchangeRate);
+                    setAmount(e.target.value !== "" && currencyExchangeRate !== "" && Number.isFinite(quantity) && Number.isFinite(rate)
+                      ? Number((quantity * rate).toFixed(2)) : "");
                   },
                 })}
                 placeholder="e.g. 500"
@@ -456,12 +466,17 @@ const TransactionForm = ({
                 className="w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
                 value={currencyExchangeRate}
                 type="number"
+                step="any"
                 id="currencyExchangeRate"
                 {...register("currencyExchangeRate", {
                   required: true,
                   pattern: /^\d+(\.\d{1,20})?$/,
                   onChange: (e) => {
                     setCurrencyExchangeRate(e.target.value);
+                    const quantity = Number(currencyQuantity);
+                    const rate = Number(e.target.value);
+                    setAmount(e.target.value !== "" && currencyQuantity !== "" && Number.isFinite(quantity) && Number.isFinite(rate)
+                      ? Number((quantity * rate).toFixed(2)) : "");
                   },
                 })}
                 placeholder="e.g. 350"
@@ -597,14 +612,11 @@ const TransactionForm = ({
               </svg>
               <input
                 className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
-                value={
-                  category.includes("Venta divisas")
-                    ? currencyQuantity * currencyExchangeRate
-                    : amount
-                }
+                value={amount ?? ""}
                 type="number"
                 id="amount"
-                readonly
+                step="0.01"
+                readOnly
                 {...register("amount", {
                   required: true,
                   pattern: /^\d+(\.\d{1,30})?$/,

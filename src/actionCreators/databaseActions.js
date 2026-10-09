@@ -190,6 +190,7 @@ export const importTransactionsAction = (userId, items) => async (dispatch) => {
 			category: item.category || 'Ingreso divisas',
 			selectedDate: item.selectedDate,
 			currencyQuantity: Number(item.currencyQuantity),
+			...(Number(item.currencyExchangeRate) > 0 && Number.isFinite(Number(item.currencyExchangeRate)) ? { currencyExchangeRate: Number(item.currencyExchangeRate) } : {}),
 			...(item.amount !== '' && Number.isFinite(Number(item.amount)) ? { amount: Number(item.amount) } : {}),
 			importKey: item.importKey,
 			importSource: item.source || 'markdown-import',

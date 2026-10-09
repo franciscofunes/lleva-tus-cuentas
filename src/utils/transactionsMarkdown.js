@@ -3,6 +3,7 @@ const FIELD_ALIASES = {
 	category: 'category', categoria: 'category',
 	date: 'selectedDate', selectedDate: 'selectedDate', fecha: 'selectedDate',
 	currencyQuantity: 'currencyQuantity', cantidadDivisas: 'currencyQuantity', amountUsd: 'currencyQuantity',
+	currencyExchangeRate: 'currencyExchangeRate', cotizacion: 'currencyExchangeRate', tipoCambio: 'currencyExchangeRate',
 	amount: 'amount', monto: 'amount',
 	comment: 'comment', description: 'comment', descripcion: 'comment',
 	institution: 'institution', institucion: 'institution',
@@ -36,6 +37,7 @@ export const parseTransactionsMarkdown = (markdown) => {
 			category: row.category || 'Ingreso divisas',
 			selectedDate: row.selectedDate,
 			currencyQuantity: Number(row.currencyQuantity || 0),
+			currencyExchangeRate: row.currencyExchangeRate === undefined ? '' : Number(row.currencyExchangeRate),
 			amount: row.amount === undefined ? '' : Number(row.amount),
 			comment: row.comment || `Rendimiento ${row.institution || ''} ${row.period || ''}`.trim(),
 			institution: row.institution || '',
@@ -45,6 +47,7 @@ export const parseTransactionsMarkdown = (markdown) => {
 		const errors = [];
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(item.selectedDate || '')) errors.push('Fecha inválida');
 		if (!Number.isFinite(item.currencyQuantity) || item.currencyQuantity <= 0) errors.push('Cantidad de divisas inválida');
+		if (row.currencyExchangeRate !== undefined && (!Number.isFinite(item.currencyExchangeRate) || item.currencyExchangeRate <= 0)) errors.push('Cotización inválida');
 		if (!item.name) errors.push('Falta nombre');
 		return { ...item, importKey: transactionImportKey(item), errors, selected: errors.length === 0, row: index + 1 };
 	});
