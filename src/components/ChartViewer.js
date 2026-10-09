@@ -74,10 +74,10 @@ export default function ChartViewer({
           <FiMaximize2 aria-hidden='true' size={16} /> Ampliar
         </button>
       </div>
-      <div className='w-full min-w-0 max-w-full'>{chart()}</div>
-      <div className='mt-3 w-full min-w-0 max-w-full overflow-hidden'>
+      <div className='mb-3 w-full min-w-0 max-w-full'>
         <ChartToggleMenu selectedChart={selectedChart} handleChartToggle={onSelect} chartComponents={chartComponents} />
       </div>
+      <div className='w-full min-w-0 max-w-full'>{chart()}</div>
 
       {expanded && createPortal(
         <div className='fixed inset-0 z-[9999] flex items-end justify-center bg-slate-950/80 sm:items-center sm:p-5'
