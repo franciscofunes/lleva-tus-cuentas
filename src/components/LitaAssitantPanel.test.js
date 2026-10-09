@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import LitaAssistantPanel from './LitaAssitantPanel';
+import LitaAssistantPanel, { visibleKeyboardLayout } from './LitaAssitantPanel';
 
 jest.mock('react-redux', () => ({
 	useSelector: (selector) => selector({ auth: { user: { uid: 'test-user' } } }),
@@ -75,6 +75,67 @@ describe('LITA iframe integration', () => {
 		fireEvent.click(screen.getByRole('button', { name: 'Restaurar tamaño de LITA' }));
 		expect(container.querySelector('aside').className).toContain('max-h-[720px]');
 		expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
+	});
+
+	test('uses the visual viewport only for an occluded mobile keyboard', () => {
+		expect(visibleKeyboardLayout(
+			{ height: 425.8, offsetTop: 4, scale: 1 }, 800, 390
+		)).toEqual({ height: 426, top: 4 });
+		expect(visibleKeyboardLayout(
+			{ height: 800, offsetTop: 0, scale: 1 }, 800, 390
+		)).toBeNull();
+		expect(visibleKeyboardLayout(
+			{ height: 425, offsetTop: 0, scale: 1 }, 800, 1200
+		)).toBeNull();
+		expect(visibleKeyboardLayout(
+			{ height: 425, offsetTop: 0, scale: 1.25 }, 800, 390
+		)).toBeNull();
+	});
+
+	test('keeps the same iframe above Android keyboard, and restores normal panel when keyboard hides', () => {
+		const previousWidth = Object.getOwnPropertyDescriptor(window, 'innerWidth');
+		const previousHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+		const previousViewport = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+		const events = {};
+		const viewport = {
+			height: 800, offsetTop: 0, scale: 1,
+			addEventListener: jest.fn((name, fn) => { events[name] = fn; }),
+			removeEventListener: jest.fn(),
+		};
+		Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+		Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+		Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+		try {
+			const { container, unmount } = render(
+				<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='transactions' />
+			);
+			const iframe = screen.getByTitle('Lita Assistant');
+			const panel = container.querySelector('aside');
+			expect(panel.style.height).toBe('');
+			act(() => {
+				viewport.height = 405;
+				viewport.offsetTop = 2;
+				events.resize();
+			});
+			expect(panel.style.height).toBe('405px');
+			expect(panel.style.top).toBe('2px');
+			expect(panel.style.bottom).toBe('auto');
+			expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
+			act(() => {
+				viewport.height = 800;
+				viewport.offsetTop = 0;
+				events.resize();
+			});
+			expect(panel.style.height).toBe('');
+			expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
+			unmount();
+			expect(viewport.removeEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
+		} finally {
+			if (previousWidth) Object.defineProperty(window, 'innerWidth', previousWidth);
+			if (previousHeight) Object.defineProperty(window, 'innerHeight', previousHeight);
+			if (previousViewport) Object.defineProperty(window, 'visualViewport', previousViewport);
+			else delete window.visualViewport;
+		}
 	});
 
 	test('sends a save result only after Firestore confirms the write', async () => {
