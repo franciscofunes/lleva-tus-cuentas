@@ -74,18 +74,18 @@ export default function ChartViewer({
           <FiMaximize2 aria-hidden='true' size={16} /> Ampliar
         </button>
       </div>
-      <div className='mb-3 w-full min-w-0 max-w-full'>
+      <div className='w-full min-w-0 max-w-full'>{chart()}</div>
+      <div className='mt-3 w-full min-w-0 max-w-full'>
         <ChartToggleMenu selectedChart={selectedChart} handleChartToggle={onSelect} chartComponents={chartComponents} />
       </div>
-      <div className='w-full min-w-0 max-w-full'>{chart()}</div>
 
       {expanded && createPortal(
-        <div className='fixed inset-0 z-[9999] flex items-end justify-center bg-slate-950/80 sm:items-center sm:p-5'
+        <div className='fixed inset-0 z-[9999] flex h-[100dvh] w-screen min-w-0 items-stretch justify-center overflow-hidden bg-slate-950/80 sm:items-center sm:p-5'
           data-testid='chart-modal-backdrop'
           onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
           <section ref={dialogRef} role='dialog' aria-modal='true' aria-labelledby='chart-modal-title'
-            className='flex max-h-[95dvh] w-full min-w-0 max-w-5xl flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-slate-50 text-slate-900 shadow-2xl dark:border-slate-700 dark:bg-gray-900 dark:text-white sm:max-h-[90dvh] sm:rounded-3xl'>
-            <div className='flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700 sm:px-6'>
+            className='flex h-[100dvh] min-h-0 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-none border-0 bg-slate-50 text-slate-900 shadow-2xl dark:bg-gray-900 dark:text-white sm:h-auto sm:max-h-[90dvh] sm:max-w-5xl sm:rounded-3xl sm:border sm:border-slate-200 sm:dark:border-slate-700'>
+            <div className='flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 pt-[max(12px,env(safe-area-inset-top))] dark:border-slate-700 sm:px-6 sm:pt-3'>
               <div>
                 <p className='text-xs font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300'>Visualización ampliada</p>
                 <h2 id='chart-modal-title' className='mt-1 text-lg font-extrabold'>{chartLabel}</h2>
@@ -95,13 +95,13 @@ export default function ChartViewer({
                 <FiX size={20} aria-hidden='true' />
               </button>
             </div>
-            <div className='min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain px-4 py-4 sm:px-6'>
-              <ChartToggleMenu selectedChart={selectedChart} handleChartToggle={onSelect} chartComponents={chartComponents} />
-              <div className='mt-4 min-w-0'>{chart()}</div>
+            <div className='min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 py-4 sm:px-6'>
+              <div className='w-full min-w-0 max-w-full'>{chart()}</div>
             </div>
-            <div className='shrink-0 border-t border-slate-200 px-4 py-3 dark:border-slate-700 sm:px-6'>
+            <div className='shrink-0 space-y-1 border-t border-slate-200 px-4 py-2 pb-[max(10px,env(safe-area-inset-bottom))] dark:border-slate-700 sm:px-6 sm:py-3'>
+              <ChartToggleMenu selectedChart={selectedChart} handleChartToggle={onSelect} chartComponents={chartComponents} />
               <button type='button' onClick={close}
-                className='inline-flex min-h-[40px] items-center gap-2 text-sm font-bold text-purple-700 dark:text-purple-300'>
+                className='inline-flex min-h-[36px] items-center gap-2 text-sm font-bold text-purple-700 dark:text-purple-300'>
                 <FiMinimize2 aria-hidden='true' /> Volver al resumen
               </button>
             </div>
