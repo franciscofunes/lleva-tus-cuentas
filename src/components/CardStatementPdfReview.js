@@ -75,7 +75,7 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
       <h3 className='text-base font-extrabold'>Analizar resumen de tarjeta PDF</h3>
       <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>
         PDF de hasta 4 MB. Extraemos consumos, cuotas, fechas y totales; nunca creamos gastos adicionales por cada compra.
-        Por ahora se admite el formato Visa validado. Los resultados requieren tu aprobación.
+        Admite Visa Santander y Visa Gold Banco Ciudad (PDF digital). Los resultados requieren tu aprobación.
       </p>
       <label htmlFor='card-statement-pdf' className='mt-3 block text-sm font-bold'>Elegí el PDF de tu home banking</label>
       <input id='card-statement-pdf' ref={fileRef} type='file' accept='application/pdf,.pdf'
@@ -97,6 +97,14 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
               <strong>{draft.statement.dueDate}</strong></div>
             <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Consumos</span>
               <strong>{draft.items.length} operaciones</strong></div>
+            <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Subtotal de consumos ARS</span>
+              <strong>{format(draft.statement.purchases.ARS, 'ARS')}</strong></div>
+            <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Impuestos y percepciones ARS</span>
+              <strong>{format(draft.statement.taxesArs, 'ARS')}</strong></div>
+            {draft.statement.feesArs !== undefined && (
+              <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Comisiones y cargos ARS</span>
+                <strong>{format(draft.statement.feesArs, 'ARS')}</strong></div>
+            )}
             <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Estado</span>
               <strong className='text-emerald-600 dark:text-emerald-400'>Totales conciliados</strong></div>
           </div>
