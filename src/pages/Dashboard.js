@@ -35,7 +35,7 @@ import closeEye from "../imgs/closeEye.svg";
 
 import AppFooter from "../components/AppFooter";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
-import ChartToggleMenu from "../components/ChartToogleMenu";
+import ChartViewer from "../components/ChartViewer";
 import IncomeChartWrapper from "../components/IncomeChartWrapper";
 import DivisasChartWrapper from "../components/DivisasChartWrapper";
 import IncomeExpenseLineChart from "../components/IncomeExpenseLineChart";
@@ -511,18 +511,13 @@ function Dashboard() {
             ) : (
               docs && (
                 <>
-                  {/* Conditionally render the appropriate chart */}
-                  {selectedChart &&
-                    chartComponents[selectedChart] &&
-                    React.createElement(chartComponents[selectedChart], {
-                      chartData: docs,
-                      categories,
-                    })}
-
-                  <ChartToggleMenu
+                  <ChartViewer
                     selectedChart={selectedChart}
-                    handleChartToggle={handleChartToggle}
+                    onSelect={handleChartToggle}
                     chartComponents={chartComponents}
+                    chartData={docs}
+                    categories={categories}
+                    hideValues={!isDataVisible}
                   />
                 </>
               )
