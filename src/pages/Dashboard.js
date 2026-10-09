@@ -100,7 +100,7 @@ const TransactionsPageSkeleton = () => (
         </div>
       </section>
 
-      <div className="grid lg:grid-cols-3 gap-5 items-start">
+      <div className="grid min-w-0 grid-cols-1 gap-5 items-start lg:grid-cols-3">
         <div className="space-y-5">
           <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
             <div className="grid grid-cols-2 gap-5">
@@ -477,7 +477,7 @@ function Dashboard() {
           <div className="grid lg:grid-cols-3 gap-5 items-start">
         <div
           id="left"
-          className="w-full flex flex-col items-stretch"
+          className="flex w-full min-w-0 max-w-full flex-col items-stretch"
         >
           <CollapsibleSection
             id="transactions-summary"
@@ -504,7 +504,8 @@ function Dashboard() {
             description="Analizá tus movimientos con la visualización que prefieras."
             collapsed={collapsedSections.charts}
             onToggle={() => toggleDashboardSection("charts")}
-            className="mb-5 font-Nunito"
+            className="mb-5 min-w-0 max-w-full overflow-hidden font-Nunito"
+            contentClassName="min-w-0 max-w-full"
           >
             {isDataFetching ? (
               <ChartSkeleton />
