@@ -25,7 +25,7 @@ export default function CategoryBreakdownChart({ data = [], title, currency = 'A
   const rows = expanded ? data : data.slice(0, 5);
   const maxValue = Math.max(0, ...data.map((row) => Number(row.value) || 0));
   return (
-    <div className='ltc-chart-surface min-w-0 rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-100 sm:p-5'>
+    <div className='ltc-chart-surface w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-100 sm:p-5'>
       <h3 className='text-base font-extrabold sm:text-lg'>{title}</h3>
       <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>
         Distribución por categoría · {currency} · Período seleccionado
@@ -36,15 +36,15 @@ export default function CategoryBreakdownChart({ data = [], title, currency = 'A
         </div>
       ) : (
         <>
-          <ol className='mt-5 space-y-4'>
+          <ol className='mt-5 min-w-0 space-y-4'>
             {rows.map((row, i) => {
               const safeValue = Number(row.value) || 0;
               const width = maxValue > 0 ? Math.min(100, Math.max(0, safeValue / maxValue * 100)) : 0;
               return (
                 <li key={row.name || i} className='min-w-0'>
-                  <div className='flex min-w-0 flex-wrap items-start justify-between gap-x-3 gap-y-1 text-sm'>
-                    <span className='min-w-0 flex-1 break-words font-semibold text-slate-800 dark:text-slate-100'>{row.name}</span>
-                    <span className='break-words font-bold tabular-nums text-slate-900 dark:text-white'>{chartMoney(safeValue, currency)}</span>
+                  <div className='flex w-full min-w-0 flex-col gap-1 text-sm sm:flex-row sm:items-start sm:justify-between sm:gap-3'>
+                    <span className='block min-w-0 max-w-full break-words font-semibold text-slate-800 dark:text-slate-100'>{row.name}</span>
+                    <span className='block w-full min-w-0 max-w-full break-words font-bold tabular-nums text-slate-900 dark:text-white sm:w-auto sm:text-right'>{chartMoney(safeValue, currency)}</span>
                   </div>
                   <div className={'mt-2 h-2.5 overflow-hidden rounded-full ' + styles.track} aria-hidden='true'>
                     <div className={'h-full rounded-full ' + styles.fill} style={{ width: width + '%' }} />

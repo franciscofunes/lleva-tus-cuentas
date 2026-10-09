@@ -30,6 +30,34 @@ describe('modern chart viewer', () => {
     expect(within(controls).getByRole('button', { name: 'Ingresos USD' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('keeps mobile navigation in a bounded select and desktop tabs wrapping', () => {
+    render(<ChartFixture />);
+    const controls = screen.getByRole('group', { name: 'Seleccionar gráfico' });
+    const mobileSelect = within(controls).getByRole('combobox', { name: 'Tipo de gráfico' });
+    expect(mobileSelect).toHaveClass('w-full', 'min-w-0', 'max-w-full', 'sm:hidden');
+    expect(mobileSelect).toHaveValue('expenses');
+    expect(within(controls).getAllByRole('button')).toHaveLength(5);
+    const desktop = within(controls).getByRole('button', { name: 'Gastos ARS' }).parentElement;
+    expect(desktop).toHaveClass('flex-wrap', 'sm:flex');
+    fireEvent.change(mobileSelect, { target: { value: 'divisas' } });
+    expect(mobileSelect).toHaveValue('divisas');
+    expect(within(controls).getByRole('button', { name: 'Ingresos USD' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByText('Ingresos USD').length).toBeGreaterThan(1);
+
+    const viewport = screen.getByTestId('clipped-parent').querySelector('.ltc-chart-viewport');
+    expect(viewport).toHaveClass('w-full', 'min-w-0', 'max-w-full', 'overflow-hidden');
+    expect(viewport.firstElementChild).toHaveClass('min-w-0');
+  });
+
+  it('offers chart selection before the graph for mobile discoverability', () => {
+    render(<ChartFixture />);
+    const viewport = screen.getByTestId('clipped-parent').querySelector('.ltc-chart-viewport');
+    const selector = screen.getByRole('combobox', { name: 'Tipo de gráfico' });
+    const chart = screen.getByText('Gastos: 2 registros');
+    expect(viewport.contains(selector)).toBe(true);
+    expect(selector.compareDocumentPosition(chart) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('opens a fullscreen responsive modal outside clipped cards and closes via Escape', async () => {
     render(<ChartFixture />);
     const trigger = screen.getByRole('button', { name: 'Ampliar gráfico: Gastos ARS' });
