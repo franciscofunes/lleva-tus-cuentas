@@ -2,8 +2,8 @@
 
 ## How to use
 1. Sign in, open Transacciones and edit an existing **Resumen tarjeta** expense, or create a new one.
-2. Upload a digital Visa statement PDF (4 MiB or smaller).
-3. The authenticated LITA API analyzes a **temporary** Edge Store object, reconciles statement totals and returns structured data only.
+2. Upload a digital Visa statement PDF (4 MiB or smaller) using the mobile-friendly **Seleccionar archivo PDF** button, or drag and drop a file on desktop. Android document providers with no PDF MIME type are accepted when the filename ends in `.pdf`; the server validates the actual file signature.
+3. The authenticated LITA API analyzes the file in volatile memory, optionally stores it as a **temporary** Edge Store object when both server-side keys are configured, reconciles statement totals and returns structured data only.
 4. Inspect close/due dates, totals in ARS and USD, purchases, installments and suggested categories.
 5. Click the **explicit** pre-fill button if you want to update the transaction values.
 6. Save the statement once. The detail is saved as a per-user Firestore subcollection, never as additional expense transactions.
@@ -43,3 +43,6 @@ The 2-page digital Banco Ciudad PDF is now recognized in addition to Santander V
 Important: Update **the live Firestore rules** before testing Banco Ciudad writes. In `firestore.rules.cardStatements`, `feesArs` is an **optional validated decimal string**, not required for old Santander records. Add it to the statement `hasOnly` allowlist and verify that the rule permits the optional field. This repository fragment does not deploy rules automatically. All reads/writes remain within the authenticated user's subcollections.
 
 For the supplied Banco Ciudad PDF, five ARS purchases total 212,929.40; fees 6,138.02 plus VAT 1,288.98 reconcile to 220,356.40 ARS. The previous payment clears the prior balance; do not double-count it. All private identifiers stay out of tests and logs.
+
+## Free Firebase / troubleshooting
+The upload and analysis do **not** need Firebase Blaze, Cloud Storage or App Check. LTC still signs in through Firebase Authentication, LITA validates the signed ID token using Google's public keys, and approved data is saved under `users/{uid}` with strict Firestore rules. If LITA shows an authentication configuration error, check `FIREBASE_PROJECT_ID` on the **Vercel/LITA** project: it must match LTC `REACT_APP_PROJECT_ID`, without quotes, followed by a fresh production deployment. Do not disable authentication. Edge Store is optional for parsing; without its secrets, the server holds the PDF only in memory.
