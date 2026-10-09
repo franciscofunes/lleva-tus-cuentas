@@ -58,9 +58,19 @@ export function verifyStatementDraft(draft) {
     }
     sums[item.currency] += moneyCents(item.amount)
   })
-  if (sums.ARS !== moneyCents(draft.statement.purchases.ARS) ||
-      sums.USD !== moneyCents(draft.statement.purchases.USD)) {
+  const purchasesArs = moneyCents(draft.statement.purchases.ARS)
+  const purchasesUsd = moneyCents(draft.statement.purchases.USD)
+  if (sums.ARS !== purchasesArs || sums.USD !== purchasesUsd) {
     throw new Error('La suma de consumos no coincide con el subtotal del PDF. Corregí los datos.')
+  }
+  // Reconcile the FULL bank balance too. Fees are not purchases, and
+  // prior payments/credits must not become additional expenses.
+  const adjustmentsArs = moneyCents(draft.statement.taxesArs || '0.00') +
+    moneyCents(draft.statement.feesArs || '0.00') +
+    moneyCents(draft.statement.previousCreditArs || '0.00')
+  if (moneyCents(draft.statement.totals.ARS) !== purchasesArs + adjustmentsArs ||
+      moneyCents(draft.statement.totals.USD) !== purchasesUsd) {
+    throw new Error('El total del resumen no coincide con consumos, impuestos, cargos y créditos.')
   }
   return true
 }
@@ -94,6 +104,7 @@ export async function saveReviewedStatement({ uid, expenseId, draft }) {
     purchases: { ARS: draft.statement.purchases.ARS, USD: draft.statement.purchases.USD },
     minimumPaymentArs: draft.statement.minimumPaymentArs,
     taxesArs: draft.statement.taxesArs,
+    ...(draft.statement.feesArs !== undefined ? { feesArs: draft.statement.feesArs } : {}),
     previousCreditArs: draft.statement.previousCreditArs,
     itemCount: draft.items.length,
     countedInCashFlow: false,
