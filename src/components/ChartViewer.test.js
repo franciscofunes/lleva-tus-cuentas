@@ -26,7 +26,7 @@ describe('modern chart viewer', () => {
     expect(within(controls).getAllByRole('button')).toHaveLength(5);
     expect(within(controls).getByRole('button', { name: 'Gastos ARS' })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(within(controls).getByRole('button', { name: 'Ingresos USD' }));
-    expect(screen.getByText('Ingresos USD')).toBeInTheDocument();
+    expect(screen.getAllByText('Ingresos USD').length).toBeGreaterThan(1);
     expect(within(controls).getByRole('button', { name: 'Ingresos USD' })).toHaveAttribute('aria-pressed', 'true');
   });
 
