@@ -39,7 +39,35 @@ const sample = {
   ],
 }
 
-beforeEach(() => jest.clearAllMocks())
+beforeEach(() => {
+  // react-scripts/Jest resets mocked implementations between test cases.
+  // Reinstall Firestore behavior before each case so the suite tests the
+  // statement contract instead of failing on an uninitialized mock.
+  jest.clearAllMocks()
+  const set = jest.fn()
+  const commit = jest.fn().mockResolvedValue(undefined)
+  const expenseRef = {
+    get: jest.fn().mockResolvedValue({
+      exists: true,
+      data: () => ({ category: 'Resumen tarjeta 💳' }),
+    }),
+  }
+  const statementRef = {
+    get: jest.fn().mockResolvedValue({ exists: false }),
+    collection: jest.fn(() => ({
+      doc: jest.fn((id) => ({ path: 'items/' + id })),
+    })),
+  }
+  const userRef = {
+    collection: jest.fn((name) => ({
+      doc: jest.fn(() => name === 'expenses' ? expenseRef : statementRef),
+    })),
+  }
+  firestore.collection.mockImplementation(() => ({
+    doc: jest.fn(() => userRef),
+  }))
+  firestore.batch.mockImplementation(() => ({ set, commit }))
+})
 
 test('accepts only full document hashes and independently reconciled items', () => {
   expect(statementDocumentId('a'.repeat(64))).toHaveLength(64)
