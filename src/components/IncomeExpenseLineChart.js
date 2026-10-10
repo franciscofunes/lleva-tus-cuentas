@@ -34,10 +34,11 @@ const IncomeExpenseLineChart = ({ chartData, categories }) => {
 		}
 
 		// Group data by month and year
-		const groupedData = chartData.reduce((result, item) => {
-			const isExpenseCategory = categories.find(
-				(category) => category.name === item.category
-			)?.isExpense;
+		const groupedData = (Array.isArray(chartData) ? chartData : []).reduce((result, item) => {
+			if (typeof item?.category !== 'string') return result;
+			const isExpenseCategory = (Array.isArray(categories) ? categories : []).some(
+				(category) => category?.name === item.category && category.isExpense === true
+			);
 
 			const { month, year } = extractMonthAndYearFromDate(item.selectedDate);
 			const monthLabel = getMonthLabel(month, year);
@@ -57,7 +58,7 @@ const IncomeExpenseLineChart = ({ chartData, categories }) => {
 
 			const amount =
 				isIngresoDivisasCategory && item.currencyQuantity
-					? Number(item.currencyQuantity.replace(',', '.')) || 0
+					? Number(String(item.currencyQuantity).replace(',', '.')) || 0
 					: typeof item.amount === 'string'
 					? Number(item.amount.replace(',', '.')) || 0
 					: Number(item.amount) || 0;

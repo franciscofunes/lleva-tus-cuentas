@@ -34,7 +34,8 @@ const IngresoDivisasLineChart = ({ chartData }) => {
 		}
 
 		// Group data by month and year
-		const groupedData = chartData.reduce((result, item) => {
+		const groupedData = (Array.isArray(chartData) ? chartData : []).reduce((result, item) => {
+			if (typeof item?.category !== 'string') return result;
 			const isIngresoDivisasCategory = item.category.includes(
 				INGRESO_DIVISAS_CATEGORY
 			);
@@ -48,7 +49,7 @@ const IngresoDivisasLineChart = ({ chartData }) => {
 				);
 
 				const amount = item.currencyQuantity
-					? Number(item.currencyQuantity.replace(',', '.')) || 0
+					? Number(String(item.currencyQuantity).replace(',', '.')) || 0
 					: 0;
 
 				if (existingItem) {

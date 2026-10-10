@@ -57,8 +57,14 @@ export default function ChartViewer({
         </p>
       );
     }
+    if (!Array.isArray(categories)) {
+      return <p role='status' className='rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'>Cargando categorías para los gráficos…</p>;
+    }
     if (!activeComponent) return null;
-    return React.createElement(activeComponent, { chartData, categories });
+    return React.createElement(activeComponent, {
+      chartData: Array.isArray(chartData) ? chartData : [],
+      categories,
+    });
   };
 
   return (

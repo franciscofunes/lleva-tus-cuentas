@@ -103,3 +103,19 @@ describe('responsive chart viewer', () => {
     expect(within(modal).getByRole('status')).toHaveTextContent('Los gráficos están ocultos');
   });
 });
+
+test('Charts defer rendering until async category catalog is ready, then recover', () => {
+  const realChart = {
+    expenses: ({ categories }) => <div>Catálogo listo: {categories.length}</div>,
+  };
+  const { rerender } = render(
+    <ChartViewer chartComponents={realChart} selectedChart='expenses' onSelect={() => {}}
+      chartData={[{ category: 'Gastos' }]} categories={null} />
+  );
+  expect(screen.getByRole('status')).toHaveTextContent('Cargando categorías');
+  rerender(
+    <ChartViewer chartComponents={realChart} selectedChart='expenses' onSelect={() => {}}
+      chartData={[{ category: 'Gastos' }]} categories={[{ name: 'Gastos', isExpense: true }]} />
+  );
+  expect(screen.getByText('Catálogo listo: 1')).toBeInTheDocument();
+});

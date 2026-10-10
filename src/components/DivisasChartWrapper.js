@@ -3,11 +3,12 @@ import CategoryBreakdownChart from './CategoryBreakdownChart';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 
 const DivisasChartWrapper = ({ chartData, categories }) => {
+	const records = Array.isArray(chartData) ? chartData : [];
+	const catalog = Array.isArray(categories) ? categories : [];
 	const generateChartData = () => {
-		const filteredData = chartData.filter((dataItem) => {
-			const isIngresoDivisasCategory = dataItem.category.includes(
-				INGRESO_DIVISAS_CATEGORY
-			);
+		const filteredData = records.filter((dataItem) => {
+			const isIngresoDivisasCategory = typeof dataItem?.category === 'string' &&
+				dataItem.category.includes(INGRESO_DIVISAS_CATEGORY);
 
 			// Include only categories that are INGRESO_DIVISAS_CATEGORY
 			return isIngresoDivisasCategory;
