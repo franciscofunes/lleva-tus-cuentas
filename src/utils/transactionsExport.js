@@ -26,7 +26,7 @@ export const buildTransactionOverview = (docs = [], categories = []) => {
   };
 };
 
-export const buildTransactionsExportSheets = (docs = [], categories = []) => {
+export const buildTransactionsExportSheets = (docs = [], categories = [], filters = {}) => {
   const expenses = new Set(categories.filter((entry) => entry?.isExpense).map((entry) => entry.name));
   const headers = ['Fecha','Nombre','Categoría','Clasificación','ARS (registrados)','USD (cantidad)','Cotización ARS/USD','Fecha cierre','Vencimiento','Estado','Comentario'];
   const records = (Array.isArray(docs) ? docs : []).map((row) => [
@@ -51,6 +51,16 @@ export const buildTransactionsExportSheets = (docs = [], categories = []) => {
     'Gastos por categoría': [
       ['Categoría','Operaciones','ARS registrados'],
       ...groups.map(([category, value]) => [category, value.count, Math.round(value.ars * 100) / 100]),
+    ],
+    'Filtros aplicados': [
+      ['Criterio', 'Valor'],
+      ['Período', safeText(filters.periodLabel || filters.period || 'Vista actual')],
+      ['Tipo de período', safeText(filters.period || 'Vista actual')],
+      ['Búsqueda', safeText(filters.query) || 'Sin búsqueda'],
+      ['Categoría', safeText(filters.category) || 'Todas'],
+      ['Tipo de movimiento', filters.type === 'expense' ? 'Gastos' : filters.type === 'income' ? 'Ingresos' : 'Todos'],
+      ['Movimientos exportados', records.length],
+      ['Alcance', 'Se exportaron todos los movimientos que coinciden con los filtros activos, sin limitarse a las tarjetas visibles en pantalla.'],
     ],
   };
 };
@@ -95,7 +105,7 @@ export const buildTransactionsLitaMarkdown = (docs = [], categories = [], now = 
   return lines.join('\n');
 };
 
-export const exportTransactionsXlsx = (docs = [], categories = []) => {
-  exportWorkbookXlsx(buildTransactionsExportSheets(docs, categories),
+export const exportTransactionsXlsx = (docs = [], categories = [], filters = {}) => {
+  exportWorkbookXlsx(buildTransactionsExportSheets(docs, categories, filters),
     `transacciones-ltc-${new Date().toISOString().slice(0, 10)}.xlsx`);
 };

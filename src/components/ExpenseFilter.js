@@ -1,7 +1,7 @@
 import es from 'date-fns/locale/es';
 import moment from 'moment';
 import 'moment/locale/es';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/ltc-datepicker.css';
@@ -107,7 +107,7 @@ export function CalendarHeader({
 }
 
 
-function ExpenseFilter() {
+function ExpenseFilter({ onPeriodChange }) {
   const dispatch = useDispatch();
   const selectedFilter = useSelector((state) => state.database.selectedFilter);
   const isFilterChanging = useSelector((state) => state.database.isFilterChanging);
@@ -155,6 +155,11 @@ function ExpenseFilter() {
   };
 
   const periodLabel = describeSelectedPeriod(selectedFilter, selectedDate);
+  // Keep the export's period label in sync even when the date is changed
+  // inside this picker (the Redux filter stores only the period key).
+  useEffect(() => {
+    if (typeof onPeriodChange === 'function') onPeriodChange({ key: selectedFilter, label: periodLabel });
+  }, [onPeriodChange, periodLabel, selectedFilter]);
 
   return (
     <section aria-label='Filtrar por período' className='mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-600 dark:bg-slate-900/70 sm:p-4'>

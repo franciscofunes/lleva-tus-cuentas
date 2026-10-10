@@ -2,8 +2,13 @@ import {
   buildTransactionOverview, buildTransactionsExportSheets,
   buildTransactionsLitaMarkdown, exportTransactionsXlsx,
 } from './transactionsExport';
-import { exportWorkbookXlsx } from './portfolioExport';
-jest.mock('./portfolioExport', () => ({ exportWorkbookXlsx: jest.fn() }));
+import { exportWorkbookXlsx, buildWorkbookXlsxBytes, worksheetXml, xlsxColumnName } from './portfolioExport';
+import { filterTransactions } from './transactionSearch';
+jest.mock('./portfolioExport', () => {
+  const { TextEncoder } = require('util');
+  if (typeof global.TextEncoder === 'undefined') global.TextEncoder = TextEncoder;
+  return { ...jest.requireActual('./portfolioExport'), exportWorkbookXlsx: jest.fn() };
+});
 
 const categories = [
   { name: 'Salud 🏥', isExpense: true },
@@ -65,4 +70,67 @@ test('large exports disclose truncation rather than presenting a partial view as
   const md = buildTransactionsLitaMarkdown(many, categories);
   expect(md).toContain('Movimientos incluidos en este prompt: 250');
   expect(md).toContain('15 movimientos omitidos');
+});
+
+test('XLSX workbook serializes real cell references, headers, filters, rows and values', () => {
+  const sheets = buildTransactionsExportSheets(docs, categories, {
+    period: 'month',
+    periodLabel: 'octubre 2026',
+    query: 'astropay',
+    category: 'Venta divisas',
+    type: 'income',
+  });
+  const xml = worksheetXml(sheets.Movimientos);
+  expect(xml).toContain('<dimension ref="A1:K5"/>');
+  expect(xml).toContain('<c r="A1" t="inlineStr">');
+  expect(xml).toContain('<c r="B2" t="inlineStr">');
+  expect(xml).toContain('<c r="E4"><v>158064</v></c>');
+  expect(xml).toContain('<autoFilter ref="A1:K5"/>');
+  expect(xml).toContain('state="frozen"');
+  expect(xlsxColumnName(0)).toBe('A');
+  expect(xlsxColumnName(10)).toBe('K');
+  expect(xlsxColumnName(26)).toBe('AA');
+  const binary = Buffer.from(buildWorkbookXlsxBytes(sheets)).toString('utf8');
+  expect(binary).toContain('xl/worksheets/sheet1.xml');
+  expect(binary).toContain('Movimientos');
+  expect(binary).toContain('Gastos por categoría');
+  expect(binary).toContain('Filtros aplicados');
+  expect(binary).toContain('Astropay');
+  expect(binary).toContain('octubre 2026');
+});
+
+test.each([
+  ['all', '', '', 4],
+  ['expense', '', '', 2],
+  ['income', '', '', 2],
+  ['all', 'Salud 🏥', '', 1],
+  ['all', '', 'astropay', 1],
+  ['all', 'Resumen tarjeta 💳', 'ciudad', 1],
+  ['income', 'Venta divisas', 'astropay', 1],
+])('Excel exports exactly the active type/category/search results: %s / %s / %s', (type, category, query, count) => {
+  const filtered = filterTransactions(docs, { type, category, query, categories });
+  const sheets = buildTransactionsExportSheets(filtered, categories, { type, category, query, period: 'month' });
+  expect(filtered).toHaveLength(count);
+  expect(sheets.Movimientos).toHaveLength(count + 1);
+  expect(sheets['Filtros aplicados']).toContainEqual(['Movimientos exportados', count]);
+  expect(sheets['Gastos por categoría'].slice(1).every((row) => row[1] > 0)).toBe(true);
+});
+
+test('exports all filtered movements rather than only the first 40 rendered cards', () => {
+  const many = Array.from({ length: 2408 }, (_, i) => ({
+    ...docs[0], expenseName: 'Movimiento ' + i, selectedDate: '2026-10-10',
+  }));
+  const filtered = filterTransactions(many, { type: 'expense', categories });
+  const sheets = buildTransactionsExportSheets(filtered, categories, { periodLabel: 'octubre 2026' });
+  expect(sheets.Movimientos).toHaveLength(2409);
+  expect(sheets['Gastos por categoría']).toContainEqual(['Salud 🏥', 2408, 84470232]);
+  expect(worksheetXml(sheets.Movimientos)).toContain('<c r="K2409"');
+  expect(worksheetXml(sheets.Movimientos)).toContain('<autoFilter ref="A1:K2409"/>');
+});
+
+test('preserves XML-special characters and prevents cell formula injection', () => {
+  const xml = worksheetXml([['Nombre','Importe'], ['=HYPERLINK("bad") & <script>', 1250]]);
+  expect(xml).toContain('r="A2" t="inlineStr"');
+  expect(xml).toContain('=HYPERLINK(&quot;bad&quot;) &amp; &lt;script&gt;');
+  expect(xml).not.toContain('<f>');
 });
