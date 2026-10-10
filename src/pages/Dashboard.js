@@ -22,6 +22,7 @@ import LitaAssistantPanel from "../components/LitaAssitantPanel";
 import { summarizeSpendingByCategory } from '../utils/litaSpendingSummary';
 import SearchBar from "../components/SearchBar";
 import { filterTransactions } from "../utils/transactionSearch";
+import { categoryContains } from "../utils/categoryContains";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
@@ -333,8 +334,8 @@ function Dashboard() {
       const currencyIncome = docs
         .filter(
           (doc) =>
-            doc.category.includes("Compra divisas") ||
-            doc.category.includes(INGRESO_DIVISAS_CATEGORY)
+            categoryContains(doc, "Compra divisas") ||
+            categoryContains(doc, INGRESO_DIVISAS_CATEGORY)
         )
         .map((doc) => {
           const currencyQuantity = parseFloat(doc?.currencyQuantity);
@@ -342,7 +343,7 @@ function Dashboard() {
         });
 
       const currencySale = docs
-        .filter((doc) => doc.category.includes("Venta divisas"))
+        .filter((doc) => categoryContains(doc, "Venta divisas"))
         .map((doc) => {
           const currencyQuantity = parseFloat(doc?.currencyQuantity);
           return isNaN(currencyQuantity) ? 0 : currencyQuantity;
