@@ -34,6 +34,8 @@ test('archives and restores only custom category without deleting historical cla
   render(<CategoryManager userId='userA' categories={categories} />);
   fireEvent.click(screen.getByRole('button', { name: 'Archivar Mascotas' }));
   await waitFor(() => expect(setCustomCategoryActive).toHaveBeenCalledWith('userA', 'pets', false));
+  // Wait until the first async mutation unlocks the controls.
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Reactivar Educación' })).toBeEnabled());
   fireEvent.click(screen.getByRole('button', { name: 'Reactivar Educación' }));
   await waitFor(() => expect(setCustomCategoryActive).toHaveBeenCalledWith('userA', 'archived', true));
 });
