@@ -1,4 +1,5 @@
 import { firestore } from '../shared/config/firebase/firebase.config';
+import { normalizeLitaChatMessages } from '../utils/litaChatMessages';
 
 const litaChatsCollection = (userId) =>
 	firestore.collection('users').doc(userId).collection('litaChats');
@@ -10,20 +11,7 @@ const toIsoString = (value) => {
 	return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
-const normalizeMessages = (messages = []) =>
-	messages
-		.filter(
-			(message) =>
-				message &&
-				['user', 'assistant'].includes(message.role) &&
-				typeof message.content === 'string'
-		)
-		.slice(-40)
-		.map((message) => ({
-			id: String(message.id || ''),
-			role: message.role,
-			content: message.content.slice(0, 12000),
-		}));
+const normalizeMessages = normalizeLitaChatMessages;
 
 export const subscribeLitaChats = (userId, onData, onError = console.error) => {
 	if (!userId) return () => {};

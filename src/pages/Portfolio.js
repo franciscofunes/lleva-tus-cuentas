@@ -103,6 +103,7 @@ function Portfolio() {
 	const [snapshotsLoaded, setSnapshotsLoaded] = useState(false);
 	const [showForm, setShowForm] = useState(false);
 	const [showLita, setShowLita] = useState(false);
+	const [litaDraft, setLitaDraft] = useState('');
 	const [markdownImport, setMarkdownImport] = useState('');
 	const [showMarkdownImport, setShowMarkdownImport] = useState(false);
 	const [importPreview, setImportPreview] = useState([]);
@@ -467,6 +468,15 @@ function Portfolio() {
 
 	const requestRateUpdate = (position) => { setRateTarget(position); setQuickRate(String(position.annualRate ?? '')); };
 	const saveQuickRate = async () => { if (!rateTarget || quickRate === '' || pendingAction) return; setPendingAction('rate'); try { await updatePortfolioPosition(user.uid, rateTarget.id, { ...rateTarget, annualRate: quickRate }); toast.success(`Tasa de ${rateTarget.institution} actualizada a ${Number(quickRate).toFixed(2)}%`); setRateTarget(null); setQuickRate(''); } catch (error) { toast.error('No se pudo actualizar la tasa'); } finally { setPendingAction(''); } };
+	const analyzeWithLita = () => {
+		const prompt = buildPortfolioLlmMarkdown(positions, snapshots);
+		if (prompt.length > 32000) {
+			toast.error('El informe completo supera el límite de LITA (32.000 caracteres). Reducí las posiciones o el historial antes de enviarlo.');
+			return;
+		}
+		setLitaDraft(prompt);
+		setShowLita(true);
+	};
 	const copyLlmPrompt = async () => {
 		try {
 			await navigator.clipboard.writeText(buildPortfolioLlmMarkdown(positions, snapshots));
@@ -650,6 +660,7 @@ function Portfolio() {
 						actions={[
 							{ id: 'excel', type: 'excel', label: 'Exportar Excel', onClick: () => exportPortfolioXlsx(positions, snapshots), disabled: !positions.length },
 							{ id: 'markdown', type: 'markdown', label: 'Copiar para Lita', onClick: copyLlmPrompt, disabled: !positions.length },
+							{ id: 'lita', type: 'assistant', label: 'Analizar con LITA', onClick: analyzeWithLita, disabled: !positions.length, title: 'Preparar el informe dentro de LITA; revisalo antes de enviarlo' },
 						]}
 						metrics={[
 							{ id: 'positions', icon: FaWallet, label: 'Posiciones', value: privateCount(portfolioMeta.positions) },
@@ -893,9 +904,10 @@ function Portfolio() {
 			{showLita && (
 				<LitaAssistantPanel
 					isOpen={showLita}
-					setIsOpen={setShowLita}
+					setIsOpen={(open) => { setShowLita(open); if (!open) setLitaDraft(''); }}
 					section='portfolio'
 					context={litaPortfolioContext}
+					initialPrompt={litaDraft}
 				/>
 			)}
 
