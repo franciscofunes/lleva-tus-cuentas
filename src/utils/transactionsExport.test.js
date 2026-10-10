@@ -50,6 +50,16 @@ test('Lita Markdown clearly labels ARS and USD and warns against double-counting
   expect(md).not.toContain('undefined');
 });
 
+test('raw export preserves refunds and conversion rows even when FX category is marked as expense', () => {
+  const rows = [...docs, { expenseName: 'Reintegro', category: 'Salud 🏥', amount: -150, selectedDate: '2026-10-09' }];
+  const xlsx = buildTransactionsExportSheets(rows, [
+    ...categories.filter((cat) => cat.name !== 'Venta divisas'),
+    { name: 'Venta divisas', isExpense: true },
+  ]);
+  expect(xlsx.Movimientos.find((row) => row[1] === 'Reintegro')[4]).toBe(-150);
+  expect(xlsx['Gastos por categoría'].some((row) => row[0] === 'Venta divisas')).toBe(false);
+});
+
 test('large exports disclose truncation rather than presenting a partial view as complete', () => {
   const many = Array.from({ length: 265 }, (_, i) => ({ ...docs[0], expenseName: 'Expense ' + i }));
   const md = buildTransactionsLitaMarkdown(many, categories);
