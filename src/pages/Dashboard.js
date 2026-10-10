@@ -211,6 +211,7 @@ function Dashboard() {
   const [comment, setComment] = useState("");
   const [category, setCategory] = useState("");
   const [customDetails, setCustomDetails] = useState({});
+  const [hasSavedCustomDetails, setHasSavedCustomDetails] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
 
   const [isCreditCardCategory, setIsCreditCardCategory] = useState(false);
@@ -433,6 +434,7 @@ function Dashboard() {
     setComment(transaction.comment || "");
     setCategory(transaction.category || "");
     setCustomDetails(transaction.customDetails || {});
+    setHasSavedCustomDetails(Boolean(Object.keys(transaction.customDetails || {}).length));
     setSelectedDate(transaction.selectedDate || "");
     setSelectedExpirationDate(transaction.selectedExpirationDate || "");
     setSelectedCloseDate(transaction.selectedCloseDate || "");
@@ -490,6 +492,7 @@ function Dashboard() {
     setComment("");
     setCategory("");
     setCustomDetails({});
+    setHasSavedCustomDetails(false);
     setSelectedDate("");
     setSelectedExpirationDate("");
     setSelectedCloseDate("");
@@ -678,6 +681,7 @@ function Dashboard() {
                     category={doc.category}
                     customDetails={doc.customDetails || {}}
                     setCustomDetails={setCustomDetails}
+                    setHasSavedCustomDetails={setHasSavedCustomDetails}
                     selectedDate={doc.selectedDate}
                     selectedExpirationDate={doc.selectedExpirationDate}
                     selectedCloseDate={doc.selectedCloseDate}
@@ -756,6 +760,7 @@ function Dashboard() {
             category={category}
             customDetails={customDetails}
             setCustomDetails={setCustomDetails}
+            hasSavedCustomDetails={hasSavedCustomDetails}
             selectedDate={selectedDate}
             selectedExpirationDate={selectedExpirationDate}
             selectedCloseDate={selectedCloseDate}
