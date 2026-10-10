@@ -3,6 +3,7 @@ const initState = {
 	docs: null,
 	categories: null,
 	isDataFetching: true,
+	dataError: null,
 	selectedFilter: 'month',
 	isFilterChanging: false,
 	savedSubscription: true,
@@ -17,7 +18,9 @@ export const databaseReducer = (state = initState, action) => {
 				...state,
 			};
 		case 'GOT_DATA':
-			return { ...state, docs: action.data, isDataFetching: false };
+			return { ...state, docs: action.data, isDataFetching: false, dataError: null };
+		case 'GOT_DATA_ERROR':
+			return { ...state, docs: [], isDataFetching: false, dataError: action.error };
 		case 'GOT_CATEGORY_DATA':
 			return { ...state, categories: action.data };
 		case 'STORE_ERROR':
@@ -45,6 +48,7 @@ export const databaseReducer = (state = initState, action) => {
 		case 'SET_FETCHING':
 			return {
 				...state,
+				dataError: action.isDataFetching ? null : state.dataError,
 				isDataFetching: action.isDataFetching,
 			};
 		case 'SET_SELECTED_FILTER':
