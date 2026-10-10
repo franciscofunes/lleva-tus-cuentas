@@ -3,6 +3,12 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import Card from './Card';
 
+// Card imports an action creator; unit tests must not initialize real Firebase.
+jest.mock('../shared/config/firebase/firebase.config', () => ({
+  auth: { currentUser: null },
+  firestore: { collection: jest.fn() },
+}));
+
 jest.mock('react-redux', () => ({
   useDispatch: () => jest.fn(),
 }));
