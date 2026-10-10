@@ -14,7 +14,7 @@ import {
 } from "../actionCreators/databaseActions";
 import BarChartWrapper from "../components/BarChartWrapper";
 import Card from "../components/Card";
-import ExpenseFilter from "../components/ExpenseFilter";
+import ExpenseFilter, { describeSelectedPeriod } from "../components/ExpenseFilter";
 import BimonetarySummary from "../components/BimonetarySummary";
 import FloatingMenu from "../components/FloatingMenu";
 import GenericModal from "../components/GenericModal";
@@ -155,7 +155,7 @@ function Dashboard() {
   const categories = useSelector((state) => state.database.categories);
   const selectedFilter = useSelector((state) => state.database.selectedFilter);
   const isFilterChanging = useSelector((state) => state.database.isFilterChanging);
-  const [selectedPeriodLabel, setSelectedPeriodLabel] = useState("Período seleccionado");
+  const [selectedPeriodInfo, setSelectedPeriodInfo] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [searchType, setSearchType] = useState("all");
@@ -526,7 +526,9 @@ function Dashboard() {
               actions={[
                 { id: "excel", type: "excel", label: "Exportar Excel", onClick: () => exportTransactionsXlsx(filteredDocs, categories || [], {
                   period: selectedFilter,
-                  periodLabel: selectedPeriodLabel,
+                  periodLabel: selectedPeriodInfo?.key === selectedFilter
+                    ? selectedPeriodInfo.label
+                    : describeSelectedPeriod(selectedFilter, new Date()),
                   query: searchQuery,
                   category: searchCategory,
                   type: searchType,
@@ -556,7 +558,7 @@ function Dashboard() {
             onToggle={() => toggleDashboardSection("summary")}
             className="mb-5 font-Nunito"
           >
-            <ExpenseFilter onPeriodChange={setSelectedPeriodLabel} />
+            <ExpenseFilter onPeriodChange={setSelectedPeriodInfo} />
             <BimonetarySummary
               docs={docs}
               categories={categories}
