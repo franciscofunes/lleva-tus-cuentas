@@ -229,7 +229,7 @@ export const getDataAction = (userId) => {
 	const currentYear = moment().year();
 
 	return (dispatch) => {
-		firestore
+		return firestore
 			.collection('users')
 			.doc(userId)
 			.collection('expenses')
@@ -252,10 +252,17 @@ export const getDataAction = (userId) => {
 					.format('YYYY-MM-DD')
 			)
 			.orderBy('selectedDate', 'desc')
-			.onSnapshot((res) => {
-				const data = res.docs.map((d) => ({ id: d.id, ...d.data() }));
-				dispatch({ type: 'GOT_DATA', data });
-			});
+			.onSnapshot(
+				(res) => {
+					const data = res.docs.map((d) => ({ id: d.id, ...d.data() }));
+					dispatch({ type: 'GOT_DATA', data });
+				},
+				(error) => {
+					console.error('No se pudieron cargar los movimientos', error);
+					// Don't leave a permanent loader if Firestore rejects the query.
+					dispatch({ type: 'GOT_DATA_ERROR', error: 'No se pudieron cargar los movimientos.' });
+				}
+			);
 	};
 };
 
