@@ -6,12 +6,16 @@ import AvatarDropdown from './AvatarDropdown';
 import NotificationsDropdown from './NotificationsDropdown';
 import { getPopoverMotion, getPopoverTap, popoverMotion, popoverTapTransition } from '../shared/animations/popoverMotion';
 
+// Stable Redux references prevent notification subscription effects from
+// re-running indefinitely in React tests.
+const mockDispatch = jest.fn();
+const mockState = {
+  database: { paymentData: { subscription: 'test' }, isPaymentDataLoading: false, categories: [] },
+  auth: { user: null },
+};
 jest.mock('react-redux', () => ({
-  useDispatch: () => jest.fn(),
-  useSelector: (selector) => selector({
-    database: { paymentData: { subscription: 'test' }, isPaymentDataLoading: false, categories: [] },
-    auth: { user: null },
-  }),
+  useDispatch: () => mockDispatch,
+  useSelector: (selector) => selector(mockState),
 }));
 
 jest.mock('../actionCreators/databaseActions', () => ({
