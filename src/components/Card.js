@@ -7,6 +7,7 @@ import { FaCheckCircle } from 'react-icons/fa';
 import InfoTooltip from '../components/InfoTooltip';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 import { usesSelectedDateAsDueDate } from '../utils/transactionDueDates';
+import { displayTransactionCustomDetails } from '../utils/categoryExtraFields';
 import CardStatementDetails from './CardStatementDetails';
 
 function Card({
@@ -23,6 +24,8 @@ function Card({
 	paidDueDate,
 	comment,
 	category,
+	customDetails = {},
+	setCustomDetails = () => {},
 	name,
 	setName,
 	setAmount,
@@ -66,6 +69,7 @@ function Card({
 		setAmount(amount);
 		setComment(comment);
 		setCategory(safeCategory);
+		setCustomDetails(customDetails);
 		setSelectedDate(selectedDate);
 		setSelectedCloseDate(selectedCloseDate);
 		setSelectedExpirationDate(selectedExpirationDate);
@@ -154,6 +158,14 @@ function Card({
 					</span>
 					{moment(selectedDate).format('DD/MM/YYYY')}
 				</p>
+
+				{displayTransactionCustomDetails(customDetails).length > 0 && (
+          <div className='mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300' aria-label='Datos adicionales de la transacción'>
+            {displayTransactionCustomDetails(customDetails).map((detail) => (
+              <p key={detail.id}><span className='font-bold'>{detail.label}: </span>{detail.value}</p>
+            ))}
+          </div>
+        )}
 
 				{isPaidBill && (
 					<div className='mt-1 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300'>
