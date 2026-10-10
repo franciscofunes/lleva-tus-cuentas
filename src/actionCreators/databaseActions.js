@@ -1,6 +1,7 @@
 import moment from 'moment';
 import { toast } from 'react-toastify';
 import { firestore } from '../shared/config/firebase/firebase.config';
+import { mergeCategories } from '../utils/customCategories';
 import { getNotificationSettings, resolveTransactionDueDate } from '../utils/transactionDueDates';
 import {
 	CREATE_SUBSCRIPTION_SUCCESS_MESSAGE,
@@ -281,16 +282,52 @@ export const getTotalBalance = (userId) => {
 	};
 };
 
-export const getCategoriesDataAction = () => {
-	return (dispatch) => {
-		firestore
-			.collection('categories')
-			.orderBy('name', 'asc')
-			.onSnapshot((res) => {
-				const data = res.docs.map((d) => ({ id: d.id, ...d.data() }));
-				dispatch({ type: 'GOT_CATEGORY_DATA', data });
-			});
-	};
+export const getCategoriesDataAction = (userId) => (dispatch) => {
+  if (!userId) {
+    dispatch({ type: 'GOT_CATEGORY_DATA', data: [] });
+    return () => {};
+  }
+  let shared = [];
+  let custom = [];
+  let sharedReady = false;
+  let customReady = false;
+  let closed = false;
+  const notify = () => {
+    if (!closed && sharedReady && customReady) {
+      dispatch({ type: 'GOT_CATEGORY_DATA', data: mergeCategories(shared, custom) });
+    }
+  };
+  // Both subscriptions are attached only while this user's Dashboard is mounted.
+  // A former user's categories cannot leak into the next signed-in session.
+  dispatch({ type: 'GOT_CATEGORY_DATA', data: null });
+  const stopShared = firestore.collection('categories').orderBy('name', 'asc').onSnapshot(
+    (snapshot) => {
+      shared = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      sharedReady = true;
+      notify();
+    },
+    (error) => console.error('No se pudieron cargar las categorías generales', error)
+  );
+  const stopCustom = firestore.collection('users').doc(userId).collection('customCategories').onSnapshot(
+    (snapshot) => {
+      custom = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      customReady = true;
+      notify();
+    },
+    (error) => {
+      // The shared system catalog still works if security rules aren't deployed.
+      console.error('No se pudieron cargar las categorías personales. Revisá Firestore Rules.', error);
+      custom = [];
+      customReady = true;
+      notify();
+    }
+  );
+  return () => {
+    closed = true;
+    stopShared();
+    stopCustom();
+    dispatch({ type: 'GOT_CATEGORY_DATA', data: null });
+  };
 };
 
 export const deleteCardAction = (docId) => {
