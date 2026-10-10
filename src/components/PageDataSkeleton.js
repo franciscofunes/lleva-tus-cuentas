@@ -57,7 +57,7 @@ const ChartCard = () => (
   </Surface>
 );
 
-const PageDataSkeleton = ({ variant = 'transactions' }) => (
+const PageDataSkeleton = ({ variant = 'transactions', withKpiCards = true }) => (
   <div
     role='status'
     aria-label={variant === 'portfolio' ? 'Cargando portfolio' : 'Cargando transacciones'}
@@ -68,7 +68,7 @@ const PageDataSkeleton = ({ variant = 'transactions' }) => (
     </span>
     {variant === 'portfolio' ? (
       <div className='space-y-5'>
-        <div className='grid grid-cols-3 gap-2 sm:gap-4'>
+        {withKpiCards && <div className='grid grid-cols-3 gap-2 sm:gap-4'>
           {[0, 1, 2].map((item) => (
             <Surface key={item} className='min-w-0'>
               <Block className='h-5 w-5' />
@@ -76,7 +76,7 @@ const PageDataSkeleton = ({ variant = 'transactions' }) => (
               <Block className='mt-3 h-3 w-20 max-w-full' />
             </Surface>
           ))}
-        </div>
+        </div>}
         <SummaryCard />
         <ChartCard />
         <Surface><SectionHeading /><ListRows /></Surface>
