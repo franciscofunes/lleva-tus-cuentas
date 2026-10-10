@@ -5,6 +5,10 @@ import LitaAssistantPanel, { visibleKeyboardLayout } from './LitaAssitantPanel';
 jest.mock('react-redux', () => ({
 	useSelector: (selector) => selector({ auth: { user: { uid: 'test-user' } } }),
 }));
+jest.mock('../services/litaHistoricalAnalysis', () => ({
+	queryLitaHistoricalTransactions: jest.fn(),
+}));
+
 jest.mock('../services/litaChatService', () => ({
 	subscribeLitaChats: jest.fn(() => () => {}),
 	saveLitaChat: jest.fn(() => Promise.resolve()),
