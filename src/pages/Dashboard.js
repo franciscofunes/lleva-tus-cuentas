@@ -26,6 +26,7 @@ import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
 import FinancialOverviewPanel from "../components/FinancialOverviewPanel";
+import CategoryManager from "../components/CategoryManager";
 import { buildTransactionOverview, buildTransactionsLitaMarkdown, exportTransactionsXlsx } from "../utils/transactionsExport";
 import { toast } from "react-toastify";
 import CollapsibleSection from "../components/CollapsibleSection";
@@ -215,6 +216,7 @@ function Dashboard() {
   const [currencySellRate, setCurrencySellRate] = useState();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
 
   const [selectedChart, setSelectedChart] = useState("expenses");
   const transactionPreferenceKey = user?.uid
@@ -295,10 +297,9 @@ function Dashboard() {
   }, [user?.uid]);
 
   useEffect(() => {
-    if (user) {
-      dispatch(getCategoriesDataAction());
-    }
-  }, [user, dispatch]);
+    if (!user?.uid) return undefined;
+    return dispatch(getCategoriesDataAction(user.uid));
+  }, [user?.uid, dispatch]);
 
   useEffect(() => {
     if (user) {
@@ -380,7 +381,8 @@ function Dashboard() {
     () => ({
       scope: "current-view",
       spendingByCategory: summarizeSpendingByCategory(docs || [], categories || []),
-      categories: (categories || []).map(({ name, isExpense }) => ({ name, isExpense: Boolean(isExpense) })),
+      categories: (categories || []).filter((entry) => entry.active !== false)
+        .map(({ name, isExpense }) => ({ name, isExpense: Boolean(isExpense) })),
       summary: {
         incomeArs: Number(income || 0),
         expensesArs: Number(expense || 0),
@@ -495,6 +497,13 @@ function Dashboard() {
             <Link to="/portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
             <button type="button" onClick={toggleDataVisibility} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
           </QuickAccessCard>
+          <div className="mb-4 flex justify-end">
+            <button type="button" onClick={() => setShowCategoryManager(true)}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-purple-500/50 bg-purple-500/10 px-4 py-2 text-sm font-semibold text-purple-700 transition-colors hover:bg-purple-500/20 dark:text-purple-300"
+            >
+              <FaTags aria-hidden="true" /> Gestionar categorías
+            </button>
+          </div>
           {!(isDataFetching && !docs) && (
             <FinancialOverviewPanel
               id="transactions-overview"
@@ -710,6 +719,7 @@ function Dashboard() {
             isSellCurrenciesCategory={isSellCurrenciesCategory}
             expenseId={expenseId}
             categories={categories}
+            onManageCategories={() => setShowCategoryManager(true)}
             closeModal={closeModal}
             show={isOpen}
             setEdit={setEdit}
@@ -734,6 +744,16 @@ function Dashboard() {
           />
         )}
 
+
+        {showCategoryManager && (
+          <GenericModal
+            component={CategoryManager}
+            show={showCategoryManager}
+            userId={user?.uid}
+            categories={categories || []}
+            closeModal={() => setShowCategoryManager(false)}
+          />
+        )}
 
         {showModal && (
           <motion.div
