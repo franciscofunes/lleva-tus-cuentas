@@ -6,7 +6,7 @@ const validMoney = (value) => value !== null && value !== undefined && value !==
 const currencyOperation = (category) => /(?:Compra|Venta|Ingreso) divisas/i.test(category || '');
 const conversion = (category) => /(?:Compra|Venta) divisas/i.test(category || '');
 const getName = (row) => safeText(row.expenseName || row.name);
-const getAmount = (row) => validMoney(row.amount) ? Number(row.amount) : null;
+const getAmount = (row) => row.amount !== '' && row.amount !== null && row.amount !== undefined && Number.isFinite(Number(row.amount)) ? Number(row.amount) : null;
 const getQuantity = (row) => currencyOperation(row.category) && validMoney(row.currencyQuantity)
   ? Number(row.currencyQuantity) : null;
 const classification = (row, expenses) => {
@@ -39,7 +39,7 @@ export const buildTransactionsExportSheets = (docs = [], categories = []) => {
   ]);
   const expenseTotals = new Map();
   (Array.isArray(docs) ? docs : []).forEach((row) => {
-    if (!expenses.has(row.category) || !validMoney(row.amount)) return;
+    if (!expenses.has(row.category) || conversion(row.category) || !validMoney(row.amount)) return;
     const value = expenseTotals.get(row.category) || { count: 0, ars: 0 };
     value.count += 1;
     value.ars += Number(row.amount);
