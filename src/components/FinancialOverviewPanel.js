@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { FaArrowDown, FaFileExcel, FaRegCopy, FaRobot } from 'react-icons/fa';
+import { FaArrowDown, FaFileExcel, FaRegCopy } from 'react-icons/fa';
 import { CollapsibleChevron, CollapsibleHeading } from './CollapsibleHeading';
 
-const actionIcons = { excel: FaFileExcel, markdown: FaRegCopy, assistant: FaRobot };
+const actionIcons = { excel: FaFileExcel, markdown: FaRegCopy };
 const KPI_VALUE_TRANSITION_MS = 180;
 
 const itemMotion = (reduceMotion, index) => reduceMotion
@@ -94,7 +94,7 @@ export default function FinancialOverviewPanel({
             className='overflow-hidden'
           >
             <div className='border-t border-slate-200 px-4 pb-4 pt-4 sm:px-5 dark:border-slate-700/80'>
-              <div className={actions.length > 2 ? 'grid grid-cols-2 gap-2 sm:grid-cols-3 sm:max-w-2xl' : 'grid grid-cols-2 gap-2 sm:max-w-md'}>
+              <div className='grid grid-cols-2 gap-2 sm:max-w-md'>
                 {actions.map((action, index) => {
                   const Icon = actionIcons[action.type] || FaArrowDown;
                   return (
@@ -121,7 +121,7 @@ export default function FinancialOverviewPanel({
               <p className='mt-2 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400'>
                 {privacyHidden
                   ? 'Los archivos y el Markdown incluyen los importes reales, aunque estén ocultos en pantalla.'
-                  : actions.some((action) => action.type === 'assistant') ? 'Analizá directamente con LITA o copiá el Markdown para usarlo donde prefieras. Revisá el informe antes de enviarlo.' : 'Excel para descargar · Markdown para copiar y analizar con Lita.'}
+                  : 'Excel para descargar · Markdown para copiar y analizar con Lita.'}
               </p>
             </div>
 

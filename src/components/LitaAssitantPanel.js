@@ -36,7 +36,6 @@ const LitaAssistantPanel = ({
 	setIsOpen,
 	section = 'transactions',
 	context = {},
-	initialPrompt = '',
 }) => {
 	const iframeRef = useRef(null);
 	const user = useSelector((state) => state.auth.user);
@@ -83,13 +82,6 @@ const LitaAssistantPanel = ({
 			payload: financialContext,
 		});
 	}, [financialContext, postToLita]);
-
-	// A verified LTC parent may prefill LITA, but cannot send a message or
-	// mutate financial records without the user's explicit action.
-	const sendDraft = useCallback(() => {
-		if (!initialPrompt || typeof initialPrompt !== 'string') return;
-		postToLita({ type: 'lita:draft', payload: { text: initialPrompt } });
-	}, [initialPrompt, postToLita]);
 
 	const sendHistory = useCallback(() => {
 		postToLita({
@@ -205,7 +197,6 @@ const LitaAssistantPanel = ({
 
 			if (event.data?.type === 'lita:ready') {
 				sendContext();
-				sendDraft();
 				sendHistory();
 				sendHistoryStatus();
 				sendTheme();
@@ -293,7 +284,6 @@ const LitaAssistantPanel = ({
 		isExpanded,
 		postToLita,
 		sendContext,
-		sendDraft,
 		sendHistory,
 		sendHistoryStatus,
 		sendTheme,

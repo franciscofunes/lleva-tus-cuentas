@@ -34,3 +34,32 @@ describe('portfolio LLM prompt accounting semantics', () => {
     expect(prompt).toContain('NO representa una pérdida comprobada');
   });
 });
+
+describe('Spanish LITA-ready portfolio copy', () => {
+  const p = (id) => ({
+    id, institution: 'Banco Ejemplo', name: 'Cuenta remunerada',
+    category: 'Cuenta remunerada', currency: 'USD', balance: 1000,
+    annualRate: 0, rateType: 'TNA',
+  });
+
+  it('keeps the recognized LTC financial report sections for the backend scope guard', () => {
+    const prompt = buildPortfolioLlmMarkdown(Array.from({ length: 8 }, (_, index) => p(String(index))), []);
+    expect(prompt.startsWith('# Portfolio LTC — contexto para análisis LLM')).toBe(true);
+    expect(prompt).toContain('## Totales por moneda');
+    expect(prompt).toContain('## Posiciones');
+    expect(prompt).toContain('## Pedido de investigación y análisis');
+    expect(prompt).toContain('Idioma solicitado: ESPAÑOL (Argentina)');
+    expect(prompt).toContain('Analizá exclusivamente los datos adjuntos');
+    expect(prompt).toContain('Tasa cargada: 0% TNA');
+    expect(prompt.length).toBeLessThan(32000);
+    expect(prompt).not.toContain('si tenés acceso a Internet, investigá CADA activo');
+    expect(prompt).not.toContain('Citá URL y fecha de consulta para cada dato investigado');
+  });
+
+  it('does not promise verified current rates or automatic investment updates', () => {
+    const prompt = buildPortfolioLlmMarkdown([p('1')], []);
+    expect(prompt).toContain('no puede navegar por Internet ni verificar tasas bancarias vigentes');
+    expect(prompt).toContain('No generes bloques LTC Asset Update si no hay valores nuevos comprobados');
+    expect(prompt).toContain('Nunca apliques cambios de forma automática');
+  });
+});
