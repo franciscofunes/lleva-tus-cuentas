@@ -1,10 +1,10 @@
 import React from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Routes, useLocation } from 'react-router-dom';
 
-// Route transition lives OUTSIDE the pages so the old view fades away before
-// the new view enters. Never apply translate/scale to the page: nested fixed
-// modals and Android floating buttons must keep their viewport coordinates.
+// Mount the new route immediately; a wait-mode exit transition can leave Android
+// showing a blank page when interrupted. Preserve the shared 180ms entrance fade.
+// Never translate or scale: fixed modals and FABs remain viewport-anchored.
 export const navigationTransition = {
   initial: { opacity: 0 },
   animate: { opacity: 1 },
@@ -22,14 +22,13 @@ export default function AnimatedRoutes({ children }) {
   const location = useLocation();
   const reduceMotion = useReducedMotion();
   return (
-    <AnimatePresence mode='wait' initial={false}>
-      <motion.div
-        key={location.pathname}
-        {...getNavigationTransition(reduceMotion)}
-        className='w-full min-w-0'
-      >
-        <Routes location={location}>{children}</Routes>
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      key={location.pathname}
+      {...getNavigationTransition(reduceMotion)}
+      initial={false}
+      className='w-full min-w-0'
+    >
+      <Routes location={location}>{children}</Routes>
+    </motion.div>
   );
 }
