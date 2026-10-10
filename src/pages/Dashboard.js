@@ -1,5 +1,4 @@
-import { motion, useReducedMotion } from "framer-motion";
-import { getPageEntranceMotion } from "../shared/animations/pageEntranceMotion";
+import { motion } from "framer-motion";
 import PageDataSkeleton from "../components/PageDataSkeleton";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -140,7 +139,6 @@ const TransactionsPageSkeleton = () => (
 
 function Dashboard() {
   const dispatch = useDispatch();
-  const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
@@ -461,8 +459,7 @@ function Dashboard() {
 
   return (
     <>
-      <motion.div
-        {...getPageEntranceMotion(prefersReducedMotion)}
+      <div
         id="dashboard"
         className="min-h-screen max-w-full bg-slate-50 dark:bg-gray-900 dark:text-zinc-100 px-3 sm:px-5 lg:px-8 py-5"
       >
@@ -636,7 +633,7 @@ function Dashboard() {
           </div>
           )}
         </div>
-      </motion.div>
+      </div>
 
       <AppFooter />
 
