@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { getPopoverMotion, getPopoverTap, popoverTapTransition } from '../shared/animations/popoverMotion';
 import {
 	FaArrowLeft,
 	FaBell,
@@ -273,6 +275,7 @@ const NotificationDropdown = () => {
 	const dispatch = useDispatch();
 	const navigate = useNavigate();
 	const dropdownRef = useRef(null);
+	const prefersReducedMotion = useReducedMotion();
 
 	const hasSubscriptionNotice = !isPaymentDataLoading && !paymentData;
 
@@ -462,7 +465,9 @@ const NotificationDropdown = () => {
 
 	return (
 		<div className='relative inline-block text-left' ref={dropdownRef}>
-			<button
+			<motion.button
+				whileTap={getPopoverTap(prefersReducedMotion)}
+				transition={popoverTapTransition}
 				type='button'
 				className='relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-600 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:text-slate-200 dark:hover:bg-slate-800'
 				onClick={handleDropdownToggle}
@@ -480,10 +485,12 @@ const NotificationDropdown = () => {
 						{unreadCount > 9 ? '9+' : unreadCount}
 					</span>
 				)}
-			</button>
+			</motion.button>
 
+			<AnimatePresence>
 			{showDropdown && (
-				<div
+				<motion.div
+					{...getPopoverMotion(prefersReducedMotion)}
 					className='fixed left-3 right-3 top-[4.75rem] z-[100] max-h-[72dvh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-3 shadow-2xl shadow-slate-950/20 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96'
 					role='menu'
 					aria-label='Notificaciones'
@@ -570,8 +577,9 @@ const NotificationDropdown = () => {
 							)}
 						</>
 					)}
-				</div>
+				</motion.div>
 			)}
+			</AnimatePresence>
 		</div>
 	);
 };
