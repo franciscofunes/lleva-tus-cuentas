@@ -657,7 +657,7 @@ function Portfolio() {
 							{ id: 'earnings', icon: FaRegClock, label: 'Con ganancias', value: positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length },
 						]}
 					/>
-				{loading ? <PageDataSkeleton variant='portfolio' /> : <>
+				{loading ? <PageDataSkeleton variant='portfolio' includeOverview={false} /> : <>
 				<CollapsibleSection
 					id='portfolio-summary'
 					eyebrow='Resumen'
