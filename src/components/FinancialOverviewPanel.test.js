@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import FinancialOverviewPanel from './FinancialOverviewPanel';
 import { FaWallet } from 'react-icons/fa';
 
@@ -38,4 +38,54 @@ test('masked values and disabled exports remain safe and transparent', () => {
   expect(screen.getByText(/importes reales/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Copiar para Lita' }));
   expect(copy).not.toHaveBeenCalled();
+});
+
+
+function CollapsibleFixture({ initialCollapsed = false }) {
+  const [collapsed, setCollapsed] = useState(initialCollapsed);
+  return (
+    <FinancialOverviewPanel
+      id='portfolio-overview'
+      title='Portfolio de un vistazo'
+      description='Exportá y analizá tus activos.'
+      collapsed={collapsed}
+      onToggle={() => setCollapsed((prev) => !prev)}
+      metrics={[{ id: 'positions', label: 'Posiciones', value: 8, icon: FaWallet }]}
+      actions={[{ id: 'excel', type: 'excel', label: 'Exportar Excel', onClick: jest.fn() }]}
+    />
+  );
+}
+
+test('collapses actions and KPIs while leaving the title and chevron toggle accessible', async () => {
+  render(<CollapsibleFixture />);
+  const toggle = screen.getByRole('button', { name: 'Portfolio de un vistazo: contraer' });
+  expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  expect(toggle).toHaveAttribute('aria-controls', 'portfolio-overview-content');
+  expect(screen.getByRole('button', { name: 'Exportar Excel' })).toBeInTheDocument();
+
+  fireEvent.click(toggle);
+  expect(screen.getByRole('button', { name: 'Portfolio de un vistazo: expandir' }))
+    .toHaveAttribute('aria-expanded', 'false');
+  await waitFor(() => {
+    expect(screen.queryByRole('button', { name: 'Exportar Excel' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Posiciones')).not.toBeInTheDocument();
+  });
+  expect(screen.getByText('Portfolio de un vistazo')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Portfolio de un vistazo: expandir' }));
+  expect(screen.getByRole('button', { name: 'Exportar Excel' })).toBeInTheDocument();
+  expect(screen.getByText('Posiciones')).toBeInTheDocument();
+});
+
+test('starts collapsed when restored from user view preferences and expands via keyboard', () => {
+  render(<CollapsibleFixture initialCollapsed />);
+  const toggle = screen.getByRole('button', { name: 'Portfolio de un vistazo: expandir' });
+  expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.queryByText('Posiciones')).not.toBeInTheDocument();
+  toggle.focus();
+  fireEvent.keyDown(toggle, { key: 'Enter' });
+  fireEvent.click(toggle);
+  expect(screen.getByRole('button', { name: 'Portfolio de un vistazo: contraer' }))
+    .toHaveAttribute('aria-expanded', 'true');
+  expect(screen.getByText('Posiciones')).toBeInTheDocument();
 });
