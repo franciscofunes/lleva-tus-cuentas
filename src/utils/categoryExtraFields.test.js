@@ -49,3 +49,10 @@ test('optional data remains empty and displays select labels', () => {
       { id: 'paymentMethod', label: 'Medio de pago', value: 'Débito' },
     ]);
 });
+
+test('accepts a real calendar day but never a rolled-over invalid date', () => {
+  expect(sanitizeTransactionCustomDetails({ operationDate: '2026-10-10' }, ['operationDate']))
+    .toEqual({ operationDate: '2026-10-10' });
+  expect(() => sanitizeTransactionCustomDetails({ operationDate: '2026-13-10' }, ['operationDate']))
+    .toThrow(/Fecha inválida/);
+});
