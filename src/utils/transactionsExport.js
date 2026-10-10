@@ -125,7 +125,7 @@ const csvValue = (cell) => {
   if (typeof cell === 'number' && Number.isFinite(cell)) return String(cell);
   const text = String(cell ?? '');
   // Keep user-entered fields as data, never Excel/CSV formulas.
-  const safe = /^[\\s]*[=+@-]/.test(text) ? "'" + text : text;
+  const safe = /^\s*[=+@-]/.test(text) ? "'" + text : text;
   return '"' + safe.replace(/"/g, '""') + '"';
 };
 
