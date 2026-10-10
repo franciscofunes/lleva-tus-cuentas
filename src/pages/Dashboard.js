@@ -141,6 +141,8 @@ const TransactionsPageSkeleton = () => (
   </main>
 );
 
+export const TRANSACTION_PAGE_SIZE = 40;
+
 function Dashboard() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -155,6 +157,7 @@ function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [searchType, setSearchType] = useState("all");
+  const [visibleTransactionCount, setVisibleTransactionCount] = useState(TRANSACTION_PAGE_SIZE);
 
   const filteredDocs = useMemo(
     () => filterTransactions(docs || [], {
@@ -165,6 +168,17 @@ function Dashboard() {
     }),
     [docs, searchQuery, searchCategory, searchType, categories]
   );
+
+  // Only render the first batch of cards. Filtering, KPIs, Lita context and
+  // exports still use the complete result set; rendering thousands of rich
+  // cards on a route transition can freeze Android Chrome.
+  const visibleTransactions = useMemo(
+    () => filteredDocs.slice(0, visibleTransactionCount),
+    [filteredDocs, visibleTransactionCount]
+  );
+  useEffect(() => {
+    setVisibleTransactionCount(TRANSACTION_PAGE_SIZE);
+  }, [user?.uid, selectedFilter, searchQuery, searchCategory, searchType]);
 
   const hasActiveSearch = Boolean(searchQuery.trim() || searchCategory || searchType !== "all");
   const clearTransactionFilters = () => {
@@ -637,7 +651,7 @@ function Dashboard() {
               </div>
             ) : null}
 
-            {!isDataFetching && filteredDocs.map((doc) => {
+            {!isDataFetching && visibleTransactions.map((doc) => {
               return (
                 <div key={doc.id}>
                   <Card
@@ -681,6 +695,20 @@ function Dashboard() {
                 </div>
               );
             })}
+            {!isDataFetching && visibleTransactions.length < filteredDocs.length && (
+              <div className="mt-5 flex flex-col items-center gap-2 border-t border-slate-200 pt-4 dark:border-slate-700">
+                <p className="text-xs text-slate-500 dark:text-slate-400" role="status">
+                  Mostrando {visibleTransactions.length} de {filteredDocs.length} movimientos
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setVisibleTransactionCount((count) => count + TRANSACTION_PAGE_SIZE)}
+                  className="min-h-[44px] rounded-xl border border-purple-500/60 bg-purple-500/10 px-5 py-2 text-sm font-semibold text-purple-700 transition-colors hover:bg-purple-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:text-purple-300"
+                >
+                  Cargar más movimientos
+                </button>
+              </div>
+            )}
         </CollapsibleSection>
 
           </div>
