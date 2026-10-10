@@ -497,21 +497,14 @@ function Dashboard() {
             <Link to="/portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
             <button type="button" onClick={toggleDataVisibility} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
           </QuickAccessCard>
-          <div className="mb-4 flex justify-end">
-            <button type="button" onClick={() => setShowCategoryManager(true)} disabled={!categories}
-              className="inline-flex min-h-[44px] disabled:opacity-50 items-center gap-2 rounded-xl border border-purple-500/50 bg-purple-500/10 px-4 py-2 text-sm font-semibold text-purple-700 transition-colors hover:bg-purple-500/20 dark:text-purple-300"
-            >
-              <FaTags aria-hidden="true" /> Gestionar categorías
-            </button>
-          </div>
-          {!(isDataFetching && !docs) && (
-            <FinancialOverviewPanel
+          <FinancialOverviewPanel
               id="transactions-overview"
               collapsed={collapsedSections.overview}
               onToggle={() => toggleDashboardSection("overview")}
               title="Movimientos de un vistazo"
               description="Métricas y exportaciones de los movimientos de la vista actual."
               privacyHidden={!isDataVisible}
+              isLoading={isDataFetching || !docs || !categories}
               actions={[
                 { id: "excel", type: "excel", label: "Exportar Excel", onClick: () => exportTransactionsXlsx(filteredDocs, categories || []), disabled: isDataFetching || !filteredDocs.length },
                 { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
@@ -522,7 +515,6 @@ function Dashboard() {
                 { id: "due", icon: FaRegCalendarCheck, label: "Con vencimiento", value: isDataVisible ? overview.dueCount : "••" },
               ]}
             />
-          )}
           {isDataFetching && !docs ? (
             <PageDataSkeleton variant="transactions" />
           ) : (
@@ -597,6 +589,17 @@ function Dashboard() {
             </Link>
           }
         >
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCategoryManager(true)}
+                disabled={!categories}
+                aria-label="Gestionar categorías personales"
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-purple-400 hover:bg-purple-500/10 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:text-purple-300"
+              >
+                <FaTags size={12} aria-hidden="true" /> Gestionar categorías
+              </button>
+            </div>
             <SearchBar
               query={searchQuery}
               onQueryChange={setSearchQuery}
