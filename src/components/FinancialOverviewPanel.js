@@ -1,0 +1,84 @@
+import React from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { FaArrowDown, FaFileExcel, FaRegCopy } from 'react-icons/fa';
+
+const actionIcons = { excel: FaFileExcel, markdown: FaRegCopy };
+const itemMotion = (reduceMotion, index) => reduceMotion
+  ? { initial: false, animate: { opacity: 1 }, transition: { duration: 0 } }
+  : {
+      initial: { opacity: 0, y: 5 },
+      animate: { opacity: 1, y: 0 },
+      transition: { duration: 0.19, delay: Math.min(index, 4) * 0.035, ease: 'easeOut' },
+    };
+
+export default function FinancialOverviewPanel({
+  title, eyebrow = 'Herramientas y métricas', description,
+  metrics = [], actions = [], privacyHidden = false,
+}) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <section
+      aria-label={title}
+      className='mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800'
+    >
+      <div className='border-b border-slate-200 px-4 pb-4 pt-4 sm:px-5 dark:border-slate-700/80'>
+        <div className='mb-3'>
+          <p className='text-[10px] font-extrabold uppercase tracking-[0.14em] text-violet-700 dark:text-violet-300'>
+            {eyebrow}
+          </p>
+          <h2 className='mt-1 text-base font-extrabold text-slate-900 dark:text-white sm:text-lg'>{title}</h2>
+          {description && <p className='mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400'>{description}</p>}
+        </div>
+        <div className='grid grid-cols-2 gap-2 sm:max-w-md'>
+          {actions.map((action, index) => {
+            const Icon = actionIcons[action.type] || FaArrowDown;
+            return (
+              <motion.button
+                key={action.id}
+                type='button'
+                onClick={action.onClick}
+                disabled={action.disabled}
+                title={action.title || action.label}
+                aria-label={action.label}
+                {...itemMotion(reduceMotion, index)}
+                whileTap={reduceMotion ? undefined : { scale: 0.975 }}
+                whileHover={reduceMotion ? undefined : { y: -1 }}
+                className='group flex min-w-0 items-center gap-2.5 rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 text-left text-sm font-semibold text-slate-900 transition-colors hover:border-violet-400 hover:bg-violet-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900/40 dark:text-white dark:hover:border-violet-400/70'
+              >
+                <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-violet-700 dark:text-violet-300'>
+                  <Icon size={15} aria-hidden='true' />
+                </span>
+                <span className='min-w-0 truncate'>{action.label}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+        <p className='mt-2 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400'>
+          {privacyHidden
+            ? 'Los archivos y el Markdown incluyen los importes reales, aunque estén ocultos en pantalla.'
+            : 'Excel para descargar · Markdown para copiar y analizar con Lita.'}
+        </p>
+      </div>
+      <div className='grid grid-cols-3 gap-2 p-3 sm:gap-3 sm:p-4'>
+        {metrics.map((metric, index) => {
+          const Icon = metric.icon;
+          return (
+            <motion.div
+              key={metric.id}
+              {...itemMotion(reduceMotion, index + actions.length)}
+              className='min-w-0 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 sm:px-4 sm:py-4 dark:border-slate-700/90 dark:bg-slate-900/50'
+            >
+              <span className='mb-3 flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10 text-violet-700 dark:text-violet-300'>
+                {Icon && <Icon size={15} aria-hidden='true' />}
+              </span>
+              <p className='truncate text-xl font-extrabold tabular-nums tracking-tight text-slate-950 sm:text-2xl dark:text-white' title={String(metric.value)}>
+                {metric.value}
+              </p>
+              <p className='mt-1 text-[11px] leading-tight text-slate-600 sm:text-xs dark:text-slate-400'>{metric.label}</p>
+            </motion.div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
