@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { FaChevronDown, FaCopy, FaPencilAlt, FaTrashAlt } from 'react-icons/fa';
+import { FaCopy, FaPencilAlt, FaTrashAlt } from 'react-icons/fa';
+import { CollapsibleChevron, CollapsibleHeading } from '../components/CollapsibleHeading';
 import { deletePortfolioSnapshot, registerReconciliationTransaction, savePortfolioReconciliation, subscribePortfolioPositions, subscribePortfolioReconciliations, subscribePortfolioSnapshots, updatePortfolioSnapshot } from '../services/portfolioService';
 import AppFooter from '../components/AppFooter';
 import PortfolioHistoryModal from '../components/PortfolioHistoryModal';
@@ -19,8 +20,8 @@ const startOf = (date, mode) => {
 const DetailSection = ({ id, title, subtitle, open, onToggle, children }) => (
 	<section className='mt-5 rounded-2xl border dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden'>
 		<button type='button' onClick={onToggle} aria-expanded={open} aria-controls={id} className='w-full p-5 flex items-center justify-between gap-4 text-left'>
-			<div className='min-w-0'><h2 className='text-xl font-bold'>{title}</h2>{subtitle && <p className='text-sm text-gray-500 mt-1'>{subtitle}</p>}</div>
-			<FaChevronDown className={`shrink-0 text-purple-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} aria-hidden='true' />
+			<CollapsibleHeading title={title} description={subtitle} />
+			<CollapsibleChevron expanded={open} />
 		</button>
 		{open && <div id={id} className='px-5 pb-5'>{children}</div>}
 	</section>
