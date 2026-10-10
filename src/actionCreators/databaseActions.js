@@ -229,7 +229,7 @@ export const getDataAction = (userId) => {
 	const currentYear = moment().year();
 
 	return (dispatch) => {
-		firestore
+		return firestore
 			.collection('users')
 			.doc(userId)
 			.collection('expenses')
@@ -255,6 +255,9 @@ export const getDataAction = (userId) => {
 			.onSnapshot((res) => {
 				const data = res.docs.map((d) => ({ id: d.id, ...d.data() }));
 				dispatch({ type: 'GOT_DATA', data });
+			}, (error) => {
+				console.error('No se pudieron consultar los movimientos del período', error);
+				dispatch({ type: 'SET_FETCHING', isDataFetching: false });
 			});
 	};
 };
