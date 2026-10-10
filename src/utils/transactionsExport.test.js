@@ -134,3 +134,24 @@ test('preserves XML-special characters and prevents cell formula injection', () 
   expect(xml).toContain('=HYPERLINK(&quot;bad&quot;) &amp; &lt;script&gt;');
   expect(xml).not.toContain('<f>');
 });
+
+test('new mobile Excel exports are versioned and include the filtered record count', () => {
+  exportWorkbookXlsx.mockClear();
+  const { filename, count } = exportTransactionsXlsx(docs.slice(0, 2), categories, {
+    period: 'month', periodLabel: 'octubre 2026', query: 'tarjeta',
+  });
+  expect(count).toBe(2);
+  expect(filename).toMatch(/^transacciones-ltc-v2-\d{4}-\d{2}-\d{2}-\d{9}-2-movimientos\.xlsx$/);
+  expect(exportWorkbookXlsx).toHaveBeenCalledTimes(1);
+  const [sheets, receivedName] = exportWorkbookXlsx.mock.calls[0];
+  expect(receivedName).toBe(filename);
+  expect(sheets.Movimientos).toHaveLength(3);
+  expect(sheets['Filtros aplicados']).toContainEqual(['Versión del exportador', 'XLSX v2 — tres hojas']);
+  expect(sheets['Filtros aplicados']).toContainEqual(['Movimientos exportados', 2]);
+});
+
+test('empty filtered data must not silently download a header-only workbook', () => {
+  exportWorkbookXlsx.mockClear();
+  expect(() => exportTransactionsXlsx([], categories)).toThrow('No hay movimientos para exportar');
+  expect(exportWorkbookXlsx).not.toHaveBeenCalled();
+});
