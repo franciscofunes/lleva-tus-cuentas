@@ -36,7 +36,7 @@ export const validateCategoryExtraFields = (ids) => {
 
 // Validates a single controlled option; no user-defined field identifiers or arbitrary JSON.
 const isCalendarDate = (value) => {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 };
@@ -53,7 +53,7 @@ export const sanitizeTransactionCustomDetails = (input, allowedIds) => {
     const value = raw.trim();
     if (!value) continue;
     const field = BY_ID[id];
-    if (field.type === 'text' && (value.length > field.maxLength || /[\\r\\n<>]/.test(value)))
+    if (field.type === 'text' && (value.length > field.maxLength || /[\r\n<>]/.test(value)))
       throw new Error(`Valor inválido para ${field.label}.`);
     if (field.type === 'date' && !isCalendarDate(value))
       throw new Error(`Fecha inválida para ${field.label}.`);
