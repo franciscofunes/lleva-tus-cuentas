@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { getPopoverMotion, getPopoverTap } from '../shared/animations/popoverMotion';
+import { getPopoverMotion, getPopoverTap, popoverTapTransition } from '../shared/animations/popoverMotion';
 import React, { useEffect, useRef, useState } from 'react';
 import { FaPlus, FaRobot } from 'react-icons/fa';
 
@@ -117,7 +117,7 @@ const FloatingMenu = ({
 						aria-controls='ltc-floating-actions'
 						className='inline-flex h-[50px] w-[50px] items-center justify-center rounded-2xl border border-purple-500 bg-purple-600 text-white shadow-lg shadow-purple-950/20 backdrop-blur transition-colors hover:bg-purple-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 dark:border-purple-500 dark:bg-purple-600 dark:hover:bg-purple-500'
 						whileTap={getPopoverTap(prefersReducedMotion)}
-						transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+						transition={popoverTapTransition}
 					>
 						<motion.span
 							animate={{ rotate: isOpen ? 45 : 0 }}
