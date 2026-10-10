@@ -134,7 +134,7 @@ export const updateDataAction = (data, docId) => {
 				expenseName: data.name,
 				comment: data.comment,
 				category: data.category,
-				customDetails: safeCustomDetails(data),
+				...(Object.keys(safeCustomDetails(data)).length ? { customDetails: safeCustomDetails(data) } : {}),
 				...(data?.amount && {
 					amount: data?.amount,
 				}),
