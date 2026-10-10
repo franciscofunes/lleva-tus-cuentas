@@ -2,6 +2,7 @@ import moment from 'moment';
 import { toast } from 'react-toastify';
 import { firestore } from '../shared/config/firebase/firebase.config';
 import { mergeCategories } from '../utils/customCategories';
+import { sanitizeTransactionCustomDetails } from '../utils/categoryExtraFields';
 import { getNotificationSettings, resolveTransactionDueDate } from '../utils/transactionDueDates';
 import {
 	CREATE_SUBSCRIPTION_SUCCESS_MESSAGE,
@@ -65,6 +66,11 @@ const removeExpenseNotification = async (userRef, sourceId) => {
 	}
 };
 
+// Independently validate extra keys at the persistence boundary.
+const safeCustomDetails = (data) => sanitizeTransactionCustomDetails(
+  data?.customDetails || {}, Object.keys(data?.customDetails || {})
+);
+
 export const storeDataAction = (data) => {
 	return async (dispatch) => {
 		const userRef = firestore.collection('users').doc(data.userId);
@@ -76,6 +82,7 @@ export const storeDataAction = (data) => {
 				expenseName: data.name,
 				comment: data.comment,
 				category: data.category,
+				...(Object.keys(safeCustomDetails(data)).length ? { customDetails: safeCustomDetails(data) } : {}),
 				...(data?.amount && {
 					amount: data?.amount,
 				}),
@@ -127,6 +134,9 @@ export const updateDataAction = (data, docId) => {
 				expenseName: data.name,
 				comment: data.comment,
 				category: data.category,
+				...(Object.keys(safeCustomDetails(data)).length
+					? { customDetails: safeCustomDetails(data) }
+					: data.clearCustomDetails ? { customDetails: {} } : {}),
 				...(data?.amount && {
 					amount: data?.amount,
 				}),
