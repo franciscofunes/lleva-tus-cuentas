@@ -151,6 +151,7 @@ function Dashboard() {
   const isFetching = useSelector((state) => state.auth.isFetching);
   const isDataFetching = useSelector((state) => state.database.isDataFetching);
   const docs = useSelector((state) => state.database.docs);
+  const dataError = useSelector((state) => state.database.dataError);
   const categories = useSelector((state) => state.database.categories);
   const selectedFilter = useSelector((state) => state.database.selectedFilter);
   const [searchQuery, setSearchQuery] = useState("");
@@ -303,10 +304,9 @@ function Dashboard() {
   }, [user?.uid, dispatch]);
 
   useEffect(() => {
-    if (user) {
-      dispatch(getDataAction(user.uid));
-    }
-  }, [user, dispatch]);
+    if (!user?.uid) return undefined;
+    return dispatch(getDataAction(user.uid));
+  }, [user?.uid, dispatch]);
 
   useEffect(() => {
     if (user) {
@@ -498,6 +498,11 @@ function Dashboard() {
             <Link to="/portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
             <button type="button" onClick={toggleDataVisibility} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
           </QuickAccessCard>
+          {dataError && (
+            <div role="alert" className="mb-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-950/30 dark:text-red-200">
+              {dataError} Revisá tu conexión y volvé a ingresar a Transacciones.
+            </div>
+          )}
           <FinancialOverviewPanel
               id="transactions-overview"
               collapsed={collapsedSections.overview}
