@@ -28,3 +28,22 @@ export const buildPortfolioLlmMarkdown=(positions,snapshots)=>{
  return l.join('\n');
 };
 export const downloadPortfolioMarkdown=(positions,snapshots)=>download(new Blob([buildPortfolioLlmMarkdown(positions,snapshots)],{type:'text/markdown;charset=utf-8'}),`portfolio-research-prompt-${new Date().toISOString().slice(0,10)}.md`);
+
+
+// Reuse the existing dependency-free XLSX writer for the Transactions export.
+// Strings use inlineStr cells, so descriptions remain literal text, not formulas.
+export const exportWorkbookXlsx = (sheets, filename) => {
+ const entries = Object.entries(sheets);
+ if (!entries.length) throw new Error('No hay datos para exportar');
+ const types = entries.map(([, rows], i) => `<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('');
+ const sheetsXml = entries.map(([name], i) => `<sheet name="${esc(name.slice(0,31))}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('');
+ const rels = entries.map(([, rows], i) => `<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('');
+ const files = {
+  '[Content_Types].xml': `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${types}</Types>`,
+  '_rels/.rels': '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>',
+  'xl/workbook.xml': `<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheetsXml}</sheets></workbook>`,
+  'xl/_rels/workbook.xml.rels': `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}</Relationships>`,
+ };
+ entries.forEach(([, rows], i) => { files[`xl/worksheets/sheet${i+1}.xml`] = sheet(rows); });
+ download(new Blob([zip(files)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename);
+};
