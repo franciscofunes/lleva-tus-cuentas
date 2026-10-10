@@ -20,11 +20,90 @@ export const exportPortfolioXlsx=(positions,snapshots)=>{
  download(new Blob([zip(files)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`portfolio-${new Date().toISOString().slice(0,10)}.xlsx`);
 };
 
-export const buildPortfolioLlmMarkdown=(positions,snapshots)=>{
- const totals=positions.reduce((a,p)=>{a[p.currency]=(a[p.currency]||0)+Number(p.balance||0);return a;},{});
- const l=['# Portfolio LTC — contexto para análisis LLM','',`Generado: ${new Date().toISOString()}`,'','## Reglas para el análisis','- No inventes datos faltantes ni tasas actuales.','- No mezcles monedas sin un tipo de cambio explícito.','- Diferencia cambios de saldo de ganancias de inversión.', '- Un retiro baja el saldo invertido pero NO la tasa ni las ganancias acumuladas. Nunca lo describas como pérdida.', '- Transferir dinero entre cuentas remuneradas es movimiento de capital: no demuestra que haya bajado la tasa.', '- Ganado informado proviene de datos cargados por el usuario, NO equivale a rendimientos auditados.', '- Las verificaciones sin clasificar NO son ganancias. Movimientos de retiro y aporte también pueden contener intereses si se combinaron operaciones.', '- Una venta de USD es una conversión de activos: NO la vuelvas a contar como gasto de tarjeta si el resumen ya está registrado.', '- No infieras cambios de annualRate por variaciones del saldo; contrastá tasas publicadas y fechas de vigencia.','- Señala concentración, liquidez, vencimientos, tasas posiblemente desactualizadas y fuentes sin verificar.','- Trata simulaciones como escenarios, no como rendimiento garantizado.','- Propón verificaciones concretas antes de recomendar movimientos.','','## Totales por moneda',...Object.entries(totals).map(([k,v])=>`- ${k}: ${v}`),'','## Posiciones'];
- positions.forEach(p=>{const audit=auditPortfolioEarnings(p,snapshots); l.push('',`### ${p.institution} — ${p.name}`,`- Categoría: ${p.category}`,`- Moneda: ${p.currency}`,`- Saldo: ${p.balance}`,`- Tasa cargada: ${p.annualRate||'N/D'}% ${p.rateType||''}`,`- Liquidez: ${p.liquidity||'N/D'}`,`- Ganancias acumuladas cargadas (no auditadas): ${audit.reportedEarnings??'N/D'}`,`- Fuente oficial: ${p.sourceUrl||p.infoUrl||'N/D'}`,`- Fuente verificada: ${p.sourceCheckedAt||'N/D'}`,`- Verificaciones almacenadas: ${audit.snapshotCount}`,`- Clasificación histórica de movimientos: ${JSON.stringify(audit.classifications)}`,`- Retiros clasificados (variación de saldo, no ganancia): ${audit.recordedWithdrawals}`,`- Aportes clasificados (variación de saldo, no ganancia): ${audit.recordedDeposits}`,`- Rendimientos etiquetados por usuario: ${audit.userTaggedEarnings}`,`- Estado de revisión: ${audit.needsReview?'Revisar registros':'No auditado externamente'}`,`- Interpretación: ${audit.note}`);if(p.category==='FCI')l.push(`- Rendimientos mensuales: ${JSON.stringify(p.monthlyReturns||{})}`,`- YTD publicado: ${p.publishedYtdReturn??'N/D'}`);});
- l.push('','## Historial',`Registros de verificación: ${snapshots.length}`,'','## Pedido de investigación y análisis','Analizá este portfolio completo y, si tenés acceso a Internet, investigá CADA activo individualmente. Priorizá la web oficial, centro de ayuda, documentación o ficha oficial de la institución/plataforma/fondo. Para cada activo verificá tasa o rendimiento vigente, tipo de tasa, método/base de cálculo, acreditación, liquidez o rescate, límites, mínimos, comisiones y condiciones relevantes. Para FCI verificá además NAV/cuota y fecha, rendimientos mensuales/YTD/1 año disponibles, rescate y mínimo. Compará cada dato oficial con LTC y señalá coincidencias, diferencias y datos no verificables. Citá URL y fecha de consulta para cada dato investigado. No uses una tasa histórica como vigente. Si fuentes se contradicen, explicalo y preferí la fuente oficial más específica y reciente.','','## Entregable','1. Resumen ejecutivo.','2. Comparación por activo: dato LTC vs dato oficial vigente, diferencia, fuente y fecha.','3. Riesgos de concentración, moneda, liquidez, vencimientos, tasa y contraparte/plataforma.','4. Oportunidades y verificaciones pendientes, separando hechos de interpretación.','5. Datos faltantes/desactualizados priorizados.','6. Al final generá un bloque Markdown LTC Asset Update POR ACTIVO solamente con campos nuevos o que deban cambiar. No incluyas campos no verificados.','','## Formato LTC Asset Update','Cada bloque debe usar líneas campo: valor. Incluí institution y name para identificar el activo. Campos permitidos cuando estén verificados: annualRate, rateType, liquidity, infoUrl, sourceUrl, sourceCheckedAt, rateVerifiedAt, interestCalculationBasis, interestAccrual, maxInterestBearingBalance, ticker, nav, navDate, redemptionPeriod, minimumInvestment, performance1D, performance1W, performance1M, performanceYTD, performance1Y, publishedYtdReturn. sourceCheckedAt y rateVerifiedAt deben usar YYYY-MM-DD.','','Importante: el objetivo del bloque final es pegarlo directamente en el importador selectivo de LTC, que mostrará un diff antes de aplicar cambios.');
+// Copy-ready financial context for LITA (no live Internet or investment writes).
+// Keep the established headings so LITA's server-side finance scope validator
+// recognizes complete reports, even when they exceed 1,500 characters.
+export const buildPortfolioLlmMarkdown=(positions=[],snapshots=[])=>{
+ const allPositions=Array.isArray(positions)?positions:[];
+ const allSnapshots=Array.isArray(snapshots)?snapshots:[];
+ const clean=(value)=>String(value??'N/D').replace(/[\r\n|]+/g,' ').trim()||'N/D';
+ const totals=allPositions.reduce((acc,p)=>{
+   const balance=Number(p.balance);
+   if(!Number.isFinite(balance))return acc;
+   const currency=clean(p.currency);
+   acc[currency]=(acc[currency]||0)+balance;
+   return acc;
+ },{});
+ const l=[
+  '# Portfolio LTC — contexto para análisis LLM',
+  '',
+  `Generado: ${new Date().toISOString()}`,
+  'Idioma solicitado: ESPAÑOL (Argentina). Responder siempre en español, aunque el siguiente mensaje sea "Okay", "Dale" o "I approve".',
+  '',
+  '## Reglas para el análisis',
+  '- Actuá como asistente financiero de LTC. Entregá directamente resultados, no describas cómo pensás resolver la consulta ni muestres planes internos.',
+  '- Analizá exclusivamente los datos adjuntos: LITA no puede navegar por Internet ni verificar tasas bancarias vigentes en tiempo real.',
+  '- No afirmes haber visitado URLs ni inventes tasas, precios, rendimientos, fechas, fuentes verificadas o movimientos faltantes.',
+  '- No mezcles monedas sin tipo de cambio explícito y no trates las conversiones USD/ARS como ganancias o gastos.',
+  '- Diferenciá movimientos de capital, intereses acreditados, valuación de activos y tasas publicadas.',
+  '- Un retiro baja el saldo invertido pero NO la tasa ni las ganancias acumuladas. Nunca lo describas como pérdida.',
+  '- Transferir dinero entre cuentas remuneradas no demuestra que haya bajado la tasa.',
+  '- Ganado informado proviene de datos cargados por el usuario, NO equivale a rendimientos auditados.',
+  '- Las verificaciones sin clasificar NO son ganancias; un movimiento de capital puede coexistir con intereses.',
+  '- Una venta de USD es una conversión de activos: NO la vuelvas a contar como gasto de tarjeta si el resumen ya está registrado.',
+  '- Los saldos y las tasas son registros del usuario; una URL guardada NO prueba que la tasa sea actual.',
+  '- Señalá concentración, liquidez, vencimientos, datos pendientes y posibles desactualizaciones sin alarmismo.',
+  '- Las simulaciones no garantizan rendimiento. No ordenes movimientos de fondos ni guardes cambios en LTC.',
+  '',
+  '## Totales por moneda',
+  ...Object.entries(totals).map(([currency,balance])=>`- ${currency}: ${balance}`),
+  '',
+  '## Posiciones'
+ ];
+ allPositions.forEach(p=>{
+   const audit=auditPortfolioEarnings(p,allSnapshots);
+   l.push(
+     '',
+     `### ${clean(p.institution)} — ${clean(p.name)}`,
+     `- Categoría: ${clean(p.category)}`,
+     `- Moneda: ${clean(p.currency)}`,
+     `- Saldo: ${clean(p.balance)}`,
+     `- Tasa cargada: ${p.annualRate??'N/D'}% ${clean(p.rateType||'')}`,
+     `- Liquidez: ${clean(p.liquidity)}`,
+     `- Ganancias acumuladas cargadas (no auditadas): ${audit.reportedEarnings??'N/D'}`,
+     `- Fuente oficial registrada (no consultada): ${clean(p.sourceUrl||p.infoUrl)}`,
+     `- Fuente verificada en LTC (no implica validación actual): ${clean(p.sourceCheckedAt)}`,
+     `- Verificaciones almacenadas: ${audit.snapshotCount}`,
+     `- Clasificación histórica de movimientos: ${JSON.stringify(audit.classifications)}`,
+     `- Retiros clasificados (variación de saldo, no ganancia): ${audit.recordedWithdrawals}`,
+     `- Aportes clasificados (variación de saldo, no ganancia): ${audit.recordedDeposits}`,
+     `- Rendimientos etiquetados por usuario: ${audit.userTaggedEarnings}`,
+     `- Estado de revisión: ${audit.needsReview?'Revisar registros':'No auditado externamente'}`,
+     `- Interpretación: ${clean(audit.note)}`
+   );
+   if(p.category==='FCI')l.push(
+     `- Rendimientos mensuales informados: ${JSON.stringify(p.monthlyReturns||{})}`,
+     `- YTD publicado registrado: ${p.publishedYtdReturn??'N/D'}`
+   );
+ });
+ l.push(
+  '',
+  '## Historial',
+  `Registros de verificación: ${allSnapshots.length}`,
+  '',
+  '## Pedido de investigación y análisis',
+  'Realizá AHORA un análisis financiero útil del portfolio registrado arriba, sin investigación web. Respondé íntegramente en español argentino.',
+  '1. Resumen de hasta cinco conclusiones basadas en los datos; aclarar cantidades y moneda.',
+  '2. Para CADA activo, comentá brevemente saldo, tasa registrada (NO tasa vigente comprobada), liquidez, ganancias cargadas y observaciones importantes.',
+  '3. Señalá riesgos de concentración, vencimientos, tasas no verificadas y registros de ganancias/retiros que requieren revisión.',
+  '4. Indicá hasta cinco verificaciones prioritarias que puedo hacer en LTC o con documentación bancaria oficial.',
+  '5. No generes bloques LTC Asset Update si no hay valores nuevos comprobados en los datos aportados. No fabriques fechas de verificación ni campos sin evidencia.',
+  'Si después te pido continuar o te digo que apruebo el análisis, retomá esta consulta financiera; no pidas que vuelva a pegar el informe.',
+  'Formato: Markdown claro con subtítulos y viñetas breves. Nada de pensamiento interno, listas de planificación en inglés ni tablas incompletas.',
+  '',
+  '## Formato LTC Asset Update',
+  'Solo cuando te aporte un dato verificable nuevo, podés proponer un bloque LTC Asset Update usando institution y name más los campos respaldados. Nunca apliques cambios de forma automática.'
+ );
  return l.join('\n');
 };
 export const downloadPortfolioMarkdown=(positions,snapshots)=>download(new Blob([buildPortfolioLlmMarkdown(positions,snapshots)],{type:'text/markdown;charset=utf-8'}),`portfolio-research-prompt-${new Date().toISOString().slice(0,10)}.md`);
