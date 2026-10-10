@@ -13,6 +13,7 @@ import {
 import InfoTooltip from "../components/InfoTooltip";
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from "../shared/constants/tooltip-messages.const";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
+import { categoriesForNewTransactions } from "../utils/customCategories";
 import { parseTransactionsMarkdown } from "../utils/transactionsMarkdown";
 import {
   getNotificationSettings,
@@ -51,6 +52,7 @@ const TransactionForm = ({
   edit,
   setEdit,
   categories,
+  onManageCategories,
   setIsOpen,
 }) => {
   const dispatch = useDispatch();
@@ -245,13 +247,19 @@ const TransactionForm = ({
           </p>
         )}
 
-        <div className="flex flex-row">
+        <div className="flex flex-row items-center justify-between gap-2">
           <label
             htmlFor="category"
             className="text-sm font-medium text-gray-700 dark:text-white"
           >
             Categoría <InfoTooltip content={CATEGORY_INFO_TOOLTIP_MESSAGE} />
           </label>
+          {onManageCategories && (
+            <button type="button" onClick={onManageCategories} disabled={!categories}
+              className="rounded-lg disabled:opacity-50 px-2 py-1 text-xs font-bold text-purple-600 hover:bg-purple-500/10 dark:text-purple-300">
+              + Personalizar
+            </button>
+          )}
         </div>
         <select
           className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
@@ -282,8 +290,8 @@ const TransactionForm = ({
         >
           <option className="dark:text-white">Elegí una categoría</option>
           <optgroup label="Gastos">
-            {categories
-              ?.filter((category) => category.isExpense)
+            {categoriesForNewTransactions(categories, category)
+              .filter((entry) => entry.isExpense)
               .map((category) => {
                 return (
                   <option key={category.id}>
@@ -293,8 +301,8 @@ const TransactionForm = ({
               })}
           </optgroup>
           <optgroup label="Ingresos">
-            {categories
-              ?.filter((category) => !category.isExpense)
+            {categoriesForNewTransactions(categories, category)
+              .filter((entry) => !entry.isExpense)
               .map((category) => {
                 return (
                   <option key={category.id}>
