@@ -54,6 +54,7 @@ export const buildTransactionsExportSheets = (docs = [], categories = [], filter
     ],
     'Filtros aplicados': [
       ['Criterio', 'Valor'],
+      ['Versión del exportador', 'XLSX v2 — tres hojas'],
       ['Período', safeText(filters.periodLabel || filters.period || 'Vista actual')],
       ['Tipo de período', safeText(filters.period || 'Vista actual')],
       ['Búsqueda', safeText(filters.query) || 'Sin búsqueda'],
@@ -106,6 +107,13 @@ export const buildTransactionsLitaMarkdown = (docs = [], categories = [], now = 
 };
 
 export const exportTransactionsXlsx = (docs = [], categories = [], filters = {}) => {
-  exportWorkbookXlsx(buildTransactionsExportSheets(docs, categories, filters),
-    `transacciones-ltc-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  const count = Array.isArray(docs) ? docs.length : 0;
+  if (!count) throw new Error('No hay movimientos para exportar con los filtros actuales.');
+  // Un nombre distinto permite identificar la versión nueva frente a los
+  // XLSX viejos que Android conserva con el mismo nombre.
+  const now = new Date().toISOString();
+  const suffix = now.slice(11, 23).replace(/[:.]/g, '');
+  const filename = `transacciones-ltc-v2-${now.slice(0, 10)}-${suffix}-${count}-movimientos.xlsx`;
+  exportWorkbookXlsx(buildTransactionsExportSheets(docs, categories, filters), filename);
+  return { filename, count };
 };
