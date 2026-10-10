@@ -20,3 +20,10 @@ test('portfolio loader shares neutral colors, cards, and reduced motion support'
   // No fake zero balances or placeholder prices appear before Firestore responds.
   expect(container.textContent).not.toContain('$0');
 });
+
+test('portfolio initial load does not duplicate the overview KPI cards', () => {
+  const { container } = render(<PageDataSkeleton variant='portfolio' includeOverview={false} />);
+  expect(screen.getByRole('status', { name: 'Cargando portfolio' })).toBeInTheDocument();
+  // Summary, chart and positions placeholders; overview has its own KPI skeletons.
+  expect(container.querySelectorAll('section')).toHaveLength(3);
+});
