@@ -469,6 +469,25 @@ function Dashboard() {
     setIsOpen(true);
   };
 
+  const downloadFilteredTransactions = () => {
+    if (isDataFetching || isFilterChanging || !filteredDocs.length) return;
+    try {
+      const { count } = exportTransactionsXlsx(filteredDocs, categories || [], {
+        period: selectedFilter,
+        periodLabel: selectedPeriodInfo?.key === selectedFilter
+          ? selectedPeriodInfo.label
+          : describeSelectedPeriod(selectedFilter, new Date()),
+        query: searchQuery,
+        category: searchCategory,
+        type: searchType,
+      });
+      toast.success(`Excel v2 generado: ${count} movimientos y 3 hojas. Abrí el archivo nuevo, no el anterior.`);
+    } catch (error) {
+      console.error('[ltc-excel] No se pudo exportar el archivo', error);
+      toast.error('No se pudo generar el Excel. Volvé a intentarlo.');
+    }
+  };
+
   const copyTransactionsForLita = async () => {
     if (!filteredDocs?.length) return;
     try {
@@ -524,15 +543,7 @@ function Dashboard() {
               privacyHidden={!isDataVisible}
               isLoading={isDataFetching || !docs || !categories}
               actions={[
-                { id: "excel", type: "excel", label: "Exportar Excel", onClick: () => exportTransactionsXlsx(filteredDocs, categories || [], {
-                  period: selectedFilter,
-                  periodLabel: selectedPeriodInfo?.key === selectedFilter
-                    ? selectedPeriodInfo.label
-                    : describeSelectedPeriod(selectedFilter, new Date()),
-                  query: searchQuery,
-                  category: searchCategory,
-                  type: searchType,
-                }), disabled: isDataFetching || isFilterChanging || !filteredDocs.length },
+                { id: "excel", type: "excel", label: "Exportar Excel", onClick: downloadFilteredTransactions, disabled: isDataFetching || isFilterChanging || !filteredDocs.length },
                 { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
               ]}
               metrics={[
