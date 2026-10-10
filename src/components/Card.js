@@ -43,6 +43,10 @@ function Card({
 	openModal,
 }) {
 	const dispatch = useDispatch();
+	// Historical imports may omit a category while Firestore categories are still loading.
+	const safeCategory = typeof category === 'string' ? category : '';
+	const safeCategories = Array.isArray(categories) ? safeCategories.filter(Boolean) : [];
+	const isExpense = safeCategories.some((entry) => entry?.isExpense && entry.name === safeCategory);
 	const selectedDateIsDueDate = usesSelectedDateAsDueDate(category, categories);
 	const isPaidBill = paymentStatus === 'paid';
 	const paidAtDate =
@@ -61,16 +65,16 @@ function Card({
 		setName(name);
 		setAmount(amount);
 		setComment(comment);
-		setCategory(category);
+		setCategory(safeCategory);
 		setSelectedDate(selectedDate);
 		setSelectedCloseDate(selectedCloseDate);
 		setSelectedExpirationDate(selectedExpirationDate);
 		setCurrencyQuantity(currencyQuantity);
 		setCurrencyExchangeRate(currencyExchangeRate);
-		setIsCreditCardCategory(category?.includes('Resumen tarjeta'));
-		setIsBuyCurrenciesCategory(category?.includes('Compra divisas'));
-		setIsCurrencyIncomeCategory(category?.includes(INGRESO_DIVISAS_CATEGORY));
-		setIsSellCurrenciesCategory(category?.includes('Venta divisas'));
+		setIsCreditCardCategory(safeCategory.includes('Resumen tarjeta'));
+		setIsBuyCurrenciesCategory(safeCategory.includes('Compra divisas'));
+		setIsCurrencyIncomeCategory(safeCategory.includes(INGRESO_DIVISAS_CATEGORY));
+		setIsSellCurrenciesCategory(safeCategory.includes('Venta divisas'));
 		setExpenseId(id);
 		setEdit(true);
 	};
@@ -100,17 +104,17 @@ function Card({
 						<span className='text-indigo-600 dark:text-indigo-300'>
 							Categoría:{' '}
 						</span>
-						{category}{' '}
+						{safeCategory || 'Sin categoría'}{' '}
 						<InfoTooltip
 							placement={'top'}
-							content={categories
+							content={safeCategories
 								.filter((c) => c.name === category)
 								.map((c) => c?.description)}
 						/>
 					</p>
 				</div>
 
-				{category.includes('Resumen tarjeta') && (
+				{safeCategory.includes('Resumen tarjeta') && (
 					<>
 						<p className='font-semibold text-base text-gray-400 ml-2'>
 							<span className='text-indigo-600 dark:text-indigo-300'>
@@ -127,7 +131,7 @@ function Card({
 					</>
 				)}
 
-				{category.includes('Compra divisas') && (
+				{safeCategory.includes('Compra divisas') && (
 					<>
 						<p className='font-semibold text-base text-gray-400 ml-2'>
 							<span className='text-indigo-600 dark:text-indigo-300'>
@@ -164,22 +168,16 @@ function Card({
 				<div className='flex flex-row gap-x-2 lg:justify-between items-stretch'>
 					<h1
 						className={`font-Nunito font-medium text-lg ${
-							categories
-								?.filter((c) => c.isExpense)
-								.map((c) => c.name)
-								.includes(category)
+							isExpense
 								? `text-red-500`
 								: `text-green-500`
 						}`}
 					>
-						{category.includes(INGRESO_DIVISAS_CATEGORY)
+						{safeCategory.includes(INGRESO_DIVISAS_CATEGORY)
 							? `$USD ${currencyQuantity}`
 							: `$AR 
 						${
-							categories
-								.filter((c) => c.isExpense)
-								.map((c) => c.name)
-								.includes(category)
+							isExpense
 								? `-${parseFloat(amount)?.toLocaleString()}`
 								: `+${parseFloat(amount)?.toLocaleString()}`
 						}
@@ -218,7 +216,7 @@ function Card({
 					</svg>
 				</div>
 			</div>
-			{category?.includes('Resumen tarjeta') && <CardStatementDetails expenseId={id} />}
+			{safeCategory.includes('Resumen tarjeta') && <CardStatementDetails expenseId={id} />}
 		</motion.div>
 	);
 }
