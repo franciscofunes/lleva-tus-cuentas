@@ -154,6 +154,8 @@ function Dashboard() {
   const docs = useSelector((state) => state.database.docs);
   const categories = useSelector((state) => state.database.categories);
   const selectedFilter = useSelector((state) => state.database.selectedFilter);
+  const isFilterChanging = useSelector((state) => state.database.isFilterChanging);
+  const [selectedPeriodLabel, setSelectedPeriodLabel] = useState("Período seleccionado");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [searchType, setSearchType] = useState("all");
@@ -522,7 +524,13 @@ function Dashboard() {
               privacyHidden={!isDataVisible}
               isLoading={isDataFetching || !docs || !categories}
               actions={[
-                { id: "excel", type: "excel", label: "Exportar Excel", onClick: () => exportTransactionsXlsx(filteredDocs, categories || []), disabled: isDataFetching || !filteredDocs.length },
+                { id: "excel", type: "excel", label: "Exportar Excel", onClick: () => exportTransactionsXlsx(filteredDocs, categories || [], {
+                  period: selectedFilter,
+                  periodLabel: selectedPeriodLabel,
+                  query: searchQuery,
+                  category: searchCategory,
+                  type: searchType,
+                }), disabled: isDataFetching || isFilterChanging || !filteredDocs.length },
                 { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
               ]}
               metrics={[
@@ -548,7 +556,7 @@ function Dashboard() {
             onToggle={() => toggleDashboardSection("summary")}
             className="mb-5 font-Nunito"
           >
-            <ExpenseFilter />
+            <ExpenseFilter onPeriodChange={setSelectedPeriodLabel} />
             <BimonetarySummary
               docs={docs}
               categories={categories}
