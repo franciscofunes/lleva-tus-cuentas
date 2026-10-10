@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Reorder } from 'framer-motion';
+import { Reorder, motion, useReducedMotion } from 'framer-motion';
+import { getPageEntranceMotion } from '../shared/animations/pageEntranceMotion';
+import PageDataSkeleton from '../components/PageDataSkeleton';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt } from 'react-icons/fa';
 import QuickAccessCard from '../components/QuickAccessCard';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -90,6 +92,7 @@ const money = (value, currency) =>
 
 function Portfolio() {
 	const user = useSelector((state) => state.auth.user);
+	const prefersReducedMotion = useReducedMotion();
 	const isFetching = useSelector((state) => state.auth.isFetching);
 	const [positions, setPositions] = useState([]);
 	const positionsRef = useRef([]);
@@ -614,8 +617,11 @@ function Portfolio() {
 	);
 
 	return (
-		<main className='relative min-h-[calc(100dvh-8.5rem)] bg-zinc-50 dark:bg-gray-900 dark:text-zinc-100 lg:p-8 pb-0 lg:pb-8'>
-			<div className='max-w-7xl mx-auto px-4 pt-4 lg:px-0 lg:pt-0 w-full'>
+		<motion.main
+			{...getPageEntranceMotion(prefersReducedMotion)}
+			className='relative min-h-screen max-w-full bg-slate-50 dark:bg-gray-900 dark:text-zinc-100 px-3 sm:px-5 lg:px-8 py-5'
+		>
+			<div className='max-w-7xl mx-auto w-full'>
 				<QuickAccessCard
 					eyebrow='Tu patrimonio, en un solo lugar'
 					title='Cuentas e inversiones'
@@ -630,7 +636,7 @@ function Portfolio() {
 					<button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>
 				</div>}
 
-				{loading ? <div className='space-y-6 animate-pulse' aria-label='Cargando portfolio'><section className='grid grid-cols-3 gap-2 sm:gap-4'>{[0,1,2].map((item) => <div key={item} className='h-28 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' />)}</section><div className='h-36 rounded-2xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /><div className='space-y-3'><div className='h-7 w-36 rounded bg-slate-200 dark:bg-slate-800' /><div className='h-64 rounded-xl bg-slate-200 dark:bg-slate-800 border dark:border-slate-700' /></div></div> : <>
+				{loading ? <PageDataSkeleton variant='portfolio' /> : <>
 
 				<section className='grid grid-cols-3 gap-2 sm:gap-4 mb-6'>
 					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
@@ -891,7 +897,7 @@ function Portfolio() {
 				/>
 			)}
 
-		</main>
+		</motion.main>
 	);
 }
 
