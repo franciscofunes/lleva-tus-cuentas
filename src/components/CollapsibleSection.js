@@ -1,5 +1,5 @@
 import React from "react";
-import { FaChevronDown } from "react-icons/fa";
+import { CollapsibleChevron, CollapsibleHeading } from "./CollapsibleHeading";
 
 function CollapsibleSection({
   id,
@@ -28,25 +28,8 @@ function CollapsibleSection({
           aria-controls={contentId}
           className="min-w-0 flex flex-1 items-start justify-between gap-3 text-left"
         >
-          <div className="min-w-0">
-            {eyebrow && (
-              <p className="text-xs font-bold uppercase tracking-wider text-purple-500">
-                {eyebrow}
-              </p>
-            )}
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">
-              {title}
-            </h2>
-            {description && (
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {description}
-              </p>
-            )}
-          </div>
-          <FaChevronDown
-            aria-hidden="true"
-            className={`mt-1 shrink-0 transition-transform duration-200 ${collapsed ? "" : "rotate-180"}`}
-          />
+          <CollapsibleHeading eyebrow={eyebrow} title={title} description={description} />
+          <CollapsibleChevron expanded={!collapsed} />
         </button>
         {action && <div className="shrink-0">{action}</div>}
       </div>
