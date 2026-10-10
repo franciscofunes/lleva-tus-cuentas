@@ -120,22 +120,32 @@ function Portfolio() {
 	const [hideValues, setHideValues] = useState(() => {
 		try { return JSON.parse(localStorage.getItem('ltc:portfolio:view:guest') || '{}').hideValues || false; } catch { return false; }
 	});
-	const [collapsedSections, setCollapsedSections] = useState({ summary:false, charts:false, positions:false });
+	const [collapsedSections, setCollapsedSections] = useState({ overview:false, summary:false, charts:false, positions:false });
+	const [preferencesLoadedFor, setPreferencesLoadedFor] = useState(null);
 	
 
 	useEffect(() => {
-		if (!user) return;
+		setPreferencesLoadedFor(null);
+		if (!user?.uid) return;
 		try {
 			const saved = JSON.parse(localStorage.getItem(preferenceKey) || '{}');
 			setHideValues(Boolean(saved.hideValues));
-			setCollapsedSections({ summary:false, charts:false, positions:false, ...(saved.collapsedSections || {}) });
-		} catch {}
-	}, [user, preferenceKey]);
+			setCollapsedSections({ overview:false, summary:false, charts:false, positions:false, ...(saved.collapsedSections || {}) });
+		} catch {
+			setCollapsedSections({ overview:false, summary:false, charts:false, positions:false });
+		} finally {
+			setPreferencesLoadedFor(user.uid);
+		}
+	}, [user?.uid, preferenceKey]);
 
 	useEffect(() => {
-		if (!user) return;
-		localStorage.setItem(preferenceKey, JSON.stringify({ hideValues, collapsedSections }));
-	}, [user, preferenceKey, hideValues, collapsedSections]);
+		if (!user?.uid || preferencesLoadedFor !== user.uid) return;
+		try {
+			localStorage.setItem(preferenceKey, JSON.stringify({ hideValues, collapsedSections }));
+		} catch {
+			// Private mode and some browsers may block storage; collapse still works in memory.
+		}
+	}, [user?.uid, preferenceKey, preferencesLoadedFor, hideValues, collapsedSections]);
 
 	const togglePortfolioSection = (section) => setCollapsedSections((current) => ({ ...current, [section]: !current[section] }));
 	const privateMoney = (value, currency) => hideValues ? '••••••' : money(value, currency);
@@ -631,6 +641,9 @@ function Portfolio() {
 				</QuickAccessCard>
 				{loading ? <PageDataSkeleton variant='portfolio' /> : <>
 					<FinancialOverviewPanel
+						id='portfolio-overview'
+						collapsed={collapsedSections.overview}
+						onToggle={() => togglePortfolioSection('overview')}
 						title='Portfolio de un vistazo'
 						description='Exportá tus activos o prepará un análisis para Lita.'
 						privacyHidden={hideValues}
