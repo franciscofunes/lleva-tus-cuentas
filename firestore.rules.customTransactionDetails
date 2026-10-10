@@ -1,0 +1,38 @@
+// LTC — validación ADITIVA de metadatos controlados para /users/{uid}/expenses/{id}.
+// IMPORTANTE: NO pegues un segundo match permisivo de expenses. Incorporá la función
+// y la condición a los allow create/update YA existentes de tu ruleset, preservando
+// ownership, importKey, pagos, notificaciones y demás validaciones.
+//
+// Ejemplo de integración dentro del MATCH EXISTENTE:
+// function validCustomDetails() { ... }
+// allow create: if <TU_CONDICIÓN_ACTUAL> && validCustomDetails();
+// allow update: if <TU_CONDICIÓN_ACTUAL> && validCustomDetails();
+//
+// Si tus reglas usan d.keys().hasOnly(...), añadí 'customDetails' a los campos
+// permitidos. No habilites write genérico y NO reemplaces todo el ruleset.
+//
+// Opcional para transacciones anteriores, incluso las que no tienen esta propiedad.
+function validCustomDetails() {
+  let d = request.resource.data;
+  return !('customDetails' in d) || (
+    d.customDetails is map
+    && d.customDetails.keys().size() <= 3
+    && d.customDetails.keys().hasOnly([
+      'reference', 'counterparty', 'paymentMethod', 'receiptNumber', 'operationDate'
+    ])
+    && d.customDetails.get('reference', '') is string
+    && d.customDetails.get('reference', '').size() <= 60
+    && d.customDetails.get('reference', '').matches('^[^\\r\\n<>]*$')
+    && d.customDetails.get('counterparty', '') is string
+    && d.customDetails.get('counterparty', '').size() <= 80
+    && d.customDetails.get('counterparty', '').matches('^[^\\r\\n<>]*$')
+    && d.customDetails.get('receiptNumber', '') is string
+    && d.customDetails.get('receiptNumber', '').size() <= 60
+    && d.customDetails.get('receiptNumber', '').matches('^[^\\r\\n<>]*$')
+    && d.customDetails.get('paymentMethod', '') in [
+      '', 'transferencia', 'debito', 'credito', 'efectivo', 'otro'
+    ]
+    && d.customDetails.get('operationDate', '') is string
+    && d.customDetails.get('operationDate', '').matches('^$|^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+  );
+}
