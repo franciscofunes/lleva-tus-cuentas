@@ -1,4 +1,8 @@
-import { buildPortfolioLlmMarkdown } from './portfolioExport';
+// CRA's Jest/jsdom environment lacks TextEncoder, which the existing XLSX module initializes on import.
+// The browser provides it natively; this polyfill is limited to tests.
+const { TextEncoder } = require('util');
+if (typeof global.TextEncoder === 'undefined') global.TextEncoder = TextEncoder;
+const { buildPortfolioLlmMarkdown } = require('./portfolioExport');
 
 describe('portfolio LLM prompt accounting semantics', () => {
   const p = (overrides = {}) => ({
