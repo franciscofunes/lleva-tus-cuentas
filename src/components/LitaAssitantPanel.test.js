@@ -32,6 +32,7 @@ describe('LITA iframe integration', () => {
 		const setIsOpen = jest.fn();
 		render(<LitaAssistantPanel isOpen setIsOpen={setIsOpen} section='portfolio' />);
 		const iframe = screen.getByTitle('Lita Assistant');
+		expect(iframe.getAttribute('allow')).toBe('clipboard-write');
 		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
 
 		act(() => {
