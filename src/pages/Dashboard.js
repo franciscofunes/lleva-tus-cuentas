@@ -794,6 +794,14 @@ function Dashboard() {
             show={showCategoryManager}
             userId={user?.uid}
             categories={categories || []}
+            onCreated={isOpen ? (newCategoryName) => {
+              setCategory(newCategoryName);
+              setIsCreditCardCategory(false);
+              setIsBuyCurrenciesCategory(false);
+              setIsCurrencyIncomeCategory(false);
+              setIsSellCurrenciesCategory(false);
+              setShowCategoryManager(false);
+            } : undefined}
             closeModal={() => setShowCategoryManager(false)}
           />
         )}
