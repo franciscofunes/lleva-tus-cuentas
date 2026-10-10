@@ -1,4 +1,6 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { getPageEntranceMotion } from "../shared/animations/pageEntranceMotion";
+import PageDataSkeleton from "../components/PageDataSkeleton";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
@@ -138,6 +140,7 @@ const TransactionsPageSkeleton = () => (
 
 function Dashboard() {
   const dispatch = useDispatch();
+  const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
@@ -459,9 +462,7 @@ function Dashboard() {
   return (
     <>
       <motion.div
-        animate={{ opacity: 1 }}
-        initial={{ opacity: 0 }}
-        transition={{ duration: 1 }}
+        {...getPageEntranceMotion(prefersReducedMotion)}
         id="dashboard"
         className="min-h-screen max-w-full bg-slate-50 dark:bg-gray-900 dark:text-zinc-100 px-3 sm:px-5 lg:px-8 py-5"
       >
@@ -475,6 +476,9 @@ function Dashboard() {
             <Link to="/portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
             <button type="button" onClick={toggleDataVisibility} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
           </QuickAccessCard>
+          {isDataFetching && !docs ? (
+            <PageDataSkeleton variant="transactions" />
+          ) : (
           <div className="grid min-w-0 grid-cols-1 gap-5 items-start lg:grid-cols-3">
         <div
           id="left"
@@ -630,6 +634,7 @@ function Dashboard() {
         </CollapsibleSection>
 
           </div>
+          )}
         </div>
       </motion.div>
 
