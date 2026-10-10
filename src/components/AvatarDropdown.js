@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { getPopoverMotion, getPopoverTap } from '../shared/animations/popoverMotion';
 import {
 	AiOutlineFund,
 	AiOutlineUnorderedList,
@@ -19,6 +21,7 @@ const itemClass = ({ isActive }) =>
 const AvatarDropdown = ({ user, handleLogout }) => {
 	const [showDropdown, setShowDropdown] = useState(false);
 	const dropdownRef = useRef(null);
+	const prefersReducedMotion = useReducedMotion();
 
 	const closeDropdown = () => setShowDropdown(false);
 
@@ -55,7 +58,8 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 
 	return (
 		<div className='relative inline-block text-left' ref={dropdownRef}>
-			<button
+			<motion.button
+				whileTap={getPopoverTap(prefersReducedMotion)}
 				type='button'
 				className='inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 text-sm font-extrabold text-slate-700 shadow-sm transition hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white'
 				onClick={() => setShowDropdown((value) => !value)}
@@ -73,10 +77,12 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 				) : (
 					<span aria-hidden='true'>{initial}</span>
 				)}
-			</button>
+			</motion.button>
 
+			<AnimatePresence>
 			{showDropdown && (
-				<div
+				<motion.div
+					{...getPopoverMotion(prefersReducedMotion)}
 					className='fixed right-3 top-[4.75rem] z-[100] w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-slate-700 dark:bg-slate-900 sm:absolute sm:right-0 sm:top-auto sm:mt-2 sm:w-72'
 					role='menu'
 					aria-label='Menú de cuenta'
@@ -151,8 +157,9 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 							<MdOutlineExitToApp className='text-lg' />
 						</button>
 					</div>
-				</div>
+				</motion.div>
 			)}
+			</AnimatePresence>
 		</div>
 	);
 };
