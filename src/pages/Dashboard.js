@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import "tippy.js/dist/tippy.css";
-import { FaArrowRight, FaChartPie, FaExchangeAlt, FaPlus } from "react-icons/fa";
+import { FaArrowRight, FaChartPie, FaExchangeAlt, FaPlus, FaListAlt, FaTags, FaRegCalendarCheck } from "react-icons/fa";
 import {
   getCategoriesDataAction,
   getDataAction,
@@ -25,6 +25,9 @@ import { filterTransactions } from "../utils/transactionSearch";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
+import FinancialOverviewPanel from "../components/FinancialOverviewPanel";
+import { buildTransactionOverview, buildTransactionsLitaMarkdown, exportTransactionsXlsx } from "../utils/transactionsExport";
+import { toast } from "react-toastify";
 import CollapsibleSection from "../components/CollapsibleSection";
 import kavakAd from "../imgs/ads/kavakAd.jpg";
 import cocacolaAd from "../imgs/ads/cocaColaAd.jpg";
@@ -366,6 +369,11 @@ function Dashboard() {
     }
   }, [docs, categories]);
 
+  const overview = useMemo(
+    () => buildTransactionOverview(filteredDocs, categories || []),
+    [filteredDocs, categories]
+  );
+
   const litaTransactionContext = useMemo(
     () => ({
       scope: "current-view",
@@ -439,6 +447,18 @@ function Dashboard() {
     setIsOpen(true);
   };
 
+  const copyTransactionsForLita = async () => {
+    if (!filteredDocs?.length) return;
+    try {
+      await navigator.clipboard.writeText(
+        buildTransactionsLitaMarkdown(filteredDocs, categories || [])
+      );
+      toast.success("Markdown listo para pegar en Lita");
+    } catch (error) {
+      toast.error("No se pudo copiar el Markdown");
+    }
+  };
+
   const closeModal = () => {
     setEdit(false);
     setName("");
@@ -473,6 +493,22 @@ function Dashboard() {
             <Link to="/portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
             <button type="button" onClick={toggleDataVisibility} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
           </QuickAccessCard>
+          {!(isDataFetching && !docs) && (
+            <FinancialOverviewPanel
+              title="Movimientos de un vistazo"
+              description="Métricas y exportaciones de los movimientos de la vista actual."
+              privacyHidden={!isDataVisible}
+              actions={[
+                { id: "excel", type: "excel", label: "Exportar Excel", onClick: () => exportTransactionsXlsx(filteredDocs, categories || []), disabled: isDataFetching || !filteredDocs.length },
+                { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
+              ]}
+              metrics={[
+                { id: "count", icon: FaListAlt, label: "Movimientos", value: isDataVisible ? overview.count : "••" },
+                { id: "categories", icon: FaTags, label: "Categorías", value: isDataVisible ? overview.categoryCount : "••" },
+                { id: "due", icon: FaRegCalendarCheck, label: "Con vencimiento", value: isDataVisible ? overview.dueCount : "••" },
+              ]}
+            />
+          )}
           {isDataFetching && !docs ? (
             <PageDataSkeleton variant="transactions" />
           ) : (
