@@ -639,24 +639,25 @@ function Portfolio() {
 					<Link to='/transacciones' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaExchangeAlt /> <span className='hidden sm:inline'>Movimientos</span></Link>
 					<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}><img className='h-5 w-5' src={hideValues ? closeEye : eyeHide} alt='' /> <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
 				</QuickAccessCard>
-				{loading ? <PageDataSkeleton variant='portfolio' /> : <>
-					<FinancialOverviewPanel
+				<FinancialOverviewPanel
 						id='portfolio-overview'
 						collapsed={collapsedSections.overview}
 						onToggle={() => togglePortfolioSection('overview')}
 						title='Portfolio de un vistazo'
 						description='Exportá tus activos o prepará un análisis para Lita.'
 						privacyHidden={hideValues}
+						loading={loading}
 						actions={[
 							{ id: 'excel', type: 'excel', label: 'Exportar Excel', onClick: () => exportPortfolioXlsx(positions, snapshots), disabled: !positions.length },
 							{ id: 'markdown', type: 'markdown', label: 'Copiar para Lita', onClick: copyLlmPrompt, disabled: !positions.length },
 						]}
 						metrics={[
-							{ id: 'positions', icon: FaWallet, label: 'Posiciones', value: privateCount(portfolioMeta.positions) },
-							{ id: 'currencies', icon: FaChartLine, label: 'Monedas', value: privateCount(portfolioMeta.currencies) },
-							{ id: 'earnings', icon: FaRegClock, label: 'Con ganancias', value: privateCount(positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length) },
+							{ id: 'positions', icon: FaWallet, label: 'Posiciones', value: portfolioMeta.positions },
+							{ id: 'currencies', icon: FaChartLine, label: 'Monedas', value: portfolioMeta.currencies },
+							{ id: 'earnings', icon: FaRegClock, label: 'Con ganancias', value: positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length },
 						]}
 					/>
+				{loading ? <PageDataSkeleton variant='portfolio' /> : <>
 				<CollapsibleSection
 					id='portfolio-summary'
 					eyebrow='Resumen'
