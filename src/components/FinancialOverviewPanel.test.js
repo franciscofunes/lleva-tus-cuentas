@@ -89,3 +89,71 @@ test('starts collapsed when restored from user view preferences and expands via 
     .toHaveAttribute('aria-expanded', 'true');
   expect(screen.getByText('Posiciones')).toBeInTheDocument();
 });
+
+test('keeps the overview visible during initial loading and replaces only KPI values with skeletons', () => {
+  const download = jest.fn();
+  render(
+    <FinancialOverviewPanel
+      title='Portfolio de un vistazo'
+      loading
+      metrics={[
+        { id: 'positions', label: 'Posiciones', icon: FaWallet, value: 8 },
+        { id: 'currencies', label: 'Monedas', icon: FaWallet, value: 1 },
+        { id: 'earned', label: 'Con ganancias', icon: FaWallet, value: 5 },
+      ]}
+      actions={[{ id: 'excel', type: 'excel', label: 'Exportar Excel', onClick: download }]}
+    />
+  );
+  expect(screen.getByRole('heading', { name: 'Portfolio de un vistazo' })).toBeInTheDocument();
+  expect(screen.getAllByRole('status', { name: /Actualizando/ })).toHaveLength(3);
+  expect(screen.getByText('Posiciones')).toBeInTheDocument();
+  expect(screen.queryByText('8')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Exportar Excel' })).toBeDisabled();
+});
+
+test('animates a skeleton only for KPIs that change, then shows updated values', async () => {
+  const baseMetrics = [
+    { id: 'positions', label: 'Posiciones', icon: FaWallet, value: 8 },
+    { id: 'currencies', label: 'Monedas', icon: FaWallet, value: 1 },
+    { id: 'earned', label: 'Con ganancias', icon: FaWallet, value: 5 },
+  ];
+  const { rerender } = render(
+    <FinancialOverviewPanel title='Portfolio de un vistazo' metrics={baseMetrics} />
+  );
+  expect(screen.getByText('8')).toBeInTheDocument();
+  rerender(<FinancialOverviewPanel title='Portfolio de un vistazo' metrics={[
+    baseMetrics[0], baseMetrics[1], { ...baseMetrics[2], value: 6 },
+  ]} />);
+  expect(screen.getByRole('status', { name: 'Actualizando Con ganancias' })).toBeInTheDocument();
+  expect(screen.queryByRole('status', { name: 'Actualizando Posiciones' })).not.toBeInTheDocument();
+  expect(screen.getByText('8')).toBeInTheDocument();
+  expect(screen.getByText('1')).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText('6')).toBeInTheDocument());
+  expect(screen.queryByRole('status', { name: 'Actualizando Con ganancias' })).not.toBeInTheDocument();
+});
+
+test('privacy mode masks raw metric values immediately without skeleton flicker', () => {
+  const metrics = [{ id: 'positions', label: 'Posiciones', icon: FaWallet, value: 8 }];
+  const { rerender } = render(
+    <FinancialOverviewPanel title='Portfolio de un vistazo' metrics={metrics} />
+  );
+  expect(screen.getByText('8')).toBeInTheDocument();
+  rerender(<FinancialOverviewPanel title='Portfolio de un vistazo' metrics={metrics} privacyHidden />);
+  expect(screen.getByText('••')).toBeInTheDocument();
+  expect(screen.queryByText('8')).not.toBeInTheDocument();
+  expect(screen.queryByRole('status', { name: 'Actualizando Posiciones' })).not.toBeInTheDocument();
+  rerender(<FinancialOverviewPanel title='Portfolio de un vistazo' metrics={metrics} />);
+  expect(screen.getByText('8')).toBeInTheDocument();
+});
+
+test('collapsed overview keeps title and control visible without rendering its KPI skeletons', () => {
+  render(
+    <FinancialOverviewPanel title='Portfolio de un vistazo' id='portfolio-overview'
+      collapsed loading onToggle={() => {}}
+      metrics={[{ id: 'positions', label: 'Posiciones', icon: FaWallet, value: 8 }]}
+    />
+  );
+  expect(screen.getByRole('button', { name: /Portfolio de un vistazo: expandir/ }))
+    .toHaveAttribute('aria-expanded', 'false');
+  expect(screen.queryByRole('status', { name: 'Actualizando Posiciones' })).not.toBeInTheDocument();
+});
