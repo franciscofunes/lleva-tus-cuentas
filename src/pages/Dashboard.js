@@ -22,6 +22,7 @@ import LitaAssistantPanel from "../components/LitaAssitantPanel";
 import { summarizeSpendingByCategory } from '../utils/litaSpendingSummary';
 import SearchBar from "../components/SearchBar";
 import { filterTransactions } from "../utils/transactionSearch";
+import { TRANSACTION_PAGE_SIZE, visibleTransactionBatch } from "../utils/transactionsPagination";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
@@ -141,8 +142,6 @@ const TransactionsPageSkeleton = () => (
   </main>
 );
 
-export const TRANSACTION_PAGE_SIZE = 40;
-
 function Dashboard() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -173,7 +172,7 @@ function Dashboard() {
   // exports still use the complete result set; rendering thousands of rich
   // cards on a route transition can freeze Android Chrome.
   const visibleTransactions = useMemo(
-    () => filteredDocs.slice(0, visibleTransactionCount),
+    () => visibleTransactionBatch(filteredDocs, visibleTransactionCount),
     [filteredDocs, visibleTransactionCount]
   );
   useEffect(() => {
