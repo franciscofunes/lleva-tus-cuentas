@@ -221,6 +221,7 @@ function Dashboard() {
     ? `ltc:transactions:view:${user.uid}`
     : "ltc:transactions:view";
   const [collapsedSections, setCollapsedSections] = useState({
+    overview: false,
     summary: false,
     charts: false,
     transactions: false,
@@ -233,6 +234,7 @@ function Dashboard() {
     try {
       const saved = JSON.parse(localStorage.getItem(transactionPreferenceKey) || "{}");
       setCollapsedSections({
+        overview: false,
         summary: false,
         charts: false,
         transactions: false,
@@ -242,7 +244,7 @@ function Dashboard() {
         ? saved.isDataVisible
         : true);
     } catch {
-      setCollapsedSections({ summary: false, charts: false, transactions: false });
+      setCollapsedSections({ overview: false, summary: false, charts: false, transactions: false });
       setIsDataVisible(true);
     }
     setPreferencesLoadedFor(user.uid);
@@ -495,6 +497,9 @@ function Dashboard() {
           </QuickAccessCard>
           {!(isDataFetching && !docs) && (
             <FinancialOverviewPanel
+              id="transactions-overview"
+              collapsed={collapsedSections.overview}
+              onToggle={() => toggleDashboardSection("overview")}
               title="Movimientos de un vistazo"
               description="Métricas y exportaciones de los movimientos de la vista actual."
               privacyHidden={!isDataVisible}
