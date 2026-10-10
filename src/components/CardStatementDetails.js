@@ -1,4 +1,6 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
+import { FiSearch } from 'react-icons/fi'
+import { filterCardStatementItems } from '../utils/cardStatementSearch'
 import { auth, firestore } from '../shared/config/firebase/firebase.config'
 
 const formatAmount = (value, currency) => new Intl.NumberFormat('es-AR', {
@@ -11,6 +13,8 @@ export default function CardStatementDetails({ expenseId }) {
   const [error, setError] = useState('')
   const [statement, setStatement] = useState(null)
   const [items, setItems] = useState([])
+  const [search, setSearch] = useState('')
+  const visibleItems = useMemo(() => filterCardStatementItems(items, search), [items, search])
 
   const toggle = async () => {
     if (open) { setOpen(false); return }
@@ -62,8 +66,28 @@ export default function CardStatementDetails({ expenseId }) {
                   <p>Saldo anterior pendiente ARS: {formatAmount(statement.previousCreditArs, 'ARS')}</p>
                 </div>
               )}
+              <div className='relative mb-2'>
+                <FiSearch aria-hidden='true' className='pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-400' />
+                <input
+                  type='search'
+                  aria-label='Buscar consumos del resumen'
+                  placeholder='Buscar comercio, categoría o importe'
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  autoComplete='off'
+                  className='w-full min-w-0 rounded-lg border border-slate-300 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-500 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400'
+                />
+              </div>
+              {search.trim() && (
+                <p role='status' className='mb-2 text-xs text-slate-600 dark:text-slate-300'>
+                  {visibleItems.length} de {items.length} consumos encontrados
+                </p>
+              )}
               <div className='max-h-[45dvh] space-y-2 overflow-y-auto'>
-                {items.map((item, index) => (
+                {visibleItems.length === 0 && search.trim() && (
+                  <p className='py-3 text-center text-sm text-slate-600 dark:text-slate-300'>No se encontraron consumos.</p>
+                )}
+                {visibleItems.map((item, index) => (
                   <div key={index} className='border-b border-slate-200 pb-2 dark:border-slate-700'>
                     <div className='flex flex-wrap justify-between gap-x-3 font-semibold'>
                       <span className='min-w-0 break-words'>{item.merchant}</span>
