@@ -26,6 +26,7 @@ function Card({
 	category,
 	customDetails = {},
 	setCustomDetails = () => {},
+	setHasSavedCustomDetails = () => {},
 	name,
 	setName,
 	setAmount,
@@ -70,6 +71,7 @@ function Card({
 		setComment(comment);
 		setCategory(safeCategory);
 		setCustomDetails(customDetails);
+		setHasSavedCustomDetails(Boolean(Object.keys(customDetails || {}).length));
 		setSelectedDate(selectedDate);
 		setSelectedCloseDate(selectedCloseDate);
 		setSelectedExpirationDate(selectedExpirationDate);
