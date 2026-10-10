@@ -46,3 +46,24 @@ test('switches route content with the same transition wrapper and stable navigat
   fireEvent.click(screen.getByRole('button', { name: 'Portfolio' }));
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Portfolio de prueba' })).toBeInTheDocument(), { timeout: 3000 });
 });
+
+test('quick access navigation from Portfolio to Transacciones mounts next route without awaiting exit', () => {
+  render(
+    <MemoryRouter initialEntries={['/portfolio']}>
+      <Links />
+      <AnimatedRoutes>
+        <Route path='/portfolio' element={<h1>Cuentas e inversiones</h1>} />
+        <Route path='/transacciones' element={<h1>Resumen financiero</h1>} />
+      </AnimatedRoutes>
+    </MemoryRouter>
+  );
+  expect(screen.getByRole('heading', { name: 'Cuentas e inversiones' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Transacciones' }));
+  // Previously mode="wait" could leave this screen blank until an exit
+  // animation completes; a route change must mount its page immediately.
+  expect(screen.getByRole('heading', { name: 'Resumen financiero' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Portfolio' }));
+  expect(screen.getByRole('heading', { name: 'Cuentas e inversiones' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Transacciones' }));
+  expect(screen.getByRole('heading', { name: 'Resumen financiero' })).toBeInTheDocument();
+});
