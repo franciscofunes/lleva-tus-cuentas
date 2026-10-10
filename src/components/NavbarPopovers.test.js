@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import AvatarDropdown from './AvatarDropdown';
 import NotificationsDropdown from './NotificationsDropdown';
-import { getPopoverMotion, getPopoverTap, popoverMotion } from '../shared/animations/popoverMotion';
+import { getPopoverMotion, getPopoverTap, popoverMotion, popoverTapTransition } from '../shared/animations/popoverMotion';
 
 jest.mock('react-redux', () => ({
   useDispatch: () => jest.fn(),
@@ -47,6 +47,7 @@ test('avatar and bell use exactly the floating actions motion with a reduced-mot
     transition: { duration: 0.16, ease: 'easeOut' },
   });
   expect(getPopoverTap(false)).toEqual({ scale: 0.95 });
+  expect(popoverTapTransition).toEqual({ type: 'spring', stiffness: 420, damping: 28 });
   expect(getPopoverTap(true)).toBeUndefined();
   expect(getPopoverMotion(true).transition.duration).toBe(0);
 });
