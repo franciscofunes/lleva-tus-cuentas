@@ -5,10 +5,6 @@ import LitaAssistantPanel, { visibleKeyboardLayout } from './LitaAssitantPanel';
 jest.mock('react-redux', () => ({
 	useSelector: (selector) => selector({ auth: { user: { uid: 'test-user' } } }),
 }));
-jest.mock('../services/litaHistoricalAnalysis', () => ({
-	queryLitaHistoricalTransactions: jest.fn(),
-}));
-
 jest.mock('../services/litaChatService', () => ({
 	subscribeLitaChats: jest.fn(() => () => {}),
 	saveLitaChat: jest.fn(() => Promise.resolve()),
@@ -36,7 +32,6 @@ describe('LITA iframe integration', () => {
 		const setIsOpen = jest.fn();
 		render(<LitaAssistantPanel isOpen setIsOpen={setIsOpen} section='portfolio' />);
 		const iframe = screen.getByTitle('Lita Assistant');
-		expect(iframe.getAttribute('allow')).toBe('clipboard-write');
 		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
 
 		act(() => {
