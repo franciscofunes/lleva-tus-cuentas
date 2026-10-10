@@ -1,7 +1,37 @@
 import { auditPortfolioEarnings } from './portfolioEarningsAudit';
-const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const cell=v=>typeof v==='number'&&Number.isFinite(v)?`<c><v>${v}</v></c>`:`<c t="inlineStr"><is><t>${esc(v)}</t></is></c>`;
-const sheet=rows=>`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((r,i)=>`<row r="${i+1}">${r.map(cell).join('')}</row>`).join('')}</sheetData></worksheet>`;
+// Excel requires explicit cell coordinates. Without r="A1" (etc.) some
+// spreadsheet readers silently discard data, especially on large exports.
+const esc=v=>String(v??'')
+ .replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]/g,'')
+ .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+export const xlsxColumnName=index=>{
+ let n=index+1,out='';
+ while(n>0){n--;out=String.fromCharCode(65+n%26)+out;n=Math.floor(n/26);}
+ return out;
+};
+const cell=(v,address)=>typeof v==='number'&&Number.isFinite(v)
+ ? `<c r="${address}"><v>${v}</v></c>`
+ : `<c r="${address}" t="inlineStr"><is><t xml:space="preserve">${esc(v)}</t></is></c>`;
+export const worksheetXml=(rows=[])=>{
+ const records=Array.isArray(rows)?rows:[];
+ const rowCount=Math.max(1,records.length);
+ const columnCount=Math.max(1,...records.map(row=>Array.isArray(row)?row.length:0));
+ const last=xlsxColumnName(columnCount-1);
+ const dimensions=`A1:${last}${rowCount}`;
+ const header=records[0]||[];
+ const cols=Array.from({length:columnCount},(_,index)=>{
+   const title=String(header[index]??'');
+   const width=Math.min(43,Math.max(15,title.length+4));
+   return `<col min="${index+1}" max="${index+1}" width="${width}" customWidth="1"/>`;
+ }).join('');
+ const data=records.map((record,index)=>{
+   const values=Array.isArray(record)?record:[];
+   return `<row r="${index+1}">${values.map((value,col)=>cell(value,`${xlsxColumnName(col)}${index+1}`)).join('')}</row>`;
+ }).join('');
+ const filter=records.length>1?`<autoFilter ref="${dimensions}"/>`:'';
+ return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="${dimensions}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${cols}</cols><sheetData>${data}</sheetData>${filter}</worksheet>`;
+};
+const sheet=worksheetXml;
 const enc=new TextEncoder(), table=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
 const crc32=b=>{let c=0xffffffff;for(const x of b)c=table[(c^x)&255]^(c>>>8);return(c^0xffffffff)>>>0;};
 const u16=n=>new Uint8Array([n&255,(n>>>8)&255]),u32=n=>new Uint8Array([n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255]);
@@ -111,7 +141,7 @@ export const downloadPortfolioMarkdown=(positions,snapshots)=>download(new Blob(
 
 // Reuse the existing dependency-free XLSX writer for the Transactions export.
 // Strings use inlineStr cells, so descriptions remain literal text, not formulas.
-export const exportWorkbookXlsx = (sheets, filename) => {
+export const buildWorkbookXlsxBytes = (sheets) => {
  const entries = Object.entries(sheets);
  if (!entries.length) throw new Error('No hay datos para exportar');
  const types = entries.map(([, rows], i) => `<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('');
@@ -124,5 +154,10 @@ export const exportWorkbookXlsx = (sheets, filename) => {
   'xl/_rels/workbook.xml.rels': `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}</Relationships>`,
  };
  entries.forEach(([, rows], i) => { files[`xl/worksheets/sheet${i+1}.xml`] = sheet(rows); });
- download(new Blob([zip(files)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename);
+ return zip(files);
+};
+
+export const exportWorkbookXlsx = (sheets, filename) => {
+ const bytes = buildWorkbookXlsxBytes(sheets);
+ download(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename);
 };
