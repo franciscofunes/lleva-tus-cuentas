@@ -37,7 +37,8 @@ export function FinancialKpiValue({ value, label, loading = false, privacyHidden
     return () => clearTimeout(timer);
   }, [value, displayedValue, loading, privacyHidden, reduceMotion]);
 
-  if (loading || changing) {
+  const valueHasChanged = !loading && !privacyHidden && !reduceMotion && !Object.is(value, displayedValue);
+  if (loading || changing || valueHasChanged) {
     return (
       <span role='status' aria-label={`Actualizando ${label}`}
         className='flex h-8 items-center sm:h-9'>
