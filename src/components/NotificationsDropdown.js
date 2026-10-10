@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { getPopoverMotion, getPopoverTap } from '../shared/animations/popoverMotion';
+import { getPopoverMotion, getPopoverTap, popoverTapTransition } from '../shared/animations/popoverMotion';
 import {
 	FaArrowLeft,
 	FaBell,
@@ -467,6 +467,7 @@ const NotificationDropdown = () => {
 		<div className='relative inline-block text-left' ref={dropdownRef}>
 			<motion.button
 				whileTap={getPopoverTap(prefersReducedMotion)}
+				transition={popoverTapTransition}
 				type='button'
 				className='relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-600 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:text-slate-200 dark:hover:bg-slate-800'
 				onClick={handleDropdownToggle}
