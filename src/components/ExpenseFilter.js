@@ -39,6 +39,10 @@ export const describeSelectedPeriod = (filter, date) => {
   }
 };
 
+// Normalize before moving months so Jan 31 / Mar 31 never skip a month.
+export const shiftReferenceMonth = (referenceDate, delta) =>
+  moment(referenceDate).startOf('month').add(delta, 'month').toDate();
+
 const CalendarTrigger = React.forwardRef(({ onClick, disabled }, ref) => (
   <button
     type='button'
@@ -142,6 +146,14 @@ function ExpenseFilter() {
     selectPeriod(period || 'day', date);
   };
 
+  const navigateMonth = (delta) => {
+    if (!userId || isFilterChanging) return;
+    const nextDate = shiftReferenceMonth(selectedDate, delta);
+    setSelectedDate(nextDate);
+    // Always select the MONTH scope, regardless of the active year/week/day/total filter.
+    selectPeriod('month', nextDate);
+  };
+
   const periodLabel = describeSelectedPeriod(selectedFilter, selectedDate);
 
   return (
@@ -156,19 +168,33 @@ function ExpenseFilter() {
             {periodLabel}
           </p>
         </div>
-        <DatePicker
-          selected={selectedDate}
-          disabled={isFilterChanging || !userId}
-          onChange={onDateChange}
-          customInput={<CalendarTrigger />}
-          locale='es'
-          withPortal
-          calendarClassName='ltc-calendar'
-          renderCustomHeader={(props) => <CalendarHeader {...props} />}
-          dateFormat='dd/MM/yyyy'
-          showPopperArrow={false}
-          todayButton='Hoy'
-        />
+        <div className='flex shrink-0 items-center gap-1 sm:gap-2'>
+          <div role='group' aria-label='Navegación mensual' className='flex items-center gap-1'>
+            <button type='button' aria-label='Ir al mes anterior' title='Ir al mes anterior'
+              disabled={isFilterChanging || !userId} onClick={() => navigateMonth(-1)}
+              className='inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition-colors hover:border-purple-400 hover:text-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-wait disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-purple-400 dark:hover:text-purple-200 sm:h-9 sm:w-9'>
+              <FiChevronLeft size={17} aria-hidden='true' />
+            </button>
+            <button type='button' aria-label='Ir al mes siguiente' title='Ir al mes siguiente'
+              disabled={isFilterChanging || !userId} onClick={() => navigateMonth(1)}
+              className='inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition-colors hover:border-purple-400 hover:text-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-wait disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-purple-400 dark:hover:text-purple-200 sm:h-9 sm:w-9'>
+              <FiChevronRight size={17} aria-hidden='true' />
+            </button>
+          </div>
+          <DatePicker
+            selected={selectedDate}
+            disabled={isFilterChanging || !userId}
+            onChange={onDateChange}
+            customInput={<CalendarTrigger />}
+            locale='es'
+            withPortal
+            calendarClassName='ltc-calendar'
+            renderCustomHeader={(props) => <CalendarHeader {...props} />}
+            dateFormat='dd/MM/yyyy'
+            showPopperArrow={false}
+            todayButton='Hoy'
+            />
+        </div>
       </div>
 
       <div role='group' aria-label='Tipo de período' className='grid grid-cols-5 gap-1 rounded-xl bg-slate-200/70 p-1 dark:bg-slate-800'>
