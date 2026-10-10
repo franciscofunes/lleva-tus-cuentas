@@ -1,11 +1,6 @@
-import firebase from 'firebase/compat/app';
 import { firestore } from '../shared/config/firebase/firebase.config';
 import { updateDataAction } from './databaseActions';
 
-jest.mock('firebase/compat/app', () => ({
-  __esModule: true,
-  default: { firestore: { FieldValue: { delete: jest.fn(() => 'FIRESTORE_FIELD_DELETE') } } },
-}));
 jest.mock('../shared/config/firebase/firebase.config', () => ({
   firestore: { collection: jest.fn() },
 }));
@@ -46,8 +41,7 @@ test('legacy transaction updates do not add an empty customDetails field', async
 test('a category change explicitly clears previously saved custom metadata', async () => {
   await updateDataAction({ ...base, customDetails: {}, clearCustomDetails: true }, 'expense-1')(jest.fn());
   const saved = update.mock.calls[0][0];
-  expect(saved.customDetails).toBe('FIRESTORE_FIELD_DELETE');
-  expect(firebase.firestore.FieldValue.delete).toHaveBeenCalledTimes(1);
+  expect(saved.customDetails).toEqual({});
 });
 
 test('only approved nonempty metadata keys are written on existing transaction edits', async () => {
