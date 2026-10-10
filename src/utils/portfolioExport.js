@@ -2,7 +2,7 @@ import { auditPortfolioEarnings } from './portfolioEarningsAudit';
 // Excel requires explicit cell coordinates. Without r="A1" (etc.) some
 // spreadsheet readers silently discard data, especially on large exports.
 const esc=v=>String(v??'')
- .replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]/g,'')
+ .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'')
  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 export const xlsxColumnName=index=>{
  let n=index+1,out='';
