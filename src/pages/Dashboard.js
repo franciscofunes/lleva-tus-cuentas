@@ -567,7 +567,7 @@ function Dashboard() {
             className="mb-5 min-w-0 max-w-full overflow-hidden font-Nunito"
             contentClassName="min-w-0 max-w-full"
           >
-            {isDataFetching ? (
+            {isDataFetching || !Array.isArray(categories) ? (
               <ChartSkeleton />
             ) : (
               docs && (
