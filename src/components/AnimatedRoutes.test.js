@@ -65,3 +65,28 @@ test('quick access from Portfolio mounts Transacciones immediately, even after r
   fireEvent.click(screen.getByRole('button', { name: 'Transacciones' }));
   expect(screen.getByRole('heading', { name: 'Resumen financiero' })).toBeInTheDocument();
 });
+
+function BrokenTransactions() {
+  throw new Error('Malformed imported movement');
+}
+
+test('a route render exception shows recovery instead of blanking the app', () => {
+  const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    render(
+      <MemoryRouter initialEntries={['/portfolio']}>
+        <Links />
+        <AnimatedRoutes>
+          <Route path='/portfolio' element={<h1>Portfolio disponible</h1>} />
+          <Route path='/transacciones' element={<BrokenTransactions />} />
+        </AnimatedRoutes>
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Transacciones' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('No pudimos mostrar esta sección');
+    fireEvent.click(screen.getByRole('button', { name: 'Portfolio' }));
+    expect(screen.getByRole('heading', { name: 'Portfolio disponible' })).toBeInTheDocument();
+  } finally {
+    spy.mockRestore();
+  }
+});

@@ -97,8 +97,9 @@ body {
 	}
 }
 #dashboard {
-	overflow-y: scroll;
-	height: 85vh;
+	min-height: calc(100dvh - 72px);
+	height: auto;
+	overflow-y: visible;
 }
 #right {
 	overflow-y: scroll;
