@@ -5,11 +5,14 @@ import CategoryBreakdownChart from './CategoryBreakdownChart';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 
 const IncomeChartWrapper = ({ chartData, categories }) => {
+	const records = Array.isArray(chartData) ? chartData : [];
+	const catalog = Array.isArray(categories) ? categories : [];
 	const generateChartData = () => {
-		const filteredData = chartData.filter((dataItem) => {
-			const isExpenseCategory = categories.find(
-				(category) => category.name === dataItem.category
-			)?.isExpense;
+		const filteredData = records.filter((dataItem) => {
+			if (typeof dataItem?.category !== 'string') return false;
+			const isExpenseCategory = catalog.some(
+				(category) => category?.name === dataItem.category && category.isExpense === true
+			);
 
 			// Include categories that are not expenses
 			return (
