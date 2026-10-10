@@ -4,6 +4,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Reorder } from 'framer-motion';
 import PageDataSkeleton from '../components/PageDataSkeleton';
+import FinancialOverviewPanel from '../components/FinancialOverviewPanel';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt } from 'react-icons/fa';
 import QuickAccessCard from '../components/QuickAccessCard';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -628,31 +629,21 @@ function Portfolio() {
 					<Link to='/transacciones' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaExchangeAlt /> <span className='hidden sm:inline'>Movimientos</span></Link>
 					<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}><img className='h-5 w-5' src={hideValues ? closeEye : eyeHide} alt='' /> <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
 				</QuickAccessCard>
-				{!loading && positions.length > 0 && <div className='mb-6 flex flex-wrap gap-2'>
-					<button type='button' onClick={() => exportPortfolioXlsx(positions, snapshots)} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileExcel /> Excel</button>
-					<button type='button' onClick={copyLlmPrompt} className='inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm font-bold bg-white dark:bg-slate-800'><FaFileAlt /> Copiar prompt LLM</button>
-				</div>}
-
 				{loading ? <PageDataSkeleton variant='portfolio' /> : <>
-
-				<section className='grid grid-cols-3 gap-2 sm:gap-4 mb-6'>
-					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
-						<FaWallet className='text-purple-500 mb-2' />
-						<p className='text-xl sm:text-2xl font-bold'>{privateCount(portfolioMeta.positions)}</p>
-						<p className='text-xs text-gray-500'>Posiciones</p>
-					</div>
-					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
-						<FaChartLine className='text-purple-500 mb-2' />
-						<p className='text-xl sm:text-2xl font-bold'>{privateCount(portfolioMeta.currencies)}</p>
-						<p className='text-xs text-gray-500'>Monedas</p>
-					</div>
-					<div className='bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl p-3 sm:p-4 shadow-sm'>
-						<FaRegClock className='text-purple-500 mb-2' />
-						<p className='text-xl sm:text-2xl font-bold'>{privateCount(positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length)}</p>
-						<p className='text-xs text-gray-500'>Con ganancias</p>
-					</div>
-				</section>
-
+					<FinancialOverviewPanel
+						title='Portfolio de un vistazo'
+						description='Exportá tus activos o prepará un análisis para Lita.'
+						privacyHidden={hideValues}
+						actions={[
+							{ id: 'excel', type: 'excel', label: 'Exportar Excel', onClick: () => exportPortfolioXlsx(positions, snapshots), disabled: !positions.length },
+							{ id: 'markdown', type: 'markdown', label: 'Copiar para Lita', onClick: copyLlmPrompt, disabled: !positions.length },
+						]}
+						metrics={[
+							{ id: 'positions', icon: FaWallet, label: 'Posiciones', value: privateCount(portfolioMeta.positions) },
+							{ id: 'currencies', icon: FaChartLine, label: 'Monedas', value: privateCount(portfolioMeta.currencies) },
+							{ id: 'earnings', icon: FaRegClock, label: 'Con ganancias', value: privateCount(positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length) },
+						]}
+					/>
 				<CollapsibleSection
 					id='portfolio-summary'
 					eyebrow='Resumen'
