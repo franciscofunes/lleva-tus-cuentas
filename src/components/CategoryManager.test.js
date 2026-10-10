@@ -50,3 +50,24 @@ test('prevents duplicates and reserved financial categories', () => {
   expect(screen.getByRole('alert')).toHaveTextContent(/reservado/);
   expect(saveCustomCategory).not.toHaveBeenCalled();
 });
+
+test('notifies an open transaction only after its private category is saved', async () => {
+  const onCreated = jest.fn();
+  render(<CategoryManager userId='userA' categories={categories} onCreated={onCreated} />);
+  fireEvent.change(screen.getByLabelText('Nombre de la categoría'), { target: { value: '  Freelance   nuevo  ' } });
+  expect(onCreated).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
+  await waitFor(() => expect(onCreated).toHaveBeenCalledWith('Freelance nuevo'));
+  expect(saveCustomCategory).toHaveBeenCalledWith('userA',
+    { name: '  Freelance   nuevo  ', isExpense: true }, categories);
+});
+
+test('does not leave the transaction form when saving a category fails', async () => {
+  const onCreated = jest.fn();
+  saveCustomCategory.mockRejectedValueOnce(new Error('No se pudo guardar.'));
+  render(<CategoryManager userId='userA' categories={categories} onCreated={onCreated} />);
+  fireEvent.change(screen.getByLabelText('Nombre de la categoría'), { target: { value: 'Nueva categoría' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('No se pudo guardar.'));
+  expect(onCreated).not.toHaveBeenCalled();
+});
