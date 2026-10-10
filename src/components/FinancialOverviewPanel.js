@@ -1,6 +1,7 @@
 import React from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { FaArrowDown, FaChevronDown, FaFileExcel, FaRegCopy } from 'react-icons/fa';
+import { FaArrowDown, FaFileExcel, FaRegCopy } from 'react-icons/fa';
+import { CollapsibleChevron, CollapsibleHeading } from './CollapsibleHeading';
 
 const actionIcons = { excel: FaFileExcel, markdown: FaRegCopy };
 const itemMotion = (reduceMotion, index) => reduceMotion
@@ -30,16 +31,10 @@ export default function FinancialOverviewPanel({
         aria-expanded={!collapsed}
         aria-controls={contentId}
         aria-label={`${title}: ${collapsed ? 'expandir' : 'contraer'}`}
-        className='flex w-full items-start justify-between gap-3 px-4 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500 sm:px-5'
+        className='flex w-full items-start justify-between gap-3 p-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500'
       >
-        <div className='min-w-0'>
-          <p className='text-[10px] font-extrabold uppercase tracking-[0.14em] text-violet-700 dark:text-violet-300'>
-            {eyebrow}
-          </p>
-          <h2 className='mt-1 text-base font-extrabold text-slate-900 dark:text-white sm:text-lg'>{title}</h2>
-          {description && <p className='mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400'>{description}</p>}
-        </div>
-        <FaChevronDown aria-hidden='true' className={`mt-1 shrink-0 text-slate-600 transition-transform duration-200 motion-reduce:transition-none dark:text-slate-300 ${collapsed ? '' : 'rotate-180'}`} />
+        <CollapsibleHeading eyebrow={eyebrow} title={title} description={description} />
+        <CollapsibleChevron expanded={!collapsed} />
       </button>
       <AnimatePresence initial={false}>
         {!collapsed && (
