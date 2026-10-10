@@ -639,8 +639,8 @@ function Portfolio() {
 					<Link to='/transacciones' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaExchangeAlt /> <span className='hidden sm:inline'>Movimientos</span></Link>
 					<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}><img className='h-5 w-5' src={hideValues ? closeEye : eyeHide} alt='' /> <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
 				</QuickAccessCard>
-				{loading ? <PageDataSkeleton variant='portfolio' /> : <>
-					<FinancialOverviewPanel
+				<FinancialOverviewPanel
+						isLoading={loading}
 						id='portfolio-overview'
 						collapsed={collapsedSections.overview}
 						onToggle={() => togglePortfolioSection('overview')}
@@ -657,6 +657,7 @@ function Portfolio() {
 							{ id: 'earnings', icon: FaRegClock, label: 'Con ganancias', value: privateCount(positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length) },
 						]}
 					/>
+				{loading ? <PageDataSkeleton variant='portfolio' withKpiCards={false} /> : <>
 				<CollapsibleSection
 					id='portfolio-summary'
 					eyebrow='Resumen'
