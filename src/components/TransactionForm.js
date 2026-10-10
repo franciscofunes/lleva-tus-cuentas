@@ -255,8 +255,8 @@ const TransactionForm = ({
             Categoría <InfoTooltip content={CATEGORY_INFO_TOOLTIP_MESSAGE} />
           </label>
           {onManageCategories && (
-            <button type="button" onClick={onManageCategories}
-              className="rounded-lg px-2 py-1 text-xs font-bold text-purple-600 hover:bg-purple-500/10 dark:text-purple-300">
+            <button type="button" onClick={onManageCategories} disabled={!categories}
+              className="rounded-lg disabled:opacity-50 px-2 py-1 text-xs font-bold text-purple-600 hover:bg-purple-500/10 dark:text-purple-300">
               + Personalizar
             </button>
           )}
