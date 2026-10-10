@@ -47,7 +47,7 @@ function Card({
 	const safeCategory = typeof category === 'string' ? category : '';
 	const safeCategories = Array.isArray(categories) ? categories.filter(Boolean) : [];
 	const isExpense = safeCategories.some((entry) => entry?.isExpense && entry.name === safeCategory);
-	const selectedDateIsDueDate = usesSelectedDateAsDueDate(category, categories);
+	const selectedDateIsDueDate = usesSelectedDateAsDueDate(safeCategory, safeCategories);
 	const isPaidBill = paymentStatus === 'paid';
 	const paidAtDate =
 		paidAt && typeof paidAt.toDate === 'function'
