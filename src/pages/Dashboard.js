@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import PageDataSkeleton from "../components/PageDataSkeleton";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import "tippy.js/dist/tippy.css";
@@ -28,8 +28,9 @@ import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
 import FinancialOverviewPanel from "../components/FinancialOverviewPanel";
+import TransactionsExportReady from "../components/TransactionsExportReady";
 import CategoryManager from "../components/CategoryManager";
-import { buildTransactionOverview, buildTransactionsLitaMarkdown, exportTransactionsXlsx } from "../utils/transactionsExport";
+import { buildTransactionOverview, buildTransactionsLitaMarkdown, prepareTransactionsExport } from "../utils/transactionsExport";
 import { toast } from "react-toastify";
 import CollapsibleSection from "../components/CollapsibleSection";
 import kavakAd from "../imgs/ads/kavakAd.jpg";
@@ -160,6 +161,17 @@ function Dashboard() {
   const [searchCategory, setSearchCategory] = useState("");
   const [searchType, setSearchType] = useState("all");
   const [visibleTransactionCount, setVisibleTransactionCount] = useState(TRANSACTION_PAGE_SIZE);
+  const [preparedExport, setPreparedExport] = useState(null);
+  const preparedExportRef = useRef(null);
+  const clearPreparedExport = useCallback(() => {
+    const old = preparedExportRef.current;
+    preparedExportRef.current = null;
+    setPreparedExport(null);
+    if (old) {
+      URL.revokeObjectURL(old.xlsxUrl);
+      URL.revokeObjectURL(old.csvUrl);
+    }
+  }, []);
 
   const filteredDocs = useMemo(
     () => filterTransactions(docs || [], {
@@ -170,6 +182,20 @@ function Dashboard() {
     }),
     [docs, searchQuery, searchCategory, searchType, categories]
   );
+
+  // Do not offer stale financial exports after changing filters, data, or the
+  // authenticated user. Also free object URLs on unmount.
+  useEffect(() => {
+    clearPreparedExport();
+  }, [user?.uid, selectedFilter, searchQuery, searchCategory, searchType, filteredDocs, clearPreparedExport]);
+  useEffect(() => () => {
+    const current = preparedExportRef.current;
+    if (current) {
+      URL.revokeObjectURL(current.xlsxUrl);
+      URL.revokeObjectURL(current.csvUrl);
+      preparedExportRef.current = null;
+    }
+  }, []);
 
   // Only render the first batch of cards. Filtering, KPIs, Lita context and
   // exports still use the complete result set; rendering thousands of rich
@@ -472,7 +498,7 @@ function Dashboard() {
   const downloadFilteredTransactions = () => {
     if (isDataFetching || isFilterChanging || !filteredDocs.length) return;
     try {
-      const { count } = exportTransactionsXlsx(filteredDocs, categories || [], {
+      const files = prepareTransactionsExport(filteredDocs, categories || [], {
         period: selectedFilter,
         periodLabel: selectedPeriodInfo?.key === selectedFilter
           ? selectedPeriodInfo.label
@@ -481,10 +507,24 @@ function Dashboard() {
         category: searchCategory,
         type: searchType,
       });
-      toast.success(`Excel v2 generado: ${count} movimientos y 3 hojas. Abrí el archivo nuevo, no el anterior.`);
+      const xlsxUrl = URL.createObjectURL(files.xlsxBlob);
+      let csvUrl;
+      try {
+        csvUrl = URL.createObjectURL(files.csvBlob);
+      } catch (error) {
+        URL.revokeObjectURL(xlsxUrl);
+        throw error;
+      }
+      // The browser gives us no API to know whether a silent .click()
+      // actually saved a file. Keep native links on-screen until the user
+      // taps one, closes the panel, or changes the filters.
+      clearPreparedExport();
+      const prepared = { ...files, xlsxUrl, csvUrl };
+      preparedExportRef.current = prepared;
+      setPreparedExport(prepared);
     } catch (error) {
-      console.error('[ltc-excel] No se pudo exportar el archivo', error);
-      toast.error('No se pudo generar el Excel. Volvé a intentarlo.');
+      console.error('[ltc-excel] No se pudo preparar el archivo', error);
+      toast.error('No se pudo preparar el archivo. Volvé a intentarlo.');
     }
   };
 
@@ -552,6 +592,7 @@ function Dashboard() {
                 { id: "due", icon: FaRegCalendarCheck, label: "Con vencimiento", value: isDataVisible ? overview.dueCount : "••" },
               ]}
             />
+            <TransactionsExportReady prepared={preparedExport} onClose={clearPreparedExport} />
           {isDataFetching && !docs ? (
             <PageDataSkeleton variant="transactions" />
           ) : (
