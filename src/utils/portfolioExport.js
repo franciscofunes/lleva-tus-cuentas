@@ -37,7 +37,20 @@ const crc32=b=>{let c=0xffffffff;for(const x of b)c=table[(c^x)&255]^(c>>>8);ret
 const u16=n=>new Uint8Array([n&255,(n>>>8)&255]),u32=n=>new Uint8Array([n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255]);
 const join=parts=>{const out=new Uint8Array(parts.reduce((s,p)=>s+p.length,0));let o=0;parts.forEach(p=>{out.set(p,o);o+=p.length;});return out;};
 const zip=files=>{const ls=[],cs=[];let off=0;Object.entries(files).forEach(([name,text])=>{const n=enc.encode(name),d=enc.encode(text),crc=crc32(d);const l=join([u32(0x04034b50),u16(20),u16(0x800),u16(0),u16(0),u16(0),u32(crc),u32(d.length),u32(d.length),u16(n.length),u16(0),n,d]);ls.push(l);cs.push(join([u32(0x02014b50),u16(20),u16(20),u16(0x800),u16(0),u16(0),u16(0),u32(crc),u32(d.length),u32(d.length),u16(n.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(off),n]));off+=l.length;});const body=join(ls),central=join(cs);return join([body,central,u32(0x06054b50),u16(0),u16(0),u16(cs.length),u16(cs.length),u32(central.length),u32(body.length),u16(0)]);};
-const download=(blob,name)=>{const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+const download=(blob,name)=>{
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;
+ a.download=name;
+ // Some Android download managers need a real, attached anchor and time to
+ // copy Blob bytes before object URL revocation. 1 second was too aggressive.
+ a.style.display='none';
+ document.body.appendChild(a);
+ try { a.click(); } finally {
+   a.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),60000);
+ }
+};
 const date=v=>!v?'':typeof v.toDate==='function'?v.toDate().toISOString():v.seconds?new Date(v.seconds*1000).toISOString():String(v);
 
 export const exportPortfolioXlsx=(positions,snapshots)=>{
