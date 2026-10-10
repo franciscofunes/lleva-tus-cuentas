@@ -1,4 +1,5 @@
 import { firestore } from '../shared/config/firebase/firebase.config';
+import { normalizeLitaChatMessages } from '../utils/litaChatMessages';
 
 const litaChatsCollection = (userId) =>
 	firestore.collection('users').doc(userId).collection('litaChats');
@@ -10,27 +11,7 @@ const toIsoString = (value) => {
 	return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
-// Preserve complete LTC analysis exports (up to LITA's 32k input limit) on
-// reload. The former 12k per-message truncation silently broke multi-turn
-// portfolio approvals. Keep a bounded document to avoid Firestore's 1 MiB cap.
-export const normalizeMessages = (messages = []) => {
-	const normalized = (Array.isArray(messages) ? messages : [])
-		.filter((message) =>
-			message && ['user', 'assistant'].includes(message.role) &&
-			typeof message.content === 'string'
-		)
-		.slice(-40)
-		.map((message) => ({
-			id: String(message.id || ''),
-			role: message.role,
-			content: message.content.slice(0, 32000),
-		}));
-	let totalChars = normalized.reduce((total, message) => total + message.content.length, 0);
-	while (normalized.length > 2 && totalChars > 90000) {
-		totalChars -= normalized.shift().content.length;
-	}
-	return normalized;
-};
+const normalizeMessages = normalizeLitaChatMessages;
 
 export const subscribeLitaChats = (userId, onData, onError = console.error) => {
 	if (!userId) return () => {};
