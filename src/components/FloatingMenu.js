@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { getPopoverMotion, getPopoverTap } from '../shared/animations/popoverMotion';
 import React, { useEffect, useRef, useState } from 'react';
 import { FaPlus, FaRobot } from 'react-icons/fa';
 
@@ -10,6 +11,7 @@ const FloatingMenu = ({
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const menuRef = useRef(null);
+	const prefersReducedMotion = useReducedMotion();
 
 	useEffect(() => {
 		if (isModalOpen) setIsOpen(false);
@@ -60,10 +62,7 @@ const FloatingMenu = ({
 							<motion.div
 								id='ltc-floating-actions'
 								className='w-60 max-w-[90vw] rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-950/10 backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30'
-								initial={{ opacity: 0, y: 8, scale: 0.98 }}
-								animate={{ opacity: 1, y: 0, scale: 1 }}
-								exit={{ opacity: 0, y: 6, scale: 0.98 }}
-								transition={{ duration: 0.16, ease: 'easeOut' }}
+								{...getPopoverMotion(prefersReducedMotion)}
 							>
 								<p className='px-2.5 pb-1.5 pt-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400'>
 									Acciones rápidas
@@ -117,7 +116,7 @@ const FloatingMenu = ({
 						aria-expanded={isOpen}
 						aria-controls='ltc-floating-actions'
 						className='inline-flex h-[50px] w-[50px] items-center justify-center rounded-2xl border border-purple-500 bg-purple-600 text-white shadow-lg shadow-purple-950/20 backdrop-blur transition-colors hover:bg-purple-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 dark:border-purple-500 dark:bg-purple-600 dark:hover:bg-purple-500'
-						whileTap={{ scale: 0.95 }}
+						whileTap={getPopoverTap(prefersReducedMotion)}
 						transition={{ type: 'spring', stiffness: 420, damping: 28 }}
 					>
 						<motion.span
