@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import CardStatementPdfReview from "./CardStatementPdfReview";
 import { getImportedStatement, saveReviewedStatement, verifyStatementDraft } from "../services/cardStatementService";
@@ -20,6 +20,9 @@ import {
   resolveTransactionDueDate,
   usesSelectedDateAsDueDate,
 } from "../utils/transactionDueDates";
+
+// A command inside the native category picker, never a category persisted to Firestore.
+export const CREATE_CATEGORY_OPTION = "__ltc_create_personal_category__";
 
 const TransactionForm = ({
   amount,
@@ -81,8 +84,14 @@ const TransactionForm = ({
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm();
+
+  // Keep react-hook-form in sync when the parent selects a newly created category.
+  useEffect(() => {
+    setValue("category", category || "");
+  }, [category, setValue]);
 
   const applyMarkdown = () => {
     if (!markdown.trim() || isParsingMarkdown) return;
@@ -268,6 +277,13 @@ const TransactionForm = ({
           {...register("category", {
             required: true,
             onChange: (e) => {
+              if (e.target.value === CREATE_CATEGORY_OPTION) {
+                // Restore the original value so the command is never submitted
+                // as a financial category. Keep the current draft intact.
+                setValue("category", category || "");
+                onManageCategories?.();
+                return;
+              }
               setCategory(e.target.value);
 
               setIsCreditCardCategory(
@@ -288,7 +304,12 @@ const TransactionForm = ({
           })}
           autoComplete="on"
         >
-          <option className="dark:text-white">Elegí una categoría</option>
+          <option value="" disabled className="dark:text-white">Elegí una categoría</option>
+          {onManageCategories && categories && (
+            <optgroup label="Acciones">
+              <option value={CREATE_CATEGORY_OPTION}>＋ Crear nueva categoría…</option>
+            </optgroup>
+          )}
           <optgroup label="Gastos">
             {categoriesForNewTransactions(categories, category)
               .filter((entry) => entry.isExpense)
