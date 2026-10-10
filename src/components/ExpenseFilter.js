@@ -182,18 +182,18 @@ function ExpenseFilter() {
             </button>
           </div>
           <DatePicker
-          selected={selectedDate}
-          disabled={isFilterChanging || !userId}
-          onChange={onDateChange}
-          customInput={<CalendarTrigger />}
-          locale='es'
-          withPortal
-          calendarClassName='ltc-calendar'
-          renderCustomHeader={(props) => <CalendarHeader {...props} />}
-          dateFormat='dd/MM/yyyy'
-          showPopperArrow={false}
-          todayButton='Hoy'
-          />
+            selected={selectedDate}
+            disabled={isFilterChanging || !userId}
+            onChange={onDateChange}
+            customInput={<CalendarTrigger />}
+            locale='es'
+            withPortal
+            calendarClassName='ltc-calendar'
+            renderCustomHeader={(props) => <CalendarHeader {...props} />}
+            dateFormat='dd/MM/yyyy'
+            showPopperArrow={false}
+            todayButton='Hoy'
+            />
         </div>
       </div>
 
