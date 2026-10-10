@@ -41,3 +41,41 @@ describe('Markdown import for foreign currency sales', () => {
     expect(item.currencyExchangeRate).toBe('');
   });
 });
+
+
+describe('Guided LITA Markdown works for every transaction class', () => {
+  const parse = (items) => parseTransactionsMarkdown(items)[0];
+
+  it('accepts a regular expense and income without inventing USD quantities', () => {
+    const expense = parse('- name: Farmacity\n  category: Salud 🏥\n  date: 2026-10-10\n  amount: 35079\n  source: lita-guided');
+    expect(expense.errors).toEqual([]);
+    expect(expense.currencyQuantity).toBe('');
+    expect(expense.amount).toBe(35079);
+    const income = parse('- name: Honorarios\n  category: Sueldo\n  date: 2026-10-10\n  amount: 250000');
+    expect(income.errors).toEqual([]);
+    expect(income.importKey).not.toBe(expense.importKey);
+  });
+
+  it('keeps card statement due date, closing date and amount', () => {
+    const item = parse('- name: Santander Visa\n  category: Resumen tarjeta 💳\n  date: 2026-10-13\n  amount: 1590805.54\n  selectedExpirationDate: 2026-10-13\n  selectedCloseDate: 2026-09-30');
+    expect(item.errors).toEqual([]);
+    expect(item.selectedCloseDate).toBe('2026-09-30');
+    expect(item.selectedExpirationDate).toBe('2026-10-13');
+  });
+
+  it('rejects a missing regular amount, invalid calendar date and missing statement dates', () => {
+    const item = parse('- name: Compra\n  category: Alimentación\n  date: 2026-02-30');
+    expect(item.errors).toContain('Monto inválido');
+    expect(item.errors).toContain('Fecha inválida');
+    const statement = parse('- name: Visa\n  category: Resumen tarjeta\n  date: 2026-10-10\n  amount: 1000');
+    expect(statement.errors).toContain('Cierre inválido');
+    expect(statement.errors).toContain('Vencimiento inválido');
+  });
+
+  it('parses two ordinary purchases separately and makes different deduplication IDs', () => {
+    const rows = parseTransactionsMarkdown('- name: Farmacia\n  category: Salud\n  amount: 400\n  date: 2026-10-10\n- name: Supermercado\n  category: Alimentación\n  amount: 400\n  date: 2026-10-10');
+    expect(rows).toHaveLength(2);
+    expect(rows.every(({ errors }) => errors.length === 0)).toBe(true);
+    expect(rows[0].importKey).not.toBe(rows[1].importKey);
+  });
+});
