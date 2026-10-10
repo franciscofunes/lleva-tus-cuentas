@@ -372,6 +372,7 @@ const LitaAssistantPanel = ({
 						<iframe
 							ref={iframeRef}
 							src={src}
+							allow='clipboard-write'
 							title='Lita Assistant'
 							className='min-h-0 w-full flex-1 border-none bg-white dark:bg-slate-950'
 							onLoad={() => {
