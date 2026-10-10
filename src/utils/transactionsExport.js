@@ -1,4 +1,4 @@
-import { exportWorkbookXlsx } from './portfolioExport';
+import { exportWorkbookXlsx, buildWorkbookXlsxBytes } from './portfolioExport';
 
 const safeText = (value) => String(value ?? '').replace(/[\r\n|]+/g, ' ').trim();
 const validMoney = (value) => value !== null && value !== undefined && value !== '' &&
@@ -116,4 +116,39 @@ export const exportTransactionsXlsx = (docs = [], categories = [], filters = {})
   const filename = `transacciones-ltc-v2-${now.slice(0, 10)}-${suffix}-${count}-movimientos.xlsx`;
   exportWorkbookXlsx(buildTransactionsExportSheets(docs, categories, filters), filename);
   return { filename, count };
+};
+
+// This prepares files locally; it never uploads private transactions. A real
+// <a href=blob: download> must be tapped by the user on mobile: browsers may
+// silently suppress a programmatic click, which cannot be verified via JS.
+const csvValue = (cell) => {
+  if (typeof cell === 'number' && Number.isFinite(cell)) return String(cell);
+  const text = String(cell ?? '');
+  // Keep user-entered fields as data, never Excel/CSV formulas.
+  const safe = /^\s*[=+@-]/.test(text) ? "'" + text : text;
+  return '"' + safe.replace(/"/g, '""') + '"';
+};
+
+export const buildTransactionsCsv = (docs = [], categories = []) => {
+  const rows = buildTransactionsExportSheets(docs, categories).Movimientos;
+  // Excel es-AR commonly uses semicolon as CSV separator.
+  return '\uFEFF' + rows.map((row) => row.map(csvValue).join(';')).join('\r\n') + '\r\n';
+};
+
+export const prepareTransactionsExport = (docs = [], categories = [], filters = {}, date = new Date()) => {
+  const count = Array.isArray(docs) ? docs.length : 0;
+  if (!count) throw new Error('No hay movimientos para exportar con los filtros actuales.');
+  const isoDate = date.toISOString();
+  const suffix = isoDate.slice(11, 23).replace(/[:.]/g, '');
+  const stem = `transacciones-ltc-v2-${isoDate.slice(0,10)}-${suffix}-${count}-movimientos`;
+  const sheets = buildTransactionsExportSheets(docs, categories, filters);
+  return {
+    count,
+    filename: `${stem}.xlsx`,
+    csvFilename: `${stem}.csv`,
+    xlsxBlob: new Blob([buildWorkbookXlsxBytes(sheets)], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }),
+    csvBlob: new Blob([buildTransactionsCsv(docs, categories)], { type: 'text/csv;charset=utf-8' }),
+  };
 };

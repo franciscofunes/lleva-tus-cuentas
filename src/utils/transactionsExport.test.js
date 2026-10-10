@@ -1,6 +1,6 @@
 import {
   buildTransactionOverview, buildTransactionsExportSheets,
-  buildTransactionsLitaMarkdown, exportTransactionsXlsx,
+  buildTransactionsLitaMarkdown, exportTransactionsXlsx, prepareTransactionsExport, buildTransactionsCsv,
 } from './transactionsExport';
 import { exportWorkbookXlsx, buildWorkbookXlsxBytes, worksheetXml, xlsxColumnName } from './portfolioExport';
 import { filterTransactions } from './transactionSearch';
@@ -154,4 +154,31 @@ test('empty filtered data must not silently download a header-only workbook', ()
   exportWorkbookXlsx.mockClear();
   expect(() => exportTransactionsXlsx([], categories)).toThrow('No hay movimientos para exportar');
   expect(exportWorkbookXlsx).not.toHaveBeenCalled();
+});
+
+test('mobile export prepares two real download blobs without automatic clicking or a false success status', () => {
+  exportWorkbookXlsx.mockClear();
+  const prepared = prepareTransactionsExport(docs, categories, { period: 'month', periodLabel: 'octubre 2026' },
+    new Date('2026-10-10T19:00:01.023Z'));
+  expect(prepared.count).toBe(4);
+  expect(prepared.filename).toBe('transacciones-ltc-v2-2026-10-10-190001023-4-movimientos.xlsx');
+  expect(prepared.csvFilename).toBe('transacciones-ltc-v2-2026-10-10-190001023-4-movimientos.csv');
+  expect(prepared.xlsxBlob.size).toBeGreaterThan(1500);
+  expect(prepared.xlsxBlob.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  expect(prepared.csvBlob.size).toBeGreaterThan(100);
+  expect(exportWorkbookXlsx).not.toHaveBeenCalled();
+});
+
+test('CSV fallback includes all transactions, separates semicolons, and neutralizes spreadsheet formulas', () => {
+  const input = [...docs, { selectedDate: '2026-10-10', expenseName: '=SUM(A1:A9)', amount: 32, category: 'Salud 🏥' }];
+  const csv = buildTransactionsCsv(input, categories);
+  expect(csv.charCodeAt(0)).toBe(0xfeff);
+  expect(csv).toContain('"Fecha";"Nombre";"Categoría";"Clasificación"');
+  expect(csv).toContain(';"\'=SUM(A1:A9)";');
+  expect(csv).toContain('158064;100;1580.64');
+  expect(csv.trim().split(/\r\n/)).toHaveLength(input.length + 1);
+});
+
+test('download preparation rejects empty filtered results', () => {
+  expect(() => prepareTransactionsExport([], categories)).toThrow(/No hay movimientos/);
 });
