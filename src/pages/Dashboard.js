@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import "tippy.js/dist/tippy.css";
-import { FaArrowRight, FaChartPie, FaExchangeAlt, FaPlus, FaListAlt, FaTags, FaRegCalendarCheck } from "react-icons/fa";
+import { FaChartPie, FaExchangeAlt, FaPlus, FaListAlt, FaTags, FaRegCalendarCheck } from "react-icons/fa";
 import {
   getCategoriesDataAction,
   getDataAction,
@@ -497,32 +497,24 @@ function Dashboard() {
             <Link to="/portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
             <button type="button" onClick={toggleDataVisibility} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
           </QuickAccessCard>
-          <div className="mb-4 flex justify-end">
-            <button type="button" onClick={() => setShowCategoryManager(true)} disabled={!categories}
-              className="inline-flex min-h-[44px] disabled:opacity-50 items-center gap-2 rounded-xl border border-purple-500/50 bg-purple-500/10 px-4 py-2 text-sm font-semibold text-purple-700 transition-colors hover:bg-purple-500/20 dark:text-purple-300"
-            >
-              <FaTags aria-hidden="true" /> Gestionar categorías
-            </button>
-          </div>
-          {!(isDataFetching && !docs) && (
-            <FinancialOverviewPanel
+          <FinancialOverviewPanel
               id="transactions-overview"
               collapsed={collapsedSections.overview}
               onToggle={() => toggleDashboardSection("overview")}
               title="Movimientos de un vistazo"
               description="Métricas y exportaciones de los movimientos de la vista actual."
               privacyHidden={!isDataVisible}
+              loading={isDataFetching || !docs}
               actions={[
                 { id: "excel", type: "excel", label: "Exportar Excel", onClick: () => exportTransactionsXlsx(filteredDocs, categories || []), disabled: isDataFetching || !filteredDocs.length },
                 { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
               ]}
               metrics={[
-                { id: "count", icon: FaListAlt, label: "Movimientos", value: isDataVisible ? overview.count : "••" },
-                { id: "categories", icon: FaTags, label: "Categorías", value: isDataVisible ? overview.categoryCount : "••" },
-                { id: "due", icon: FaRegCalendarCheck, label: "Con vencimiento", value: isDataVisible ? overview.dueCount : "••" },
+                { id: "count", icon: FaListAlt, label: "Movimientos", value: overview.count },
+                { id: "categories", icon: FaTags, label: "Categorías", value: overview.categoryCount },
+                { id: "due", icon: FaRegCalendarCheck, label: "Con vencimiento", value: overview.dueCount },
               ]}
             />
-          )}
           {isDataFetching && !docs ? (
             <PageDataSkeleton variant="transactions" />
           ) : (
@@ -592,9 +584,17 @@ function Dashboard() {
           onToggle={() => toggleDashboardSection("transactions")}
           className="lg:col-span-2"
           action={
-            <Link to="/portfolio" className="hidden sm:inline-flex items-center gap-2 text-sm font-bold text-purple-500">
-              Ver portfolio <FaArrowRight />
-            </Link>
+            <button
+              type="button"
+              onClick={() => setShowCategoryManager(true)}
+              disabled={!categories}
+              aria-label="Gestionar categorías"
+              title="Gestionar categorías"
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2 text-xs font-semibold text-purple-700 transition-colors hover:bg-purple-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40 dark:text-purple-300 sm:px-3"
+            >
+              <FaTags aria-hidden="true" size={13} />
+              <span className="hidden sm:inline">Categorías</span>
+            </button>
           }
         >
             <SearchBar
