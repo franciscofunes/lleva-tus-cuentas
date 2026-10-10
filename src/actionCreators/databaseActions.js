@@ -1,4 +1,5 @@
 import moment from 'moment';
+import firebase from 'firebase/compat/app';
 import { toast } from 'react-toastify';
 import { firestore } from '../shared/config/firebase/firebase.config';
 import { mergeCategories } from '../utils/customCategories';
@@ -134,7 +135,9 @@ export const updateDataAction = (data, docId) => {
 				expenseName: data.name,
 				comment: data.comment,
 				category: data.category,
-				...(Object.keys(safeCustomDetails(data)).length ? { customDetails: safeCustomDetails(data) } : {}),
+				...(Object.keys(safeCustomDetails(data)).length
+					? { customDetails: safeCustomDetails(data) }
+					: data.clearCustomDetails ? { customDetails: firebase.firestore.FieldValue.delete() } : {}),
 				...(data?.amount && {
 					amount: data?.amount,
 				}),
