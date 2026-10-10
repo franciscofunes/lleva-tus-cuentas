@@ -18,6 +18,8 @@ export const getPopoverMotion = (prefersReducedMotion) => (
     : popoverMotion
 )
 
+export const popoverTapTransition = { type: 'spring', stiffness: 420, damping: 28 }
+
 export const getPopoverTap = (prefersReducedMotion) => (
   prefersReducedMotion ? undefined : { scale: 0.95 }
 )
