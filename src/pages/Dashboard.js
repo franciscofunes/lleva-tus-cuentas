@@ -22,6 +22,8 @@ import LitaAssistantPanel from "../components/LitaAssitantPanel";
 import { summarizeSpendingByCategory } from '../utils/litaSpendingSummary';
 import SearchBar from "../components/SearchBar";
 import { filterTransactions } from "../utils/transactionSearch";
+import { categoryContains } from "../utils/categoryContains";
+import { TRANSACTION_PAGE_SIZE, visibleTransactionBatch } from "../utils/transactionsPagination";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
@@ -155,6 +157,7 @@ function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [searchType, setSearchType] = useState("all");
+  const [visibleTransactionCount, setVisibleTransactionCount] = useState(TRANSACTION_PAGE_SIZE);
 
   const filteredDocs = useMemo(
     () => filterTransactions(docs || [], {
@@ -165,6 +168,17 @@ function Dashboard() {
     }),
     [docs, searchQuery, searchCategory, searchType, categories]
   );
+
+  // Only render the first batch of cards. Filtering, KPIs, Lita context and
+  // exports still use the complete result set; rendering thousands of rich
+  // cards on a route transition can freeze Android Chrome.
+  const visibleTransactions = useMemo(
+    () => visibleTransactionBatch(filteredDocs, visibleTransactionCount),
+    [filteredDocs, visibleTransactionCount]
+  );
+  useEffect(() => {
+    setVisibleTransactionCount(TRANSACTION_PAGE_SIZE);
+  }, [user?.uid, selectedFilter, searchQuery, searchCategory, searchType]);
 
   const hasActiveSearch = Boolean(searchQuery.trim() || searchCategory || searchType !== "all");
   const clearTransactionFilters = () => {
@@ -302,10 +316,12 @@ function Dashboard() {
   }, [user?.uid, dispatch]);
 
   useEffect(() => {
-    if (user) {
-      dispatch(getDataAction(user.uid));
-    }
-  }, [user, dispatch]);
+    // Subscribe only for the default current-month view. Previous versions
+    // accumulated listeners each time Portfolio -> Transacciones was visited,
+    // and those listeners could overwrite "Todo" period results after navigation.
+    if (!user?.uid || selectedFilter !== "month") return undefined;
+    return dispatch(getDataAction(user.uid));
+  }, [user?.uid, selectedFilter, dispatch]);
 
   useEffect(() => {
     if (user) {
@@ -333,8 +349,8 @@ function Dashboard() {
       const currencyIncome = docs
         .filter(
           (doc) =>
-            doc.category.includes("Compra divisas") ||
-            doc.category.includes(INGRESO_DIVISAS_CATEGORY)
+            categoryContains(doc, "Compra divisas") ||
+            categoryContains(doc, INGRESO_DIVISAS_CATEGORY)
         )
         .map((doc) => {
           const currencyQuantity = parseFloat(doc?.currencyQuantity);
@@ -342,7 +358,7 @@ function Dashboard() {
         });
 
       const currencySale = docs
-        .filter((doc) => doc.category.includes("Venta divisas"))
+        .filter((doc) => categoryContains(doc, "Venta divisas"))
         .map((doc) => {
           const currencyQuantity = parseFloat(doc?.currencyQuantity);
           return isNaN(currencyQuantity) ? 0 : currencyQuantity;
@@ -497,21 +513,14 @@ function Dashboard() {
             <Link to="/portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
             <button type="button" onClick={toggleDataVisibility} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
           </QuickAccessCard>
-          <div className="mb-4 flex justify-end">
-            <button type="button" onClick={() => setShowCategoryManager(true)} disabled={!categories}
-              className="inline-flex min-h-[44px] disabled:opacity-50 items-center gap-2 rounded-xl border border-purple-500/50 bg-purple-500/10 px-4 py-2 text-sm font-semibold text-purple-700 transition-colors hover:bg-purple-500/20 dark:text-purple-300"
-            >
-              <FaTags aria-hidden="true" /> Gestionar categorías
-            </button>
-          </div>
-          {!(isDataFetching && !docs) && (
-            <FinancialOverviewPanel
+          <FinancialOverviewPanel
               id="transactions-overview"
               collapsed={collapsedSections.overview}
               onToggle={() => toggleDashboardSection("overview")}
               title="Movimientos de un vistazo"
               description="Métricas y exportaciones de los movimientos de la vista actual."
               privacyHidden={!isDataVisible}
+              isLoading={isDataFetching || !docs || !categories}
               actions={[
                 { id: "excel", type: "excel", label: "Exportar Excel", onClick: () => exportTransactionsXlsx(filteredDocs, categories || []), disabled: isDataFetching || !filteredDocs.length },
                 { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
@@ -522,7 +531,6 @@ function Dashboard() {
                 { id: "due", icon: FaRegCalendarCheck, label: "Con vencimiento", value: isDataVisible ? overview.dueCount : "••" },
               ]}
             />
-          )}
           {isDataFetching && !docs ? (
             <PageDataSkeleton variant="transactions" />
           ) : (
@@ -597,6 +605,17 @@ function Dashboard() {
             </Link>
           }
         >
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCategoryManager(true)}
+                disabled={!categories}
+                aria-label="Gestionar categorías personales"
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-purple-400 hover:bg-purple-500/10 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:text-purple-300"
+              >
+                <FaTags size={12} aria-hidden="true" /> Gestionar categorías
+              </button>
+            </div>
             <SearchBar
               query={searchQuery}
               onQueryChange={setSearchQuery}
@@ -634,7 +653,7 @@ function Dashboard() {
               </div>
             ) : null}
 
-            {!isDataFetching && filteredDocs.map((doc) => {
+            {!isDataFetching && visibleTransactions.map((doc) => {
               return (
                 <div key={doc.id}>
                   <Card
@@ -678,6 +697,20 @@ function Dashboard() {
                 </div>
               );
             })}
+            {!isDataFetching && visibleTransactions.length < filteredDocs.length && (
+              <div className="mt-5 flex flex-col items-center gap-2 border-t border-slate-200 pt-4 dark:border-slate-700">
+                <p className="text-xs text-slate-500 dark:text-slate-400" role="status">
+                  Mostrando {visibleTransactions.length} de {filteredDocs.length} movimientos
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setVisibleTransactionCount((count) => count + TRANSACTION_PAGE_SIZE)}
+                  className="min-h-[44px] rounded-xl border border-purple-500/60 bg-purple-500/10 px-5 py-2 text-sm font-semibold text-purple-700 transition-colors hover:bg-purple-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:text-purple-300"
+                >
+                  Cargar más movimientos
+                </button>
+              </div>
+            )}
         </CollapsibleSection>
 
           </div>
