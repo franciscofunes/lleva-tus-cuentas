@@ -316,10 +316,12 @@ function Dashboard() {
   }, [user?.uid, dispatch]);
 
   useEffect(() => {
-    if (user) {
-      dispatch(getDataAction(user.uid));
-    }
-  }, [user, dispatch]);
+    // Subscribe only for the default current-month view. Previous versions
+    // accumulated listeners each time Portfolio -> Transacciones was visited,
+    // and those listeners could overwrite "Todo" period results after navigation.
+    if (!user?.uid || selectedFilter !== "month") return undefined;
+    return dispatch(getDataAction(user.uid));
+  }, [user?.uid, selectedFilter, dispatch]);
 
   useEffect(() => {
     if (user) {
