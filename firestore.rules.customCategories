@@ -5,6 +5,9 @@
 //
 // NO reemplazar el ruleset existente (cardStatements, litaChats,
 // notifications, portfolioPositions, subscribers, etc.).
+// extraFieldIds es una lista opcional e INMUTABLE de claves permitidas.
+// Además de estas reglas, actualizar la validación del match de expenses
+// según firestore.rules.customTransactionDetails antes de desplegar UI.
 // La colección compartida /categories conserva su regla existente:
 //   allow read: if request.auth != null;
 //   allow create, update, delete: if false;
@@ -17,10 +20,21 @@ match /users/{uid}/customCategories/{categoryId} {
     return request.auth != null && request.auth.uid == uid;
   }
 
+  // Optional for backwards compatibility with categories created before this feature.
+  // Only LTC-defined metadata can be configured. At most three fields per category.
+  function validExtraFieldSelection(data) {
+    return !('extraFieldIds' in data) ||
+      (data.extraFieldIds is list
+       && data.extraFieldIds.size() <= 3
+       && data.extraFieldIds.hasOnly([
+         'reference', 'counterparty', 'paymentMethod', 'receiptNumber', 'operationDate'
+       ]));
+  }
+
   function validPersonalCategory() {
     let d = request.resource.data;
     return d.keys().hasAll(['name', 'isExpense', 'active', 'createdAt', 'updatedAt'])
-      && d.keys().hasOnly(['name', 'isExpense', 'active', 'createdAt', 'updatedAt'])
+      && d.keys().hasOnly(['name', 'isExpense', 'active', 'createdAt', 'updatedAt', 'extraFieldIds'])
       && categoryId.matches('^[a-z0-9-]{3,80}$')
       && d.name is string
       && d.name.size() >= 2
@@ -28,6 +42,7 @@ match /users/{uid}/customCategories/{categoryId} {
       && d.name.matches('^[^\\r\\n]+$')
       && d.isExpense is bool
       && d.active is bool
+      && validExtraFieldSelection(d)
       && d.createdAt is timestamp
       && d.updatedAt is timestamp;
   }
@@ -49,6 +64,7 @@ match /users/{uid}/customCategories/{categoryId} {
     && request.resource.data.createdAt == resource.data.createdAt
     && request.resource.data.name == resource.data.name
     && request.resource.data.isExpense == resource.data.isExpense
+    && request.resource.data.get('extraFieldIds', []) == resource.data.get('extraFieldIds', [])
     && request.resource.data.updatedAt == request.time;
 
   // Deleting would orphan old transaction categories; archive instead.

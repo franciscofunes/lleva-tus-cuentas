@@ -25,10 +25,13 @@ jest.mock('./InfoTooltip', () => () => null);
 const initialCategories = [
   { id: 'transport', name: 'Transporte 🚌', isExpense: true, active: true },
   { id: 'salary', name: 'Salario 💲', isExpense: false, active: true },
+  { id: 'freelance', name: 'Freelance', isExpense: false, active: true,
+    extraFieldIds: ['reference', 'paymentMethod'], origin: 'custom', isCustom: true },
 ];
 
 function TransactionHarness({ initialCategory = 'Transporte 🚌', onCategoryFlags = {} }) {
   const [category, setCategory] = useState(initialCategory);
+  const [customDetails, setCustomDetails] = useState({});
   const [name, setName] = useState('Taxi de regreso');
   const [openManager, setOpenManager] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
@@ -40,6 +43,7 @@ function TransactionHarness({ initialCategory = 'Transporte 🚌', onCategoryFla
         amount='2500' setAmount={noop}
         comment='Viaje' setComment={noop}
         category={category} setCategory={setCategory}
+        customDetails={customDetails} setCustomDetails={setCustomDetails}
         selectedDate='2026-10-10' setSelectedDate={noop}
         selectedExpirationDate='' setSelectedExpirationDate={noop}
         selectedCloseDate='' setSelectedCloseDate={noop}
@@ -106,4 +110,26 @@ test('the create-category action does not become a persisted form category with 
   fireEvent.change(picker, { target: { value: CREATE_CATEGORY_OPTION } });
   expect(picker).toHaveValue('');
   expect(screen.getByRole('dialog', { name: 'Administrar categorías personales' })).toBeInTheDocument();
+});
+
+test('renders only the configured safe inputs when selecting a private category', () => {
+  render(<TransactionHarness initialCategory='Freelance' />);
+  const section = screen.getByRole('region', { name: 'Datos adicionales de la categoría' });
+  expect(section).toHaveTextContent('Referencia / ID de operación');
+  expect(section).toHaveTextContent('Medio de pago');
+  expect(screen.queryByLabelText('Número de comprobante')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Referencia / ID de operación'), { target: { value: 'OP-800' } });
+  fireEvent.change(screen.getByLabelText('Medio de pago'), { target: { value: 'transferencia' } });
+  expect(screen.getByLabelText('Referencia / ID de operación')).toHaveValue('OP-800');
+  expect(screen.getByLabelText('Medio de pago')).toHaveValue('transferencia');
+});
+
+test('switching categories removes stale custom metadata from the transaction draft', () => {
+  render(<TransactionHarness initialCategory='Freelance' />);
+  const ref = screen.getByLabelText('Referencia / ID de operación');
+  fireEvent.change(ref, { target: { value: 'OP-800' } });
+  fireEvent.change(screen.getByRole('combobox', { name: 'Categoría' }), { target: { value: 'Salario 💲' } });
+  expect(screen.queryByLabelText('Referencia / ID de operación')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole('combobox', { name: 'Categoría' }), { target: { value: 'Freelance' } });
+  expect(screen.getByLabelText('Referencia / ID de operación')).toHaveValue('');
 });

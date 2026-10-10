@@ -71,3 +71,24 @@ test('does not leave the transaction form when saving a category fails', async (
   await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('No se pudo guardar.'));
   expect(onCreated).not.toHaveBeenCalled();
 });
+
+test('new private category stores only controlled preset identifiers', async () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  fireEvent.change(screen.getByLabelText('Nombre de la categoría'), { target: { value: 'Servicios freelance' } });
+  fireEvent.click(screen.getByLabelText('Referencia / ID de operación'));
+  fireEvent.click(screen.getByLabelText('Medio de pago'));
+  fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
+  await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA',
+    { name: 'Servicios freelance', isExpense: true, extraFieldIds: ['reference', 'paymentMethod'] }, categories));
+});
+
+test('allows at most three extra presets and never changes mandatory base fields', () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  expect(screen.getByText(/nombre, categoría, monto, fecha y descripción/)).toBeInTheDocument();
+  fireEvent.click(screen.getByLabelText('Referencia / ID de operación'));
+  fireEvent.click(screen.getByLabelText('Medio de pago'));
+  fireEvent.click(screen.getByLabelText('Número de comprobante'));
+  expect(screen.getByLabelText('Fecha de operación adicional')).toBeDisabled();
+  fireEvent.click(screen.getByLabelText('Medio de pago'));
+  expect(screen.getByLabelText('Fecha de operación adicional')).toBeEnabled();
+});

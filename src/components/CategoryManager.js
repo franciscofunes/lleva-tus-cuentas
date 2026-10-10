@@ -3,12 +3,14 @@ import { FaCheck, FaPlus, FaTag } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { saveCustomCategory, setCustomCategoryActive } from '../services/customCategoriesService';
 import { normalizeCategoryName, validateCustomCategory } from '../utils/customCategories';
+import { CATEGORY_EXTRA_FIELD_CATALOG, MAX_EXTRA_FIELDS, validateCategoryExtraFields } from '../utils/categoryExtraFields';
 
 const fieldClass = 'w-full min-h-[44px] rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white';
 
 const CategoryManager = ({ userId, categories = [], onCreated }) => {
   const [name, setName] = useState('');
   const [isExpense, setIsExpense] = useState(true);
+  const [extraFieldIds, setExtraFieldIds] = useState([]);
   const [working, setWorking] = useState('');
   const [error, setError] = useState('');
   const customCategories = useMemo(() =>
@@ -26,13 +28,15 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
       setError('Esta categoría está archivada. Reactivala desde la lista de abajo.');
       return;
     }
-    const validation = validateCustomCategory({ name, isExpense }, categories);
+    const validation = validateCustomCategory({ name, isExpense }, categories)
+      || validateCategoryExtraFields(extraFieldIds);
     if (validation) { setError(validation); return; }
     setWorking('create');
     setError('');
     try {
-      await saveCustomCategory(userId, { name, isExpense }, categories);
+      await saveCustomCategory(userId, { name, isExpense, ...(extraFieldIds.length ? { extraFieldIds } : {}) }, categories);
       setName('');
+      setExtraFieldIds([]);
       toast.success('Categoría personal creada');
       // Only close/select automatically when launched from an active transaction.
       // The callback runs solely after Firestore confirms creation.
@@ -79,6 +83,33 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
             <input type='radio' checked={!isExpense} onChange={() => setIsExpense(false)} name='personal-category-type' /> Ingreso
           </label>
         </fieldset>
+        <section aria-label='Campos de la categoría' className='space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-600 dark:bg-slate-900/70'>
+          <h3 className='text-sm font-bold text-slate-900 dark:text-white'>Campos de la transacción</h3>
+          <p className='text-xs leading-5 text-slate-600 dark:text-slate-300'>
+            Incluidos en todas las categorías: nombre, categoría, monto, fecha y descripción.
+          </p>
+          <p className='text-xs font-bold text-purple-700 dark:text-purple-300'>
+            Adicionales opcionales ({extraFieldIds.length}/{MAX_EXTRA_FIELDS})
+          </p>
+          <div className='grid gap-1.5 sm:grid-cols-2'>
+            {CATEGORY_EXTRA_FIELD_CATALOG.map((field) => {
+              const checked = extraFieldIds.includes(field.id);
+              return (
+                <label key={field.id} className='flex min-h-[42px] items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200'>
+                  <input type='checkbox' checked={checked} disabled={Boolean(working) || (!checked && extraFieldIds.length >= MAX_EXTRA_FIELDS)}
+                    onChange={(event) => setExtraFieldIds((current) => event.target.checked
+                      ? [...current, field.id] : current.filter((id) => id !== field.id))}
+                    className='h-4 w-4 accent-purple-600' />
+                  <span>{field.label}</span>
+                </label>
+              );
+            })}
+          </div>
+          <p className='text-xs text-slate-500 dark:text-slate-400'>
+            Son campos controlados por LTC: no alteran cálculos ni reemplazan los campos especiales de tarjetas o divisas.
+            La selección queda fija para proteger los movimientos históricos.
+          </p>
+        </section>
         {error && <p role='alert' className='text-sm text-red-700 dark:text-red-300'>{error}</p>}
         <button type='submit' disabled={Boolean(working) || !userId}
           className='flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2 font-semibold text-white hover:bg-purple-700 disabled:opacity-50'>
@@ -94,6 +125,9 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
             <div className='min-w-0'>
               <p className='break-words text-sm font-bold text-slate-900 dark:text-white'>{entry.name}</p>
               <p className='text-xs text-slate-500 dark:text-slate-400'>{entry.isExpense ? 'Gasto' : 'Ingreso'} · {entry.active === false ? 'Archivada' : 'Activa'}</p>
+              {Array.isArray(entry.extraFieldIds) && entry.extraFieldIds.length > 0 && (
+                <p className='mt-1 text-xs text-purple-700 dark:text-purple-300'>{entry.extraFieldIds.length} campos adicionales</p>
+              )}
             </div>
             <button type='button' disabled={Boolean(working)} onClick={() => toggleActive(entry)}
               aria-label={entry.active === false ? `Reactivar ${entry.name}` : `Archivar ${entry.name}`}
