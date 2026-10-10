@@ -59,6 +59,7 @@ const TransactionForm = ({
   onManageCategories,
   customDetails = {},
   setCustomDetails = () => {},
+  hasSavedCustomDetails = false,
   setIsOpen,
 }) => {
   const dispatch = useDispatch();
@@ -169,6 +170,7 @@ const TransactionForm = ({
       const data = {
         userId: user?.uid,
         customDetails: safeDetails,
+        clearCustomDetails: edit && hasSavedCustomDetails && !Object.keys(safeDetails).length,
         name, amount, comment, category, selectedDate,
         selectedExpirationDate, selectedCloseDate,
         currencyQuantity, currencyExchangeRate, dueDate,
