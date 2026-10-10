@@ -146,8 +146,8 @@ function ExpenseFilter({ onPeriodChange }) {
   // Keep the export's period label in sync even when the date is changed
   // inside this picker (the Redux filter stores only the period key).
   useEffect(() => {
-    if (typeof onPeriodChange === 'function') onPeriodChange(periodLabel);
-  }, [onPeriodChange, periodLabel]);
+    if (typeof onPeriodChange === 'function') onPeriodChange({ key: selectedFilter, label: periodLabel });
+  }, [onPeriodChange, periodLabel, selectedFilter]);
 
   return (
     <section aria-label='Filtrar por período' className='mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-600 dark:bg-slate-900/70 sm:p-4'>
