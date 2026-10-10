@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Routes, useLocation } from 'react-router-dom';
+import RouteErrorBoundary from './RouteErrorBoundary';
 
 // Mount the new route immediately; a wait-mode exit transition can leave Android
 // showing a blank page when interrupted. Preserve the shared 180ms entrance fade.
@@ -28,7 +29,9 @@ export default function AnimatedRoutes({ children }) {
       initial={false}
       className='w-full min-w-0'
     >
-      <Routes location={location}>{children}</Routes>
+      <RouteErrorBoundary key={location.pathname}>
+        <Routes location={location}>{children}</Routes>
+      </RouteErrorBoundary>
     </motion.div>
   );
 }
