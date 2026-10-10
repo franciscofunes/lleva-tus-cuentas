@@ -210,6 +210,7 @@ function Dashboard() {
   const [amount, setAmount] = useState("");
   const [comment, setComment] = useState("");
   const [category, setCategory] = useState("");
+  const [customDetails, setCustomDetails] = useState({});
   const [selectedDate, setSelectedDate] = useState("");
 
   const [isCreditCardCategory, setIsCreditCardCategory] = useState(false);
@@ -431,6 +432,7 @@ function Dashboard() {
     setAmount(transaction.amount ?? "");
     setComment(transaction.comment || "");
     setCategory(transaction.category || "");
+    setCustomDetails(transaction.customDetails || {});
     setSelectedDate(transaction.selectedDate || "");
     setSelectedExpirationDate(transaction.selectedExpirationDate || "");
     setSelectedCloseDate(transaction.selectedCloseDate || "");
@@ -487,6 +489,7 @@ function Dashboard() {
     setAmount("");
     setComment("");
     setCategory("");
+    setCustomDetails({});
     setSelectedDate("");
     setSelectedExpirationDate("");
     setSelectedCloseDate("");
@@ -673,6 +676,8 @@ function Dashboard() {
                     date={doc.date}
                     comment={doc.comment}
                     category={doc.category}
+                    customDetails={doc.customDetails || {}}
+                    setCustomDetails={setCustomDetails}
                     selectedDate={doc.selectedDate}
                     selectedExpirationDate={doc.selectedExpirationDate}
                     selectedCloseDate={doc.selectedCloseDate}
@@ -749,6 +754,8 @@ function Dashboard() {
             edit={edit}
             comment={comment}
             category={category}
+            customDetails={customDetails}
+            setCustomDetails={setCustomDetails}
             selectedDate={selectedDate}
             selectedExpirationDate={selectedExpirationDate}
             selectedCloseDate={selectedCloseDate}
@@ -796,6 +803,7 @@ function Dashboard() {
             categories={categories || []}
             onCreated={isOpen ? (newCategoryName) => {
               setCategory(newCategoryName);
+              setCustomDetails({});
               setIsCreditCardCategory(false);
               setIsBuyCurrenciesCategory(false);
               setIsCurrencyIncomeCategory(false);
