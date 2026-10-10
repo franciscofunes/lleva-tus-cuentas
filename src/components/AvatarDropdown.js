@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { getPopoverMotion, getPopoverTap } from '../shared/animations/popoverMotion';
+import { getPopoverMotion, getPopoverTap, popoverTapTransition } from '../shared/animations/popoverMotion';
 import {
 	AiOutlineFund,
 	AiOutlineUnorderedList,
@@ -60,6 +60,7 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 		<div className='relative inline-block text-left' ref={dropdownRef}>
 			<motion.button
 				whileTap={getPopoverTap(prefersReducedMotion)}
+				transition={popoverTapTransition}
 				type='button'
 				className='inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 text-sm font-extrabold text-slate-700 shadow-sm transition hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white'
 				onClick={() => setShowDropdown((value) => !value)}
