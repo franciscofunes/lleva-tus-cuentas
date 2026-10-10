@@ -176,7 +176,7 @@ test('CSV fallback includes all transactions, separates semicolons, and neutrali
   expect(csv).toContain('Fecha;Nombre;Categoría;Clasificación');
   expect(csv).toContain(';"\'=SUM(A1:A9)";');
   expect(csv).toContain('158064;100;1580.64');
-  expect(csv.trim().split('\\r\\n')).toHaveLength(input.length + 1);
+  expect(csv.trim().split(/\r\n/)).toHaveLength(input.length + 1);
 });
 
 test('download preparation rejects empty filtered results', () => {
