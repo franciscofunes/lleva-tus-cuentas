@@ -1,7 +1,8 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route } from 'react-router-dom';
+import AnimatedRoutes from './components/AnimatedRoutes';
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
 import App from './App';
@@ -31,7 +32,7 @@ root.render(
 			<Provider store={store}>
 				<AuthSessionBootstrap>
 					<App />
-					<Routes>
+					<AnimatedRoutes>
 						<Route exact path='/' element={<Home />} />
 						<Route path='/registrarse' element={<SignUp />} />
 						<Route path='/ingresar' element={<LogIn />} />
@@ -84,7 +85,7 @@ root.render(
 								</ProtectedRoute>
 							}
 						/>
-					</Routes>
+					</AnimatedRoutes>
 				</AuthSessionBootstrap>
 			</Provider>
 		</Router>
