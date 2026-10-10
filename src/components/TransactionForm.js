@@ -101,6 +101,8 @@ const TransactionForm = ({
       setName(item.name || "");
       setCategory(nextCategory);
       setSelectedDate(item.selectedDate || "");
+      setSelectedExpirationDate(item.selectedExpirationDate || "");
+      setSelectedCloseDate(item.selectedCloseDate || "");
       setComment(item.comment || "");
       setCurrencyQuantity(item.currencyQuantity || "");
       setCurrencyExchangeRate(item.currencyExchangeRate !== "" ? item.currencyExchangeRate : "");
