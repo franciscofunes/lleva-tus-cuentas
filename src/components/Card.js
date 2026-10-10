@@ -45,7 +45,7 @@ function Card({
 	const dispatch = useDispatch();
 	// Historical imports may omit a category while Firestore categories are still loading.
 	const safeCategory = typeof category === 'string' ? category : '';
-	const safeCategories = Array.isArray(categories) ? safeCategories.filter(Boolean) : [];
+	const safeCategories = Array.isArray(categories) ? categories.filter(Boolean) : [];
 	const isExpense = safeCategories.some((entry) => entry?.isExpense && entry.name === safeCategory);
 	const selectedDateIsDueDate = usesSelectedDateAsDueDate(category, categories);
 	const isPaidBill = paymentStatus === 'paid';
