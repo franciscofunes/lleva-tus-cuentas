@@ -21,8 +21,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci --omit=optional --ignore-scripts --no-audit --no-fund
-      - name: Test user isolation, money reconciliation, and no expense duplication
-        run: CI=true npm test -- --watch=false --runInBand src/services/cardStatementService.test.js
+      - name: Test secure statement imports and in-memory purchase search
+        run: CI=true npm test -- --watch=false --runInBand src/services/cardStatementService.test.js src/components/CardStatementDetails.test.js src/utils/cardStatementSearch.test.js
       - name: Restore optional browser dependencies for production build
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Compile LTC
