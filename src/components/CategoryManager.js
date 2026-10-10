@@ -6,7 +6,7 @@ import { normalizeCategoryName, validateCustomCategory } from '../utils/customCa
 
 const fieldClass = 'w-full min-h-[44px] rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white';
 
-const CategoryManager = ({ userId, categories = [] }) => {
+const CategoryManager = ({ userId, categories = [], onCreated }) => {
   const [name, setName] = useState('');
   const [isExpense, setIsExpense] = useState(true);
   const [working, setWorking] = useState('');
@@ -34,6 +34,9 @@ const CategoryManager = ({ userId, categories = [] }) => {
       await saveCustomCategory(userId, { name, isExpense }, categories);
       setName('');
       toast.success('Categoría personal creada');
+      // Only close/select automatically when launched from an active transaction.
+      // The callback runs solely after Firestore confirms creation.
+      onCreated?.(name.replace(/\s+/g, ' ').trim());
     } catch (err) {
       setError(err.message || 'No se pudo guardar. Verificá las reglas de Firestore.');
     } finally {
