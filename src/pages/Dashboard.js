@@ -498,8 +498,8 @@ function Dashboard() {
             <button type="button" onClick={toggleDataVisibility} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
           </QuickAccessCard>
           <div className="mb-4 flex justify-end">
-            <button type="button" onClick={() => setShowCategoryManager(true)}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-purple-500/50 bg-purple-500/10 px-4 py-2 text-sm font-semibold text-purple-700 transition-colors hover:bg-purple-500/20 dark:text-purple-300"
+            <button type="button" onClick={() => setShowCategoryManager(true)} disabled={!categories}
+              className="inline-flex min-h-[44px] disabled:opacity-50 items-center gap-2 rounded-xl border border-purple-500/50 bg-purple-500/10 px-4 py-2 text-sm font-semibold text-purple-700 transition-colors hover:bg-purple-500/20 dark:text-purple-300"
             >
               <FaTags aria-hidden="true" /> Gestionar categorías
             </button>
@@ -719,8 +719,8 @@ function Dashboard() {
             isSellCurrenciesCategory={isSellCurrenciesCategory}
             expenseId={expenseId}
             categories={categories}
-            onManageCategories={() => setShowCategoryManager(true)}
-            closeModal={closeModal}
+            onManageCategories={() => { if (categories) setShowCategoryManager(true); }}
+            closeModal={() => { if (!showCategoryManager) closeModal(); }}
             show={isOpen}
             setEdit={setEdit}
             setExpense={setExpense}
