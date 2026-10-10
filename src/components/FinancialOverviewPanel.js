@@ -1,6 +1,6 @@
 import React from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
-import { FaArrowDown, FaFileExcel, FaRegCopy } from 'react-icons/fa';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { FaArrowDown, FaChevronDown, FaFileExcel, FaRegCopy } from 'react-icons/fa';
 
 const actionIcons = { excel: FaFileExcel, markdown: FaRegCopy };
 const itemMotion = (reduceMotion, index) => reduceMotion
@@ -14,21 +14,45 @@ const itemMotion = (reduceMotion, index) => reduceMotion
 export default function FinancialOverviewPanel({
   title, eyebrow = 'Herramientas y métricas', description,
   metrics = [], actions = [], privacyHidden = false,
+  id, collapsed = false, onToggle,
 }) {
   const reduceMotion = useReducedMotion();
+  const contentId = id ? `${id}-content` : undefined;
   return (
     <section
+      id={id}
       aria-label={title}
       className='mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800'
     >
-      <div className='border-b border-slate-200 px-4 pb-4 pt-4 sm:px-5 dark:border-slate-700/80'>
-        <div className='mb-3'>
+      <button
+        type='button'
+        onClick={onToggle}
+        aria-expanded={!collapsed}
+        aria-controls={contentId}
+        aria-label={`${title}: ${collapsed ? 'expandir' : 'contraer'}`}
+        className='flex w-full items-start justify-between gap-3 px-4 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500 sm:px-5'
+      >
+        <div className='min-w-0'>
           <p className='text-[10px] font-extrabold uppercase tracking-[0.14em] text-violet-700 dark:text-violet-300'>
             {eyebrow}
           </p>
           <h2 className='mt-1 text-base font-extrabold text-slate-900 dark:text-white sm:text-lg'>{title}</h2>
           {description && <p className='mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400'>{description}</p>}
         </div>
+        <FaChevronDown aria-hidden='true' className={`mt-1 shrink-0 text-slate-600 transition-transform duration-200 motion-reduce:transition-none dark:text-slate-300 ${collapsed ? '' : 'rotate-180'}`} />
+      </button>
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.div
+            id={contentId}
+            key='overview-content'
+            initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={reduceMotion ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.18, ease: 'easeOut' }}
+            className='overflow-hidden'
+          >
+            <div className='border-t border-slate-200 px-4 pb-4 pt-4 sm:px-5 dark:border-slate-700/80'>
         <div className='grid grid-cols-2 gap-2 sm:max-w-md'>
           {actions.map((action, index) => {
             const Icon = actionIcons[action.type] || FaArrowDown;
@@ -58,7 +82,7 @@ export default function FinancialOverviewPanel({
             ? 'Los archivos y el Markdown incluyen los importes reales, aunque estén ocultos en pantalla.'
             : 'Excel para descargar · Markdown para copiar y analizar con Lita.'}
         </p>
-      </div>
+            </div>
       <div className='grid grid-cols-3 gap-2 p-3 sm:gap-3 sm:p-4'>
         {metrics.map((metric, index) => {
           const Icon = metric.icon;
@@ -79,6 +103,9 @@ export default function FinancialOverviewPanel({
           );
         })}
       </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
