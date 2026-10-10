@@ -309,7 +309,13 @@ export const getCategoriesDataAction = (userId) => (dispatch) => {
       sharedReady = true;
       notify();
     },
-    (error) => console.error('No se pudieron cargar las categorías generales', error)
+    (error) => {
+      console.error('No se pudieron cargar las categorías generales', error);
+      // Do not strand Transactions waiting forever on a failed catalog request.
+      shared = [];
+      sharedReady = true;
+      notify();
+    }
   );
   const stopCustom = firestore.collection('users').doc(userId).collection('customCategories').onSnapshot(
     (snapshot) => {
