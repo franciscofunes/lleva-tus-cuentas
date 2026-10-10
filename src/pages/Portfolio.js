@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Reorder, motion, useReducedMotion } from 'framer-motion';
-import { getPageEntranceMotion } from '../shared/animations/pageEntranceMotion';
+import { Reorder } from 'framer-motion';
 import PageDataSkeleton from '../components/PageDataSkeleton';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt } from 'react-icons/fa';
 import QuickAccessCard from '../components/QuickAccessCard';
@@ -92,7 +91,6 @@ const money = (value, currency) =>
 
 function Portfolio() {
 	const user = useSelector((state) => state.auth.user);
-	const prefersReducedMotion = useReducedMotion();
 	const isFetching = useSelector((state) => state.auth.isFetching);
 	const [positions, setPositions] = useState([]);
 	const positionsRef = useRef([]);
@@ -617,8 +615,7 @@ function Portfolio() {
 	);
 
 	return (
-		<motion.main
-			{...getPageEntranceMotion(prefersReducedMotion)}
+		<main
 			className='relative min-h-screen max-w-full bg-slate-50 dark:bg-gray-900 dark:text-zinc-100 px-3 sm:px-5 lg:px-8 py-5'
 		>
 			<div className='max-w-7xl mx-auto w-full'>
@@ -897,7 +894,7 @@ function Portfolio() {
 				/>
 			)}
 
-		</motion.main>
+		</main>
 	);
 }
 
