@@ -4,7 +4,11 @@ import {
 } from './transactionsExport';
 import { exportWorkbookXlsx, buildWorkbookXlsxBytes, worksheetXml, xlsxColumnName } from './portfolioExport';
 import { filterTransactions } from './transactionSearch';
-jest.mock('./portfolioExport', () => ({ exportWorkbookXlsx: jest.fn() }));
+jest.mock('./portfolioExport', () => {
+  const { TextEncoder } = require('util');
+  if (typeof global.TextEncoder === 'undefined') global.TextEncoder = TextEncoder;
+  return { ...jest.requireActual('./portfolioExport'), exportWorkbookXlsx: jest.fn() };
+});
 
 const categories = [
   { name: 'Salud 🏥', isExpense: true },
