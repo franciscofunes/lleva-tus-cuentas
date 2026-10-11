@@ -46,7 +46,7 @@ export const backfillExpenseNotifications = async (userId, categories = []) => {
 				sourceId: doc.id,
 				title: expense.expenseName || 'Vencimiento',
 				category: expense.category || '',
-				transactionCurrency: expense.transactionCurrency === 'USD' ? 'USD' : 'ARS',
+				...(expense.transactionCurrency === 'USD' ? { transactionCurrency: 'USD' } : {}),
 				dueDate,
 				amount: Number.isFinite(Number(expense.amount))
 					? Number(expense.amount)
