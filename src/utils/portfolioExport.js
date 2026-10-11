@@ -1,4 +1,5 @@
 import { auditPortfolioEarnings } from './portfolioEarningsAudit';
+import { exportCsvRows } from './exportCsvRows';
 // Excel requires explicit cell coordinates. Without r="A1" (etc.) some
 // spreadsheet readers silently discard data, especially on large exports.
 const esc=v=>String(v??'')
@@ -53,14 +54,84 @@ const download=(blob,name)=>{
 };
 const date=v=>!v?'':typeof v.toDate==='function'?v.toDate().toISOString():v.seconds?new Date(v.seconds*1000).toISOString():String(v);
 
-export const exportPortfolioXlsx=(positions,snapshots)=>{
- const ph=['Institución','Producto','Categoría','Moneda','Saldo','Tasa anual %','Tipo tasa','Liquidez','Ganado informado','Último cambio','Inicio','Vencimiento','Info oficial','Fuente','Fuente verificada'];
- const pr=[ph,...positions.map(p=>[p.institution,p.name,p.category,p.currency,Number(p.balance||0),Number(p.annualRate||0),p.rateType,p.liquidity,Number(p.realizedEarnings||0),Number(p.lastEarning||0),p.startDate,p.maturityDate,p.infoUrl,p.sourceUrl,p.sourceCheckedAt])];
- const ms=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
- const fr=[['Institución','Fondo','Ticker',...ms.map(x=>x.toUpperCase()),'YTD publicado','NAV','Fecha NAV'],...positions.filter(p=>p.category==='FCI').map(p=>[p.institution,p.name,p.ticker,...ms.map(m=>Number(p.monthlyReturns?.[m]||0)),Number(p.publishedYtdReturn||0),Number(p.nav||0),p.navDate])];
- const hr=[['Institución','Producto','Moneda','Saldo','Tasa anual %','Fuente registro','Fecha'],...snapshots.map(s=>[s.institution,s.name,s.currency,Number(s.balance||0),Number(s.annualRate||0),s.source,date(s.capturedAt)])];
- const files={'[Content_Types].xml':'<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>','_rels/.rels':'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>','xl/workbook.xml':'<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Posiciones" sheetId="1" r:id="rId1"/><sheet name="FCI mensual" sheetId="2" r:id="rId2"/><sheet name="Historial" sheetId="3" r:id="rId3"/></sheets></workbook>','xl/_rels/workbook.xml.rels':'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/></Relationships>','xl/worksheets/sheet1.xml':sheet(pr),'xl/worksheets/sheet2.xml':sheet(fr),'xl/worksheets/sheet3.xml':sheet(hr)};
- download(new Blob([zip(files)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`portfolio-${new Date().toISOString().slice(0,10)}.xlsx`);
+// Portfolio-specific data adapter. The UI and sharing logic are owned by
+// ExportReadyModal and are identical for Transactions and Portfolio.
+export const buildPortfolioExportSheets = (positions = [], snapshots = []) => {
+  const assets = Array.isArray(positions) ? positions : [];
+  const history = Array.isArray(snapshots) ? snapshots : [];
+  const ph = ['Institución','Producto','Categoría','Moneda','Saldo','Tasa anual %','Tipo tasa','Liquidez','Ganado informado','Último cambio','Inicio','Vencimiento','Info oficial','Fuente','Fuente verificada'];
+  const records = [ph, ...assets.map(p => [
+    p.institution, p.name, p.category, p.currency,
+    Number(p.balance || 0), Number(p.annualRate || 0), p.rateType, p.liquidity,
+    Number(p.realizedEarnings || 0), Number(p.lastEarning || 0),
+    p.startDate, p.maturityDate, p.infoUrl, p.sourceUrl, p.sourceCheckedAt,
+  ])];
+  const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const funds = [
+    ['Institución','Fondo','Ticker',...months.map(m => m.toUpperCase()),'YTD publicado','NAV','Fecha NAV'],
+    ...assets.filter(p => p.category === 'FCI').map(p => [
+      p.institution, p.name, p.ticker,
+      ...months.map(m => Number(p.monthlyReturns?.[m] || 0)),
+      Number(p.publishedYtdReturn || 0), Number(p.nav || 0), p.navDate,
+    ]),
+  ];
+  const snapshotsSheet = [
+    ['Institución','Producto','Moneda','Saldo','Tasa anual %','Fuente registro','Fecha'],
+    ...history.map(s => [s.institution, s.name, s.currency,
+      Number(s.balance || 0), Number(s.annualRate || 0), s.source, date(s.capturedAt)]),
+  ];
+  const totals = new Map();
+  assets.forEach(asset => {
+    const balance = Number(asset.balance);
+    if (!Number.isFinite(balance)) return;
+    const currency = String(asset.currency || 'ARS');
+    totals.set(currency, (totals.get(currency) || 0) + balance);
+  });
+  const metadata = [
+    ['LTC$ — Lleva tus cuentas','Portfolio de usuario'],
+    ['Posiciones exportadas', assets.length],
+    ['Verificaciones del historial', history.length],
+    ['Advertencia', 'No sumar ARS y USD sin una cotización explícita.'],
+    ['Advertencia', 'Tasas registradas por el usuario: no verificadas en tiempo real.'],
+    ['Advertencia', 'Ganado informado no equivale a rendimiento auditado.'],
+    ['Totales por moneda', 'Saldo registrado'],
+    ...[...totals].map(([currency, balance]) => [currency, balance]),
+  ];
+  return {
+    Posiciones: records,
+    'FCI mensual': funds,
+    Historial: snapshotsSheet,
+    'Información LTC$': metadata,
+  };
+};
+
+export const exportPortfolioXlsx = (positions = [], snapshots = []) => {
+  const sheets = buildPortfolioExportSheets(positions, snapshots);
+  exportWorkbookXlsx(sheets, `portfolio-${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+
+export const buildPortfolioCsv = (positions = [], snapshots = []) =>
+  exportCsvRows(buildPortfolioExportSheets(positions, snapshots).Posiciones);
+
+export const preparePortfolioExport = (positions = [], snapshots = [], now = new Date()) => {
+  const assets = Array.isArray(positions) ? positions : [];
+  const history = Array.isArray(snapshots) ? snapshots : [];
+  if (!assets.length) throw new Error('No hay posiciones para exportar.');
+  const timestamp = now.toISOString();
+  const suffix = timestamp.slice(11,23).replace(/[:.]/g, '');
+  const stem = `portfolio-ltc-${timestamp.slice(0,10)}-${suffix}-${assets.length}-posiciones`;
+  return {
+    count: assets.length,
+    filename: `${stem}.xlsx`,
+    csvFilename: `${stem}.csv`,
+    xlsxBlob: new Blob([buildWorkbookXlsxBytes(buildPortfolioExportSheets(assets, history))], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }),
+    csvBlob: new Blob([buildPortfolioCsv(assets, history)], {
+      type: 'text/csv;charset=utf-8',
+    }),
+    pdfSource: { positions: assets, snapshots: history },
+  };
 };
 
 // Copy-ready financial context for LITA (no live Internet or investment writes).
