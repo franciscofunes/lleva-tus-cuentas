@@ -1,3 +1,4 @@
+import { displayCategoryName } from './customCategories';
 import { exportWorkbookXlsx, buildWorkbookXlsxBytes } from './portfolioExport';
 import { exportCsvRows } from './exportCsvRows';
 
@@ -31,7 +32,7 @@ export const buildTransactionsExportSheets = (docs = [], categories = [], filter
   const expenses = new Set(categories.filter((entry) => entry?.isExpense).map((entry) => entry.name));
   const headers = ['Fecha','Nombre','Categoría','Clasificación','ARS (registrados)','USD (cantidad)','Cotización ARS/USD','Fecha cierre','Vencimiento','Estado','Comentario'];
   const records = (Array.isArray(docs) ? docs : []).map((row) => [
-    safeText(row.selectedDate), getName(row), safeText(row.category),
+    safeText(row.selectedDate), getName(row), safeText(displayCategoryName(row.category, categories)),
     classification(row, expenses),
     getAmount(row) ?? '', getQuantity(row) ?? '',
     conversion(row.category) && validMoney(row.currencyExchangeRate) ? Number(row.currencyExchangeRate) : '',
@@ -51,7 +52,7 @@ export const buildTransactionsExportSheets = (docs = [], categories = [], filter
     Movimientos: [headers, ...records],
     'Gastos por categoría': [
       ['Categoría','Operaciones','ARS registrados'],
-      ...groups.map(([category, value]) => [category, value.count, Math.round(value.ars * 100) / 100]),
+      ...groups.map(([category, value]) => [displayCategoryName(category, categories), value.count, Math.round(value.ars * 100) / 100]),
     ],
     'Filtros aplicados': [
       ['Criterio', 'Valor'],
@@ -60,7 +61,7 @@ export const buildTransactionsExportSheets = (docs = [], categories = [], filter
       ['Período', safeText(filters.periodLabel || filters.period || 'Vista actual')],
       ['Tipo de período', safeText(filters.period || 'Vista actual')],
       ['Búsqueda', safeText(filters.query) || 'Sin búsqueda'],
-      ['Categoría', safeText(filters.category) || 'Todas'],
+      ['Categoría', safeText(displayCategoryName(filters.category, categories)) || 'Todas'],
       ['Tipo de movimiento', filters.type === 'expense' ? 'Gastos' : filters.type === 'income' ? 'Ingresos' : 'Todos'],
       ['Movimientos exportados', records.length],
       ['Alcance', 'Se exportaron todos los movimientos que coinciden con los filtros activos, sin limitarse a las tarjetas visibles en pantalla.'],
@@ -98,9 +99,9 @@ export const buildTransactionsLitaMarkdown = (docs = [], categories = [], now = 
     '| --- | --- | --- | --- | ---: | ---: | ---: |',
   ];
   shown.forEach((row) => {
-    const category = safeText(row.category);
+    const category = safeText(displayCategoryName(row.category, categories));
     const amount = getAmount(row), usd = getQuantity(row);
-    lines.push(`| ${safeText(row.selectedDate) || 'N/D'} | ${getName(row) || 'N/D'} | ${category || 'N/D'} | ${classification(row, expenses)} | ${amount ?? 'N/D'} | ${usd ?? 'N/D'} | ${conversion(category) && validMoney(row.currencyExchangeRate) ? Number(row.currencyExchangeRate) : 'N/D'} |`);
+    lines.push(`| ${safeText(row.selectedDate) || 'N/D'} | ${getName(row) || 'N/D'} | ${category || 'N/D'} | ${classification(row, expenses)} | ${amount ?? 'N/D'} | ${usd ?? 'N/D'} | ${conversion(row.category) && validMoney(row.currencyExchangeRate) ? Number(row.currencyExchangeRate) : 'N/D'} |`);
   });
   lines.push('', '## Pedido para Lita',
     'Analizá estos movimientos del período visible. Identificá categorías con mayor peso, patrones, anomalías y vencimientos que habría que revisar. Indicá datos incompletos y verificaciones pendientes. Separá monedas y movimientos de capital; no presentes estimaciones como hechos.',
