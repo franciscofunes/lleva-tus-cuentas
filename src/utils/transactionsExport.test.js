@@ -85,7 +85,7 @@ test('XLSX workbook serializes real cell references, headers, filters, rows and 
   expect(xml).toContain('<c r="A1" t="inlineStr">');
   expect(xml).toContain('<c r="B2" t="inlineStr">');
   expect(xml).toContain('<c r="E4"><v>158064</v></c>');
-  expect(xml).toContain('<autoFilter ref="A1:K5"/>');
+  expect(xml).toContain('<autoFilter ref="A1:M5"/>');
   expect(xml).toContain('state="frozen"');
   expect(xlsxColumnName(0)).toBe('A');
   expect(xlsxColumnName(10)).toBe('K');
@@ -125,7 +125,7 @@ test('exports all filtered movements rather than only the first 40 rendered card
   expect(sheets.Movimientos).toHaveLength(2409);
   expect(sheets['Gastos por categoría']).toContainEqual(['Salud 🏥', 2408, 84470232, '']);
   expect(worksheetXml(sheets.Movimientos)).toContain('<c r="K2409"');
-  expect(worksheetXml(sheets.Movimientos)).toContain('<autoFilter ref="A1:K2409"/>');
+  expect(worksheetXml(sheets.Movimientos)).toContain('<autoFilter ref="A1:M2409"/>');
 });
 
 test('preserves XML-special characters and prevents cell formula injection', () => {
