@@ -123,14 +123,14 @@ test('dark transactions use opaque slate surfaces and readable semantic text in 
   expect(screen.getByText('Descripción de un servicio')).toHaveClass('dark:text-slate-200');
   expect(screen.getByLabelText('Datos adicionales de la transacción'))
     .toHaveClass('dark:bg-slate-900/70', 'dark:text-slate-200');
-  expect(card.querySelectorAll('.dark\\:text-slate-200').length).toBeGreaterThan(2);
+  expect(Array.from(card.querySelectorAll('p')).filter((row) => row.className.includes('dark:text-slate-200')).length).toBeGreaterThan(2);
 });
 
 test('real html.dark theme selector enforces the opaque card background at CSS level', () => {
   const { readFileSync } = require('fs');
   const { join } = require('path');
   const css = readFileSync(join(__dirname, '..', 'index.css'), 'utf8');
-  const fallback = css.match(/html\\.dark\\s+\\.ltc-transaction-card\\s*\\{[^}]+\\}/)?.[0];
+  const fallback = css.match(/html\.dark\s+\.ltc-transaction-card\s*\{[^}]+\}/)?.[0];
   expect(fallback).toBeTruthy();
   const style = document.createElement('style');
   style.textContent = fallback;
