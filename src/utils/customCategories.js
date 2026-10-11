@@ -19,12 +19,15 @@ export const categoryDocumentId = (name) => {
   return `${slug}-${(hash >>> 0).toString(16).padStart(8, '0')}`;
 };
 
-// Category-level behavior, not an arbitrary custom field. It reuses LTC's
-// existing selectedDate/dueDate and notification pipeline.
-export const CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR = 'due-date';
+// Legacy categories tagged 'due-date' used selectedDate as the due date.
+// Keep that behavior for historical records. New categories preserve the
+// transaction date and use the existing selectedExpirationDate field separately.
+export const LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR = 'due-date';
+export const CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR = 'separate-due-date';
 
 export const validateCustomCategoryDateBehavior = (dateBehavior) =>
   dateBehavior === undefined || dateBehavior === null || dateBehavior === ''
+    || dateBehavior === LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR
     || dateBehavior === CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR
     ? null
     : 'La configuración de vencimiento no es válida.';
