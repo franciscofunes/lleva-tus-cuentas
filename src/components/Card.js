@@ -1,3 +1,4 @@
+import { displayCategoryName } from '../utils/customCategories';
 import moment from 'moment';
 import React from 'react';
 import { useDispatch } from 'react-redux';
@@ -113,7 +114,7 @@ function Card({
 						<span className='font-semibold text-violet-700 dark:text-violet-200'>
 							Categoría:{' '}
 						</span>
-						{safeCategory || 'Sin categoría'}{' '}
+						{displayCategoryName(safeCategory, safeCategories) || 'Sin categoría'}{' '}
 						<InfoTooltip
 							placement={'top'}
 							content={safeCategories

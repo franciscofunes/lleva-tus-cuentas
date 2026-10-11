@@ -1,3 +1,5 @@
+import { displayCategoryName } from './customCategories';
+
 const normalize = (value) =>
   String(value ?? '')
     .normalize('NFD')
@@ -70,6 +72,7 @@ export const filterTransactions = (transactions = [], options = {}) => {
       item.expenseName,
       item.name,
       item.category,
+      displayCategoryName(item.category, categories),
       item.comment,
       item.importInstitution,
       item.importSource,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { FiSearch, FiX, FiSliders, FiChevronDown, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { TRANSACTION_SORT_OPTIONS } from '../utils/transactionSort';
+import { categoryLabel } from '../utils/customCategories';
 
 const PERIOD_NAMES = {
   day: 'día',
@@ -36,9 +37,8 @@ function SearchBar({
   const active = Boolean(query.trim() || selectedCategory || transactionType !== 'all');
   const periodLabel = PERIOD_NAMES[selectedFilter] || 'período seleccionado';
   const sortLabel = TRANSACTION_SORT_OPTIONS.find((option) => option.value === sortBy)?.label || 'Fecha del movimiento';
-  const categoryOptions = [...new Set(
-    (categories || []).map((entry) => entry?.name).filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, 'es-AR'));
+  const categoryOptions = (categories || []).filter((entry) => entry?.name)
+    .slice().sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b), 'es-AR'));
 
   return (
     <section aria-label='Buscar y filtrar transacciones' className='mb-5 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/60'>
@@ -130,8 +130,8 @@ function SearchBar({
             className={fieldClass}
           >
             <option value=''>Todas las categorías</option>
-            {categoryOptions.map((name) => (
-              <option key={name} value={name}>{name}</option>
+            {categoryOptions.map((entry) => (
+              <option key={entry.id || entry.name} value={entry.name}>{categoryLabel(entry)}</option>
             ))}
           </select>
         </div>

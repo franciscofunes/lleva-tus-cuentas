@@ -1,3 +1,4 @@
+import { displayCategoryName } from '../utils/customCategories';
 // IncomeChartWrapper.js
 
 import React from 'react';
@@ -45,6 +46,7 @@ const IncomeChartWrapper = ({ chartData, categories }) => {
 			return result;
 		}, []);
 
+		groupedData.forEach((item) => { item.name = displayCategoryName(item.name, catalog); });
 		groupedData.sort((a, b) => b.value - a.value);
 
 		return groupedData;

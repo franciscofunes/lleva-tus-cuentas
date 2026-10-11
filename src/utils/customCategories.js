@@ -8,6 +8,32 @@ const reservedCategoryLabels = [
   'resumen tarjeta', 'compra divisas', 'venta divisas', 'ingreso divisas',
 ];
 
+// The original category name is a stable key used by historical Firestore
+// expenses, filters, and financial calculations. Renames change ONLY its
+// visible label, so no existing expense needs migration.
+export const categoryLabel = (category) =>
+  String(category?.displayName || category?.name || '').trim();
+
+export const displayCategoryName = (canonicalName, categories = []) =>
+  categoryLabel((categories || []).find((entry) => entry?.name === canonicalName)) ||
+  String(canonicalName || '');
+
+export const validateCategoryDisplayName = (name, categories = [], editingId = null) => {
+  const clean = String(name || '').replace(/\s+/g, ' ').trim();
+  if (clean.length < 2 || clean.length > 50)
+    return 'Ingresá un nombre de entre 2 y 50 caracteres.';
+  if (/[\r\n<>]/.test(clean))
+    return 'El nombre contiene caracteres no permitidos.';
+  const normalized = normalizeCategoryName(clean);
+  if (reservedCategoryLabels.some((term) => normalized.includes(term)))
+    return 'Este nombre está reservado para una categoría especial del sistema.';
+  if ((categories || []).some((entry) =>
+    entry.id !== editingId && [entry.name, entry.displayName]
+      .some((label) => label && normalizeCategoryName(label) === normalized)))
+    return 'Ya existe una categoría con ese nombre.';
+  return null;
+};
+
 export const categoryDocumentId = (name) => {
   const normalized = normalizeCategoryName(name);
   const slug = normalized.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'categoria';
@@ -39,12 +65,7 @@ export const validateCustomCategory = ({ name, isExpense }, categories = []) => 
   if (/[\r\n<>]/.test(cleanName))
     return 'El nombre contiene caracteres no permitidos.';
   if (typeof isExpense !== 'boolean') return 'Elegí si es un gasto o ingreso.';
-  const normalized = normalizeCategoryName(cleanName);
-  if (reservedCategoryLabels.some((term) => normalized.includes(term)))
-    return 'Este nombre está reservado para una categoría especial del sistema.';
-  if ((categories || []).some((entry) => normalizeCategoryName(entry?.name) === normalized))
-    return 'Ya existe una categoría con ese nombre. Podés reactivarla si está archivada.';
-  return null;
+  return validateCategoryDisplayName(cleanName, categories);
 };
 
 export const mergeCategories = (shared = [], custom = []) => {
@@ -55,7 +76,7 @@ export const mergeCategories = (shared = [], custom = []) => {
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).sort((a, b) => a.name.localeCompare(b.name, 'es-AR'));
+  }).sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b), 'es-AR'));
 };
 
 export const categoriesForNewTransactions = (categories = [], selected = '') =>

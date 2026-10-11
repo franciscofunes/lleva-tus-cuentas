@@ -39,6 +39,14 @@ match /users/{uid}/customCategories/{categoryId} {
        data.dateBehavior in ['due-date', 'separate-due-date']);
   }
 
+  function validCategoryDisplayName(data) {
+    return !('displayName' in data) ||
+      (data.displayName is string
+       && data.displayName.size() >= 2
+       && data.displayName.size() <= 50
+       && data.displayName.matches('^[^\\r\\n<>]+$'));
+  }
+
   function validPersonalCategory() {
     let d = request.resource.data;
     return d.keys().hasAll(['name', 'isExpense', 'active', 'createdAt', 'updatedAt'])

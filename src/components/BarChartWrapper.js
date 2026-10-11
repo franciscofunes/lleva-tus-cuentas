@@ -1,3 +1,4 @@
+import { displayCategoryName } from '../utils/customCategories';
 import React from 'react';
 import CategoryBreakdownChart from './CategoryBreakdownChart';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
@@ -41,6 +42,7 @@ const BarChartWrapper = ({ chartData, categories }) => {
 			return result;
 		}, []);
 
+		groupedData.forEach((item) => { item.name = displayCategoryName(item.name, catalog); });
 		groupedData.sort((a, b) => b.value - a.value);
 
 		return groupedData;

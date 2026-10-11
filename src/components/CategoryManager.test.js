@@ -2,11 +2,12 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import CategoryManager from './CategoryManager';
-import { saveCustomCategory, setCustomCategoryActive } from '../services/customCategoriesService';
+import { saveCustomCategory, setCustomCategoryActive, updateCustomCategoryLabel } from '../services/customCategoriesService';
 
 jest.mock('../services/customCategoriesService', () => ({
   saveCustomCategory: jest.fn().mockResolvedValue('id-mascotas'),
   setCustomCategoryActive: jest.fn().mockResolvedValue(undefined),
+  updateCustomCategoryLabel: jest.fn().mockResolvedValue('Telefonía móvil'),
 }));
 jest.mock('react-toastify', () => ({ toast: { success: jest.fn() } }));
 
@@ -134,4 +135,47 @@ test('explains that expiration is a second optional date, not a replacement for 
   expect(screen.getByText(/Agrega una segunda fecha opcional/)).toBeInTheDocument();
   expect(screen.getByText(/además de la fecha de transacción/)).toBeInTheDocument();
   expect(screen.getByLabelText('Fecha de vencimiento')).not.toBeChecked();
+});
+
+test('edits the private category visible name, preserving the stable underlying name', async () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Editar Mascotas' }));
+  const field = screen.getByLabelText('Nuevo nombre visible');
+  expect(field).toHaveValue('Mascotas');
+  fireEvent.change(field, { target: { value: 'Animales domésticos' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+  await waitFor(() => expect(updateCustomCategoryLabel).toHaveBeenCalledWith(
+    'userA', categories[1], 'Animales domésticos', categories,
+  ));
+});
+
+test('can edit archived private categories without changing their archived state', async () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Editar Educación' }));
+  expect(screen.getByLabelText('Nuevo nombre visible')).toHaveValue('Educación');
+  expect(screen.getByRole('button', { name: 'Reactivar Educación' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+  expect(screen.queryByLabelText('Nuevo nombre visible')).not.toBeInTheDocument();
+  expect(updateCustomCategoryLabel).not.toHaveBeenCalled();
+});
+
+test('rejects duplicate or reserved display names without saving anything', () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Editar Mascotas' }));
+  fireEvent.change(screen.getByLabelText('Nuevo nombre visible'), { target: { value: 'Alimentación 🍜' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+  expect(screen.getByRole('alert')).toHaveTextContent(/existe/);
+  fireEvent.change(screen.getByLabelText('Nuevo nombre visible'), { target: { value: 'Venta divisas nuevas' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+  expect(screen.getByRole('alert')).toHaveTextContent(/reservado/);
+  expect(updateCustomCategoryLabel).not.toHaveBeenCalled();
+});
+
+test('preserves the edited label in the private category list and never exposes shared edit actions', () => {
+  const renamed = [{...categories[1], displayName:'Telefonía móvil'}, categories[0]];
+  render(<CategoryManager userId='userA' categories={renamed} />);
+  expect(screen.getByText('Telefonía móvil')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Editar Telefonía móvil' }));
+  expect(screen.getByLabelText('Nuevo nombre visible')).toHaveValue('Telefonía móvil');
+  expect(screen.queryByRole('button', { name: /Editar Alimentación/ })).not.toBeInTheDocument();
 });

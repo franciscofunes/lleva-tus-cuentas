@@ -29,3 +29,10 @@ All transactions retain the required `selectedDate`. Do not confuse that with a 
 - No expiration entered means no reminder. Never silently copy the transaction date to the expiration field.
 - Credit-card summaries continue using their existing dedicated closing/expiration controls.
 - Confirm dates are distinct on the form, transaction card, saved data, and dark-mode mobile UI; do not merge or rename these fields without a deliberate migration.
+
+## Custom category editing (safe rename)
+- Never rewrite users' `expenses` collection or rename the canonical `category.name` merely to edit a label.
+- Only personal categories can edit `displayName`; keep the original `name`, type, extra field selection, expiration behavior and document ID immutable.
+- Render `displayName || name` for user-facing labels; retain `name` as the option value / Firestore financial classification.
+- Verify search, filters, charts, exports and historical transaction editor all display the new label without changing the underlying category.
+- Update `docs/custom-category-editing.md`, scoped Firestore rules and regression tests when editing category behavior.

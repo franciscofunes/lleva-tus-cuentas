@@ -1,6 +1,7 @@
 import {
   categoryDocumentId, normalizeCategoryName, validateCustomCategory,
   mergeCategories, categoriesForNewTransactions, validateCustomCategoryDateBehavior,
+  categoryLabel, displayCategoryName, validateCategoryDisplayName,
 } from './customCategories';
 
 const shared = [
@@ -65,4 +66,25 @@ test('due-date is the only allowed optional date behavior and is preserved when 
   ]);
   expect(merged.find((category) => category.name === 'Alquiler'))
     .toMatchObject({ isCustom: true, origin: 'custom', dateBehavior: 'separate-due-date' });
+});
+
+test('a visible rename preserves canonical category identifiers, financial type and transaction references', () => {
+  const base = [{ id:'pets', name:'Mascotas', displayName:'Cuidado de animales', isExpense:true, origin:'custom', active:true }];
+  const merged = mergeCategories(shared, base);
+  const entry = merged.find(x=>x.id==='pets');
+  expect(entry.name).toBe('Mascotas');
+  expect(entry.isExpense).toBe(true);
+  expect(categoryLabel(entry)).toBe('Cuidado de animales');
+  expect(displayCategoryName('Mascotas', merged)).toBe('Cuidado de animales');
+  expect(displayCategoryName('Sin categoría', merged)).toBe('Sin categoría');
+  expect(categoriesForNewTransactions(merged).some(x=>x.name==='Mascotas')).toBe(true);
+});
+
+test('rejects rename collisions with both canonical and edited names and special system labels', () => {
+  const all = [...shared, {id:'pets',name:'Mascotas',displayName:'Animalitos',isExpense:true}];
+  expect(validateCategoryDisplayName('Alimentación 🍜', all, 'pets')).toMatch(/existe/);
+  expect(validateCategoryDisplayName('Resumen tarjeta viaje', all, 'pets')).toMatch(/reservado/);
+  expect(validateCategoryDisplayName('Mascotas', all, 'pets')).toBeNull();
+  expect(validateCategoryDisplayName('Telefonía móvil', all, 'pets')).toBeNull();
+  expect(validateCustomCategory({name:'Animalitos',isExpense:true},all)).toMatch(/existe/);
 });

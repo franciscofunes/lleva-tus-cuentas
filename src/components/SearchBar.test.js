@@ -129,3 +129,16 @@ describe('collapsible transaction search and sorting', () => {
     expect(screen.getByLabelText('Ordenar por')).toHaveValue('amount');
   });
 });
+
+test('renamed category displays its label but keeps the canonical option value for filtering', () => {
+  const props = {
+    query: '', onQueryChange: jest.fn(), selectedCategory: '', onCategoryChange: jest.fn(),
+    transactionType:'all', onTypeChange:jest.fn(),
+    categories:[{name:'Mascotas',displayName:'Cuidado animal',isExpense:true}],
+    resultCount:1,totalCount:1,selectedFilter:'month',
+    onClear:jest.fn(),onViewAll:jest.fn(),
+  };
+  render(<SearchBar {...props} />);
+  const option = screen.getByRole('option', { name:'Cuidado animal' });
+  expect(option).toHaveValue('Mascotas');
+});
