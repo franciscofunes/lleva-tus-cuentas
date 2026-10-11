@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { deleteCardAction } from '../actionCreators/databaseActions';
 import { motion } from 'framer-motion';
 import { FaCheckCircle } from 'react-icons/fa';
+import { FiEdit3, FiTrash2 } from 'react-icons/fi';
 import InfoTooltip from '../components/InfoTooltip';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 import { usesSelectedDateAsDueDate } from '../utils/transactionDueDates';
@@ -90,24 +91,25 @@ function Card({
 			animate={{ opacity: 1 }}
 			initial={{ opacity: 0 }}
 			transition={{ duration: 0.4, type: 'tween', delay: 0.2 }}
-			id='card'
-			className='lg:flex border-b-2 border-purple-400 w-full mb-2 justify-between items-center py-3 px-4 font-Nunito dark:border-indigo-400'
+			role='article'
+			aria-label={`Movimiento: ${name || 'Sin nombre'}`}
+			className='mb-3 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-3.5 shadow-sm transition-colors hover:border-violet-300 sm:px-4 sm:py-4 dark:border-slate-700/90 dark:bg-slate-900/45 dark:hover:border-violet-500/50'
 		>
-			<div className='flex flex-col gap-y-1 justify-evenly items-start'>
-				<p className='font-semibold text-base text-gray-400'>
-					<span className='text-indigo-600 dark:text-indigo-300'>Nombre: </span>
+			<div className='min-w-0 space-y-1.5'>
+				<p className='min-w-0 break-words text-base font-bold leading-relaxed text-slate-950 dark:text-slate-100'>
+					<span className='font-semibold text-violet-700 dark:text-violet-300'>Nombre: </span>
 					{name}
 				</p>
 
-				<p className='font-semibold text-base text-gray-400'>
-					<span className='text-indigo-600 dark:text-indigo-300'>
+				<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
+					<span className='font-semibold text-violet-700 dark:text-violet-300'>
 						Descripción:{' '}
 					</span>{' '}
 					{comment}
 				</p>
-				<div className='flex flex-row gap-x-1 items-stretch'>
-					<p className='font-semibold text-base text-gray-400'>
-						<span className='text-indigo-600 dark:text-indigo-300'>
+				<div className='min-w-0'>
+					<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
+						<span className='font-semibold text-violet-700 dark:text-violet-300'>
 							Categoría:{' '}
 						</span>
 						{safeCategory || 'Sin categoría'}{' '}
@@ -122,14 +124,14 @@ function Card({
 
 				{safeCategory.includes('Resumen tarjeta') && (
 					<>
-						<p className='font-semibold text-base text-gray-400 ml-2'>
-							<span className='text-indigo-600 dark:text-indigo-300'>
+						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
+							<span className='font-semibold text-violet-700 dark:text-violet-300'>
 								Fecha de Cierre:{' '}
 							</span>
 							{moment(selectedCloseDate).format('DD/MM/YYYY')}
 						</p>
-						<p className='font-semibold text-base text-gray-400 ml-2'>
-							<span className='text-indigo-600 dark:text-indigo-300'>
+						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
+							<span className='font-semibold text-violet-700 dark:text-violet-300'>
 								Fecha de vencimiento:{' '}
 							</span>
 							{moment(selectedExpirationDate).format('DD/MM/YYYY')}
@@ -139,14 +141,14 @@ function Card({
 
 				{safeCategory.includes('Compra divisas') && (
 					<>
-						<p className='font-semibold text-base text-gray-400 ml-2'>
-							<span className='text-indigo-600 dark:text-indigo-300'>
+						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
+							<span className='font-semibold text-violet-700 dark:text-violet-300'>
 								Cantidad:{' '}
 							</span>
 							{`$USD ${currencyQuantity}`}
 						</p>
-						<p className='font-semibold text-base text-gray-400 ml-2'>
-							<span className='text-indigo-600 dark:text-indigo-300'>
+						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
+							<span className='font-semibold text-violet-700 dark:text-violet-300'>
 								Cotización:{' '}
 							</span>
 							{`$AR ${currencyExchangeRate}`}
@@ -154,15 +156,15 @@ function Card({
 					</>
 				)}
 
-				<p className='font-semibold text-base text-gray-400'>
-					<span className='text-indigo-600 dark:text-indigo-300'>
+				<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
+					<span className='font-semibold text-violet-700 dark:text-violet-300'>
 						{selectedDateIsDueDate ? 'Fecha de vencimiento' : 'Fecha transacción'}:{' '}
 					</span>
 					{moment(selectedDate).format('DD/MM/YYYY')}
 				</p>
 
 				{displayTransactionCustomDetails(customDetails).length > 0 && (
-          <div className='mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300' aria-label='Datos adicionales de la transacción'>
+          <div className='mt-2 space-y-1.5 rounded-lg border border-slate-200/80 bg-white/70 px-3 py-2 text-xs leading-relaxed text-slate-700 dark:border-slate-700/80 dark:bg-slate-800/50 dark:text-slate-300' aria-label='Datos adicionales de la transacción'>
             {displayTransactionCustomDetails(customDetails).map((detail) => (
               <p key={detail.id}><span className='font-bold'>{detail.label}: </span>{detail.value}</p>
             ))}
@@ -179,12 +181,12 @@ function Card({
 						)}
 					</div>
 				)}
-				<div className='flex flex-row gap-x-2 lg:justify-between items-stretch'>
-					<h1
-						className={`font-Nunito font-medium text-lg ${
+				<div className='mt-3 flex min-w-0 flex-wrap items-center gap-2 border-t border-slate-200/90 pt-3 dark:border-slate-700/80'>
+					<p
+						className={`mr-auto min-w-0 break-words text-lg font-bold leading-6 tabular-nums sm:text-xl ${
 							isExpense
-								? `text-red-500`
-								: `text-green-500`
+								? 'text-rose-600 dark:text-rose-400'
+								: 'text-emerald-600 dark:text-emerald-400'
 						}`}
 					>
 						{safeCategory.includes(INGRESO_DIVISAS_CATEGORY)
@@ -196,41 +198,24 @@ function Card({
 								: `+${parseFloat(amount)?.toLocaleString()}`
 						}
 						`}
-					</h1>
-					<svg
-						xmlns='http://www.w3.org/2000/svg'
-						className='h-6 w-6 cursor-pointer dark:text-white'
-						fill='none'
-						viewBox='0 0 24 24'
-						stroke='currentColor'
-						onClick={handleDelete}
-					>
-						<path
-							strokeLinecap='round'
-							strokeLinejoin='round'
-							strokeWidth='2'
-							d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-						/>
-					</svg>
-
-					<svg
-						xmlns='http://www.w3.org/2000/svg'
-						fill='none'
-						className='h-6 w-6 cursor-pointer w-6 h-6 dark:text-white'
-						viewBox='0 0 24 24'
-						strokeWidth='1.5'
-						stroke='currentColor'
-						onClick={handleEdit}
-					>
-						<path
-							strokeLinecap='round'
-							strokeLinejoin='round'
-							d='M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10'
-						/>
-					</svg>
+					</p>
+					<div className='ml-auto flex shrink-0 items-center gap-2'>
+						<button type='button' onClick={handleDelete} aria-label={`Eliminar ${name || 'movimiento'}`} title='Eliminar movimiento'
+							className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition-colors hover:border-rose-400 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-rose-500/70 dark:hover:bg-rose-500/10 dark:hover:text-rose-300'>
+							<FiTrash2 className='h-[18px] w-[18px]' aria-hidden='true' />
+						</button>
+						<button type='button' onClick={handleEdit} aria-label={`Editar ${name || 'movimiento'}`} title='Editar movimiento'
+							className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition-colors hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-violet-400/70 dark:hover:bg-violet-500/10 dark:hover:text-violet-300'>
+							<FiEdit3 className='h-[18px] w-[18px]' aria-hidden='true' />
+						</button>
+					</div>
 				</div>
 			</div>
-			{safeCategory.includes('Resumen tarjeta') && <CardStatementDetails expenseId={id} />}
+			{safeCategory.includes('Resumen tarjeta') && (
+				<div className='mt-3 min-w-0 border-t border-slate-200/80 pt-2 dark:border-slate-700/80'>
+					<CardStatementDetails expenseId={id} />
+				</div>
+			)}
 		</motion.div>
 	);
 }
