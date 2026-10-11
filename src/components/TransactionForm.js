@@ -13,7 +13,7 @@ import {
 import InfoTooltip from "../components/InfoTooltip";
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from "../shared/constants/tooltip-messages.const";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
-import { categoriesForNewTransactions, categoryLabel } from "../utils/customCategories";
+import { categoriesForNewTransactions, categoryLabel, getCategoryCurrency } from "../utils/customCategories";
 import { getCategoryExtraFields, sanitizeTransactionCustomDetails } from "../utils/categoryExtraFields";
 import { parseTransactionsMarkdown } from "../utils/transactionsMarkdown";
 import {
@@ -28,6 +28,8 @@ export const CREATE_CATEGORY_OPTION = "__ltc_create_personal_category__";
 
 const TransactionForm = ({
   amount,
+  transactionCurrency = 'ARS',
+  setTransactionCurrency = () => {},
   selectedDate,
   selectedCloseDate,
   selectedExpirationDate,
@@ -76,6 +78,13 @@ const TransactionForm = ({
   const selectedDateIsDueDate = usesSelectedDateAsDueDate(category, categories);
   const hasSeparateDueDate = usesSeparateDueDate(category, categories);
   const categoryDefinition = categories?.find((entry) => entry.name === category);
+  // Old expenses always remain ARS unless they explicitly saved USD.
+  // New expenses inherit the selected category's currency; conversion
+  // categories continue using their dedicated ARS + USD quantity fields.
+  const isFxCategory = /(?:Compra|Venta|Ingreso) divisas/i.test(category || '');
+  const effectiveCurrency = isFxCategory ? 'ARS' : edit
+    ? (transactionCurrency === 'USD' ? 'USD' : 'ARS')
+    : getCategoryCurrency(category, categories);
   const selectedExtraFields = getCategoryExtraFields(categoryDefinition);
   const notificationSettings = getNotificationSettings(category, categories);
   const dueDate = resolveTransactionDueDate({
@@ -174,6 +183,7 @@ const TransactionForm = ({
         customDetails: safeDetails,
         clearCustomDetails: edit && hasSavedCustomDetails && !Object.keys(safeDetails).length,
         name, amount, comment, category, selectedDate,
+        transactionCurrency: effectiveCurrency,
         selectedExpirationDate, selectedCloseDate,
         currencyQuantity, currencyExchangeRate, dueDate,
         notificationEnabled, notificationLeadDays: notificationSettings.leadDays,
@@ -298,6 +308,7 @@ const TransactionForm = ({
                 return;
               }
               setCategory(e.target.value);
+              setTransactionCurrency(getCategoryCurrency(e.target.value, categories));
               setCustomDetails({});
               // Avoid leaking a different category's expiration date.
               setSelectedExpirationDate("");
@@ -591,13 +602,19 @@ const TransactionForm = ({
           </>
         )}
 
+        {!isFxCategory && category && (
+          <p className="text-xs text-slate-600 dark:text-slate-300" role="status">
+            Moneda del movimiento: <strong>{effectiveCurrency}</strong>.
+            {effectiveCurrency === 'USD' ? ' Gasto o ingreso en dólares, sin cotización ni venta de divisas.' : ''}
+          </p>
+        )}
         {!(isCurrencyIncomeCategory || isSellCurrenciesCategory) && (
           <>
             <label
               htmlFor="amount"
               className=" text-sm font-medium text-gray-700 dark:text-white block"
             >
-              Monto
+              Monto ({effectiveCurrency})
             </label>
 
             <div className="relative">
