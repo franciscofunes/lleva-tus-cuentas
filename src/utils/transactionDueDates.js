@@ -19,12 +19,19 @@ const PUBLIC_SERVICE_PATTERNS = [
 export const getCategoryDefinition = (categoryName, categories = []) =>
 	(categories || []).find((item) => item?.name === categoryName) || null;
 
+export const hasExplicitCategoryDueDate = (categoryName, categories = []) => {
+  const definition = getCategoryDefinition(categoryName, categories);
+  return Array.isArray(definition?.extraFieldIds) && definition.extraFieldIds.includes('dueDate');
+};
+
 export const isPublicServiceCategory = (categoryName) => {
 	const normalized = normalizeCategoryName(categoryName);
 	return PUBLIC_SERVICE_PATTERNS.some((pattern) => pattern.test(normalized));
 };
 
 export const usesSelectedDateAsDueDate = (categoryName, categories = []) => {
+  // Configured bills keep the transaction date and the payable due date separate.
+  if (hasExplicitCategoryDueDate(categoryName, categories)) return false;
 	const definition = getCategoryDefinition(categoryName, categories);
 	const behavior = String(definition?.dateBehavior || '').toLowerCase();
 
@@ -37,7 +44,8 @@ export const usesSelectedDateAsDueDate = (categoryName, categories = []) => {
 
 export const getNotificationSettings = (categoryName, categories = []) => {
 	const definition = getCategoryDefinition(categoryName, categories);
-	const dueDateCategory = usesSelectedDateAsDueDate(categoryName, categories);
+	const dueDateCategory = usesSelectedDateAsDueDate(categoryName, categories)
+    || hasExplicitCategoryDueDate(categoryName, categories);
 	const configuredLeadDays = Number(definition?.notificationLeadDays);
 	const leadDays = Number.isFinite(configuredLeadDays)
 		? Math.max(0, Math.min(60, configuredLeadDays))
@@ -61,6 +69,7 @@ export const resolveTransactionDueDate = ({
 	if (String(category || '').includes('Resumen tarjeta')) {
 		return selectedExpirationDate || '';
 	}
+  if (hasExplicitCategoryDueDate(category, categories)) return selectedExpirationDate || '';
 
 	return usesSelectedDateAsDueDate(category, categories) ? selectedDate || '' : '';
 };
