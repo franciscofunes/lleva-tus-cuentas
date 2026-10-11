@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FaCheck, FaEdit, FaPlus, FaTag } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { saveCustomCategory, setCustomCategoryActive, updateCustomCategoryLabel } from '../services/customCategoriesService';
+import { saveCustomCategory, setCustomCategoryActive, updateCustomCategoryCurrency, updateCustomCategoryLabel } from '../services/customCategoriesService';
 import { CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, categoryLabel, normalizeCategoryName, validateCategoryDisplayName, validateCustomCategory } from '../utils/customCategories';
 import { CATEGORY_EXTRA_FIELD_CATALOG, MAX_EXTRA_FIELDS, validateCategoryExtraFields } from '../utils/categoryExtraFields';
 
@@ -10,11 +10,13 @@ const fieldClass = 'w-full min-h-[44px] rounded-xl border border-slate-300 bg-wh
 const CategoryManager = ({ userId, categories = [], onCreated }) => {
   const [name, setName] = useState('');
   const [isExpense, setIsExpense] = useState(true);
+  const [currency, setCurrency] = useState('ARS');
   const [extraFieldIds, setExtraFieldIds] = useState([]);
   const [hasDueDate, setHasDueDate] = useState(false);
   const [working, setWorking] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editingLabel, setEditingLabel] = useState('');
+  const [editingCurrency, setEditingCurrency] = useState('ARS');
   const [editError, setEditError] = useState('');
   const [error, setError] = useState('');
   const customCategories = useMemo(() =>
@@ -39,13 +41,14 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
     setError('');
     try {
       await saveCustomCategory(userId, {
-        name, isExpense,
+        name, isExpense, currency,
         ...(extraFieldIds.length ? { extraFieldIds } : {}),
         ...(hasDueDate ? { dateBehavior: CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } : {}),
       }, categories);
       setName('');
       setExtraFieldIds([]);
       setHasDueDate(false);
+      setCurrency('ARS');
       toast.success('Categoría personal creada');
       // Only close/select automatically when launched from an active transaction.
       // The callback runs solely after Firestore confirms creation.
@@ -61,11 +64,13 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
     if (working) return;
     setEditingId(entry.id);
     setEditingLabel(categoryLabel(entry));
+    setEditingCurrency(entry.currency === 'USD' ? 'USD' : 'ARS');
     setEditError('');
   };
   const cancelEditing = () => {
     setEditingId(null);
     setEditingLabel('');
+    setEditingCurrency('ARS');
     setEditError('');
   };
   const rename = async (event, entry) => {
@@ -76,7 +81,12 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
     setWorking(entry.id);
     setEditError('');
     try {
-      await updateCustomCategoryLabel(userId, entry, editingLabel, categories);
+      if (editingLabel.trim().replace(/\s+/g, ' ') !== categoryLabel(entry)) {
+        await updateCustomCategoryLabel(userId, entry, editingLabel, categories);
+      }
+      if (editingCurrency !== (entry.currency === 'USD' ? 'USD' : 'ARS')) {
+        await updateCustomCategoryCurrency(userId, entry, editingCurrency);
+      }
       toast.success('Nombre de categoría actualizado');
       cancelEditing();
     } catch (err) {
@@ -121,6 +131,15 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
             <input type='radio' checked={!isExpense} onChange={() => setIsExpense(false)} name='personal-category-type' /> Ingreso
           </label>
         </fieldset>
+        <label htmlFor='personal-category-currency' className='block text-sm font-semibold'>
+          Moneda de los movimientos
+        </label>
+        <select id='personal-category-currency' value={currency} onChange={(event) => setCurrency(event.target.value)}
+          className={fieldClass}>
+          <option value='ARS'>Pesos argentinos (ARS)</option>
+          <option value='USD'>Dólares estadounidenses (USD)</option>
+        </select>
+        <p className='text-xs text-slate-600 dark:text-slate-300'>La moneda se guarda en cada movimiento. No hace falta cotización para registrar un gasto en dólares.</p>
         <section aria-label='Campos de la categoría' className='space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-600 dark:bg-slate-900/70'>
           <h3 className='text-sm font-bold text-slate-900 dark:text-white'>Campos de la transacción</h3>
           <p className='text-xs leading-5 text-slate-600 dark:text-slate-300'>
@@ -176,7 +195,7 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
             <div className='flex min-w-0 flex-wrap items-center justify-between gap-3'>
             <div className='min-w-0'>
               <p className='break-words text-sm font-bold text-slate-900 dark:text-white'>{categoryLabel(entry)}</p>
-              <p className='text-xs text-slate-500 dark:text-slate-400'>{entry.isExpense ? 'Gasto' : 'Ingreso'} · {entry.active === false ? 'Archivada' : 'Activa'}{['due-date', CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR].includes(entry.dateBehavior) ? ' · Con vencimiento' : ''}</p>
+              <p className='text-xs text-slate-500 dark:text-slate-400'>{entry.isExpense ? 'Gasto' : 'Ingreso'} · {entry.currency === 'USD' ? 'USD' : 'ARS'} · {entry.active === false ? 'Archivada' : 'Activa'}{['due-date', CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR].includes(entry.dateBehavior) ? ' · Con vencimiento' : ''}</p>
               {Array.isArray(entry.extraFieldIds) && entry.extraFieldIds.length > 0 && (
                 <p className='mt-1 text-xs text-purple-700 dark:text-purple-300'>{entry.extraFieldIds.length} campos adicionales</p>
               )}
@@ -205,6 +224,16 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
                   disabled={Boolean(working)} value={editingLabel}
                   onChange={(event) => { setEditingLabel(event.target.value); setEditError(''); }}
                   className={fieldClass} />
+                <label htmlFor='edit-personal-category-currency' className='block text-sm font-semibold'>Moneda para nuevos movimientos</label>
+                <select id='edit-personal-category-currency' value={editingCurrency}
+                  onChange={(event) => setEditingCurrency(event.target.value)} disabled={Boolean(working)}
+                  className={fieldClass}>
+                  <option value='ARS'>Pesos argentinos (ARS)</option>
+                  <option value='USD'>Dólares estadounidenses (USD)</option>
+                </select>
+                <p className='text-xs text-slate-600 dark:text-slate-300'>
+                  Cambiar la moneda solo afecta los movimientos nuevos. Los anteriores conservan la moneda con la que fueron registrados.
+                </p>
                 <p className='text-xs text-slate-600 dark:text-slate-300'>
                   Actualiza el nombre que ves en transacciones y filtros. No cambia el tipo de movimiento,
                   las fechas, los campos personalizados ni la identidad de los registros guardados.

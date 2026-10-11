@@ -171,12 +171,13 @@ export default function BimonetarySummary({ docs, categories, userId, hideValues
 
         <SummaryCard id='usd' title='Movimiento de dólares' eyebrow='USD · Este período'
           value={money(flows.knownUsdMovement, 'USD')} color={hideValues ? 'text-slate-900 dark:text-slate-100' : signedColor(flows.knownUsdMovement)}
-          caption='Ingresados + comprados − vendidos' Icon={FiTrendingUp}
+          caption='Ingresados + comprados − vendidos − gastos USD' Icon={FiTrendingUp}
           expanded={expanded.usd} onToggle={() => toggle('usd')}>
           <dl className='space-y-2.5 text-sm'>
             <MoneyRow label='Ingresos USD' amount={flows.earnedUsd} currency='USD' hide={hideValues} tone='income' />
             <MoneyRow label='Dólares comprados' amount={flows.purchasedUsd} currency='USD' hide={hideValues} />
             <MoneyRow label='Dólares vendidos' amount={flows.soldUsd} currency='USD' hide={hideValues} />
+            <MoneyRow label='Gastos en USD' amount={flows.spentUsd} currency='USD' hide={hideValues} tone='expense' />
           </dl>
           <p className={'mt-3 text-xs leading-5 ' + muted}>Flujo del período, no ganancias ni saldo de inversiones.</p>
         </SummaryCard>

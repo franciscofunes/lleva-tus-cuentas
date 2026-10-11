@@ -1,6 +1,8 @@
+import { getTransactionCurrency } from './customCategories';
+
 /**
  * Category totals use the SAME filtered transaction rows as the Dashboard.
- * LTC transactions store ARS amounts and category records mark expenses.
+ * Each expense has an explicit currency. Never mix ARS and USD.
  * This is aggregate reference data, never an exchange-rate conversion.
  */
 export const summarizeSpendingByCategory = (docs = [], categories = []) => {
@@ -12,6 +14,7 @@ export const summarizeSpendingByCategory = (docs = [], categories = []) => {
   const totals = new Map();
   let expenseCount = 0;
   let invalidAmountCount = 0;
+  const usdTotals = new Map();
 
   for (const transaction of docs) {
     const category = String(transaction?.category || '').trim();
@@ -29,6 +32,13 @@ export const summarizeSpendingByCategory = (docs = [], categories = []) => {
     }
 
     expenseCount += 1;
+    if (getTransactionCurrency(transaction) === 'USD') {
+      const currentUsd = usdTotals.get(category) || { category, totalUsd: 0, transactionCount: 0 };
+      currentUsd.totalUsd += amount;
+      currentUsd.transactionCount += 1;
+      usdTotals.set(category, currentUsd);
+      continue;
+    }
     const current = totals.get(category) || { category, totalArs: 0, transactionCount: 0 };
     current.totalArs += amount;
     current.transactionCount += 1;
@@ -41,6 +51,10 @@ export const summarizeSpendingByCategory = (docs = [], categories = []) => {
     currency: 'ARS',
     scope: 'current-view',
     totalArs: Math.round(totalArs * 100) / 100,
+    totalUsd: Math.round([...usdTotals.values()].reduce((sum, row) => sum + row.totalUsd, 0) * 100) / 100,
+    categoriesUsd: [...usdTotals.values()].map((item) => ({
+      ...item, totalUsd: Math.round(item.totalUsd * 100) / 100,
+    })),
     transactionCount: expenseCount,
     invalidAmountCount,
     categories: sorted.map((item) => ({

@@ -1,3 +1,4 @@
+import { getTransactionCurrency } from './customCategories';
 /**
  * Presentation-only ordering for Transactions.
  * Firestore records, filtered KPIs, exports and cross-currency values are untouched.
@@ -5,7 +6,8 @@
 export const TRANSACTION_SORT_OPTIONS = [
   { value: 'date', label: 'Fecha del movimiento' },
   { value: 'amount', label: 'Importe ARS' },
-  { value: 'usd', label: 'Cantidad USD' },
+  { value: 'usd', label: 'Cantidad USD (divisas)' },
+  { value: 'usdAmount', label: 'Importe USD' },
   { value: 'name', label: 'Nombre' },
   { value: 'category', label: 'Categoría' },
   { value: 'due', label: 'Vencimiento' },
@@ -56,7 +58,8 @@ const textValue = (value) => {
 
 const sortValue = (row, key) => {
   switch (key) {
-    case 'amount': return numericValue(row?.amount);
+    case 'amount': return getTransactionCurrency(row) === 'ARS' ? numericValue(row?.amount) : null;
+    case 'usdAmount': return getTransactionCurrency(row) === 'USD' ? numericValue(row?.amount) : null;
     case 'usd': return numericValue(row?.currencyQuantity);
     case 'name': return textValue(row?.expenseName || row?.name);
     case 'category': return textValue(row?.category);

@@ -16,6 +16,8 @@ function Card({
 	id,
 	expenseId,
 	amount,
+	transactionCurrency,
+	setTransactionCurrency = () => {},
 	selectedDate,
 	selectedCloseDate,
 	selectedExpirationDate,
@@ -71,6 +73,7 @@ function Card({
 		openModal();
 		setName(name);
 		setAmount(amount);
+		setTransactionCurrency(transactionCurrency === 'USD' ? 'USD' : 'ARS');
 		setComment(comment);
 		setCategory(safeCategory);
 		setCustomDetails(customDetails);
@@ -202,7 +205,7 @@ function Card({
 					>
 						{safeCategory.includes(INGRESO_DIVISAS_CATEGORY)
 							? `$USD ${currencyQuantity}`
-							: `$AR 
+							: `${transactionCurrency === 'USD' ? '$USD' : '$AR'} 
 						${
 							isExpense
 								? `-${parseFloat(amount)?.toLocaleString()}`

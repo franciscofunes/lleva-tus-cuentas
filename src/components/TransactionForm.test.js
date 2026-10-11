@@ -25,6 +25,7 @@ jest.mock('./InfoTooltip', () => () => null);
 const initialCategories = [
   { id: 'transport', name: 'Transporte 🚌', isExpense: true, active: true },
   { id: 'salary', name: 'Salario 💲', isExpense: false, active: true },
+  { id: 'usd', name: 'Software USD', isExpense: true, currency: 'USD', isCustom: true, origin: 'custom' },
   { id: 'rent2', name: 'Alquiler comercial', isExpense: true, active: true,
     dateBehavior: 'separate-due-date', origin: 'custom', isCustom: true },
   { id: 'rent', name: 'Alquiler mensual', isExpense: true, active: true,
@@ -177,4 +178,17 @@ test('expiration from a custom category is cleared when switching to an ordinary
     target: { value: 'Alquiler comercial' },
   });
   expect(screen.getByLabelText('Fecha de vencimiento (opcional)')).toHaveValue('');
+});
+
+test('USD custom expenses use their own currency and do not show exchange-rate input', () => {
+  render(<TransactionHarness initialCategory='Software USD' />);
+  expect(screen.getByText('Monto (USD)')).toBeInTheDocument();
+  expect(screen.getByText(/sin cotización ni venta de divisas/)).toBeInTheDocument();
+  expect(screen.queryByLabelText('Cotización de venta')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Cantidad a vender')).not.toBeInTheDocument();
+});
+
+test('legacy ARS categories keep ARS amount field', () => {
+  render(<TransactionHarness initialCategory='Transporte 🚌' />);
+  expect(screen.getByText('Monto (ARS)')).toBeInTheDocument();
 });

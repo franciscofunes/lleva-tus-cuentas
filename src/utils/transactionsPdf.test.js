@@ -35,3 +35,12 @@ test('a large movement history is paginated without truncating records or crashi
 test('does not produce misleading empty PDF files', () => {
   expect(() => buildTransactionsPdf([], catalog)).toThrow(/No hay movimientos/);
 });
+
+test('native USD expense PDF is a valid file without requiring fake exchange rate', () => {
+  const blob=buildTransactionsPdf([...input,{
+    expenseName:'AWS', selectedDate:'2026-10-11', category:'Suscripción USD',
+    amount:24.55,transactionCurrency:'USD'
+  }], [...catalog,{name:'Suscripción USD',isExpense:true,currency:'USD'}]);
+  expect(blob.type).toBe('application/pdf');
+  expect(blob.size).toBeGreaterThan(1500);
+});

@@ -35,12 +35,12 @@ const dueLabel = (days) => {
 	return `Vence en ${days} días`;
 };
 
-const money = (value) => {
+const money = (value, currency = 'ARS') => {
 	const amount = Number(value);
 	if (!Number.isFinite(amount)) return '';
 	return new Intl.NumberFormat('es-AR', {
 		style: 'currency',
-		currency: 'ARS',
+		currency: currency === 'USD' ? 'USD' : 'ARS',
 		maximumFractionDigits: 2,
 	}).format(amount);
 };
@@ -125,10 +125,10 @@ const ReminderItem = ({ notification, onOpen }) => {
 
 				<span className='mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400'>
 					<span className='truncate'>{notification.category || 'Transacción'}</span>
-					{money(notification.amount) && (
+					{money(notification.amount, notification.transactionCurrency) && (
 						<>
 							<span aria-hidden='true'>·</span>
-							<span className='whitespace-nowrap'>{money(notification.amount)}</span>
+							<span className='whitespace-nowrap'>{money(notification.amount, notification.transactionCurrency)}</span>
 						</>
 					)}
 				</span>
@@ -201,7 +201,7 @@ const NotificationDetail = ({
 							Monto
 						</p>
 						<p className='mt-1 text-sm font-bold text-slate-900 dark:text-white'>
-							{money(notification.amount) || 'Sin monto'}
+							{money(notification.amount, notification.transactionCurrency) || 'Sin monto'}
 						</p>
 					</div>
 					<div className='col-span-2'>

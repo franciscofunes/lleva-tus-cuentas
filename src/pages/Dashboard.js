@@ -24,6 +24,7 @@ import SearchBar from "../components/SearchBar";
 import { filterTransactions } from "../utils/transactionSearch";
 import { sortTransactions, isTransactionSortKey } from "../utils/transactionSort";
 import { categoryContains } from "../utils/categoryContains";
+import { getTransactionCurrency } from "../utils/customCategories";
 import { TRANSACTION_PAGE_SIZE, visibleTransactionBatch } from "../utils/transactionsPagination";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
@@ -241,6 +242,7 @@ function Dashboard() {
   const [expenseId, setExpenseId] = useState("");
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
+  const [transactionCurrency, setTransactionCurrency] = useState("ARS");
   const [comment, setComment] = useState("");
   const [category, setCategory] = useState("");
   const [customDetails, setCustomDetails] = useState({});
@@ -382,11 +384,11 @@ function Dashboard() {
         ?.map((category) => category.name);
 
       const expenses = docs
-        .filter((doc) => expensesCategories?.includes(doc?.category))
+        .filter((doc) => expensesCategories?.includes(doc?.category) && getTransactionCurrency(doc) === 'ARS')
         .map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
 
       const incomes = docs
-        .filter((doc) => !expensesCategories?.includes(doc?.category))
+        .filter((doc) => !expensesCategories?.includes(doc?.category) && getTransactionCurrency(doc) === 'ARS')
         .map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
 
       const currencyIncome = docs
@@ -441,7 +443,7 @@ function Dashboard() {
       scope: "current-view",
       spendingByCategory: summarizeSpendingByCategory(docs || [], categories || []),
       categories: (categories || []).filter((entry) => entry.active !== false)
-        .map(({ name, isExpense }) => ({ name, isExpense: Boolean(isExpense) })),
+        .map(({ name, isExpense, currency }) => ({ name, isExpense: Boolean(isExpense), currency: currency === 'USD' ? 'USD' : 'ARS' })),
       summary: {
         incomeArs: Number(income || 0),
         expensesArs: Number(expense || 0),
@@ -452,6 +454,7 @@ function Dashboard() {
         name: doc.expenseName || "",
         category: doc.category || "",
         amount: Number(doc.amount || 0),
+        transactionCurrency: getTransactionCurrency(doc),
         selectedDate: doc.selectedDate || "",
         comment: doc.comment || "",
         currencyQuantity: Number(doc.currencyQuantity || 0),
@@ -470,6 +473,7 @@ function Dashboard() {
 
     setName(transaction.expenseName || "");
     setAmount(transaction.amount ?? "");
+    setTransactionCurrency(transaction.transactionCurrency === "USD" ? "USD" : "ARS");
     setComment(transaction.comment || "");
     setCategory(transaction.category || "");
     setCustomDetails(transaction.customDetails || {});
@@ -573,6 +577,7 @@ function Dashboard() {
     setEdit(false);
     setName("");
     setAmount("");
+    setTransactionCurrency("ARS");
     setComment("");
     setCategory("");
     setCustomDetails({});
@@ -758,6 +763,8 @@ function Dashboard() {
                     id={doc.id}
                     name={doc.expenseName}
                     amount={doc.amount}
+                    transactionCurrency={doc.transactionCurrency}
+                    setTransactionCurrency={setTransactionCurrency}
                     date={doc.date}
                     comment={doc.comment}
                     category={doc.category}
@@ -837,6 +844,8 @@ function Dashboard() {
             component={TransactionForm}
             name={name}
             amount={amount}
+            transactionCurrency={transactionCurrency}
+            setTransactionCurrency={setTransactionCurrency}
             edit={edit}
             comment={comment}
             category={category}

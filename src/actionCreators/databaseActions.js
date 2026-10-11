@@ -17,6 +17,7 @@ const notificationPayload = (data, sourceId, includeCreatedAt = false) => ({
 	sourceId,
 	title: data.name || 'Vencimiento',
 	category: data.category || '',
+	...(data.transactionCurrency === 'USD' ? { transactionCurrency: 'USD' } : {}),
 	dueDate: data.dueDate,
 	amount: Number.isFinite(Number(data.amount)) ? Number(data.amount) : null,
 	leadDays: Number.isFinite(Number(data.notificationLeadDays))
@@ -82,6 +83,7 @@ export const storeDataAction = (data) => {
 				expenseName: data.name,
 				comment: data.comment,
 				category: data.category,
+				transactionCurrency: data.transactionCurrency === 'USD' ? 'USD' : 'ARS',
 				...(Object.keys(safeCustomDetails(data)).length ? { customDetails: safeCustomDetails(data) } : {}),
 				...(data?.amount && {
 					amount: data?.amount,
@@ -134,6 +136,7 @@ export const updateDataAction = (data, docId) => {
 				expenseName: data.name,
 				comment: data.comment,
 				category: data.category,
+				transactionCurrency: data.transactionCurrency === 'USD' ? 'USD' : 'ARS',
 				...(Object.keys(safeCustomDetails(data)).length
 					? { customDetails: safeCustomDetails(data) }
 					: data.clearCustomDetails ? { customDetails: {} } : {}),

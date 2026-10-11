@@ -2,12 +2,13 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import CategoryManager from './CategoryManager';
-import { saveCustomCategory, setCustomCategoryActive, updateCustomCategoryLabel } from '../services/customCategoriesService';
+import { saveCustomCategory, setCustomCategoryActive, updateCustomCategoryCurrency, updateCustomCategoryLabel } from '../services/customCategoriesService';
 
 jest.mock('../services/customCategoriesService', () => ({
   saveCustomCategory: jest.fn().mockResolvedValue('id-mascotas'),
   setCustomCategoryActive: jest.fn().mockResolvedValue(undefined),
   updateCustomCategoryLabel: jest.fn().mockResolvedValue('Telefonía móvil'),
+  updateCustomCategoryCurrency: jest.fn().mockResolvedValue('USD'),
 }));
 jest.mock('react-toastify', () => ({ toast: { success: jest.fn() } }));
 
@@ -26,7 +27,7 @@ test('creates private income category and leaves global catalog read-only', asyn
   fireEvent.click(screen.getByLabelText('Ingreso'));
   fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
   await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA',
-    { name: 'Freelance', isExpense: false }, categories));
+    { name: 'Freelance', isExpense: false, currency: 'ARS' }, categories));
   expect(screen.getByText('Mascotas')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Archivar Alimentación 🍜' })).not.toBeInTheDocument();
 });
@@ -60,7 +61,7 @@ test('notifies an open transaction only after its private category is saved', as
   fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
   await waitFor(() => expect(onCreated).toHaveBeenCalledWith('Freelance nuevo'));
   expect(saveCustomCategory).toHaveBeenCalledWith('userA',
-    { name: '  Freelance   nuevo  ', isExpense: true }, categories);
+    { name: '  Freelance   nuevo  ', isExpense: true, currency: 'ARS' }, categories);
 });
 
 test('does not leave the transaction form when saving a category fails', async () => {
@@ -80,7 +81,7 @@ test('new private category stores only controlled preset identifiers', async () 
   fireEvent.click(screen.getByLabelText('Medio de pago'));
   fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
   await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA',
-    { name: 'Servicios freelance', isExpense: true, extraFieldIds: ['reference', 'paymentMethod'] }, categories));
+    { name: 'Servicios freelance', isExpense: true, currency: 'ARS', extraFieldIds: ['reference', 'paymentMethod'] }, categories));
 });
 
 test('allows at most three extra presets and never changes mandatory base fields', () => {
@@ -106,7 +107,7 @@ test('opt-in due date is saved on a new personal category without consuming the 
   expect(screen.getByLabelText('Fecha de vencimiento')).toBeChecked();
   fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
   await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA', {
-    name: 'Expensas edificio', isExpense: true,
+    name: 'Expensas edificio', isExpense: true, currency: 'ARS',
     extraFieldIds: ['reference', 'paymentMethod', 'receiptNumber'], dateBehavior: 'separate-due-date',
   }, categories));
   await waitFor(() => expect(screen.getByLabelText('Fecha de vencimiento')).not.toBeChecked());
@@ -119,7 +120,7 @@ test('an unchecked due-date option preserves legacy normal category data', async
   fireEvent.click(screen.getByLabelText('Fecha de vencimiento'));
   fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
   await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA', {
-    name: 'Papelería', isExpense: true,
+    name: 'Papelería', isExpense: true, currency: 'ARS',
   }, categories));
 });
 
@@ -178,4 +179,22 @@ test('preserves the edited label in the private category list and never exposes 
   fireEvent.click(screen.getByRole('button', { name: 'Editar Telefonía móvil' }));
   expect(screen.getByLabelText('Nuevo nombre visible')).toHaveValue('Telefonía móvil');
   expect(screen.queryByRole('button', { name: /Editar Alimentación/ })).not.toBeInTheDocument();
+});
+
+test('new category chooses USD without fake exchange rate or extra custom fields', async () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  fireEvent.change(screen.getByLabelText('Nombre de la categoría'), { target: { value: 'Suscripción USD' } });
+  fireEvent.change(screen.getByLabelText('Moneda de los movimientos'), { target: { value: 'USD' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
+  await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA',
+    { name: 'Suscripción USD', isExpense: true, currency: 'USD' }, categories));
+});
+
+test('editing category currency updates defaults only and does not mutate historical transactions', async () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Editar Mascotas' }));
+  fireEvent.change(screen.getByLabelText('Moneda para nuevos movimientos'), { target: { value: 'USD' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+  await waitFor(() => expect(updateCustomCategoryCurrency).toHaveBeenCalledWith('userA', categories[1], 'USD'));
+  expect(updateCustomCategoryLabel).not.toHaveBeenCalled();
 });

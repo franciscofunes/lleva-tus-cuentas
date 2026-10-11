@@ -51,6 +51,19 @@ export const categoryDocumentId = (name) => {
 export const LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR = 'due-date';
 export const CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR = 'separate-due-date';
 
+// A category currency is a default for NEW transactions. Stored transaction
+// currency is a snapshot: editing this setting must not revalue old records.
+export const CATEGORY_CURRENCIES = ['ARS', 'USD'];
+export const validCategoryCurrency = (currency) =>
+  currency === undefined || CATEGORY_CURRENCIES.includes(currency);
+export const getCategoryCurrency = (name, categories = []) =>
+  (categories || []).find((entry) => entry?.name === name)?.currency === 'USD'
+    ? 'USD' : 'ARS';
+// Existing records without transactionCurrency always represent ARS amounts,
+// except the dedicated foreign-exchange categories with separate USD quantity.
+export const getTransactionCurrency = (row) =>
+  row?.transactionCurrency === 'USD' ? 'USD' : 'ARS';
+
 export const validateCustomCategoryDateBehavior = (dateBehavior) =>
   dateBehavior === undefined || dateBehavior === null || dateBehavior === ''
     || dateBehavior === LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR

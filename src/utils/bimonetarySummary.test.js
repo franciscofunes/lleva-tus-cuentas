@@ -61,3 +61,32 @@ describe('bimonetary summary: transfers do not become income or consumption', ()
     ])).toEqual({ USD: 3000.25, ARS: 100500, positions: 4 });
   });
 });
+
+test('USD expenses are real spending, never a fake FX sale or ARS expense', () => {
+  const cat = [...categories, { name: 'Software en dólares', isExpense: true, currency: 'USD' }];
+  const summary = summarizeBimonetaryFlows([
+    {category:'Software en dólares',amount:49.95,transactionCurrency:'USD'},
+    {category:'Alquiler',amount:120000},
+    {category:'Ingreso divisas',currencyQuantity:500},
+    {category:'Venta divisas',currencyQuantity:100,amount:155000},
+  ], cat);
+  expect(summary.spentUsd).toBe(49.95);
+  expect(summary.spentArs).toBe(120000);
+  expect(summary.fromUsdSalesArs).toBe(155000);
+  expect(summary.soldUsd).toBe(100);
+  expect(summary.knownUsdMovement).toBeCloseTo(350.05);
+  expect(summary.knownArsNet).toBe(35000);
+  expect(summary.unexplainedArsCount).toBe(0);
+});
+
+test('old expenses stay ARS even after their category default currency is edited to USD', () => {
+  const cat = [{name:'Servicio telefonía',isExpense:true,currency:'USD'}];
+  const summary = summarizeBimonetaryFlows([
+    {category:'Servicio telefonía',amount:1100},
+    {category:'Servicio telefonía',amount:15,transactionCurrency:'USD'},
+  ], cat);
+  expect(summary.spentArs).toBe(1100);
+  expect(summary.spentUsd).toBe(15);
+  expect(summary.knownArsNet).toBe(-1100);
+  expect(summary.knownUsdMovement).toBe(-15);
+});

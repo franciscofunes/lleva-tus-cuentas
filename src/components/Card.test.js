@@ -165,3 +165,25 @@ test('new due-date category without an optional expiration has no placeholder or
   expect(screen.queryByText(/Fecha de vencimiento:/)).not.toBeInTheDocument();
   expect(screen.queryByText('Invalid date')).not.toBeInTheDocument();
 });
+
+test('USD subscription is displayed in dollars and editor retains its native currency', () => {
+  const setTransactionCurrency = jest.fn();
+  render(<Card {...basicProps} category='Software USD' transactionCurrency='USD'
+    categories={[{name:'Software USD',isExpense:true,currency:'USD'}]}
+    setTransactionCurrency={setTransactionCurrency} openModal={jest.fn()} setName={jest.fn()}
+    setAmount={jest.fn()} setCategory={jest.fn()} setComment={jest.fn()}
+    setSelectedDate={jest.fn()} setSelectedCloseDate={jest.fn()} setSelectedExpirationDate={jest.fn()}
+    setCurrencyQuantity={jest.fn()} setCurrencyExchangeRate={jest.fn()}
+    setIsCreditCardCategory={jest.fn()} setIsBuyCurrenciesCategory={jest.fn()}
+    setIsCurrencyIncomeCategory={jest.fn()} setIsSellCurrenciesCategory={jest.fn()}
+    setExpenseId={jest.fn()} setEdit={jest.fn()} />);
+  expect(screen.getByText(/\$USD -1,?250/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name:'Editar Movimiento importado' }));
+  expect(setTransactionCurrency).toHaveBeenCalledWith('USD');
+});
+
+test('legacy transactions remain displayed in ARS after their category defaults to USD', () => {
+  render(<Card {...basicProps} category='Software USD'
+    categories={[{name:'Software USD',isExpense:true,currency:'USD'}]} />);
+  expect(screen.getByText(/\$AR -1,?250/)).toBeInTheDocument();
+});

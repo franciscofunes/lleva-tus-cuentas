@@ -83,14 +83,18 @@ export const buildTransactionsPdf = (rows = [], categories = [], filters = {}) =
 
   const exported = buildTransactionsExportSheets(rows, categories, filters).Movimientos.slice(1);
   exported.forEach((cells, index) => {
-    const [date, name, category, classification, ars, usd, exchangeRate, closeDate, due, status, comment] = cells;
+    const [date, name, category, classification, ars, usd, exchangeRate, closeDate, due, status, comment, nativeCurrency, nativeUsd] = cells;
     ensureSpace(18);
     pdf.setDrawColor(226, 232, 240);
     pdf.line(margin, y - 2, w - margin, y - 2);
     print((index + 1) + '. ' + (date || 'Sin fecha') + ' — ' + (name || 'Sin nombre'), { bold: true });
     print('Categoría: ' + (category || 'Sin categoría') + ' | Tipo: ' + classification, { indent: 2 });
-    print('ARS registrado: ' + formatAmount(ars) + ' | USD cantidad: ' + formatAmount(usd) +
-      ' | Cotización ARS/USD: ' + formatAmount(exchangeRate), { indent: 2 });
+    if (nativeCurrency === 'USD') {
+      print('Gasto/ingreso USD: ' + formatAmount(nativeUsd) + ' | Sin conversión de divisas', { indent: 2 });
+    } else {
+      print('ARS registrado: ' + formatAmount(ars) + ' | USD divisas: ' + formatAmount(usd) +
+        ' | Cotización ARS/USD: ' + formatAmount(exchangeRate), { indent: 2 });
+    }
     if (closeDate || due || status) {
       print('Cierre: ' + (closeDate || 'N/D') + ' | Vencimiento: ' + (due || 'N/D') +
         ' | Estado: ' + (status || 'N/D'), { indent: 2 });

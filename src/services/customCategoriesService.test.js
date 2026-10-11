@@ -1,4 +1,4 @@
-import { saveCustomCategory, updateCustomCategoryLabel } from './customCategoriesService';
+import { saveCustomCategory, updateCustomCategoryLabel, updateCustomCategoryCurrency } from './customCategoriesService';
 import firebase from 'firebase/compat/app';
 import { firestore } from '../shared/config/firebase/firebase.config';
 
@@ -37,7 +37,7 @@ test('stores the due-date option only in the private user category and uses allo
   expect(firestore.collection).toHaveBeenCalledWith('users');
   expect(collection).toHaveBeenCalledWith('customCategories');
   expect(set).toHaveBeenCalledWith({
-    name: 'Alquiler', isExpense: true, active: true,
+    name: 'Alquiler', isExpense: true, currency: 'ARS', active: true,
     dateBehavior: 'separate-due-date', createdAt: 'server-time', updatedAt: 'server-time',
   });
 });
@@ -88,4 +88,25 @@ test('refuses to rename a shared category, a duplicate label, or an unauthentica
   await expect(updateCustomCategoryLabel('',own,'Cuidado animal',[own,shared]))
     .rejects.toThrow(/personales/);
   expect(update).not.toHaveBeenCalled();
+});
+
+test('saves native USD default on new expense category and validates allowed values', async () => {
+  await saveCustomCategory('userA', { name: 'Hosting en USD', isExpense: true, currency: 'USD' }, customCategories);
+  expect(set).toHaveBeenCalledWith(expect.objectContaining({
+    name: 'Hosting en USD', isExpense: true, currency: 'USD',
+  }));
+  set.mockClear();
+  await expect(saveCustomCategory('userA', {
+    name: 'Otra categoría', isExpense: true, currency: 'EUR',
+  }, customCategories)).rejects.toThrow(/ARS o USD/);
+  expect(set).not.toHaveBeenCalled();
+});
+
+test('updates future-only currency via owner category reference and never historical expenses', async () => {
+  const entry = { id: 'servicio', name: 'Servicio telefonía', origin: 'custom', isCustom: true };
+  await updateCustomCategoryCurrency('userA', entry, 'USD');
+  expect(update).toHaveBeenCalledWith({currency: 'USD',updatedAt:'server-time'});
+  expect(update.mock.calls[0][0].name).toBeUndefined();
+  expect(update.mock.calls[0][0].isExpense).toBeUndefined();
+  await expect(updateCustomCategoryCurrency('userA', entry, 'EUR')).rejects.toThrow(/Moneda inválida/);
 });
