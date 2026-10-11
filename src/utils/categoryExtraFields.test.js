@@ -9,7 +9,7 @@ import {
 } from './categoryExtraFields';
 
 test('offers a bounded controlled field catalog and preserves requested order', () => {
-  expect(CATEGORY_EXTRA_FIELD_CATALOG).toHaveLength(5);
+  expect(CATEGORY_EXTRA_FIELD_CATALOG).toHaveLength(8);
   expect(MAX_EXTRA_FIELDS).toBe(3);
   expect(getCategoryExtraFields({ extraFieldIds: ['paymentMethod', 'reference'] }).map((x) => x.id))
     .toEqual(['paymentMethod', 'reference']);
