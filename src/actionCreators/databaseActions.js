@@ -82,6 +82,7 @@ export const storeDataAction = (data) => {
 				expenseName: data.name,
 				comment: data.comment,
 				category: data.category,
+				transactionCurrency: data.transactionCurrency === 'USD' ? 'USD' : 'ARS',
 				...(Object.keys(safeCustomDetails(data)).length ? { customDetails: safeCustomDetails(data) } : {}),
 				...(data?.amount && {
 					amount: data?.amount,
@@ -134,6 +135,7 @@ export const updateDataAction = (data, docId) => {
 				expenseName: data.name,
 				comment: data.comment,
 				category: data.category,
+				transactionCurrency: data.transactionCurrency === 'USD' ? 'USD' : 'ARS',
 				...(Object.keys(safeCustomDetails(data)).length
 					? { customDetails: safeCustomDetails(data) }
 					: data.clearCustomDetails ? { customDetails: {} } : {}),
