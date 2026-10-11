@@ -41,8 +41,8 @@ test('normal card still renders its expense sign when the category exists', () =
 test('each transaction has a readable, distinct card surface and accessible touch targets', () => {
   render(<Card {...basicProps} category='Salud' comment='Consulta médica' categories={[{ name: 'Salud', isExpense: true }]} />);
   const card = screen.getByRole('article', { name: 'Movimiento: Movimiento importado' });
-  expect(card).toHaveClass('rounded-xl', 'dark:bg-slate-900/45', 'dark:border-slate-700/90');
-  expect(screen.getByText('Nombre:')).toHaveClass('text-violet-700');
+  expect(card).toHaveClass('rounded-2xl', 'bg-white', 'dark:bg-slate-800', 'dark:border-slate-700', 'ltc-transaction-card');
+  expect(screen.getByText('Nombre:')).toHaveClass('text-violet-700', 'dark:text-violet-200');
   expect(screen.getByText('Consulta médica')).toHaveClass('text-sm');
   const edit = screen.getByRole('button', { name: 'Editar Movimiento importado' });
   const remove = screen.getByRole('button', { name: 'Eliminar Movimiento importado' });
@@ -108,4 +108,41 @@ test('edit action still opens the same form and restores the transaction data', 
   expect(setters.setCurrencyQuantity).toHaveBeenCalledWith('100');
   expect(setters.setIsBuyCurrenciesCategory).toHaveBeenCalledWith(true);
   expect(setters.setEdit).toHaveBeenCalledWith(true);
+});
+
+test('dark transactions use opaque slate surfaces and readable semantic text in every row', () => {
+  const { container } = render(<Card {...basicProps} category='Servicio de Internet'
+    selectedCloseDate='2026-10-31' selectedExpirationDate='2026-11-13'
+    comment='Descripción de un servicio' paymentStatus='paid'
+    customDetails={{ reference: 'ABC123' }}
+    categories={[{ name: 'Servicio de Internet', isExpense: true, dateBehavior: 'due-date' }]} />);
+  const card = container.querySelector('.ltc-transaction-card');
+  expect(card).toHaveClass('dark:bg-slate-800', 'dark:border-slate-700');
+  expect(card).not.toHaveClass('bg-slate-50/80', 'dark:bg-slate-900/45');
+  expect(screen.getByText('Nombre:')).toHaveClass('dark:text-violet-200');
+  expect(screen.getByText('Descripción de un servicio')).toHaveClass('dark:text-slate-200');
+  expect(screen.getByLabelText('Datos adicionales de la transacción'))
+    .toHaveClass('dark:bg-slate-900/70', 'dark:text-slate-200');
+  expect(card.querySelectorAll('.dark\\:text-slate-200').length).toBeGreaterThan(2);
+});
+
+test('real html.dark theme selector enforces the opaque card background at CSS level', () => {
+  const { readFileSync } = require('fs');
+  const { join } = require('path');
+  const css = readFileSync(join(__dirname, '..', 'index.css'), 'utf8');
+  const fallback = css.match(/html\\.dark\\s+\\.ltc-transaction-card\\s*\\{[^}]+\\}/)?.[0];
+  expect(fallback).toBeTruthy();
+  const style = document.createElement('style');
+  style.textContent = fallback;
+  document.head.appendChild(style);
+  document.documentElement.classList.add('dark');
+  try {
+    render(<Card {...basicProps} />);
+    const card = screen.getByRole('article');
+    expect(getComputedStyle(card).backgroundColor).toBe('rgb(30, 41, 59)');
+    expect(getComputedStyle(card).color).toBe('rgb(248, 250, 252)');
+  } finally {
+    style.remove();
+    document.documentElement.classList.remove('dark');
+  }
 });
