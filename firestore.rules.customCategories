@@ -44,50 +44,7 @@ match /users/{uid}/customCategories/{categoryId} {
       (data.displayName is string
        && data.displayName.size() >= 2
        && data.displayName.size() <= 50
-       && data.displayName.matches('^[^\\\\r\\\\n<>]+
-    let d = request.resource.data;
-    return d.keys().hasAll(['name', 'isExpense', 'active', 'createdAt', 'updatedAt'])
-      && d.keys().hasOnly(['name', 'isExpense', 'active', 'createdAt', 'updatedAt', 'extraFieldIds', 'dateBehavior', 'displayName'])
-      && categoryId.matches('^[a-z0-9-]{3,80}$')
-      && d.name is string
-      && d.name.size() >= 2
-      && d.name.size() <= 50
-      && d.name.matches('^[^\\r\\n]+$')
-      && d.isExpense is bool
-      && d.active is bool
-      && validExtraFieldSelection(d)
-      && validCategoryDateBehavior(d)
-      && validCategoryDisplayName(d)
-      && d.createdAt is timestamp
-      && d.updatedAt is timestamp;
-  }
-
-  allow get, list: if ownsCustomCategories();
-
-  allow create: if ownsCustomCategories()
-    && validPersonalCategory()
-    && request.resource.data.active == true
-    && request.resource.data.createdAt == request.time
-    && request.resource.data.updatedAt == request.time;
-
-  // The immutable original name and type protect historical records.
-  // Only a bounded, owner-only displayName may change without rewriting
-  // transactions. Archiving remains supported.
-  allow update: if ownsCustomCategories()
-    && validPersonalCategory()
-    && request.resource.data.diff(resource.data).affectedKeys()
-       .hasOnly(['active', 'displayName', 'updatedAt'])
-    && request.resource.data.createdAt == resource.data.createdAt
-    && request.resource.data.name == resource.data.name
-    && request.resource.data.isExpense == resource.data.isExpense
-    && request.resource.data.get('extraFieldIds', []) == resource.data.get('extraFieldIds', [])
-    && request.resource.data.get('dateBehavior', '') == resource.data.get('dateBehavior', '')
-    && request.resource.data.updatedAt == request.time;
-
-  // Deleting would orphan old transaction categories; archive instead.
-  allow delete: if false;
-}
-));
+       && data.displayName.matches('^[^\\r\\n<>]+$'));
   }
 
   function validPersonalCategory() {
