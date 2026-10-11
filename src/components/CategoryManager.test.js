@@ -108,7 +108,7 @@ test('opt-in due date is saved on a new personal category without consuming the 
     name: 'Expensas edificio', isExpense: true,
     extraFieldIds: ['reference', 'paymentMethod', 'receiptNumber'], dateBehavior: 'due-date',
   }, categories));
-  expect(screen.getByLabelText('Fecha de vencimiento')).not.toBeChecked();
+  await waitFor(() => expect(screen.getByLabelText('Fecha de vencimiento')).not.toBeChecked());
 });
 
 test('an unchecked due-date option preserves legacy normal category data', async () => {
