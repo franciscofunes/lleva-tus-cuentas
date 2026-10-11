@@ -1,7 +1,8 @@
+import { getTransactionCurrency } from './customCategories';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 
 // Transactions are persisted in two different units:
-// - amount: pesos (ARS) for regular ARS cash movements and conversions
+// - amount: actual transactionCurrency (ARS or USD) for ordinary movements, ARS for FX conversions
 // - currencyQuantity: dollars (USD) for Ingreso/Compra/Venta divisas
 // These flows are NOT portfolio balances or financial profit.
 const safeAmount = (value) => {
@@ -25,6 +26,7 @@ export const summarizeBimonetaryFlows = (docs = [], categories = []) => {
     fromUsdSalesArs: 0,
     spentOnUsdPurchasesArs: 0,
     earnedUsd: 0,
+    spentUsd: 0,
     purchasedUsd: 0,
     soldUsd: 0,
     unexplainedArsCount: 0,
@@ -39,7 +41,9 @@ export const summarizeBimonetaryFlows = (docs = [], categories = []) => {
     const isIngresoUsd = hasCategory(cat, INGRESO_DIVISAS_CATEGORY);
     const isCompraUsd = hasCategory(cat, 'Compra divisas');
     const isVentaUsd = hasCategory(cat, 'Venta divisas');
-    const ars = safeAmount(doc?.amount);
+    const nativeAmount = safeAmount(doc?.amount);
+    const isNativeUsd = !isIngresoUsd && !isCompraUsd && !isVentaUsd && getTransactionCurrency(doc) === 'USD';
+    const ars = isNativeUsd ? null : nativeAmount;
     const usd = safeAmount(doc?.currencyQuantity);
 
     if (isIngresoUsd || isCompraUsd || isVentaUsd) {
@@ -47,6 +51,14 @@ export const summarizeBimonetaryFlows = (docs = [], categories = []) => {
       else if (isIngresoUsd) result.earnedUsd += usd;
       else if (isCompraUsd) result.purchasedUsd += usd;
       else result.soldUsd += usd;
+    }
+
+    if (isNativeUsd) {
+      if (nativeAmount === null) result.missingUsdCount += 1;
+      else if (expenses.has(cat)) result.spentUsd += nativeAmount;
+      else if (incomes.has(cat)) result.earnedUsd += nativeAmount;
+      // A USD expense is NOT a sale of dollars or a zero-rate conversion.
+      return;
     }
 
     if (ars === null) {
@@ -73,7 +85,7 @@ export const summarizeBimonetaryFlows = (docs = [], categories = []) => {
     }
   });
 
-  result.knownUsdMovement = result.earnedUsd + result.purchasedUsd - result.soldUsd;
+  result.knownUsdMovement = result.earnedUsd + result.purchasedUsd - result.soldUsd - result.spentUsd;
   return result;
 };
 
