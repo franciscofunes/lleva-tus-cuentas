@@ -27,7 +27,8 @@ match /users/{uid}/customCategories/{categoryId} {
       (data.extraFieldIds is list
        && data.extraFieldIds.size() <= 3
        && data.extraFieldIds.hasOnly([
-         'reference', 'counterparty', 'paymentMethod', 'receiptNumber', 'operationDate'
+         'reference', 'counterparty', 'paymentMethod', 'receiptNumber', 'operationDate',
+         'dueDate', 'serviceAccount', 'billingPeriod'
        ]));
   }
 
