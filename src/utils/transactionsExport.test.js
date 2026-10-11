@@ -123,7 +123,7 @@ test('exports all filtered movements rather than only the first 40 rendered card
   const filtered = filterTransactions(many, { type: 'expense', categories });
   const sheets = buildTransactionsExportSheets(filtered, categories, { periodLabel: 'octubre 2026' });
   expect(sheets.Movimientos).toHaveLength(2409);
-  expect(sheets['Gastos por categoría']).toContainEqual(['Salud 🏥', 2408, 84470232]);
+  expect(sheets['Gastos por categoría']).toContainEqual(['Salud 🏥', 2408, 84470232, '']);
   expect(worksheetXml(sheets.Movimientos)).toContain('<c r="K2409"');
   expect(worksheetXml(sheets.Movimientos)).toContain('<autoFilter ref="A1:K2409"/>');
 });
