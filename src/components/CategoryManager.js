@@ -193,6 +193,7 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
                 {entry.active === false ? <><FaCheck aria-hidden='true' /> Reactivar</> : 'Archivar'}
               </button>
             </div>
+            </div>
             {editingId === entry.id && (
               <form onSubmit={(event) => rename(event, entry)}
                 aria-label={`Editar categoría ${categoryLabel(entry)}`}
