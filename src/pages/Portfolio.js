@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, Navigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -16,7 +16,8 @@ import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import FloatingMenu from '../components/FloatingMenu';
 import SortablePortfolioPositionCard from '../components/SortablePortfolioPositionCard';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
-import { exportPortfolioXlsx, buildPortfolioLlmMarkdown } from '../utils/portfolioExport';
+import { preparePortfolioExport, buildPortfolioLlmMarkdown } from '../utils/portfolioExport';
+import PortfolioExportReady from '../components/PortfolioExportReady';
 import { auditPortfolioEarnings } from '../utils/portfolioEarningsAudit';
 import eyeHide from '../imgs/eyeHide.svg';
 import closeEye from '../imgs/closeEye.svg';
@@ -96,6 +97,29 @@ function Portfolio() {
 	const [positions, setPositions] = useState([]);
 	const positionsRef = useRef([]);
 	const [snapshots, setSnapshots] = useState([]);
+	const [preparedPortfolioExport, setPreparedPortfolioExport] = useState(null);
+	const preparedPortfolioExportRef = useRef(null);
+	const clearPreparedPortfolioExport = useCallback(() => {
+		const previous = preparedPortfolioExportRef.current;
+		preparedPortfolioExportRef.current = null;
+		setPreparedPortfolioExport(null);
+		if (previous) {
+			URL.revokeObjectURL(previous.xlsxUrl);
+			URL.revokeObjectURL(previous.csvUrl);
+		}
+	}, []);
+	// Revoke private blob URLs on logout, data changes and leaving the page.
+	useEffect(() => {
+		clearPreparedPortfolioExport();
+	}, [user?.uid, positions, snapshots, clearPreparedPortfolioExport]);
+	useEffect(() => () => {
+		const previous = preparedPortfolioExportRef.current;
+		if (previous) {
+			URL.revokeObjectURL(previous.xlsxUrl);
+			URL.revokeObjectURL(previous.csvUrl);
+			preparedPortfolioExportRef.current = null;
+		}
+	}, []);
 	const [form, setForm] = useState(emptyForm);
 	const [editingId, setEditingId] = useState(null);
 	const [loading, setLoading] = useState(true);
@@ -467,6 +491,27 @@ function Portfolio() {
 
 	const requestRateUpdate = (position) => { setRateTarget(position); setQuickRate(String(position.annualRate ?? '')); };
 	const saveQuickRate = async () => { if (!rateTarget || quickRate === '' || pendingAction) return; setPendingAction('rate'); try { await updatePortfolioPosition(user.uid, rateTarget.id, { ...rateTarget, annualRate: quickRate }); toast.success(`Tasa de ${rateTarget.institution} actualizada a ${Number(quickRate).toFixed(2)}%`); setRateTarget(null); setQuickRate(''); } catch (error) { toast.error('No se pudo actualizar la tasa'); } finally { setPendingAction(''); } };
+	const openPortfolioExport = () => {
+		if (loading || !positions.length) return;
+		try {
+			const files = preparePortfolioExport(positions, snapshots);
+			const xlsxUrl = URL.createObjectURL(files.xlsxBlob);
+			let csvUrl;
+			try {
+				csvUrl = URL.createObjectURL(files.csvBlob);
+			} catch (error) {
+				URL.revokeObjectURL(xlsxUrl);
+				throw error;
+			}
+			clearPreparedPortfolioExport();
+			const prepared = { ...files, xlsxUrl, csvUrl };
+			preparedPortfolioExportRef.current = prepared;
+			setPreparedPortfolioExport(prepared);
+		} catch (error) {
+			console.error('[ltc-export] Portfolio file preparation failed', error?.name || 'Error');
+			toast.error('No se pudo preparar el portfolio. Volvé a intentarlo.');
+		}
+	};
 	const copyLlmPrompt = async () => {
 		try {
 			await navigator.clipboard.writeText(buildPortfolioLlmMarkdown(positions, snapshots));
@@ -648,7 +693,7 @@ function Portfolio() {
 						description='Exportá tus activos o prepará un análisis para Lita.'
 						privacyHidden={hideValues}
 						actions={[
-							{ id: 'excel', type: 'excel', label: 'Exportar Excel', onClick: () => exportPortfolioXlsx(positions, snapshots), disabled: !positions.length },
+							{ id: 'excel', type: 'excel', label: 'Exportar archivos', onClick: openPortfolioExport, disabled: loading || !positions.length },
 							{ id: 'markdown', type: 'markdown', label: 'Copiar para Lita', onClick: copyLlmPrompt, disabled: !positions.length },
 						]}
 						metrics={[
@@ -889,6 +934,8 @@ function Portfolio() {
 					}
 				/>
 			)}
+
+			<PortfolioExportReady prepared={preparedPortfolioExport} onClose={clearPreparedPortfolioExport} />
 
 			{showLita && (
 				<LitaAssistantPanel

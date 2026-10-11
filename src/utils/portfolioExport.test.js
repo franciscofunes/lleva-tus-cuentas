@@ -63,3 +63,59 @@ describe('Spanish LITA-ready portfolio copy', () => {
     expect(prompt).toContain('Nunca apliques cambios de forma automática');
   });
 });
+
+describe('portfolio export adapters for the shared LTC$ file modal', () => {
+  const { buildPortfolioExportSheets, buildPortfolioCsv, preparePortfolioExport } = require('./portfolioExport');
+  const positions = [
+    { id: 'usd', institution: 'Banco A', name: 'Cuenta USD', category: 'Cuenta remunerada',
+      currency: 'USD', balance: 300, annualRate: 4, rateType: 'TNA', realizedEarnings: 8 },
+    { id: 'ars', institution: 'Banco B', name: '=IMPORTDATA("evil")', category: 'FCI', ticker: 'ABC',
+      currency: 'ARS', balance: 120000, annualRate: 25, rateType: 'TEA',
+      monthlyReturns: { jan: 0.5, feb: 0.3 }, publishedYtdReturn: 0.8 },
+  ];
+  const snapshots = [
+    { institution: 'Banco A', name: 'Cuenta USD', currency: 'USD',
+      balance: 285, annualRate: 3.5, capturedAt: '2026-09-30', source: 'Manual' },
+  ];
+
+  test('preserves positions, FCI and full verification history in the workbook', () => {
+    const sheets = buildPortfolioExportSheets(positions, snapshots);
+    expect(sheets.Posiciones).toHaveLength(3);
+    expect(sheets['FCI mensual']).toHaveLength(2);
+    expect(sheets['FCI mensual'][1][3]).toBe(0.5);
+    expect(sheets.Historial).toHaveLength(2);
+    expect(sheets['Información LTC$']).toContainEqual(['LTC$ — Lleva tus cuentas', 'Portfolio de usuario']);
+    expect(sheets['Información LTC$']).toContainEqual(['ARS', 120000]);
+    expect(sheets['Información LTC$']).toContainEqual(['USD', 300]);
+    expect(sheets['Información LTC$'].some(row => String(row[1]).includes('no verificadas en tiempo real'))).toBe(true);
+  });
+
+  test('exports branded formula-safe CSV without joining different currencies or omitting positions', () => {
+    const csv = buildPortfolioCsv(positions, snapshots);
+    expect(csv.charCodeAt(0)).toBe(0xfeff);
+    expect(csv).toContain('"Moneda";"Saldo"');
+    expect(csv).toContain('"Origen"');
+    expect(csv).toContain('"LTC$"');
+    expect(csv).toContain("'=IMPORTDATA");
+    expect(csv).toContain('300');
+    expect(csv).toContain('120000');
+    expect(csv.trim().split(/\r\n/)).toHaveLength(3);
+  });
+
+  test('prepares private XLSX/CSV Blobs plus PDF inputs without auto downloading', () => {
+    const prepared = preparePortfolioExport(positions, snapshots, new Date('2026-10-11T13:20:01.222Z'));
+    expect(prepared.count).toBe(2);
+    expect(prepared.filename).toBe('portfolio-ltc-2026-10-11-132001222-2-posiciones.xlsx');
+    expect(prepared.csvFilename).toBe('portfolio-ltc-2026-10-11-132001222-2-posiciones.csv');
+    expect(prepared.xlsxBlob.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect(prepared.xlsxBlob.size).toBeGreaterThan(1200);
+    expect(prepared.csvBlob.type).toBe('text/csv;charset=utf-8');
+    expect(prepared.pdfSource).toEqual({ positions, snapshots });
+    expect(positions).toHaveLength(2);
+    expect(snapshots).toHaveLength(1);
+  });
+
+  test('prevents exporting an empty portfolio as a fake success', () => {
+    expect(() => preparePortfolioExport([], [])).toThrow(/No hay posiciones/);
+  });
+});
