@@ -10,6 +10,7 @@ jest.mock('react-toastify', () => ({
 
 const update = jest.fn().mockResolvedValue(undefined);
 const removeReminder = jest.fn().mockResolvedValue(undefined);
+const writeReminder = jest.fn().mockResolvedValue(undefined);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -18,7 +19,7 @@ beforeEach(() => {
       collection: (name) => ({
         doc: () => name === 'expenses'
           ? { update }
-          : { delete: removeReminder },
+          : { delete: removeReminder, set: writeReminder },
       }),
     }),
   }));
@@ -62,6 +63,9 @@ test('service bill stores a separately controlled due date and reminder on edits
   expect(saved.selectedExpirationDate).toBe('2026-10-25');
   expect(saved.dueDate).toBe('2026-10-25');
   expect(saved.notificationEnabled).toBe(true);
+  expect(writeReminder).toHaveBeenCalledWith(expect.objectContaining({
+    dueDate: '2026-10-25', sourceId: 'expense-1', category: 'Transporte 🚌',
+  }), expect.any(Object));
 });
 
 test('editing a service bill with an erased due date clears only the prior expiration', async () => {
