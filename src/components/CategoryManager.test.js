@@ -106,7 +106,7 @@ test('opt-in due date is saved on a new personal category without consuming the 
   fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
   await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA', {
     name: 'Expensas edificio', isExpense: true,
-    extraFieldIds: ['reference', 'paymentMethod', 'receiptNumber'], dateBehavior: 'due-date',
+    extraFieldIds: ['reference', 'paymentMethod', 'receiptNumber'], dateBehavior: 'separate-due-date',
   }, categories));
   await waitFor(() => expect(screen.getByLabelText('Fecha de vencimiento')).not.toBeChecked());
 });
@@ -127,4 +127,11 @@ test('the list shows which historical custom categories were configured with a d
     { id: 'rent', name: 'Alquiler', active: true, isCustom: true, origin: 'custom', isExpense: true, dateBehavior: 'due-date' },
   ]} />);
   expect(screen.getByText(/Con vencimiento/)).toBeInTheDocument();
+});
+
+test('explains that expiration is a second optional date, not a replacement for the transaction date', () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  expect(screen.getByText(/Agrega una segunda fecha opcional/)).toBeInTheDocument();
+  expect(screen.getByText(/además de la fecha de transacción/)).toBeInTheDocument();
+  expect(screen.getByLabelText('Fecha de vencimiento')).not.toBeChecked();
 });
