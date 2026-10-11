@@ -38,8 +38,8 @@ test('XLSX contains only the provided view, separate USD quantity and category A
   expect(sale[5]).toBe(100);
   expect(sale[6]).toBe(1580.64);
   const groups = sheets['Gastos por categoría'];
-  expect(groups).toContainEqual(['Salud 🏥', 1, 35079]);
-  expect(groups).toContainEqual(['Resumen tarjeta 💳', 1, 1590805.54]);
+  expect(groups).toContainEqual(['Salud 🏥', 1, 35079, '']);
+  expect(groups).toContainEqual(['Resumen tarjeta 💳', 1, 1590805.54, '']);
   expect(groups.some((row) => row[0] === 'Venta divisas')).toBe(false);
   exportTransactionsXlsx(docs, categories);
   expect(exportWorkbookXlsx).toHaveBeenCalledWith(sheets, expect.stringMatching(/^transacciones-ltc-.*\.xlsx$/));
@@ -50,7 +50,7 @@ test('Lita Markdown clearly labels ARS and USD and warns against double-counting
   expect(md).toContain('Movimientos registrados en el período/vista: 4');
   expect(md).toContain('Una compra/venta de divisas es conversión');
   expect(md).toContain('no sumes nuevamente los consumos individuales');
-  expect(md).toContain('| Astropay | Venta divisas | Conversión ARS/USD | 158064 | 100 | 1580.64 |');
+  expect(md).toContain('| Astropay | Venta divisas | Conversión ARS/USD | 158064 | — | 100 | 1580.64 |');
   expect(md).toContain('| Banco Ciudad Visa | Resumen tarjeta 💳 | Pago de resumen');
   expect(md).not.toContain('undefined');
 });
@@ -81,7 +81,7 @@ test('XLSX workbook serializes real cell references, headers, filters, rows and 
     type: 'income',
   });
   const xml = worksheetXml(sheets.Movimientos);
-  expect(xml).toContain('<dimension ref="A1:K5"/>');
+  expect(xml).toContain('<dimension ref="A1:M5"/>');
   expect(xml).toContain('<c r="A1" t="inlineStr">');
   expect(xml).toContain('<c r="B2" t="inlineStr">');
   expect(xml).toContain('<c r="E4"><v>158064</v></c>');
@@ -191,4 +191,25 @@ test('export branding is embedded without mixing currencies or breaking CSV head
   expect(csv).toContain('"Origen"');
   expect(csv).toContain('"LTC$"');
   expect(csv.trim().split(/\r\n/)).toHaveLength(docs.length + 1);
+});
+
+test('native USD expenses export as USD, leave ARS blank, and never invent an exchange rate', () => {
+  const cat = [...categories,{name:'Membresía USD',isExpense:true,currency:'USD'}];
+  const rows = [...docs,{expenseName:'Servicio AWS',category:'Membresía USD',amount:'49.75',
+    selectedDate:'2026-10-10',transactionCurrency:'USD'}];
+  const sheets=buildTransactionsExportSheets(rows,cat);
+  const aws=sheets.Movimientos.find((row)=>row[1]==='Servicio AWS');
+  expect(aws[3]).toBe('Gasto USD');
+  expect(aws[4]).toBe('');
+  expect(aws[5]).toBe('');
+  expect(aws[6]).toBe('');
+  expect(aws[11]).toBe('USD');
+  expect(aws[12]).toBe(49.75);
+  expect(sheets['Gastos por categoría']).toContainEqual(['Membresía USD',1,'',49.75]);
+  const legacy = sheets.Movimientos.find((row)=>row[1]==='Farmacity');
+  expect(legacy[11]).toBe('ARS');
+  expect(legacy[4]).toBe(35079);
+  const md=buildTransactionsLitaMarkdown(rows,cat);
+  expect(md).toContain('49.75');
+  expect(md).toContain('Gasto USD');
 });
