@@ -867,6 +867,7 @@ function Dashboard() {
             onCreated={isOpen ? (newCategoryName) => {
               setCategory(newCategoryName);
               setCustomDetails({});
+              setSelectedExpirationDate("");
               setIsCreditCardCategory(false);
               setIsBuyCurrenciesCategory(false);
               setIsCurrencyIncomeCategory(false);
