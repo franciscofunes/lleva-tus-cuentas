@@ -25,6 +25,8 @@ jest.mock('./InfoTooltip', () => () => null);
 const initialCategories = [
   { id: 'transport', name: 'Transporte 🚌', isExpense: true, active: true },
   { id: 'salary', name: 'Salario 💲', isExpense: false, active: true },
+  { id: 'rent', name: 'Alquiler mensual', isExpense: true, active: true,
+    extraFieldIds: ['reference'], dateBehavior: 'due-date', origin: 'custom', isCustom: true },
   { id: 'freelance', name: 'Freelance', isExpense: false, active: true,
     extraFieldIds: ['reference', 'paymentMethod'], origin: 'custom', isCustom: true },
 ];
@@ -132,4 +134,18 @@ test('switching categories removes stale custom metadata from the transaction dr
   expect(screen.queryByLabelText('Referencia / ID de operación')).not.toBeInTheDocument();
   fireEvent.change(screen.getByRole('combobox', { name: 'Categoría' }), { target: { value: 'Freelance' } });
   expect(screen.getByLabelText('Referencia / ID de operación')).toHaveValue('');
+});
+
+test('a due-date personal category reuses the standard date picker and shows reminder guidance', () => {
+  render(<TransactionHarness initialCategory='Alquiler mensual' />);
+  expect(screen.getByLabelText('Fecha de vencimiento')).toHaveAttribute('type', 'date');
+  expect(screen.getByText(/Esta categoría usa la fecha como vencimiento/)).toBeInTheDocument();
+  expect(screen.getByText(/avisará con 5 días de anticipación/)).toBeInTheDocument();
+  expect(screen.getByRole('region', { name: 'Datos adicionales de la categoría' })).toBeInTheDocument();
+});
+
+test('a regular custom category still shows the original transaction date field', () => {
+  render(<TransactionHarness initialCategory='Freelance' />);
+  expect(screen.getByLabelText('Fecha')).toHaveAttribute('type', 'date');
+  expect(screen.queryByText(/Esta categoría usa la fecha como vencimiento/)).not.toBeInTheDocument();
 });

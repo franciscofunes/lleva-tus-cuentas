@@ -709,7 +709,7 @@ const TransactionForm = ({
         )}
 
         <label
-          htmlFor="date"
+          htmlFor="selectedDate"
           className="block text-sm font-medium text-gray-700 dark:text-white"
         >
           {selectedDateIsDueDate ? "Fecha de vencimiento" : "Fecha"}
