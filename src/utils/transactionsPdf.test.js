@@ -1,3 +1,9 @@
+jest.mock('./portfolioExport', () => {
+  const { TextEncoder } = require('util');
+  if (typeof global.TextEncoder === 'undefined') global.TextEncoder = TextEncoder;
+  return jest.requireActual('./portfolioExport');
+});
+
 import { buildTransactionsPdf } from './transactionsPdf';
 
 const input = [
