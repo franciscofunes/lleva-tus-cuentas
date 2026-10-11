@@ -1,6 +1,7 @@
 import {
   CATEGORY_EXTRA_FIELD_CATALOG,
   MAX_EXTRA_FIELDS,
+  SERVICE_EXTRA_FIELD_PRESET,
   getCategoryExtraFields,
   validateCategoryExtraFields,
   sanitizeTransactionCustomDetails,
@@ -55,4 +56,23 @@ test('accepts a real calendar day but never a rolled-over invalid date', () => {
     .toEqual({ operationDate: '2026-10-10' });
   expect(() => sanitizeTransactionCustomDetails({ operationDate: '2026-13-10' }, ['operationDate']))
     .toThrow(/Fecha inválida/);
+});
+
+test('service preset selects due date, supply ID and monthly billing period', () => {
+  expect(SERVICE_EXTRA_FIELD_PRESET).toEqual(['dueDate', 'serviceAccount', 'billingPeriod']);
+  expect(validateCategoryExtraFields([...SERVICE_EXTRA_FIELD_PRESET])).toBeNull();
+  const configured = getCategoryExtraFields({ extraFieldIds: [...SERVICE_EXTRA_FIELD_PRESET] });
+  expect(configured.map((item) => item.id)).toEqual(SERVICE_EXTRA_FIELD_PRESET);
+});
+
+test('a due date never enters customDetails and service information is constrained', () => {
+  expect(sanitizeTransactionCustomDetails({
+    dueDate: '2026-10-25', serviceAccount: '  A-508  ', billingPeriod: '2026-10',
+  }, [...SERVICE_EXTRA_FIELD_PRESET])).toEqual({
+    serviceAccount: 'A-508', billingPeriod: '2026-10',
+  });
+  expect(() => sanitizeTransactionCustomDetails({ billingPeriod: '2026-14' }, ['billingPeriod']))
+    .toThrow(/Período inválido/);
+  expect(() => sanitizeTransactionCustomDetails({ serviceAccount: 'A'.repeat(51) }, ['serviceAccount']))
+    .toThrow(/Valor inválido/);
 });
