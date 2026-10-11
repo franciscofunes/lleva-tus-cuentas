@@ -599,7 +599,6 @@ function Dashboard() {
                 { id: "due", icon: FaRegCalendarCheck, label: "Con vencimiento", value: isDataVisible ? overview.dueCount : "••" },
               ]}
             />
-            <TransactionsExportReady prepared={preparedExport} onClose={clearPreparedExport} />
           {isDataFetching && !docs ? (
             <PageDataSkeleton variant="transactions" />
           ) : (
@@ -887,6 +886,8 @@ function Dashboard() {
           </motion.div>
         )}
       </motion.div>
+      {/* The export is a fixed overlay, not another collapsible dashboard widget. */}
+      <TransactionsExportReady prepared={preparedExport} onClose={clearPreparedExport} />
     </>
   );
 }

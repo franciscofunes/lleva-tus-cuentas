@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect } from 'react';
 import { IoMdClose } from 'react-icons/io';
 
-const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
+const GenericModal = ({ show, component: Component, closeModal, dialogLabel, ...props }) => {
 	const content = React.isValidElement(Component) ? Component : <Component {...props} />;
 
 	useEffect(() => {
@@ -45,6 +45,7 @@ const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
 						<motion.div
 							role='dialog'
 							aria-modal='true'
+							aria-label={dialogLabel}
 							className='relative flex h-auto w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-purple-500/70 bg-white text-slate-900 shadow-2xl max-h-[calc(100svh-1rem)] dark:bg-slate-900 dark:text-white sm:max-h-[calc(100dvh-3rem)]'
 							initial={{ opacity: 0, y: 24, scale: 0.98 }}
 							animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -57,6 +58,7 @@ const GenericModal = ({ show, component: Component, closeModal, ...props }) => {
 									className='inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-600 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-slate-700 dark:bg-slate-800/95 dark:text-white dark:hover:bg-slate-700'
 									onClick={closeModal}
 									aria-label='Cerrar'
+                    autoFocus={Boolean(dialogLabel)}
 								>
 									<IoMdClose size={22} />
 								</button>
