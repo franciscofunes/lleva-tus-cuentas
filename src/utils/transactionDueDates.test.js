@@ -50,3 +50,35 @@ describe('transaction due-date helpers', () => {
 		).toBe('2026-10-20');
 	});
 });
+
+describe('personal category due-date option', () => {
+  const custom = [
+    { name: 'Alquiler oficina', isExpense: true, origin: 'custom', isCustom: true, dateBehavior: 'due-date' },
+    { name: 'Papelería', isExpense: true, origin: 'custom', isCustom: true },
+  ];
+
+  test('uses the existing date field as due date for opted-in custom category and enables reminders', () => {
+    expect(usesSelectedDateAsDueDate('Alquiler oficina', custom)).toBe(true);
+    expect(resolveTransactionDueDate({
+      category: 'Alquiler oficina', categories: custom,
+      selectedDate: '2026-11-10', selectedExpirationDate: '',
+    })).toBe('2026-11-10');
+    expect(getNotificationSettings('Alquiler oficina', custom)).toEqual({ enabled: true, leadDays: 5 });
+  });
+
+  test('leaves ordinary new custom categories as transaction dates without reminders', () => {
+    expect(usesSelectedDateAsDueDate('Papelería', custom)).toBe(false);
+    expect(resolveTransactionDueDate({
+      category: 'Papelería', categories: custom,
+      selectedDate: '2026-11-10', selectedExpirationDate: '',
+    })).toBe('');
+    expect(getNotificationSettings('Papelería', custom).enabled).toBe(false);
+  });
+
+  test('credit card summaries continue using their dedicated expiration date', () => {
+    expect(resolveTransactionDueDate({
+      category: 'Resumen tarjeta 💳', categories: custom,
+      selectedDate: '2026-10-20', selectedExpirationDate: '2026-11-15',
+    })).toBe('2026-11-15');
+  });
+});
