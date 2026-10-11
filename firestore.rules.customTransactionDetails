@@ -36,3 +36,17 @@ function validCustomDetails() {
     && d.customDetails.get('operationDate', '').matches('^$|^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
   );
 }
+
+// Moneda de un movimiento normal. Debe añadirse de forma ADITIVA al match
+// EXISTENTE de /users/{uid}/expenses/{id} (no copiar un segundo match).
+// Las transacciones históricas sin campo son ARS; no migrarlas automáticamente.
+// Agregar 'transactionCurrency' al hasOnly(...) del match de expenses si existe.
+function validTransactionCurrency() {
+  let d = request.resource.data;
+  return !('transactionCurrency' in d)
+    || (d.transactionCurrency is string
+        && d.transactionCurrency in ['ARS', 'USD']);
+}
+// En allow create/update de expenses: && validTransactionCurrency()
+// La regla de category.currency también necesita actualizarse desde
+// firestore.rules.customCategories antes de crear categorías en USD.
