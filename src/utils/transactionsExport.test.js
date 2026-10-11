@@ -182,3 +182,13 @@ test('CSV fallback includes all transactions, separates semicolons, and neutrali
 test('download preparation rejects empty filtered results', () => {
   expect(() => prepareTransactionsExport([], categories)).toThrow(/No hay movimientos/);
 });
+
+test('export branding is embedded without mixing currencies or breaking CSV headers', () => {
+  const sheets = buildTransactionsExportSheets(docs, categories);
+  expect(sheets['Filtros aplicados']).toContainEqual(['Exportado por', 'LTC$ — Lleva tus cuentas']);
+  const csv = buildTransactionsCsv(docs, categories);
+  expect(csv).toContain('"Fecha";"Nombre";"Categoría"');
+  expect(csv).toContain('"Origen"');
+  expect(csv).toContain('"LTC$"');
+  expect(csv.trim().split(/\r\n/)).toHaveLength(docs.length + 1);
+});

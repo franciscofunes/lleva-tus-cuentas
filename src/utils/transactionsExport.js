@@ -55,6 +55,7 @@ export const buildTransactionsExportSheets = (docs = [], categories = [], filter
     'Filtros aplicados': [
       ['Criterio', 'Valor'],
       ['Versión del exportador', 'XLSX v2 — tres hojas'],
+      ['Exportado por', 'LTC$ — Lleva tus cuentas'],
       ['Período', safeText(filters.periodLabel || filters.period || 'Vista actual')],
       ['Tipo de período', safeText(filters.period || 'Vista actual')],
       ['Búsqueda', safeText(filters.query) || 'Sin búsqueda'],
@@ -132,7 +133,9 @@ const csvValue = (cell) => {
 export const buildTransactionsCsv = (docs = [], categories = []) => {
   const rows = buildTransactionsExportSheets(docs, categories).Movimientos;
   // Excel es-AR commonly uses semicolon as CSV separator.
-  return '\uFEFF' + rows.map((row) => row.map(csvValue).join(';')).join('\r\n') + '\r\n';
+  // A regular data column brands every record without breaking CSV imports.
+  const branded = rows.map((row, index) => [...row, index === 0 ? 'Origen' : 'LTC$']);
+  return '\uFEFF' + branded.map((row) => row.map(csvValue).join(';')).join('\r\n') + '\r\n';
 };
 
 export const prepareTransactionsExport = (docs = [], categories = [], filters = {}, date = new Date()) => {

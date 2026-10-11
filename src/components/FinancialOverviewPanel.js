@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { FaArrowDown, FaFileExcel, FaRegCopy } from 'react-icons/fa';
+import { FaArrowDown, FaFileExport, FaRegCopy } from 'react-icons/fa';
 import { CollapsibleChevron, CollapsibleHeading } from './CollapsibleHeading';
 
-const actionIcons = { excel: FaFileExcel, markdown: FaRegCopy };
+const actionIcons = { excel: FaFileExport, markdown: FaRegCopy };
 const KPI_VALUE_TRANSITION_MS = 180;
 
 const itemMotion = (reduceMotion, index) => reduceMotion
@@ -121,7 +121,7 @@ export default function FinancialOverviewPanel({
               <p className='mt-2 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400'>
                 {privacyHidden
                   ? 'Los archivos y el Markdown incluyen los importes reales, aunque estén ocultos en pantalla.'
-                  : 'Excel para descargar · Markdown para copiar y analizar con Lita.'}
+                  : 'PDF, Excel y CSV para descargar o compartir · Markdown para analizar con Lita.'}
               </p>
             </div>
 
