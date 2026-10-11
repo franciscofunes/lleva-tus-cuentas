@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { FaCheck, FaPlus, FaTag } from 'react-icons/fa';
+import { FaCheck, FaEdit, FaPlus, FaTag } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { saveCustomCategory, setCustomCategoryActive } from '../services/customCategoriesService';
-import { CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, normalizeCategoryName, validateCustomCategory } from '../utils/customCategories';
+import { saveCustomCategory, setCustomCategoryActive, updateCustomCategoryLabel } from '../services/customCategoriesService';
+import { CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, categoryLabel, normalizeCategoryName, validateCategoryDisplayName, validateCustomCategory } from '../utils/customCategories';
 import { CATEGORY_EXTRA_FIELD_CATALOG, MAX_EXTRA_FIELDS, validateCategoryExtraFields } from '../utils/categoryExtraFields';
 
 const fieldClass = 'w-full min-h-[44px] rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white';
@@ -13,10 +13,13 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
   const [extraFieldIds, setExtraFieldIds] = useState([]);
   const [hasDueDate, setHasDueDate] = useState(false);
   const [working, setWorking] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editingLabel, setEditingLabel] = useState('');
+  const [editError, setEditError] = useState('');
   const [error, setError] = useState('');
   const customCategories = useMemo(() =>
     categories.filter((entry) => entry.isCustom && entry.origin === 'custom')
-      .sort((a, b) => a.name.localeCompare(b.name, 'es-AR')), [categories]);
+      .sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b), 'es-AR')), [categories]);
 
   const create = async (event) => {
     event.preventDefault();
@@ -54,6 +57,35 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
     }
   };
 
+  const startEditing = (entry) => {
+    if (working) return;
+    setEditingId(entry.id);
+    setEditingLabel(categoryLabel(entry));
+    setEditError('');
+  };
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditingLabel('');
+    setEditError('');
+  };
+  const rename = async (event, entry) => {
+    event.preventDefault();
+    if (working) return;
+    const validation = validateCategoryDisplayName(editingLabel, categories, entry.id);
+    if (validation) { setEditError(validation); return; }
+    setWorking(entry.id);
+    setEditError('');
+    try {
+      await updateCustomCategoryLabel(userId, entry, editingLabel, categories);
+      toast.success('Nombre de categoría actualizado');
+      cancelEditing();
+    } catch (err) {
+      setEditError(err.message || 'No se pudo editar. Verificá las reglas de Firestore.');
+    } finally {
+      setWorking('');
+    }
+  };
+
   const toggleActive = async (entry) => {
     if (working) return;
     setWorking(entry.id);
@@ -72,7 +104,7 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
         <div className='flex items-center gap-2 text-purple-600 dark:text-purple-300'><FaTag aria-hidden='true' /> <span className='text-xs font-extrabold uppercase tracking-wider'>Mis categorías</span></div>
         <h2 className='text-xl font-extrabold text-slate-900 dark:text-white'>Categorías personalizadas</h2>
         <p className='text-sm text-slate-600 dark:text-slate-300'>
-          Las categorías generales son compartidas y no se pueden modificar. Las tuyas son privadas y aparecen en transacciones, filtros y Lita.
+          Las categorías generales son compartidas y no se pueden modificar. Podés renombrar, archivar y reactivar las tuyas sin modificar movimientos históricos.
         </p>
       </header>
 
@@ -140,23 +172,59 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
         <h3 className='text-sm font-bold text-slate-900 dark:text-white'>Tus categorías ({customCategories.length})</h3>
         {!customCategories.length && <p className='rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-600 dark:text-slate-300'>Todavía no creaste categorías personales.</p>}
         {customCategories.map((entry) => (
-          <div key={entry.id} className='flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
+          <div key={entry.id} className='rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
+            <div className='flex min-w-0 flex-wrap items-center justify-between gap-3'>
             <div className='min-w-0'>
-              <p className='break-words text-sm font-bold text-slate-900 dark:text-white'>{entry.name}</p>
+              <p className='break-words text-sm font-bold text-slate-900 dark:text-white'>{categoryLabel(entry)}</p>
               <p className='text-xs text-slate-500 dark:text-slate-400'>{entry.isExpense ? 'Gasto' : 'Ingreso'} · {entry.active === false ? 'Archivada' : 'Activa'}{['due-date', CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR].includes(entry.dateBehavior) ? ' · Con vencimiento' : ''}</p>
               {Array.isArray(entry.extraFieldIds) && entry.extraFieldIds.length > 0 && (
                 <p className='mt-1 text-xs text-purple-700 dark:text-purple-300'>{entry.extraFieldIds.length} campos adicionales</p>
               )}
             </div>
-            <button type='button' disabled={Boolean(working)} onClick={() => toggleActive(entry)}
-              aria-label={entry.active === false ? `Reactivar ${entry.name}` : `Archivar ${entry.name}`}
-              className='flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:border-purple-500 dark:border-slate-600 dark:text-slate-100'>
-              {entry.active === false ? <><FaCheck aria-hidden='true' /> Reactivar</> : 'Archivar'}
-            </button>
+            <div className='flex shrink-0 flex-wrap items-center gap-1.5'>
+              <button type='button' disabled={Boolean(working)} onClick={() => startEditing(entry)}
+                aria-label={`Editar ${categoryLabel(entry)}`}
+                className='inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:border-purple-500 dark:border-slate-600 dark:text-slate-100'>
+                <FaEdit aria-hidden='true' /> Editar
+              </button>
+              <button type='button' disabled={Boolean(working)} onClick={() => toggleActive(entry)}
+                aria-label={entry.active === false ? `Reactivar ${categoryLabel(entry)}` : `Archivar ${categoryLabel(entry)}`}
+                className='inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-300 px-3 text-xs font-semibold text-slate-700 hover:border-purple-500 dark:border-slate-600 dark:text-slate-100'>
+                {entry.active === false ? <><FaCheck aria-hidden='true' /> Reactivar</> : 'Archivar'}
+              </button>
+            </div>
+            {editingId === entry.id && (
+              <form onSubmit={(event) => rename(event, entry)}
+                aria-label={`Editar categoría ${categoryLabel(entry)}`}
+                className='mt-3 space-y-2 border-t border-slate-200 pt-3 dark:border-slate-700'>
+                <label htmlFor='edit-personal-category-name' className='block text-sm font-semibold text-slate-900 dark:text-slate-100'>
+                  Nuevo nombre visible
+                </label>
+                <input id='edit-personal-category-name' autoComplete='off' maxLength={50}
+                  disabled={Boolean(working)} value={editingLabel}
+                  onChange={(event) => { setEditingLabel(event.target.value); setEditError(''); }}
+                  className={fieldClass} />
+                <p className='text-xs text-slate-600 dark:text-slate-300'>
+                  Actualiza el nombre que ves en transacciones y filtros. No cambia el tipo de movimiento,
+                  las fechas, los campos personalizados ni la identidad de los registros guardados.
+                </p>
+                {editError && <p role='alert' className='text-sm text-red-700 dark:text-red-300'>{editError}</p>}
+                <div className='flex flex-wrap gap-2'>
+                  <button type='submit' disabled={Boolean(working)}
+                    className='min-h-[44px] rounded-lg bg-purple-600 px-4 text-sm font-semibold text-white disabled:opacity-50'>
+                    {working === entry.id ? 'Guardando…' : 'Guardar cambios'}
+                  </button>
+                  <button type='button' disabled={Boolean(working)} onClick={cancelEditing}
+                    className='min-h-[44px] rounded-lg border border-slate-300 px-4 text-sm font-semibold dark:border-slate-600'>
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         ))}
         <p className='text-xs leading-relaxed text-slate-500 dark:text-slate-400'>
-          Archivar oculta la categoría al cargar nuevos movimientos. Los anteriores conservan su categoría, gráficos y reportes. Para evitar cambios retroactivos, el nombre y el tipo no se editan.
+          Editar cambia el nombre visible sin reescribir movimientos anteriores. El tipo, los campos adicionales y la configuración de fechas no cambian. Archivar solo impide seleccionar la categoría para nuevas transacciones.
         </p>
       </section>
     </div>
