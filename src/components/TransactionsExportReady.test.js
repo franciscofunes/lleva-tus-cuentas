@@ -46,7 +46,7 @@ test('opens a general LTC$ modal with persistent Excel/CSV native links', () => 
   expect(excel).toHaveAttribute('download', prepared.filename);
   expect(screen.getByRole('link', { name: /Descargar CSV/ })).toHaveAttribute('href', prepared.csvUrl);
   expect(screen.getByRole('button', { name: /Preparar PDF/ })).toBeInTheDocument();
-  expect(screen.getByLabelText('Formato para compartir')).toHaveValue('pdf');
+  expect(screen.getByLabelText('Formato para compartir')).toHaveValue('xlsx');
   expect(screen.getByText(/Instagram y Facebook pueden no aceptar/)).toBeInTheDocument();
 });
 
@@ -67,6 +67,7 @@ test('PDF is generated only after explicitly tapping prepare, then downloadable 
 
 test('sharing PDF without preparing it first gives actionable feedback', async () => {
   render(<TransactionsExportReady prepared={prepared} onClose={jest.fn()} />);
+  fireEvent.change(screen.getByLabelText('Formato para compartir'), { target: { value: 'pdf' } });
   fireEvent.click(screen.getByRole('button', { name: 'Compartir con otra aplicación' }));
   await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Primero tocá Preparar PDF'));
 });
@@ -137,4 +138,18 @@ test('modal remains detached from dashboard and supports Escape/outside click', 
 test('no modal without a prepared file', () => {
   render(<TransactionsExportReady prepared={null} onClose={jest.fn()} />);
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
+test('a prepared PDF can also be shared as a real file', async () => {
+  const share = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, 'share', { configurable: true, value: share });
+  Object.defineProperty(navigator, 'canShare', { configurable: true, value: jest.fn(() => true) });
+  render(<TransactionsExportReady prepared={prepared} onClose={jest.fn()} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Preparar PDF' }));
+  await waitFor(() => expect(screen.getByRole('link', { name: /Descargar PDF/ })).toBeInTheDocument());
+  fireEvent.change(screen.getByLabelText('Formato para compartir'), { target: { value: 'pdf' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Compartir con otra aplicación' }));
+  await waitFor(() => expect(share).toHaveBeenCalledWith(expect.objectContaining({
+    files: [expect.objectContaining({ name: expect.stringMatching(/\\.pdf$/), type: 'application/pdf' })],
+  })));
 });
