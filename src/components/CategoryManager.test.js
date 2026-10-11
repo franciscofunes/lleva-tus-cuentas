@@ -81,7 +81,7 @@ test('new private category stores only controlled preset identifiers', async () 
   fireEvent.click(screen.getByLabelText('Medio de pago'));
   fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
   await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA',
-    { name: 'Servicios freelance', isExpense: true, extraFieldIds: ['reference', 'paymentMethod'] }, categories));
+    { name: 'Servicios freelance', isExpense: true, currency: 'ARS', extraFieldIds: ['reference', 'paymentMethod'] }, categories));
 });
 
 test('allows at most three extra presets and never changes mandatory base fields', () => {
