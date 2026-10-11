@@ -1,6 +1,7 @@
 // Version 1: controlled, optional metadata. These fields never change LTC's
 // financial amounts, category meaning, due-date rules or currency conversions.
 export const MAX_EXTRA_FIELDS = 3;
+export const SERVICE_EXTRA_FIELD_PRESET = Object.freeze(['dueDate', 'serviceAccount', 'billingPeriod']);
 
 export const CATEGORY_EXTRA_FIELD_CATALOG = Object.freeze([
   { id: 'reference', label: 'Referencia / ID de operación', type: 'text', maxLength: 60 },
@@ -17,6 +18,10 @@ export const CATEGORY_EXTRA_FIELD_CATALOG = Object.freeze([
   },
   { id: 'receiptNumber', label: 'Número de comprobante', type: 'text', maxLength: 60 },
   { id: 'operationDate', label: 'Fecha de operación adicional', type: 'date' },
+  // Uses the existing financial due date and notification flow; never stored in customDetails.
+  { id: 'dueDate', label: 'Fecha de vencimiento', type: 'due-date' },
+  { id: 'serviceAccount', label: 'Número de cliente / suministro', type: 'text', maxLength: 50 },
+  { id: 'billingPeriod', label: 'Período facturado', type: 'month' },
 ]);
 
 const BY_ID = Object.fromEntries(CATEGORY_EXTRA_FIELD_CATALOG.map((field) => [field.id, field]));
@@ -35,7 +40,7 @@ export const validateCategoryExtraFields = (ids) => {
 };
 
 // Validates a single controlled option; no user-defined field identifiers or arbitrary JSON.
-const isCalendarDate = (value) => {
+export const isCalendarDate = (value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
@@ -47,6 +52,8 @@ export const sanitizeTransactionCustomDetails = (input, allowedIds) => {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return {};
   const result = {};
   for (const id of allowedIds) {
+    // A due date is financial metadata and must use the dedicated expense fields.
+    if (BY_ID[id].type === 'due-date') continue;
     const raw = input[id];
     if (raw === undefined || raw === null || raw === '') continue;
     if (typeof raw !== 'string') throw new Error('Los campos adicionales deben contener texto válido.');
@@ -57,6 +64,8 @@ export const sanitizeTransactionCustomDetails = (input, allowedIds) => {
       throw new Error(`Valor inválido para ${field.label}.`);
     if (field.type === 'date' && !isCalendarDate(value))
       throw new Error(`Fecha inválida para ${field.label}.`);
+    if (field.type === 'month' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(value))
+      throw new Error(`Período inválido para ${field.label}.`);
     if (field.type === 'select' && !field.options.some((item) => item.value === value))
       throw new Error(`Opción inválida para ${field.label}.`);
     result[id] = value;
