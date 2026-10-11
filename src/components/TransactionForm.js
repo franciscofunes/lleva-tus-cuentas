@@ -20,6 +20,7 @@ import {
   getNotificationSettings,
   resolveTransactionDueDate,
   usesSelectedDateAsDueDate,
+  usesSeparateDueDate,
 } from "../utils/transactionDueDates";
 
 // A command inside the native category picker, never a category persisted to Firestore.
@@ -73,6 +74,7 @@ const TransactionForm = ({
   const [statementDraft, setStatementDraft] = useState(null);
   const [draftExpenseId, setDraftExpenseId] = useState(null);
   const selectedDateIsDueDate = usesSelectedDateAsDueDate(category, categories);
+  const hasSeparateDueDate = usesSeparateDueDate(category, categories);
   const categoryDefinition = categories?.find((entry) => entry.name === category);
   const selectedExtraFields = getCategoryExtraFields(categoryDefinition);
   const notificationSettings = getNotificationSettings(category, categories);
@@ -297,6 +299,9 @@ const TransactionForm = ({
               }
               setCategory(e.target.value);
               setCustomDetails({});
+              // Avoid leaking a different category's expiration date.
+              setSelectedExpirationDate("");
+              setValue("selectedExpirationDate", "");
 
               setIsCreditCardCategory(
                 e.target.value.includes("Resumen tarjeta")
@@ -712,7 +717,7 @@ const TransactionForm = ({
           htmlFor="selectedDate"
           className="block text-sm font-medium text-gray-700 dark:text-white"
         >
-          {selectedDateIsDueDate ? "Fecha de vencimiento" : "Fecha"}
+          {selectedDateIsDueDate ? "Fecha de vencimiento" : hasSeparateDueDate ? "Fecha de transacción" : "Fecha"}
         </label>
         <input
           className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
@@ -740,6 +745,26 @@ const TransactionForm = ({
               ? ` y te avisará con ${notificationSettings.leadDays} día${notificationSettings.leadDays === 1 ? "" : "s"} de anticipación.`
               : "."}
           </p>
+        )}
+
+        {hasSeparateDueDate && (
+          <div className="space-y-1.5">
+            <label htmlFor="customCategoryDueDate"
+              className="block text-sm font-medium text-gray-700 dark:text-slate-100">
+              Fecha de vencimiento (opcional)
+            </label>
+            <input
+              id="customCategoryDueDate"
+              type="date"
+              value={selectedExpirationDate || ""}
+              onChange={(event) => setSelectedExpirationDate(event.target.value)}
+              className="w-full min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            />
+            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+              La fecha de la transacción se mantiene. Si completás el vencimiento,
+              LTC podrá avisarte {notificationSettings.leadDays} días antes.
+            </p>
+          </div>
         )}
 
         <label
