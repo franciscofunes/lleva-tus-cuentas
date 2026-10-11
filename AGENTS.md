@@ -20,3 +20,11 @@ These instructions apply to all contributors and coding agents working in this r
 - Run targeted Jest tests and the production build through CI. Check Netlify preview and deployed commit before reporting production as ready.
 - Use a PR for changes. Do not claim a successful merge, CI, or production deployment unless the corresponding provider confirms it.
 - Never change Firestore rules or financial data for purely visual work without a separate, justified request.
+
+## Native transaction currency invariants
+
+- Never model an ordinary USD payment as a fake currency sale or ask for an invented FX rate. Currency conversions and ordinary expenses are separate operations.
+- Category `currency` is the default for **new** transactions only; a transaction's persisted `transactionCurrency` is the immutable unit of its amount. A missing field in legacy records means ARS, regardless of current category settings.
+- Never sum or sort USD and ARS amounts as comparable values. ARS charts/totals must exclude native USD. Display USD spending separately in summaries and exports.
+- Preserve FX `currencyQuantity`, `currencyExchangeRate` semantics for the dedicated divisas categories. Do not infer a conversion for native USD spending.
+- Any field added to user categories or expenses requires a narrowly scoped Firebase rules snippet and regression tests. See [docs/native-currency-transactions.md](docs/native-currency-transactions.md).
