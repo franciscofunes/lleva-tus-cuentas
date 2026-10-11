@@ -37,3 +37,16 @@ describe('expense aggregates for LITA', () => {
     expect(totals.invalidAmountCount).toBe(5);
   });
 });
+
+test('ARS and USD expenses are distinct category aggregations without guessed FX', () => {
+  const cats = [{name:'Suscripción',isExpense:true,currency:'USD'}];
+  const result = summarizeSpendingByCategory([
+    {category:'Suscripción',amount:1499}, // legacy ARS
+    {category:'Suscripción',amount:19.99,transactionCurrency:'USD'},
+    {category:'Suscripción',amount:15,transactionCurrency:'USD'},
+  ],cats);
+  expect(result.totalArs).toBe(1499);
+  expect(result.totalUsd).toBe(34.99);
+  expect(result.categories[0].totalArs).toBe(1499);
+  expect(result.categoriesUsd[0].totalUsd).toBe(34.99);
+});
