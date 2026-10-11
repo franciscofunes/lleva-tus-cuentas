@@ -3,6 +3,7 @@ import {
 	isPublicServiceCategory,
 	resolveTransactionDueDate,
 	usesSelectedDateAsDueDate,
+	usesSeparateDueDate,
 } from './transactionDueDates';
 
 describe('transaction due-date helpers', () => {
@@ -80,5 +81,46 @@ describe('personal category due-date option', () => {
       category: 'Resumen tarjeta 💳', categories: custom,
       selectedDate: '2026-10-20', selectedExpirationDate: '2026-11-15',
     })).toBe('2026-11-15');
+  });
+});
+
+describe('new separate expiration date behavior', () => {
+  const categories = [
+    { name: 'Alquiler mensual', isExpense: true, dateBehavior: 'separate-due-date', origin: 'custom' },
+    { name: 'Internet oficina', isExpense: true, dateBehavior: 'separate-due-date', origin: 'custom' },
+    { name: 'Servicio heredado', isExpense: true, dateBehavior: 'due-date', origin: 'custom' },
+  ];
+
+  test('does not reinterpret mandatory transaction date as expiration', () => {
+    expect(usesSeparateDueDate('Alquiler mensual', categories)).toBe(true);
+    expect(usesSelectedDateAsDueDate('Alquiler mensual', categories)).toBe(false);
+    expect(resolveTransactionDueDate({
+      category: 'Alquiler mensual', categories,
+      selectedDate: '2026-10-10', selectedExpirationDate: '2026-10-20',
+    })).toBe('2026-10-20');
+    expect(getNotificationSettings('Alquiler mensual', categories)).toEqual({ enabled: true, leadDays: 5 });
+  });
+
+  test('never generates a reminder when the optional due date is not provided', () => {
+    expect(resolveTransactionDueDate({
+      category: 'Alquiler mensual', categories,
+      selectedDate: '2026-10-10', selectedExpirationDate: '',
+    })).toBe('');
+  });
+
+  test('explicit separate-date setting wins over public-service names', () => {
+    expect(usesSelectedDateAsDueDate('Internet oficina', categories)).toBe(false);
+    expect(resolveTransactionDueDate({
+      category: 'Internet oficina', categories,
+      selectedDate: '2026-10-10', selectedExpirationDate: '2026-10-25',
+    })).toBe('2026-10-25');
+  });
+
+  test('existing legacy categories continue using selectedDate as due date', () => {
+    expect(usesSelectedDateAsDueDate('Servicio heredado', categories)).toBe(true);
+    expect(resolveTransactionDueDate({
+      category: 'Servicio heredado', categories,
+      selectedDate: '2026-10-18', selectedExpirationDate: '2026-10-30',
+    })).toBe('2026-10-18');
   });
 });
