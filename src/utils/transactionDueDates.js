@@ -1,3 +1,5 @@
+import { CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } from './customCategories';
+
 const normalizeCategoryName = (value = '') =>
 	String(value)
 		.normalize('NFD')
@@ -24,9 +26,18 @@ export const isPublicServiceCategory = (categoryName) => {
 	return PUBLIC_SERVICE_PATTERNS.some((pattern) => pattern.test(normalized));
 };
 
+// Versioned custom-category setting: transaction date and expiration date
+// are stored independently for new categories.
+export const usesSeparateDueDate = (categoryName, categories = []) =>
+  getCategoryDefinition(categoryName, categories)?.dateBehavior === CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR;
+
 export const usesSelectedDateAsDueDate = (categoryName, categories = []) => {
 	const definition = getCategoryDefinition(categoryName, categories);
 	const behavior = String(definition?.dateBehavior || '').toLowerCase();
+
+	// Explicit separate dates take precedence even if the user's category
+	// name happens to contain words like "gas" or "internet".
+	if (usesSeparateDueDate(categoryName, categories)) return false;
 
 	if (['due-date', 'due_date', 'duedate', 'vencimiento'].includes(behavior)) {
 		return true;
@@ -37,7 +48,7 @@ export const usesSelectedDateAsDueDate = (categoryName, categories = []) => {
 
 export const getNotificationSettings = (categoryName, categories = []) => {
 	const definition = getCategoryDefinition(categoryName, categories);
-	const dueDateCategory = usesSelectedDateAsDueDate(categoryName, categories);
+	const dueDateCategory = usesSelectedDateAsDueDate(categoryName, categories) || usesSeparateDueDate(categoryName, categories);
 	const configuredLeadDays = Number(definition?.notificationLeadDays);
 	const leadDays = Number.isFinite(configuredLeadDays)
 		? Math.max(0, Math.min(60, configuredLeadDays))
@@ -58,7 +69,7 @@ export const resolveTransactionDueDate = ({
 	selectedDate,
 	selectedExpirationDate,
 }) => {
-	if (String(category || '').includes('Resumen tarjeta')) {
+	if (String(category || '').includes('Resumen tarjeta') || usesSeparateDueDate(category, categories)) {
 		return selectedExpirationDate || '';
 	}
 
