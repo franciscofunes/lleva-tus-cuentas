@@ -14,7 +14,7 @@ import InfoTooltip from "../components/InfoTooltip";
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from "../shared/constants/tooltip-messages.const";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
 import { categoriesForNewTransactions } from "../utils/customCategories";
-import { getCategoryExtraFields, sanitizeTransactionCustomDetails } from "../utils/categoryExtraFields";
+import { getCategoryExtraFields, isCalendarDate, sanitizeTransactionCustomDetails } from "../utils/categoryExtraFields";
 import { parseTransactionsMarkdown } from "../utils/transactionsMarkdown";
 import {
   getNotificationSettings,
@@ -60,6 +60,7 @@ const TransactionForm = ({
   customDetails = {},
   setCustomDetails = () => {},
   hasSavedCustomDetails = false,
+  hasSavedExpirationDate = false,
   setIsOpen,
 }) => {
   const dispatch = useDispatch();
@@ -75,6 +76,7 @@ const TransactionForm = ({
   const selectedDateIsDueDate = usesSelectedDateAsDueDate(category, categories);
   const categoryDefinition = categories?.find((entry) => entry.name === category);
   const selectedExtraFields = getCategoryExtraFields(categoryDefinition);
+  const hasConfiguredDueDate = selectedExtraFields.some((field) => field.id === "dueDate");
   const notificationSettings = getNotificationSettings(category, categories);
   const dueDate = resolveTransactionDueDate({
     category,
@@ -166,11 +168,16 @@ const TransactionForm = ({
           throw new Error("Este PDF ya está vinculado a otro resumen. Abrí esa transacción para revisarlo.");
         }
       }
-      const safeDetails = sanitizeTransactionCustomDetails(customDetails, selectedExtraFields.map((field) => field.id));
+      if (hasConfiguredDueDate && selectedExpirationDate && !isCalendarDate(selectedExpirationDate)) {
+        throw new Error("La fecha de vencimiento no es válida.");
+      }
+      const safeDetails = sanitizeTransactionCustomDetails(customDetails,
+        selectedExtraFields.filter((field) => field.type !== "due-date").map((field) => field.id));
       const data = {
         userId: user?.uid,
         customDetails: safeDetails,
         clearCustomDetails: edit && hasSavedCustomDetails && !Object.keys(safeDetails).length,
+        clearSelectedExpirationDate: edit && hasSavedExpirationDate && !selectedExpirationDate,
         name, amount, comment, category, selectedDate,
         selectedExpirationDate, selectedCloseDate,
         currencyQuantity, currencyExchangeRate, dueDate,
@@ -297,6 +304,8 @@ const TransactionForm = ({
               }
               setCategory(e.target.value);
               setCustomDetails({});
+              // Never carry a previous bill or credit-card deadline into a new category.
+              setSelectedExpirationDate("");
 
               setIsCreditCardCategory(
                 e.target.value.includes("Resumen tarjeta")
@@ -349,10 +358,15 @@ const TransactionForm = ({
           <section aria-label='Datos adicionales de la categoría' className='mt-2 space-y-2 rounded-xl border border-purple-300/60 bg-purple-50/40 p-3 dark:border-purple-500/40 dark:bg-purple-500/5'>
             <h2 className='text-sm font-bold text-slate-800 dark:text-white'>Datos adicionales</h2>
             <p className='text-xs text-slate-600 dark:text-slate-300'>Opcionales · no modifican el importe ni los cálculos de esta transacción.</p>
+            {hasConfiguredDueDate && <p className='text-xs text-purple-700 dark:text-purple-300'>El vencimiento genera recordatorios cuando indicás una fecha; la fecha del gasto permanece independiente.</p>}
             {selectedExtraFields.map((field) => (
               <label key={field.id} className='block space-y-1 text-sm font-medium text-slate-700 dark:text-slate-200'>
                 <span>{field.label}</span>
-                {field.type === 'select' ? (
+                {field.type === 'due-date' ? (
+                  <input aria-label={field.label} type='date' value={selectedExpirationDate || ''}
+                    disabled={isSubmitting} onChange={(event) => setSelectedExpirationDate(event.target.value)}
+                    className='w-full min-h-[42px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white' />
+                ) : field.type === 'select' ? (
                   <select aria-label={field.label} value={customDetails?.[field.id] || ''}
                     onChange={(event) => setCustomDetails((previous) => ({ ...previous, [field.id]: event.target.value }))}
                     disabled={isSubmitting} className='w-full min-h-[42px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white'>
@@ -360,7 +374,7 @@ const TransactionForm = ({
                     {field.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                 ) : (
-                  <input aria-label={field.label} type={field.type === 'date' ? 'date' : 'text'}
+                  <input aria-label={field.label} type={field.type === 'date' ? 'date' : field.type === 'month' ? 'month' : 'text'}
                     maxLength={field.maxLength} autoComplete='off'
                     value={customDetails?.[field.id] || ''} disabled={isSubmitting}
                     onChange={(event) => setCustomDetails((previous) => ({ ...previous, [field.id]: event.target.value }))}
