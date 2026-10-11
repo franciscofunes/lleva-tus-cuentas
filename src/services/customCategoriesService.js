@@ -1,6 +1,6 @@
 import firebase from 'firebase/compat/app';
 import { firestore } from '../shared/config/firebase/firebase.config';
-import { categoryDocumentId, validateCustomCategory, validateCustomCategoryDateBehavior, CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } from '../utils/customCategories';
+import { categoryDocumentId, validateCustomCategory, validateCustomCategoryDateBehavior, CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } from '../utils/customCategories';
 import { validateCategoryExtraFields } from '../utils/categoryExtraFields';
 
 const collectionForUser = (uid) => firestore.collection('users').doc(uid).collection('customCategories');
@@ -18,7 +18,8 @@ export const saveCustomCategory = async (uid, draft, categories = []) => {
   await collectionForUser(uid).doc(id).set({
     name, isExpense: draft.isExpense, active: true,
     ...(extraFieldIds.length ? { extraFieldIds } : {}),
-    ...(draft.dateBehavior === CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR ? { dateBehavior: CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } : {}),
+    ...([CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR].includes(draft.dateBehavior)
+      ? { dateBehavior: draft.dateBehavior } : {}),
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   });
