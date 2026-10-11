@@ -16,7 +16,14 @@ const customCategories = [{ name: 'Mascotas', isExpense: true }];
 
 beforeEach(() => {
   jest.clearAllMocks();
-  firestore.collection.mockReturnValue({ doc: jest.fn(() => ({ collection })) });
+  // CRA/Jest may reset mocks between suites. Restore every link in the
+  // Firestore collection -> user document -> category collection -> doc chain.
+  set.mockResolvedValue(undefined);
+  doc.mockImplementation(() => ({ set }));
+  collection.mockImplementation(() => ({ doc }));
+  firestore.collection.mockImplementation(() => ({
+    doc: jest.fn(() => ({ collection })),
+  }));
 });
 
 test('stores the due-date option only in the private user category and uses allowed field', async () => {
