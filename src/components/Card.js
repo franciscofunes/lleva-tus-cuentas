@@ -201,11 +201,11 @@ function Card({
 					</p>
 					<div className='ml-auto flex shrink-0 items-center gap-2'>
 						<button type='button' onClick={handleDelete} aria-label={`Eliminar ${name || 'movimiento'}`} title='Eliminar movimiento'
-							className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition-colors hover:border-rose-400 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-rose-500/70 dark:hover:bg-rose-500/10 dark:hover:text-rose-300'>
+							className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition-colors hover:border-rose-400 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-rose-500/70 dark:hover:bg-rose-500/10 dark:hover:text-rose-300'>
 							<FiTrash2 className='h-[18px] w-[18px]' aria-hidden='true' />
 						</button>
 						<button type='button' onClick={handleEdit} aria-label={`Editar ${name || 'movimiento'}`} title='Editar movimiento'
-							className='inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition-colors hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-violet-400/70 dark:hover:bg-violet-500/10 dark:hover:text-violet-300'>
+							className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition-colors hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-violet-400/70 dark:hover:bg-violet-500/10 dark:hover:text-violet-300'>
 							<FiEdit3 className='h-[18px] w-[18px]' aria-hidden='true' />
 						</button>
 					</div>
