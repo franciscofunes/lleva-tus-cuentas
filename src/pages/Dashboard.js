@@ -536,7 +536,19 @@ function Dashboard() {
       // actually saved a file. Keep native links on-screen until the user
       // taps one, closes the panel, or changes the filters.
       clearPreparedExport();
-      const prepared = { ...files, xlsxUrl, csvUrl };
+      const prepared = {
+        ...files, xlsxUrl, csvUrl,
+        // Retain the exact filtered view for an optional on-demand private PDF.
+        pdfSource: { docs: filteredDocs, categories: categories || [], filters: {
+          period: selectedFilter,
+          periodLabel: selectedPeriodInfo?.key === selectedFilter
+            ? selectedPeriodInfo.label
+            : describeSelectedPeriod(selectedFilter, new Date()),
+          query: searchQuery,
+          category: searchCategory,
+          type: searchType,
+        } },
+      };
       preparedExportRef.current = prepared;
       setPreparedExport(prepared);
     } catch (error) {
@@ -602,7 +614,7 @@ function Dashboard() {
               privacyHidden={!isDataVisible}
               isLoading={isDataFetching || !docs || !categories}
               actions={[
-                { id: "excel", type: "excel", label: "Exportar Excel", onClick: downloadFilteredTransactions, disabled: isDataFetching || isFilterChanging || !filteredDocs.length },
+                { id: "excel", type: "excel", label: "Exportar archivos", onClick: downloadFilteredTransactions, disabled: isDataFetching || isFilterChanging || !filteredDocs.length },
                 { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
               ]}
               metrics={[
