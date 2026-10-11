@@ -9,7 +9,7 @@ import { shareExportFile } from '../utils/shareExportFile';
  */
 function PreparedExportOptions({ prepared }) {
   const { filename, csvFilename, xlsxUrl, csvUrl, xlsxBlob, csvBlob, count, pdfSource } = prepared;
-  const [shareFormat, setShareFormat] = useState('pdf');
+  const [shareFormat, setShareFormat] = useState('xlsx');
   const [pdfState, setPdfState] = useState({ status: 'idle' });
   const [sharing, setSharing] = useState(false);
   const [feedback, setFeedback] = useState('');
