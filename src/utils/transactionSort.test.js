@@ -52,3 +52,14 @@ test('filter first, sort second, paginate third; no changes to original filtered
   expect(isTransactionSortKey('random')).toBe(false);
   expect(sortTransactions(null)).toEqual([]);
 });
+
+test('sort ARS and USD amounts separately and leave opposite-currency values last', () => {
+  const rows = [
+    {id:'usd-small',amount:3,transactionCurrency:'USD'},
+    {id:'ars',amount:150,transactionCurrency:'ARS'},
+    {id:'usd-large',amount:900,transactionCurrency:'USD'},
+    {id:'legacy',amount:100},
+  ];
+  expect(ids(sortTransactions(rows,'amount','desc'))).toEqual(['ars','legacy','usd-small','usd-large']);
+  expect(ids(sortTransactions(rows,'usdAmount','desc'))).toEqual(['usd-large','usd-small','ars','legacy']);
+});
