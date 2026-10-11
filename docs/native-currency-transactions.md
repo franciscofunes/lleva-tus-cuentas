@@ -31,6 +31,8 @@ The PR updates `firestore.rules.customCategories` to whitelist owner-scoped `cur
 
 In `firestore.rules.customTransactionDetails`, a new additive `validTransactionCurrency()` validates the transaction snapshot; insert this into the existing `/users/{uid}/expenses/{id}` create/update rules and include `transactionCurrency` if your expense rules use `keys().hasOnly(...)`.
 
+For USD transactions with reminders, the existing `users/{uid}/notifications` rules must also optionally allow `transactionCurrency: 'USD'` in their field allowlist (if any), validating the literal USD. ARS notifications keep their prior payload unchanged. These rules are deployment-specific and not stored as a single canonical notifications ruleset in this repository; review the current deployed rules before adding anything.
+
 **Do not paste another broad expenses match**, disable security or change other user permissions. This is compatible with the free Spark plan.
 
 ## Regression checklist
