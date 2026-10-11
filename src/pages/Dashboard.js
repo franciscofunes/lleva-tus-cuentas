@@ -241,6 +241,7 @@ function Dashboard() {
   const [expenseId, setExpenseId] = useState("");
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
+  const [transactionCurrency, setTransactionCurrency] = useState("ARS");
   const [comment, setComment] = useState("");
   const [category, setCategory] = useState("");
   const [customDetails, setCustomDetails] = useState({});
@@ -470,6 +471,7 @@ function Dashboard() {
 
     setName(transaction.expenseName || "");
     setAmount(transaction.amount ?? "");
+    setTransactionCurrency(transaction.transactionCurrency === "USD" ? "USD" : "ARS");
     setComment(transaction.comment || "");
     setCategory(transaction.category || "");
     setCustomDetails(transaction.customDetails || {});
@@ -573,6 +575,7 @@ function Dashboard() {
     setEdit(false);
     setName("");
     setAmount("");
+    setTransactionCurrency("ARS");
     setComment("");
     setCategory("");
     setCustomDetails({});
@@ -758,6 +761,8 @@ function Dashboard() {
                     id={doc.id}
                     name={doc.expenseName}
                     amount={doc.amount}
+                    transactionCurrency={doc.transactionCurrency}
+                    setTransactionCurrency={setTransactionCurrency}
                     date={doc.date}
                     comment={doc.comment}
                     category={doc.category}
@@ -837,6 +842,8 @@ function Dashboard() {
             component={TransactionForm}
             name={name}
             amount={amount}
+            transactionCurrency={transactionCurrency}
+            setTransactionCurrency={setTransactionCurrency}
             edit={edit}
             comment={comment}
             category={category}
