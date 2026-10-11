@@ -83,7 +83,7 @@ function PreparedExportOptions({ prepared }) {
         <span aria-hidden='true' className='mb-2 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10 font-extrabold text-violet-700 dark:text-violet-300'>LTC$</span>
         <h2 className='text-lg font-bold leading-snug text-slate-950 dark:text-slate-50'>Exportar movimientos</h2>
         <p className='mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300'>
-          {count} movimientos según los filtros seleccionados. PDF, Excel y CSV creados en tu dispositivo, sin subir tus datos.
+          {count} movimientos según los filtros seleccionados. Excel y CSV listos; PDF a pedido. Todo se genera en tu dispositivo, sin subir tus datos.
         </p>
       </header>
 
