@@ -1,4 +1,4 @@
-import { displayCategoryName } from './customCategories';
+import { displayCategoryName, getTransactionCurrency } from './customCategories';
 import { exportWorkbookXlsx, buildWorkbookXlsxBytes } from './portfolioExport';
 import { exportCsvRows } from './exportCsvRows';
 
@@ -14,9 +14,9 @@ const getQuantity = (row) => currencyOperation(row.category) && validMoney(row.c
 const classification = (row, expenses) => {
   if (conversion(row.category)) return 'Conversión ARS/USD';
   if (/Resumen tarjeta/i.test(row.category || '')) return 'Pago de resumen (no duplicar consumos)';
-  if (expenses.has(row.category)) return 'Gasto ARS';
+  if (expenses.has(row.category)) return 'Gasto ' + getTransactionCurrency(row);
   if (/Ingreso divisas/i.test(row.category || '')) return 'Ingreso USD';
-  return 'Ingreso / movimiento ARS (verificar)';
+  return 'Ingreso / movimiento ' + getTransactionCurrency(row) + ' (verificar)';
 };
 
 export const buildTransactionOverview = (docs = [], categories = []) => {
@@ -30,29 +30,33 @@ export const buildTransactionOverview = (docs = [], categories = []) => {
 
 export const buildTransactionsExportSheets = (docs = [], categories = [], filters = {}) => {
   const expenses = new Set(categories.filter((entry) => entry?.isExpense).map((entry) => entry.name));
-  const headers = ['Fecha','Nombre','Categoría','Clasificación','ARS (registrados)','USD (cantidad)','Cotización ARS/USD','Fecha cierre','Vencimiento','Estado','Comentario'];
+  const headers = ['Fecha','Nombre','Categoría','Clasificación','ARS (registrados)','USD (cantidad)','Cotización ARS/USD','Fecha cierre','Vencimiento','Estado','Comentario','Moneda del movimiento','USD nativos registrados'];
   const records = (Array.isArray(docs) ? docs : []).map((row) => [
     safeText(row.selectedDate), getName(row), safeText(displayCategoryName(row.category, categories)),
     classification(row, expenses),
-    getAmount(row) ?? '', getQuantity(row) ?? '',
+    getTransactionCurrency(row) === 'USD' ? '' : getAmount(row) ?? '', getQuantity(row) ?? '',
     conversion(row.category) && validMoney(row.currencyExchangeRate) ? Number(row.currencyExchangeRate) : '',
     safeText(row.selectedCloseDate), safeText(row.selectedExpirationDate || row.dueDate),
     safeText(row.paymentStatus), safeText(row.comment),
+    currencyOperation(row.category) ? 'ARS + USD (divisas)' : getTransactionCurrency(row),
+    !currencyOperation(row.category) && getTransactionCurrency(row) === 'USD' ? getAmount(row) ?? '' : '',
   ]);
   const expenseTotals = new Map();
   (Array.isArray(docs) ? docs : []).forEach((row) => {
     if (!expenses.has(row.category) || conversion(row.category) || !validMoney(row.amount)) return;
-    const value = expenseTotals.get(row.category) || { count: 0, ars: 0 };
+    const unit = getTransactionCurrency(row);
+    const key = row.category + '::' + unit;
+    const value = expenseTotals.get(key) || { category: row.category, currency: unit, count: 0, amount: 0 };
     value.count += 1;
-    value.ars += Number(row.amount);
-    expenseTotals.set(row.category, value);
+    value.amount += Number(row.amount);
+    expenseTotals.set(key, value);
   });
-  const groups = [...expenseTotals].sort((a,b) => b[1].ars - a[1].ars);
+  const groups = [...expenseTotals.values()].sort((a,b) => b.amount - a.amount);
   return {
     Movimientos: [headers, ...records],
     'Gastos por categoría': [
-      ['Categoría','Operaciones','ARS registrados'],
-      ...groups.map(([category, value]) => [displayCategoryName(category, categories), value.count, Math.round(value.ars * 100) / 100]),
+      ['Categoría','Operaciones','ARS registrados','USD registrados'],
+      ...groups.map((value) => [displayCategoryName(value.category, categories), value.count, value.currency === 'ARS' ? Math.round(value.amount * 100) / 100 : '', value.currency === 'USD' ? Math.round(value.amount * 100) / 100 : '']),
     ],
     'Filtros aplicados': [
       ['Criterio', 'Valor'],
@@ -95,13 +99,13 @@ export const buildTransactionsLitaMarkdown = (docs = [], categories = [], now = 
     '- Si no se incluyen todos los movimientos, marcá el análisis como parcial.',
     '',
     '## Movimientos',
-    '| Fecha | Nombre | Categoría | Tipo | ARS cargados | USD cantidad | Cotización ARS/USD |',
-    '| --- | --- | --- | --- | ---: | ---: | ---: |',
+    '| Fecha | Nombre | Categoría | Tipo | ARS cargados | USD movimiento | USD divisas | Cotización ARS/USD |',
+    '| --- | --- | --- | --- | ---: | ---: | ---: | ---: |',
   ];
   shown.forEach((row) => {
     const category = safeText(displayCategoryName(row.category, categories));
-    const amount = getAmount(row), usd = getQuantity(row);
-    lines.push(`| ${safeText(row.selectedDate) || 'N/D'} | ${getName(row) || 'N/D'} | ${category || 'N/D'} | ${classification(row, expenses)} | ${amount ?? 'N/D'} | ${usd ?? 'N/D'} | ${conversion(row.category) && validMoney(row.currencyExchangeRate) ? Number(row.currencyExchangeRate) : 'N/D'} |`);
+    const amount = getAmount(row), usd = getQuantity(row), nativeCurrency = getTransactionCurrency(row);
+    lines.push(`| ${safeText(row.selectedDate) || 'N/D'} | ${getName(row) || 'N/D'} | ${category || 'N/D'} | ${classification(row, expenses)} | ${nativeCurrency === 'ARS' ? amount ?? 'N/D' : '—'} | ${nativeCurrency === 'USD' ? amount ?? 'N/D' : '—'} | ${usd ?? 'N/D'} | ${conversion(row.category) && validMoney(row.currencyExchangeRate) ? Number(row.currencyExchangeRate) : 'N/D'} |`);
   });
   lines.push('', '## Pedido para Lita',
     'Analizá estos movimientos del período visible. Identificá categorías con mayor peso, patrones, anomalías y vencimientos que habría que revisar. Indicá datos incompletos y verificaciones pendientes. Separá monedas y movimientos de capital; no presentes estimaciones como hechos.',
