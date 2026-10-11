@@ -93,23 +93,23 @@ function Card({
 			transition={{ duration: 0.4, type: 'tween', delay: 0.2 }}
 			role='article'
 			aria-label={`Movimiento: ${name || 'Sin nombre'}`}
-			className='mb-3 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-3.5 shadow-sm transition-colors hover:border-violet-300 sm:px-4 sm:py-4 dark:border-slate-700/90 dark:bg-slate-900/45 dark:hover:border-violet-500/50'
+			className='ltc-transaction-card mb-3 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3.5 py-3.5 shadow-sm transition-colors hover:border-violet-300 sm:px-4 sm:py-4 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-violet-500/60'
 		>
 			<div className='min-w-0 space-y-1.5'>
-				<p className='min-w-0 break-words text-base font-bold leading-relaxed text-slate-950 dark:text-slate-100'>
-					<span className='font-semibold text-violet-700 dark:text-violet-300'>Nombre: </span>
+				<p className='min-w-0 break-words text-base font-bold leading-relaxed text-slate-900 dark:text-slate-50'>
+					<span className='font-semibold text-violet-700 dark:text-violet-200'>Nombre: </span>
 					{name}
 				</p>
 
-				<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
-					<span className='font-semibold text-violet-700 dark:text-violet-300'>
+				<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
+					<span className='font-semibold text-violet-700 dark:text-violet-200'>
 						Descripción:{' '}
 					</span>{' '}
 					{comment}
 				</p>
 				<div className='min-w-0'>
-					<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
-						<span className='font-semibold text-violet-700 dark:text-violet-300'>
+					<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
+						<span className='font-semibold text-violet-700 dark:text-violet-200'>
 							Categoría:{' '}
 						</span>
 						{safeCategory || 'Sin categoría'}{' '}
@@ -124,14 +124,14 @@ function Card({
 
 				{safeCategory.includes('Resumen tarjeta') && (
 					<>
-						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
-							<span className='font-semibold text-violet-700 dark:text-violet-300'>
+						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
+							<span className='font-semibold text-violet-700 dark:text-violet-200'>
 								Fecha de Cierre:{' '}
 							</span>
 							{moment(selectedCloseDate).format('DD/MM/YYYY')}
 						</p>
-						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
-							<span className='font-semibold text-violet-700 dark:text-violet-300'>
+						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
+							<span className='font-semibold text-violet-700 dark:text-violet-200'>
 								Fecha de vencimiento:{' '}
 							</span>
 							{moment(selectedExpirationDate).format('DD/MM/YYYY')}
@@ -141,14 +141,14 @@ function Card({
 
 				{safeCategory.includes('Compra divisas') && (
 					<>
-						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
-							<span className='font-semibold text-violet-700 dark:text-violet-300'>
+						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
+							<span className='font-semibold text-violet-700 dark:text-violet-200'>
 								Cantidad:{' '}
 							</span>
 							{`$USD ${currencyQuantity}`}
 						</p>
-						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
-							<span className='font-semibold text-violet-700 dark:text-violet-300'>
+						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
+							<span className='font-semibold text-violet-700 dark:text-violet-200'>
 								Cotización:{' '}
 							</span>
 							{`$AR ${currencyExchangeRate}`}
@@ -156,15 +156,15 @@ function Card({
 					</>
 				)}
 
-				<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300'>
-					<span className='font-semibold text-violet-700 dark:text-violet-300'>
+				<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
+					<span className='font-semibold text-violet-700 dark:text-violet-200'>
 						{selectedDateIsDueDate ? 'Fecha de vencimiento' : 'Fecha transacción'}:{' '}
 					</span>
 					{moment(selectedDate).format('DD/MM/YYYY')}
 				</p>
 
 				{displayTransactionCustomDetails(customDetails).length > 0 && (
-          <div className='mt-2 space-y-1.5 rounded-lg border border-slate-200/80 bg-white/70 px-3 py-2 text-xs leading-relaxed text-slate-700 dark:border-slate-700/80 dark:bg-slate-800/50 dark:text-slate-300' aria-label='Datos adicionales de la transacción'>
+          <div className='mt-2 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200' aria-label='Datos adicionales de la transacción'>
             {displayTransactionCustomDetails(customDetails).map((detail) => (
               <p key={detail.id}><span className='font-bold'>{detail.label}: </span>{detail.value}</p>
             ))}
@@ -181,7 +181,7 @@ function Card({
 						)}
 					</div>
 				)}
-				<div className='mt-3 flex min-w-0 flex-wrap items-center gap-2 border-t border-slate-200/90 pt-3 dark:border-slate-700/80'>
+				<div className='mt-3 flex min-w-0 flex-wrap items-center gap-2 border-t border-slate-200 pt-3 dark:border-slate-700'>
 					<p
 						className={`mr-auto min-w-0 break-words text-lg font-bold leading-6 tabular-nums sm:text-xl ${
 							isExpense
@@ -201,18 +201,18 @@ function Card({
 					</p>
 					<div className='ml-auto flex shrink-0 items-center gap-2'>
 						<button type='button' onClick={handleDelete} aria-label={`Eliminar ${name || 'movimiento'}`} title='Eliminar movimiento'
-							className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition-colors hover:border-rose-400 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-rose-500/70 dark:hover:bg-rose-500/10 dark:hover:text-rose-300'>
+							className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-slate-50 text-slate-700 transition-colors hover:border-rose-400 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-rose-500/70 dark:hover:bg-rose-500/10 dark:hover:text-rose-300'>
 							<FiTrash2 className='h-[18px] w-[18px]' aria-hidden='true' />
 						</button>
 						<button type='button' onClick={handleEdit} aria-label={`Editar ${name || 'movimiento'}`} title='Editar movimiento'
-							className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition-colors hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-violet-400/70 dark:hover:bg-violet-500/10 dark:hover:text-violet-300'>
+							className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-slate-50 text-slate-700 transition-colors hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-violet-400/70 dark:hover:bg-violet-500/10 dark:hover:text-violet-300'>
 							<FiEdit3 className='h-[18px] w-[18px]' aria-hidden='true' />
 						</button>
 					</div>
 				</div>
 			</div>
 			{safeCategory.includes('Resumen tarjeta') && (
-				<div className='mt-3 min-w-0 border-t border-slate-200/80 pt-2 dark:border-slate-700/80'>
+				<div className='mt-3 min-w-0 border-t border-slate-200 pt-2 dark:border-slate-700'>
 					<CardStatementDetails expenseId={id} />
 				</div>
 			)}
