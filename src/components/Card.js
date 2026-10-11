@@ -7,7 +7,7 @@ import { FaCheckCircle } from 'react-icons/fa';
 import { FiEdit3, FiTrash2 } from 'react-icons/fi';
 import InfoTooltip from '../components/InfoTooltip';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
-import { usesSelectedDateAsDueDate } from '../utils/transactionDueDates';
+import { usesSelectedDateAsDueDate, usesSeparateDueDate } from '../utils/transactionDueDates';
 import { displayTransactionCustomDetails } from '../utils/categoryExtraFields';
 import CardStatementDetails from './CardStatementDetails';
 
@@ -53,6 +53,7 @@ function Card({
 	const safeCategories = Array.isArray(categories) ? categories.filter(Boolean) : [];
 	const isExpense = safeCategories.some((entry) => entry?.isExpense && entry.name === safeCategory);
 	const selectedDateIsDueDate = usesSelectedDateAsDueDate(safeCategory, safeCategories);
+	const hasSeparateDueDate = usesSeparateDueDate(safeCategory, safeCategories);
 	const isPaidBill = paymentStatus === 'paid';
 	const paidAtDate =
 		paidAt && typeof paidAt.toDate === 'function'
@@ -162,6 +163,15 @@ function Card({
 					</span>
 					{moment(selectedDate).format('DD/MM/YYYY')}
 				</p>
+
+				{hasSeparateDueDate && selectedExpirationDate && (
+					<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
+						<span className='font-semibold text-violet-700 dark:text-violet-200'>
+							Fecha de vencimiento:{' '}
+						</span>
+						{moment(selectedExpirationDate).format('DD/MM/YYYY')}
+					</p>
+				)}
 
 				{displayTransactionCustomDetails(customDetails).length > 0 && (
           <div className='mt-2 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200' aria-label='Datos adicionales de la transacción'>

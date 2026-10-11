@@ -6,7 +6,8 @@
 // NO reemplazar el ruleset existente (cardStatements, litaChats,
 // notifications, portfolioPositions, subscribers, etc.).
 // extraFieldIds es una lista opcional e INMUTABLE de claves permitidas.
-// dateBehavior es opcional e INMUTABLE; solo admite 'due-date'.
+// dateBehavior es opcional e INMUTABLE: 'due-date' legado o
+// 'separate-due-date' para un vencimiento independiente.
 // Además de estas reglas, actualizar la validación del match de expenses
 // según firestore.rules.customTransactionDetails antes de desplegar UI.
 // La colección compartida /categories conserva su regla existente:
@@ -34,7 +35,8 @@ match /users/{uid}/customCategories/{categoryId} {
 
   function validCategoryDateBehavior(data) {
     return !('dateBehavior' in data) ||
-      (data.dateBehavior is string && data.dateBehavior == 'due-date');
+      (data.dateBehavior is string &&
+       data.dateBehavior in ['due-date', 'separate-due-date']);
   }
 
   function validPersonalCategory() {

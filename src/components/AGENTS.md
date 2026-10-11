@@ -19,3 +19,13 @@ These apply to every component in this directory. Follow the repo-wide [AGENTS.m
 - Edit/delete handlers and the data populated in editing forms.
 
 Update `Card.test.js` alongside card changes, including dark theme classes and conditional content checks. Do not alter saved monetary values, categories or Firestore rules for a style-only request.
+
+## Date semantics for personal categories
+
+All transactions retain the required `selectedDate`. Do not confuse that with a deadline.
+- Existing `dateBehavior: 'due-date'` categories are **legacy**: they interpret `selectedDate` as the due date. Preserve historical records.
+- New `dateBehavior: 'separate-due-date'` categories retain the transaction date and can supply a **separate optional** `selectedExpirationDate` (already supported by the transaction model).
+- `resolveTransactionDueDate` must derive `dueDate` from `selectedExpirationDate` for the new behavior, and from `selectedDate` for the legacy behavior.
+- No expiration entered means no reminder. Never silently copy the transaction date to the expiration field.
+- Credit-card summaries continue using their existing dedicated closing/expiration controls.
+- Confirm dates are distinct on the form, transaction card, saved data, and dark-mode mobile UI; do not merge or rename these fields without a deliberate migration.

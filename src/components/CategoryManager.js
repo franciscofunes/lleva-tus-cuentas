@@ -101,8 +101,9 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
             <span className='min-w-0'>
               <span className='block text-sm font-semibold text-slate-900 dark:text-slate-100'>Fecha de vencimiento</span>
               <span className='mt-1 block text-xs leading-relaxed text-slate-600 dark:text-slate-300'>
-                La fecha principal de cada movimiento se usará como vencimiento y LTC podrá recordártelo
-                5 días antes. No agrega una segunda fecha ni consume los 3 campos adicionales.
+                Agrega una segunda fecha opcional a tus movimientos, además de la fecha de transacción.
+                Si la completás, LTC puede recordarte el vencimiento 5 días antes.
+                No consume los 3 campos adicionales.
               </span>
             </span>
           </label>
@@ -142,7 +143,7 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
           <div key={entry.id} className='flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
             <div className='min-w-0'>
               <p className='break-words text-sm font-bold text-slate-900 dark:text-white'>{entry.name}</p>
-              <p className='text-xs text-slate-500 dark:text-slate-400'>{entry.isExpense ? 'Gasto' : 'Ingreso'} · {entry.active === false ? 'Archivada' : 'Activa'}{entry.dateBehavior === CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR ? ' · Con vencimiento' : ''}</p>
+              <p className='text-xs text-slate-500 dark:text-slate-400'>{entry.isExpense ? 'Gasto' : 'Ingreso'} · {entry.active === false ? 'Archivada' : 'Activa'}{['due-date', CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR].includes(entry.dateBehavior) ? ' · Con vencimiento' : ''}</p>
               {Array.isArray(entry.extraFieldIds) && entry.extraFieldIds.length > 0 && (
                 <p className='mt-1 text-xs text-purple-700 dark:text-purple-300'>{entry.extraFieldIds.length} campos adicionales</p>
               )}

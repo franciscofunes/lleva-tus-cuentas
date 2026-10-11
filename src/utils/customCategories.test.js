@@ -57,11 +57,12 @@ test('archiving removes only new form options; old transactions keep their categ
 test('due-date is the only allowed optional date behavior and is preserved when merging per-user catalog', () => {
   expect(validateCustomCategoryDateBehavior()).toBeNull();
   expect(validateCustomCategoryDateBehavior('due-date')).toBeNull();
+  expect(validateCustomCategoryDateBehavior('separate-due-date')).toBeNull();
   expect(validateCustomCategoryDateBehavior('')).toBeNull();
   expect(validateCustomCategoryDateBehavior('arbitrary-field')).toMatch(/vencimiento/);
   const merged = mergeCategories(shared, [
-    { name: 'Alquiler', isExpense: true, active: true, dateBehavior: 'due-date' },
+    { name: 'Alquiler', isExpense: true, active: true, dateBehavior: 'separate-due-date' },
   ]);
   expect(merged.find((category) => category.name === 'Alquiler'))
-    .toMatchObject({ isCustom: true, origin: 'custom', dateBehavior: 'due-date' });
+    .toMatchObject({ isCustom: true, origin: 'custom', dateBehavior: 'separate-due-date' });
 });

@@ -25,6 +25,8 @@ jest.mock('./InfoTooltip', () => () => null);
 const initialCategories = [
   { id: 'transport', name: 'Transporte 🚌', isExpense: true, active: true },
   { id: 'salary', name: 'Salario 💲', isExpense: false, active: true },
+  { id: 'rent2', name: 'Alquiler comercial', isExpense: true, active: true,
+    dateBehavior: 'separate-due-date', origin: 'custom', isCustom: true },
   { id: 'rent', name: 'Alquiler mensual', isExpense: true, active: true,
     extraFieldIds: ['reference'], dateBehavior: 'due-date', origin: 'custom', isCustom: true },
   { id: 'freelance', name: 'Freelance', isExpense: false, active: true,
@@ -34,6 +36,7 @@ const initialCategories = [
 function TransactionHarness({ initialCategory = 'Transporte 🚌', onCategoryFlags = {} }) {
   const [category, setCategory] = useState(initialCategory);
   const [customDetails, setCustomDetails] = useState({});
+  const [expiration, setExpiration] = useState('');
   const [name, setName] = useState('Taxi de regreso');
   const [openManager, setOpenManager] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
@@ -47,7 +50,7 @@ function TransactionHarness({ initialCategory = 'Transporte 🚌', onCategoryFla
         category={category} setCategory={setCategory}
         customDetails={customDetails} setCustomDetails={setCustomDetails}
         selectedDate='2026-10-10' setSelectedDate={noop}
-        selectedExpirationDate='' setSelectedExpirationDate={noop}
+        selectedExpirationDate={expiration} setSelectedExpirationDate={setExpiration}
         selectedCloseDate='' setSelectedCloseDate={noop}
         currencyQuantity='' setCurrencyQuantity={noop}
         currencyExchangeRate='' setCurrencyExchangeRate={noop}
@@ -148,4 +151,30 @@ test('a regular custom category still shows the original transaction date field'
   render(<TransactionHarness initialCategory='Freelance' />);
   expect(screen.getByLabelText('Fecha')).toHaveAttribute('type', 'date');
   expect(screen.queryByText(/Esta categoría usa la fecha como vencimiento/)).not.toBeInTheDocument();
+});
+
+test('separate deadline custom category displays TWO distinct date fields and a plain explanation', () => {
+  render(<TransactionHarness initialCategory='Alquiler comercial' />);
+  expect(screen.getByLabelText('Fecha de transacción')).toHaveAttribute('type', 'date');
+  const optional = screen.getByLabelText('Fecha de vencimiento (opcional)');
+  expect(optional).toHaveAttribute('type', 'date');
+  expect(optional).toHaveValue('');
+  fireEvent.change(optional, { target: { value: '2026-10-20' } });
+  expect(optional).toHaveValue('2026-10-20');
+  expect(screen.getByText(/La fecha de la transacción se mantiene/)).toBeInTheDocument();
+});
+
+test('expiration from a custom category is cleared when switching to an ordinary category', () => {
+  render(<TransactionHarness initialCategory='Alquiler comercial' />);
+  fireEvent.change(screen.getByLabelText('Fecha de vencimiento (opcional)'), {
+    target: { value: '2026-10-20' },
+  });
+  fireEvent.change(screen.getByRole('combobox', { name: 'Categoría' }), {
+    target: { value: 'Freelance' },
+  });
+  expect(screen.queryByLabelText('Fecha de vencimiento (opcional)')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole('combobox', { name: 'Categoría' }), {
+    target: { value: 'Alquiler comercial' },
+  });
+  expect(screen.getByLabelText('Fecha de vencimiento (opcional)')).toHaveValue('');
 });

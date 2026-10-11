@@ -146,3 +146,22 @@ test('real html.dark theme selector enforces the opaque card background at CSS l
     document.documentElement.classList.remove('dark');
   }
 });
+
+test('new due-date categories display transaction and optional expiration dates independently', () => {
+  const category = { name: 'Alquiler comercial', isExpense: true, dateBehavior: 'separate-due-date' };
+  render(<Card {...basicProps} category={category.name} categories={[category]}
+    selectedDate='2026-10-10' selectedExpirationDate='2026-10-20' />);
+  expect(screen.getByText(/Fecha transacción/)).toBeInTheDocument();
+  expect(screen.getByText(/Fecha de vencimiento:/)).toBeInTheDocument();
+  expect(screen.getByText('10/10/2026')).toBeInTheDocument();
+  expect(screen.getByText('20/10/2026')).toBeInTheDocument();
+});
+
+test('new due-date category without an optional expiration has no placeholder or invalid date', () => {
+  const category = { name: 'Alquiler comercial', isExpense: true, dateBehavior: 'separate-due-date' };
+  render(<Card {...basicProps} category={category.name} categories={[category]}
+    selectedDate='2026-10-10' selectedExpirationDate='' />);
+  expect(screen.getByText(/Fecha transacción/)).toBeInTheDocument();
+  expect(screen.queryByText(/Fecha de vencimiento:/)).not.toBeInTheDocument();
+  expect(screen.queryByText('Invalid date')).not.toBeInTheDocument();
+});
