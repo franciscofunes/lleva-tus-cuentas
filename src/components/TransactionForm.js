@@ -13,7 +13,7 @@ import {
 import InfoTooltip from "../components/InfoTooltip";
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from "../shared/constants/tooltip-messages.const";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
-import { categoriesForNewTransactions } from "../utils/customCategories";
+import { categoriesForNewTransactions, categoryLabel } from "../utils/customCategories";
 import { getCategoryExtraFields, sanitizeTransactionCustomDetails } from "../utils/categoryExtraFields";
 import { parseTransactionsMarkdown } from "../utils/transactionsMarkdown";
 import {
@@ -332,8 +332,8 @@ const TransactionForm = ({
               .filter((entry) => entry.isExpense)
               .map((category) => {
                 return (
-                  <option key={category.id}>
-                    {isDataFetching ? "Cargando ..." : category.name}
+                  <option key={category.id || category.name} value={category.name}>
+                    {isDataFetching ? "Cargando ..." : categoryLabel(category)}
                   </option>
                 );
               })}
@@ -343,8 +343,8 @@ const TransactionForm = ({
               .filter((entry) => !entry.isExpense)
               .map((category) => {
                 return (
-                  <option key={category.id}>
-                    {isDataFetching ? "Cargando ..." : category.name}
+                  <option key={category.id || category.name} value={category.name}>
+                    {isDataFetching ? "Cargando ..." : categoryLabel(category)}
                   </option>
                 );
               })}
