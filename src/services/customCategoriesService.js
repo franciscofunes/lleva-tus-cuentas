@@ -41,7 +41,7 @@ export const setCustomCategoryActive = async (uid, id, active) => {
 export const updateCustomCategoryLabel = async (uid, entry, nextLabel, categories = []) => {
   if (!uid || !entry?.id || entry?.origin !== 'custom' || entry?.isCustom !== true)
     throw new Error('Solo podés editar categorías personales.');
-  const label = String(nextLabel || '').replace(/\\s+/g, ' ').trim();
+  const label = String(nextLabel || '').replace(/\s+/g, ' ').trim();
   const error = validateCategoryDisplayName(label, categories, entry.id);
   if (error) throw new Error(error);
   // A label matching the canonical name resets the visual override.
