@@ -1,6 +1,6 @@
 import firebase from 'firebase/compat/app';
 import { firestore } from '../shared/config/firebase/firebase.config';
-import { categoryDocumentId, validateCustomCategory } from '../utils/customCategories';
+import { categoryDocumentId, validateCustomCategory, validateCustomCategoryDateBehavior, CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } from '../utils/customCategories';
 import { validateCategoryExtraFields } from '../utils/categoryExtraFields';
 
 const collectionForUser = (uid) => firestore.collection('users').doc(uid).collection('customCategories');
@@ -10,13 +10,15 @@ export const saveCustomCategory = async (uid, draft, categories = []) => {
   const name = String(draft.name || '').replace(/\s+/g, ' ').trim();
   const extraFieldIds = draft.extraFieldIds || [];
   const invalid = validateCustomCategory({ name, isExpense: draft.isExpense }, categories)
-    || validateCategoryExtraFields(extraFieldIds);
+    || validateCategoryExtraFields(extraFieldIds)
+    || validateCustomCategoryDateBehavior(draft.dateBehavior);
   if (invalid) throw new Error(invalid);
   const id = categoryDocumentId(name);
   // Deterministic ID plus create() prevents racing tabs creating duplicate categories.
   await collectionForUser(uid).doc(id).set({
     name, isExpense: draft.isExpense, active: true,
     ...(extraFieldIds.length ? { extraFieldIds } : {}),
+    ...(draft.dateBehavior === CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR ? { dateBehavior: CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } : {}),
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   });
