@@ -1,4 +1,5 @@
 import { exportWorkbookXlsx, buildWorkbookXlsxBytes } from './portfolioExport';
+import { exportCsvRows } from './exportCsvRows';
 
 const safeText = (value) => String(value ?? '').replace(/[\r\n|]+/g, ' ').trim();
 const validMoney = (value) => value !== null && value !== undefined && value !== '' &&
@@ -122,20 +123,9 @@ export const exportTransactionsXlsx = (docs = [], categories = [], filters = {})
 // This prepares files locally; it never uploads private transactions. A real
 // <a href=blob: download> must be tapped by the user on mobile: browsers may
 // silently suppress a programmatic click, which cannot be verified via JS.
-const csvValue = (cell) => {
-  if (typeof cell === 'number' && Number.isFinite(cell)) return String(cell);
-  const text = String(cell ?? '');
-  // Keep user-entered fields as data, never Excel/CSV formulas.
-  const safe = /^\s*[=+@-]/.test(text) ? "'" + text : text;
-  return '"' + safe.replace(/"/g, '""') + '"';
-};
-
 export const buildTransactionsCsv = (docs = [], categories = []) => {
   const rows = buildTransactionsExportSheets(docs, categories).Movimientos;
-  // Excel es-AR commonly uses semicolon as CSV separator.
-  // A regular data column brands every record without breaking CSV imports.
-  const branded = rows.map((row, index) => [...row, index === 0 ? 'Origen' : 'LTC$']);
-  return '\uFEFF' + branded.map((row) => row.map(csvValue).join(';')).join('\r\n') + '\r\n';
+  return exportCsvRows(rows);
 };
 
 export const prepareTransactionsExport = (docs = [], categories = [], filters = {}, date = new Date()) => {
