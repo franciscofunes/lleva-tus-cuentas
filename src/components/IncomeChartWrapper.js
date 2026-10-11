@@ -1,4 +1,4 @@
-import { displayCategoryName } from '../utils/customCategories';
+import { displayCategoryName, getTransactionCurrency } from '../utils/customCategories';
 // IncomeChartWrapper.js
 
 import React from 'react';
@@ -10,7 +10,7 @@ const IncomeChartWrapper = ({ chartData, categories }) => {
 	const catalog = Array.isArray(categories) ? categories : [];
 	const generateChartData = () => {
 		const filteredData = records.filter((dataItem) => {
-			if (typeof dataItem?.category !== 'string') return false;
+			if (typeof dataItem?.category !== 'string' || getTransactionCurrency(dataItem) !== 'ARS') return false;
 			const isExpenseCategory = catalog.some(
 				(category) => category?.name === dataItem.category && category.isExpense === true
 			);
