@@ -22,6 +22,7 @@ import LitaAssistantPanel from "../components/LitaAssitantPanel";
 import { summarizeSpendingByCategory } from '../utils/litaSpendingSummary';
 import SearchBar from "../components/SearchBar";
 import { filterTransactions } from "../utils/transactionSearch";
+import { sortTransactions, isTransactionSortKey } from "../utils/transactionSort";
 import { categoryContains } from "../utils/categoryContains";
 import { TRANSACTION_PAGE_SIZE, visibleTransactionBatch } from "../utils/transactionsPagination";
 import TransactionForm from "../components/TransactionForm";
@@ -160,6 +161,8 @@ function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [searchType, setSearchType] = useState("all");
+  const [sortBy, setSortBy] = useState("date");
+  const [sortDirection, setSortDirection] = useState("desc");
   const [visibleTransactionCount, setVisibleTransactionCount] = useState(TRANSACTION_PAGE_SIZE);
   const [preparedExport, setPreparedExport] = useState(null);
   const preparedExportRef = useRef(null);
@@ -198,16 +201,19 @@ function Dashboard() {
     }
   }, []);
 
-  // Only render the first batch of cards. Filtering, KPIs, Lita context and
-  // exports still use the complete result set; rendering thousands of rich
-  // cards on a route transition can freeze Android Chrome.
+  // Sort only the visible cards, after filtering, before mobile pagination.
+  // KPIs, balances, Lita and export keep the unmodified full filtered set.
+  const sortedDocs = useMemo(
+    () => sortTransactions(filteredDocs, sortBy, sortDirection),
+    [filteredDocs, sortBy, sortDirection]
+  );
   const visibleTransactions = useMemo(
-    () => visibleTransactionBatch(filteredDocs, visibleTransactionCount),
-    [filteredDocs, visibleTransactionCount]
+    () => visibleTransactionBatch(sortedDocs, visibleTransactionCount),
+    [sortedDocs, visibleTransactionCount]
   );
   useEffect(() => {
     setVisibleTransactionCount(TRANSACTION_PAGE_SIZE);
-  }, [user?.uid, selectedFilter, searchQuery, searchCategory, searchType]);
+  }, [user?.uid, selectedFilter, searchQuery, searchCategory, searchType, sortBy, sortDirection]);
 
   const hasActiveSearch = Boolean(searchQuery.trim() || searchCategory || searchType !== "all");
   const clearTransactionFilters = () => {
@@ -272,6 +278,7 @@ function Dashboard() {
     summary: false,
     charts: false,
     transactions: false,
+    filters: true,
   });
 
   const [preferencesLoadedFor, setPreferencesLoadedFor] = useState(null);
@@ -285,14 +292,19 @@ function Dashboard() {
         summary: false,
         charts: false,
         transactions: false,
+        filters: true,
         ...(saved.collapsedSections || {}),
       });
       setIsDataVisible(typeof saved.isDataVisible === "boolean"
         ? saved.isDataVisible
         : true);
+      setSortBy(isTransactionSortKey(saved.sortBy) ? saved.sortBy : "date");
+      setSortDirection(saved.sortDirection === "asc" ? "asc" : "desc");
     } catch {
-      setCollapsedSections({ overview: false, summary: false, charts: false, transactions: false });
+      setCollapsedSections({ overview: false, summary: false, charts: false, transactions: false, filters: true });
       setIsDataVisible(true);
+      setSortBy("date");
+      setSortDirection("desc");
     }
     setPreferencesLoadedFor(user.uid);
   }, [user?.uid, transactionPreferenceKey]);
@@ -302,12 +314,12 @@ function Dashboard() {
     try {
       localStorage.setItem(
         transactionPreferenceKey,
-        JSON.stringify({ collapsedSections, isDataVisible })
+        JSON.stringify({ collapsedSections, isDataVisible, sortBy, sortDirection })
       );
     } catch {
       // Browsers can disable local storage; the UI still works in memory.
     }
-  }, [user?.uid, preferencesLoadedFor, transactionPreferenceKey, collapsedSections, isDataVisible]);
+  }, [user?.uid, preferencesLoadedFor, transactionPreferenceKey, collapsedSections, isDataVisible, sortBy, sortDirection]);
 
   const toggleDashboardSection = (section) =>
     setCollapsedSections((current) => ({
@@ -691,6 +703,12 @@ function Dashboard() {
               onCategoryChange={setSearchCategory}
               transactionType={searchType}
               onTypeChange={setSearchType}
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+              sortDirection={sortDirection}
+              onSortDirectionChange={setSortDirection}
+              collapsed={collapsedSections.filters}
+              onToggle={() => toggleDashboardSection("filters")}
               categories={categories || []}
               resultCount={filteredDocs.length}
               totalCount={(docs || []).length}
