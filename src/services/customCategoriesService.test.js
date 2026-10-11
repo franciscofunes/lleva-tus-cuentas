@@ -1,4 +1,5 @@
 import { saveCustomCategory } from './customCategoriesService';
+import firebase from 'firebase/compat/app';
 import { firestore } from '../shared/config/firebase/firebase.config';
 
 jest.mock('firebase/compat/app', () => ({
@@ -19,6 +20,7 @@ beforeEach(() => {
   // CRA/Jest may reset mocks between suites. Restore every link in the
   // Firestore collection -> user document -> category collection -> doc chain.
   set.mockResolvedValue(undefined);
+  firebase.firestore.FieldValue.serverTimestamp.mockReturnValue('server-time');
   doc.mockImplementation(() => ({ set }));
   collection.mockImplementation(() => ({ doc }));
   firestore.collection.mockImplementation(() => ({
