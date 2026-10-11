@@ -30,13 +30,13 @@ beforeEach(() => {
 
 test('stores the due-date option only in the private user category and uses allowed field', async () => {
   await saveCustomCategory('userA', {
-    name: 'Alquiler', isExpense: true, dateBehavior: 'due-date',
+    name: 'Alquiler', isExpense: true, dateBehavior: 'separate-due-date',
   }, customCategories);
   expect(firestore.collection).toHaveBeenCalledWith('users');
   expect(collection).toHaveBeenCalledWith('customCategories');
   expect(set).toHaveBeenCalledWith({
     name: 'Alquiler', isExpense: true, active: true,
-    dateBehavior: 'due-date', createdAt: 'server-time', updatedAt: 'server-time',
+    dateBehavior: 'separate-due-date', createdAt: 'server-time', updatedAt: 'server-time',
   });
 });
 
@@ -51,4 +51,11 @@ test('rejects arbitrary date behavior before writing to Firestore', async () => 
     name: 'Alquiler', isExpense: true, dateBehavior: 'date-of-purchase',
   }, customCategories)).rejects.toThrow(/vencimiento/);
   expect(set).not.toHaveBeenCalled();
+});
+
+test('legacy due-date category configuration remains accepted without rewriting historical behavior', async () => {
+  await saveCustomCategory('userA', {
+    name: 'Servicio anterior', isExpense: true, dateBehavior: 'due-date',
+  }, customCategories);
+  expect(set.mock.calls[0][0].dateBehavior).toBe('due-date');
 });
