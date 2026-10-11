@@ -150,6 +150,6 @@ test('a prepared PDF can also be shared as a real file', async () => {
   fireEvent.change(screen.getByLabelText('Formato para compartir'), { target: { value: 'pdf' } });
   fireEvent.click(screen.getByRole('button', { name: 'Compartir con otra aplicación' }));
   await waitFor(() => expect(share).toHaveBeenCalledWith(expect.objectContaining({
-    files: [expect.objectContaining({ name: expect.stringMatching(/\\.pdf$/), type: 'application/pdf' })],
+    files: [expect.objectContaining({ name: expect.stringMatching(/[.]pdf$/), type: 'application/pdf' })],
   })));
 });
