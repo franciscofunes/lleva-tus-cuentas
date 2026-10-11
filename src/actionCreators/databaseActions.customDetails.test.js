@@ -50,3 +50,34 @@ test('only approved nonempty metadata keys are written on existing transaction e
   expect(saved.customDetails).toEqual({ paymentMethod: 'debito', reference: 'A-23' });
   expect(saved.amount).toBe('2500');
 });
+
+test('service bill stores a separately controlled due date and reminder on edits', async () => {
+  await updateDataAction({
+    ...base, selectedExpirationDate: '2026-10-25',
+    dueDate: '2026-10-25', notificationEnabled: true,
+    notificationLeadDays: 5,
+  }, 'expense-1')(jest.fn());
+  const saved = update.mock.calls[0][0];
+  expect(saved.selectedDate).toBe('2026-10-10');
+  expect(saved.selectedExpirationDate).toBe('2026-10-25');
+  expect(saved.dueDate).toBe('2026-10-25');
+  expect(saved.notificationEnabled).toBe(true);
+});
+
+test('editing a service bill with an erased due date clears only the prior expiration', async () => {
+  await updateDataAction({
+    ...base, selectedExpirationDate: '', clearSelectedExpirationDate: true,
+    dueDate: '', notificationEnabled: false,
+  }, 'expense-1')(jest.fn());
+  const saved = update.mock.calls[0][0];
+  expect(saved.selectedExpirationDate).toBe('');
+  expect(saved.dueDate).toBeNull();
+  expect(saved.selectedDate).toBe('2026-10-10');
+});
+
+test('legacy edits without an expiration date do not create that property', async () => {
+  await updateDataAction({
+    ...base, selectedExpirationDate: '', clearSelectedExpirationDate: false,
+  }, 'expense-1')(jest.fn());
+  expect(update.mock.calls[0][0]).not.toHaveProperty('selectedExpirationDate');
+});
