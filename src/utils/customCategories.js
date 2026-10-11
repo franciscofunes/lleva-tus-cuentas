@@ -19,10 +19,10 @@ export const displayCategoryName = (canonicalName, categories = []) =>
   String(canonicalName || '');
 
 export const validateCategoryDisplayName = (name, categories = [], editingId = null) => {
-  const clean = String(name || '').replace(/\\s+/g, ' ').trim();
+  const clean = String(name || '').replace(/\s+/g, ' ').trim();
   if (clean.length < 2 || clean.length > 50)
     return 'Ingresá un nombre de entre 2 y 50 caracteres.';
-  if (/[\\r\\n<>]/.test(clean))
+  if (/[\r\n<>]/.test(clean))
     return 'El nombre contiene caracteres no permitidos.';
   const normalized = normalizeCategoryName(clean);
   if (reservedCategoryLabels.some((term) => normalized.includes(term)))
