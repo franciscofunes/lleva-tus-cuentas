@@ -68,3 +68,12 @@ describe('transaction search and filters', () => {
     expect(filterTransactions(null, { query: 'visa' })).toEqual([]);
   });
 });
+
+it('finds transactions by edited category labels while preserving original filters and type classification', () => {
+  const withAlias = [...categories, { name: 'Mascotas', displayName: 'Cuidado animal', isExpense: true }];
+  const transactions = [{ id:'pet-1',category:'Mascotas',expenseName:'Veterinaria',amount:2000 }];
+  expect(filterTransactions(transactions,{categories:withAlias,query:'cuidado animal'}).map(x=>x.id))
+    .toEqual(['pet-1']);
+  expect(filterTransactions(transactions,{categories:withAlias,category:'Mascotas',type:'expense'}).map(x=>x.id))
+    .toEqual(['pet-1']);
+});
