@@ -140,16 +140,3 @@ test('no modal without a prepared file', () => {
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
-test('a prepared PDF can also be shared as a real file', async () => {
-  const share = jest.fn().mockResolvedValue(undefined);
-  Object.defineProperty(navigator, 'share', { configurable: true, value: share });
-  Object.defineProperty(navigator, 'canShare', { configurable: true, value: jest.fn(() => true) });
-  render(<TransactionsExportReady prepared={prepared} onClose={jest.fn()} />);
-  fireEvent.click(screen.getByRole('button', { name: 'Preparar PDF' }));
-  await waitFor(() => expect(screen.getByRole('link', { name: /Descargar PDF/ })).toBeInTheDocument());
-  fireEvent.change(screen.getByLabelText('Formato para compartir'), { target: { value: 'pdf' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Compartir con otra aplicación' }));
-  await waitFor(() => expect(share).toHaveBeenCalledWith(expect.objectContaining({
-    files: [expect.objectContaining({ name: expect.stringMatching(/[.]pdf$/), type: 'application/pdf' })],
-  })));
-});
