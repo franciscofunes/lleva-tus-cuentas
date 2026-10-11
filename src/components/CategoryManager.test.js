@@ -92,3 +92,39 @@ test('allows at most three extra presets and never changes mandatory base fields
   fireEvent.click(screen.getByLabelText('Medio de pago'));
   expect(screen.getByLabelText('Fecha de operación adicional')).toBeEnabled();
 });
+
+test('opt-in due date is saved on a new personal category without consuming the three optional extra fields', async () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  fireEvent.change(screen.getByLabelText('Nombre de la categoría'), { target: { value: 'Expensas edificio' } });
+  expect(screen.getByLabelText('Fecha de vencimiento')).not.toBeChecked();
+  fireEvent.click(screen.getByLabelText('Fecha de vencimiento'));
+  fireEvent.click(screen.getByLabelText('Referencia / ID de operación'));
+  fireEvent.click(screen.getByLabelText('Medio de pago'));
+  fireEvent.click(screen.getByLabelText('Número de comprobante'));
+  expect(screen.getByLabelText('Fecha de operación adicional')).toBeDisabled();
+  expect(screen.getByLabelText('Fecha de vencimiento')).toBeChecked();
+  fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
+  await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA', {
+    name: 'Expensas edificio', isExpense: true,
+    extraFieldIds: ['reference', 'paymentMethod', 'receiptNumber'], dateBehavior: 'due-date',
+  }, categories));
+  expect(screen.getByLabelText('Fecha de vencimiento')).not.toBeChecked();
+});
+
+test('an unchecked due-date option preserves legacy normal category data', async () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  fireEvent.change(screen.getByLabelText('Nombre de la categoría'), { target: { value: 'Papelería' } });
+  fireEvent.click(screen.getByLabelText('Fecha de vencimiento'));
+  fireEvent.click(screen.getByLabelText('Fecha de vencimiento'));
+  fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
+  await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA', {
+    name: 'Papelería', isExpense: true,
+  }, categories));
+});
+
+test('the list shows which historical custom categories were configured with a due date', () => {
+  render(<CategoryManager userId='userA' categories={[...categories,
+    { id: 'rent', name: 'Alquiler', active: true, isCustom: true, origin: 'custom', isExpense: true, dateBehavior: 'due-date' },
+  ]} />);
+  expect(screen.getByText(/Con vencimiento/)).toBeInTheDocument();
+});
