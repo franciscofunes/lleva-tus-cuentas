@@ -17,6 +17,7 @@ const notificationPayload = (data, sourceId, includeCreatedAt = false) => ({
 	sourceId,
 	title: data.name || 'Vencimiento',
 	category: data.category || '',
+	transactionCurrency: data.transactionCurrency === 'USD' ? 'USD' : 'ARS',
 	dueDate: data.dueDate,
 	amount: Number.isFinite(Number(data.amount)) ? Number(data.amount) : null,
 	leadDays: Number.isFinite(Number(data.notificationLeadDays))
