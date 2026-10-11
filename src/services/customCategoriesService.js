@@ -1,6 +1,6 @@
 import firebase from 'firebase/compat/app';
 import { firestore } from '../shared/config/firebase/firebase.config';
-import { categoryDocumentId, validateCustomCategory, validateCustomCategoryDateBehavior, CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } from '../utils/customCategories';
+import { categoryDocumentId, validateCategoryDisplayName, validateCustomCategory, validateCustomCategoryDateBehavior, CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } from '../utils/customCategories';
 import { validateCategoryExtraFields } from '../utils/categoryExtraFields';
 
 const collectionForUser = (uid) => firestore.collection('users').doc(uid).collection('customCategories');
@@ -31,4 +31,24 @@ export const setCustomCategoryActive = async (uid, id, active) => {
   await collectionForUser(uid).doc(id).update({
     active, updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   });
+};
+
+/**
+ * Safe rename: the immutable canonical name remains the Firestore reference
+ * used by old expenses, charts and reminders. Only the visible label changes.
+ * No data migration, reclassification or extra write quota is required.
+ */
+export const updateCustomCategoryLabel = async (uid, entry, nextLabel, categories = []) => {
+  if (!uid || !entry?.id || entry?.origin !== 'custom' || entry?.isCustom !== true)
+    throw new Error('Solo podés editar categorías personales.');
+  const label = String(nextLabel || '').replace(/\\s+/g, ' ').trim();
+  const error = validateCategoryDisplayName(label, categories, entry.id);
+  if (error) throw new Error(error);
+  // A label matching the canonical name resets the visual override.
+  const displayName = label === entry.name ? entry.name : label;
+  await collectionForUser(uid).doc(entry.id).update({
+    displayName,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+  return displayName;
 };
