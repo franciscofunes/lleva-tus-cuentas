@@ -82,7 +82,7 @@ test('native share passes the selected Excel file with LTC$ title to Android', a
     title: 'LTC$ · Movimientos',
     files: [expect.objectContaining({ name: prepared.filename })],
   })));
-  expect(screen.getByRole('status')).toHaveTextContent('Confirmá el envío');
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Confirmá el envío'));
 });
 
 test('unsupported native file sharing provides fallback instead of doing nothing', async () => {
