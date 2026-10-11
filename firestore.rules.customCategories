@@ -1,11 +1,16 @@
 // LTC — categorías personales (Firebase Spark compatible).
 //
-// Pegar SOLO este match dentro de:
+// IMPORTANTE: insertar o reemplazar SOLO este match DENTRO de:
 // service cloud.firestore { match /databases/{database}/documents { ... } }
+// NO pegarlo antes de match /databases ni conservar dos versiones de
+// /users/{uid}/customCategories/{categoryId}.
+// Firebase debe confirmar "Publish" antes de probar Guardar cambios.
 //
 // NO reemplazar el ruleset existente (cardStatements, litaChats,
 // notifications, portfolioPositions, subscribers, etc.).
 // extraFieldIds es una lista opcional e INMUTABLE de claves permitidas.
+// displayName es opcional, validado y EDITABLE por el dueño.
+// name, isExpense, extraFieldIds y dateBehavior permanecen INMUTABLES.
 // dateBehavior es opcional e INMUTABLE: 'due-date' legado o
 // 'separate-due-date' para un vencimiento independiente.
 // Además de estas reglas, actualizar la validación del match de expenses
@@ -50,7 +55,7 @@ match /users/{uid}/customCategories/{categoryId} {
   function validPersonalCategory() {
     let d = request.resource.data;
     return d.keys().hasAll(['name', 'isExpense', 'active', 'createdAt', 'updatedAt'])
-      && d.keys().hasOnly(['name', 'isExpense', 'active', 'createdAt', 'updatedAt', 'extraFieldIds', 'dateBehavior'])
+      && d.keys().hasOnly(['name', 'isExpense', 'active', 'createdAt', 'updatedAt', 'extraFieldIds', 'dateBehavior', 'displayName'])
       && categoryId.matches('^[a-z0-9-]{3,80}$')
       && d.name is string
       && d.name.size() >= 2
@@ -60,6 +65,7 @@ match /users/{uid}/customCategories/{categoryId} {
       && d.active is bool
       && validExtraFieldSelection(d)
       && validCategoryDateBehavior(d)
+      && validCategoryDisplayName(d)
       && d.createdAt is timestamp
       && d.updatedAt is timestamp;
   }
@@ -72,12 +78,12 @@ match /users/{uid}/customCategories/{categoryId} {
     && request.resource.data.createdAt == request.time
     && request.resource.data.updatedAt == request.time;
 
-  // Never rename or change type: historical transactions depend on them.
-  // Soft archive and reactivate are the ONLY permitted updates.
+  // Preserve canonical name/type and historical references. Permit a safe
+  // display-only rename and archive/reactivate for the signed-in owner.
   allow update: if ownsCustomCategories()
     && validPersonalCategory()
     && request.resource.data.diff(resource.data).affectedKeys()
-       .hasOnly(['active', 'updatedAt'])
+       .hasOnly(['active', 'displayName', 'updatedAt'])
     && request.resource.data.createdAt == resource.data.createdAt
     && request.resource.data.name == resource.data.name
     && request.resource.data.isExpense == resource.data.isExpense
