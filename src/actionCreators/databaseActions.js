@@ -141,9 +141,8 @@ export const updateDataAction = (data, docId) => {
 					amount: data?.amount,
 				}),
 				selectedDate: data.selectedDate,
-				...(data?.selectedExpirationDate && {
-					selectedExpirationDate: data?.selectedExpirationDate,
-				}),
+				...(data?.selectedExpirationDate ? { selectedExpirationDate: data.selectedExpirationDate }
+          : data?.clearSelectedExpirationDate ? { selectedExpirationDate: '' } : {}),
 				...(data?.selectedCloseDate && {
 					selectedCloseDate: data?.selectedCloseDate,
 				}),

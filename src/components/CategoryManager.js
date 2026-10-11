@@ -3,7 +3,7 @@ import { FaCheck, FaPlus, FaTag } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { saveCustomCategory, setCustomCategoryActive } from '../services/customCategoriesService';
 import { normalizeCategoryName, validateCustomCategory } from '../utils/customCategories';
-import { CATEGORY_EXTRA_FIELD_CATALOG, MAX_EXTRA_FIELDS, validateCategoryExtraFields } from '../utils/categoryExtraFields';
+import { CATEGORY_EXTRA_FIELD_CATALOG, MAX_EXTRA_FIELDS, SERVICE_EXTRA_FIELD_PRESET, validateCategoryExtraFields } from '../utils/categoryExtraFields';
 
 const fieldClass = 'w-full min-h-[44px] rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white';
 
@@ -88,9 +88,15 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
           <p className='text-xs leading-5 text-slate-600 dark:text-slate-300'>
             Incluidos en todas las categorías: nombre, categoría, monto, fecha y descripción.
           </p>
-          <p className='text-xs font-bold text-purple-700 dark:text-purple-300'>
-            Adicionales opcionales ({extraFieldIds.length}/{MAX_EXTRA_FIELDS})
-          </p>
+          <div className='flex flex-wrap items-center justify-between gap-2'>
+            <p className='text-xs font-bold text-purple-700 dark:text-purple-300'>
+              Adicionales opcionales ({extraFieldIds.length}/{MAX_EXTRA_FIELDS})
+            </p>
+            <button type='button' disabled={Boolean(working)} onClick={() => { setIsExpense(true); setExtraFieldIds([...SERVICE_EXTRA_FIELD_PRESET]); }}
+              className='rounded-lg border border-purple-300 px-2.5 py-1.5 text-xs font-bold text-purple-700 hover:bg-purple-100 focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-purple-500/50 dark:text-purple-200 dark:hover:bg-purple-500/20'>
+              Usar plantilla Servicios
+            </button>
+          </div>
           <div className='grid gap-1.5 sm:grid-cols-2'>
             {CATEGORY_EXTRA_FIELD_CATALOG.map((field) => {
               const checked = extraFieldIds.includes(field.id);
@@ -107,6 +113,7 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
           </div>
           <p className='text-xs text-slate-500 dark:text-slate-400'>
             Son campos controlados por LTC: no alteran cálculos ni reemplazan los campos especiales de tarjetas o divisas.
+            Si elegís fecha de vencimiento, LTC la conecta a sus recordatorios y la separa de la fecha del gasto.
             La selección queda fija para proteger los movimientos históricos.
           </p>
         </section>

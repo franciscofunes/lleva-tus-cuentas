@@ -239,6 +239,7 @@ function Dashboard() {
   const [category, setCategory] = useState("");
   const [customDetails, setCustomDetails] = useState({});
   const [hasSavedCustomDetails, setHasSavedCustomDetails] = useState(false);
+  const [hasSavedExpirationDate, setHasSavedExpirationDate] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
 
   const [isCreditCardCategory, setIsCreditCardCategory] = useState(false);
@@ -464,6 +465,7 @@ function Dashboard() {
     setHasSavedCustomDetails(Boolean(Object.keys(transaction.customDetails || {}).length));
     setSelectedDate(transaction.selectedDate || "");
     setSelectedExpirationDate(transaction.selectedExpirationDate || "");
+    setHasSavedExpirationDate(Boolean(transaction.selectedExpirationDate));
     setSelectedCloseDate(transaction.selectedCloseDate || "");
     setCurrencyQuantity(transaction.currencyQuantity ?? "");
     setCurrencyExchangeRate(transaction.currencyExchangeRate ?? "");
@@ -553,6 +555,7 @@ function Dashboard() {
     setCategory("");
     setCustomDetails({});
     setHasSavedCustomDetails(false);
+    setHasSavedExpirationDate(false);
     setSelectedDate("");
     setSelectedExpirationDate("");
     setSelectedCloseDate("");
@@ -735,6 +738,7 @@ function Dashboard() {
                     customDetails={doc.customDetails || {}}
                     setCustomDetails={setCustomDetails}
                     setHasSavedCustomDetails={setHasSavedCustomDetails}
+                    setHasSavedExpirationDate={setHasSavedExpirationDate}
                     selectedDate={doc.selectedDate}
                     selectedExpirationDate={doc.selectedExpirationDate}
                     selectedCloseDate={doc.selectedCloseDate}
@@ -814,6 +818,7 @@ function Dashboard() {
             customDetails={customDetails}
             setCustomDetails={setCustomDetails}
             hasSavedCustomDetails={hasSavedCustomDetails}
+            hasSavedExpirationDate={hasSavedExpirationDate}
             selectedDate={selectedDate}
             selectedExpirationDate={selectedExpirationDate}
             selectedCloseDate={selectedCloseDate}
@@ -862,6 +867,7 @@ function Dashboard() {
             onCreated={isOpen ? (newCategoryName) => {
               setCategory(newCategoryName);
               setCustomDetails({});
+              setSelectedExpirationDate("");
               setIsCreditCardCategory(false);
               setIsBuyCurrenciesCategory(false);
               setIsCurrencyIncomeCategory(false);

@@ -27,6 +27,7 @@ function Card({
 	customDetails = {},
 	setCustomDetails = () => {},
 	setHasSavedCustomDetails = () => {},
+	setHasSavedExpirationDate = () => {},
 	name,
 	setName,
 	setAmount,
@@ -52,6 +53,7 @@ function Card({
 	const safeCategories = Array.isArray(categories) ? categories.filter(Boolean) : [];
 	const isExpense = safeCategories.some((entry) => entry?.isExpense && entry.name === safeCategory);
 	const selectedDateIsDueDate = usesSelectedDateAsDueDate(safeCategory, safeCategories);
+  const hasSeparateDueDate = safeCategories.some((entry) => entry.name === safeCategory && entry.extraFieldIds?.includes('dueDate'));
 	const isPaidBill = paymentStatus === 'paid';
 	const paidAtDate =
 		paidAt && typeof paidAt.toDate === 'function'
@@ -75,6 +77,7 @@ function Card({
 		setSelectedDate(selectedDate);
 		setSelectedCloseDate(selectedCloseDate);
 		setSelectedExpirationDate(selectedExpirationDate);
+		setHasSavedExpirationDate(Boolean(selectedExpirationDate));
 		setCurrencyQuantity(currencyQuantity);
 		setCurrencyExchangeRate(currencyExchangeRate);
 		setIsCreditCardCategory(safeCategory.includes('Resumen tarjeta'));
@@ -161,6 +164,12 @@ function Card({
 					{moment(selectedDate).format('DD/MM/YYYY')}
 				</p>
 
+        {hasSeparateDueDate && selectedExpirationDate && (
+          <p className='font-semibold text-base text-gray-400'>
+            <span className='text-indigo-600 dark:text-indigo-300'>Vence: </span>
+            {moment(selectedExpirationDate).format('DD/MM/YYYY')}
+          </p>
+        )}
 				{displayTransactionCustomDetails(customDetails).length > 0 && (
           <div className='mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300' aria-label='Datos adicionales de la transacción'>
             {displayTransactionCustomDetails(customDetails).map((detail) => (

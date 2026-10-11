@@ -1,5 +1,6 @@
 import {
 	getNotificationSettings,
+  hasExplicitCategoryDueDate,
 	isPublicServiceCategory,
 	resolveTransactionDueDate,
 	usesSelectedDateAsDueDate,
@@ -49,4 +50,35 @@ describe('transaction due-date helpers', () => {
 			})
 		).toBe('2026-10-20');
 	});
+});
+
+describe('controlled service due dates', () => {
+  const categories = [
+    { name: 'Servicio Telefonía', extraFieldIds: ['dueDate', 'serviceAccount', 'billingPeriod'] },
+    { name: 'Internet' },
+  ];
+  test('configured service separates operation date and payable due date', () => {
+    expect(hasExplicitCategoryDueDate('Servicio Telefonía', categories)).toBe(true);
+    expect(usesSelectedDateAsDueDate('Servicio Telefonía', categories)).toBe(false);
+    expect(resolveTransactionDueDate({
+      category: 'Servicio Telefonía', categories,
+      selectedDate: '2026-10-10', selectedExpirationDate: '2026-10-25',
+    })).toBe('2026-10-25');
+    expect(getNotificationSettings('Servicio Telefonía', categories))
+      .toEqual({ enabled: true, leadDays: 5 });
+  });
+
+  test('empty due date does not create a reminder', () => {
+    expect(resolveTransactionDueDate({
+      category: 'Servicio Telefonía', categories,
+      selectedDate: '2026-10-10', selectedExpirationDate: '',
+    })).toBe('');
+  });
+
+  test('existing service categories without configured date still use the original behavior', () => {
+    expect(usesSelectedDateAsDueDate('Internet', categories)).toBe(true);
+    expect(resolveTransactionDueDate({
+      category: 'Internet', categories, selectedDate: '2026-10-10', selectedExpirationDate: '',
+    })).toBe('2026-10-10');
+  });
 });

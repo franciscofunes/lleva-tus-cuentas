@@ -27,11 +27,14 @@ const initialCategories = [
   { id: 'salary', name: 'Salario 💲', isExpense: false, active: true },
   { id: 'freelance', name: 'Freelance', isExpense: false, active: true,
     extraFieldIds: ['reference', 'paymentMethod'], origin: 'custom', isCustom: true },
+  { id: 'service', name: 'Servicio Telefonía', isExpense: true, active: true,
+    extraFieldIds: ['dueDate', 'serviceAccount', 'billingPeriod'], origin: 'custom', isCustom: true },
 ];
 
 function TransactionHarness({ initialCategory = 'Transporte 🚌', onCategoryFlags = {} }) {
   const [category, setCategory] = useState(initialCategory);
   const [customDetails, setCustomDetails] = useState({});
+  const [selectedExpirationDate, setSelectedExpirationDate] = useState('');
   const [name, setName] = useState('Taxi de regreso');
   const [openManager, setOpenManager] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
@@ -45,7 +48,7 @@ function TransactionHarness({ initialCategory = 'Transporte 🚌', onCategoryFla
         category={category} setCategory={setCategory}
         customDetails={customDetails} setCustomDetails={setCustomDetails}
         selectedDate='2026-10-10' setSelectedDate={noop}
-        selectedExpirationDate='' setSelectedExpirationDate={noop}
+        selectedExpirationDate={selectedExpirationDate} setSelectedExpirationDate={setSelectedExpirationDate}
         selectedCloseDate='' setSelectedCloseDate={noop}
         currencyQuantity='' setCurrencyQuantity={noop}
         currencyExchangeRate='' setCurrencyExchangeRate={noop}
@@ -132,4 +135,27 @@ test('switching categories removes stale custom metadata from the transaction dr
   expect(screen.queryByLabelText('Referencia / ID de operación')).not.toBeInTheDocument();
   fireEvent.change(screen.getByRole('combobox', { name: 'Categoría' }), { target: { value: 'Freelance' } });
   expect(screen.getByLabelText('Referencia / ID de operación')).toHaveValue('');
+});
+
+test('service category keeps operation date, selects billing month and edits dedicated due date', () => {
+  render(<TransactionHarness initialCategory='Servicio Telefonía' />);
+  const section = screen.getByRole('region', { name: 'Datos adicionales de la categoría' });
+  expect(section).toHaveTextContent(/vencimiento genera recordatorios/);
+  const expiry = screen.getByLabelText('Fecha de vencimiento');
+  expect(expiry).toHaveAttribute('type', 'date');
+  fireEvent.change(expiry, { target: { value: '2026-10-25' } });
+  expect(expiry).toHaveValue('2026-10-25');
+  expect(screen.getByLabelText('Período facturado')).toHaveAttribute('type', 'month');
+  fireEvent.change(screen.getByLabelText('Período facturado'), { target: { value: '2026-09' } });
+  expect(screen.getByLabelText('Período facturado')).toHaveValue('2026-09');
+  expect(screen.getByDisplayValue('2026-10-10')).toBeInTheDocument();
+});
+
+test('switching to another category clears the service due date instead of carrying it over', () => {
+  render(<TransactionHarness initialCategory='Servicio Telefonía' />);
+  fireEvent.change(screen.getByLabelText('Fecha de vencimiento'), { target: { value: '2026-10-25' } });
+  fireEvent.change(screen.getByRole('combobox', { name: 'Categoría' }), { target: { value: 'Salario 💲' } });
+  expect(screen.queryByLabelText('Fecha de vencimiento')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole('combobox', { name: 'Categoría' }), { target: { value: 'Servicio Telefonía' } });
+  expect(screen.getByLabelText('Fecha de vencimiento')).toHaveValue('');
 });

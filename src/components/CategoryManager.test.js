@@ -92,3 +92,19 @@ test('allows at most three extra presets and never changes mandatory base fields
   fireEvent.click(screen.getByLabelText('Medio de pago'));
   expect(screen.getByLabelText('Fecha de operación adicional')).toBeEnabled();
 });
+
+test('service template selects three supported fields and a service expense', async () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  fireEvent.change(screen.getByLabelText('Nombre de la categoría'), { target: { value: 'Facturas del hogar' } });
+  fireEvent.click(screen.getByLabelText('Ingreso'));
+  fireEvent.click(screen.getByRole('button', { name: 'Usar plantilla Servicios' }));
+  expect(screen.getByLabelText('Gasto')).toBeChecked();
+  expect(screen.getByLabelText('Fecha de vencimiento')).toBeChecked();
+  expect(screen.getByLabelText('Número de cliente / suministro')).toBeChecked();
+  expect(screen.getByLabelText('Período facturado')).toBeChecked();
+  fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
+  await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA', {
+    name: 'Facturas del hogar', isExpense: true,
+    extraFieldIds: ['dueDate', 'serviceAccount', 'billingPeriod'],
+  }, categories));
+});
