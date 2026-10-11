@@ -1,6 +1,6 @@
 import firebase from 'firebase/compat/app';
 import { firestore } from '../shared/config/firebase/firebase.config';
-import { categoryDocumentId, validateCategoryDisplayName, validateCustomCategory, validateCustomCategoryDateBehavior, CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } from '../utils/customCategories';
+import { categoryDocumentId, validateCategoryDisplayName, validateCustomCategory, validateCustomCategoryDateBehavior, CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, validCategoryCurrency } from '../utils/customCategories';
 import { validateCategoryExtraFields } from '../utils/categoryExtraFields';
 
 const collectionForUser = (uid) => firestore.collection('users').doc(uid).collection('customCategories');
@@ -11,12 +11,14 @@ export const saveCustomCategory = async (uid, draft, categories = []) => {
   const extraFieldIds = draft.extraFieldIds || [];
   const invalid = validateCustomCategory({ name, isExpense: draft.isExpense }, categories)
     || validateCategoryExtraFields(extraFieldIds)
-    || validateCustomCategoryDateBehavior(draft.dateBehavior);
+    || validateCustomCategoryDateBehavior(draft.dateBehavior)
+    || (!validCategoryCurrency(draft.currency) ? 'Elegí ARS o USD.' : null);
   if (invalid) throw new Error(invalid);
   const id = categoryDocumentId(name);
   // Deterministic ID plus create() prevents racing tabs creating duplicate categories.
   await collectionForUser(uid).doc(id).set({
     name, isExpense: draft.isExpense, active: true,
+    currency: draft.currency === 'USD' ? 'USD' : 'ARS',
     ...(extraFieldIds.length ? { extraFieldIds } : {}),
     ...([CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR].includes(draft.dateBehavior)
       ? { dateBehavior: draft.dateBehavior } : {}),
@@ -51,4 +53,17 @@ export const updateCustomCategoryLabel = async (uid, entry, nextLabel, categorie
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   });
   return displayName;
+};
+
+// Category currency is only a default for subsequent transactions.
+// Historical expenses keep their persisted transactionCurrency (legacy: ARS).
+export const updateCustomCategoryCurrency = async (uid, entry, nextCurrency) => {
+  if (!uid || !entry?.id || !entry?.isCustom || entry?.origin !== 'custom')
+    throw new Error('Solo podés modificar categorías personales.');
+  if (!['ARS', 'USD'].includes(nextCurrency)) throw new Error('Moneda inválida.');
+  await collectionForUser(uid).doc(entry.id).update({
+    currency: nextCurrency,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+  return nextCurrency;
 };
