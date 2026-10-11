@@ -99,7 +99,7 @@ describe('portfolio export adapters for the shared LTC$ file modal', () => {
     expect(csv).toContain("'=IMPORTDATA");
     expect(csv).toContain('300');
     expect(csv).toContain('120000');
-    expect(csv.trim().split(/\\r\\n/)).toHaveLength(3);
+    expect(csv.trim().split(/\r\n/)).toHaveLength(3);
   });
 
   test('prepares private XLSX/CSV Blobs plus PDF inputs without auto downloading', () => {
