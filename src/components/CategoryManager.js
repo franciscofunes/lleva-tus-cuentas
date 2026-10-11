@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { FaCheck, FaPlus, FaTag } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { saveCustomCategory, setCustomCategoryActive } from '../services/customCategoriesService';
-import { normalizeCategoryName, validateCustomCategory } from '../utils/customCategories';
+import { CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, normalizeCategoryName, validateCustomCategory } from '../utils/customCategories';
 import { CATEGORY_EXTRA_FIELD_CATALOG, MAX_EXTRA_FIELDS, validateCategoryExtraFields } from '../utils/categoryExtraFields';
 
 const fieldClass = 'w-full min-h-[44px] rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white';
@@ -11,6 +11,7 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
   const [name, setName] = useState('');
   const [isExpense, setIsExpense] = useState(true);
   const [extraFieldIds, setExtraFieldIds] = useState([]);
+  const [hasDueDate, setHasDueDate] = useState(false);
   const [working, setWorking] = useState('');
   const [error, setError] = useState('');
   const customCategories = useMemo(() =>
@@ -34,9 +35,14 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
     setWorking('create');
     setError('');
     try {
-      await saveCustomCategory(userId, { name, isExpense, ...(extraFieldIds.length ? { extraFieldIds } : {}) }, categories);
+      await saveCustomCategory(userId, {
+        name, isExpense,
+        ...(extraFieldIds.length ? { extraFieldIds } : {}),
+        ...(hasDueDate ? { dateBehavior: CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } : {}),
+      }, categories);
       setName('');
       setExtraFieldIds([]);
+      setHasDueDate(false);
       toast.success('Categoría personal creada');
       // Only close/select automatically when launched from an active transaction.
       // The callback runs solely after Firestore confirms creation.
@@ -88,6 +94,18 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
           <p className='text-xs leading-5 text-slate-600 dark:text-slate-300'>
             Incluidos en todas las categorías: nombre, categoría, monto, fecha y descripción.
           </p>
+          <label className='flex min-h-[44px] items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800'>
+            <input type='checkbox' checked={hasDueDate} disabled={Boolean(working)}
+              onChange={(event) => setHasDueDate(event.target.checked)}
+              className='mt-0.5 h-4 w-4 shrink-0 accent-purple-600' />
+            <span className='min-w-0'>
+              <span className='block text-sm font-semibold text-slate-900 dark:text-slate-100'>Fecha de vencimiento</span>
+              <span className='mt-1 block text-xs leading-relaxed text-slate-600 dark:text-slate-300'>
+                La fecha principal de cada movimiento se usará como vencimiento y LTC podrá recordártelo
+                5 días antes. No agrega una segunda fecha ni consume los 3 campos adicionales.
+              </span>
+            </span>
+          </label>
           <p className='text-xs font-bold text-purple-700 dark:text-purple-300'>
             Adicionales opcionales ({extraFieldIds.length}/{MAX_EXTRA_FIELDS})
           </p>
@@ -124,7 +142,7 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
           <div key={entry.id} className='flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
             <div className='min-w-0'>
               <p className='break-words text-sm font-bold text-slate-900 dark:text-white'>{entry.name}</p>
-              <p className='text-xs text-slate-500 dark:text-slate-400'>{entry.isExpense ? 'Gasto' : 'Ingreso'} · {entry.active === false ? 'Archivada' : 'Activa'}</p>
+              <p className='text-xs text-slate-500 dark:text-slate-400'>{entry.isExpense ? 'Gasto' : 'Ingreso'} · {entry.active === false ? 'Archivada' : 'Activa'}{entry.dateBehavior === CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR ? ' · Con vencimiento' : ''}</p>
               {Array.isArray(entry.extraFieldIds) && entry.extraFieldIds.length > 0 && (
                 <p className='mt-1 text-xs text-purple-700 dark:text-purple-300'>{entry.extraFieldIds.length} campos adicionales</p>
               )}
