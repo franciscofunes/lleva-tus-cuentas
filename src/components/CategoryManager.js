@@ -95,7 +95,7 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
             Incluidos en todas las categorías: nombre, categoría, monto, fecha y descripción.
           </p>
           <label className='flex min-h-[44px] items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-700 dark:bg-slate-800'>
-            <input type='checkbox' checked={hasDueDate} disabled={Boolean(working)}
+            <input type='checkbox' aria-label='Fecha de vencimiento' checked={hasDueDate} disabled={Boolean(working)}
               onChange={(event) => setHasDueDate(event.target.checked)}
               className='mt-0.5 h-4 w-4 shrink-0 accent-purple-600' />
             <span className='min-w-0'>
