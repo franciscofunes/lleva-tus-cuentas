@@ -24,6 +24,7 @@ import SearchBar from "../components/SearchBar";
 import { filterTransactions } from "../utils/transactionSearch";
 import { sortTransactions, isTransactionSortKey } from "../utils/transactionSort";
 import { categoryContains } from "../utils/categoryContains";
+import { getTransactionCurrency } from "../utils/customCategories";
 import { TRANSACTION_PAGE_SIZE, visibleTransactionBatch } from "../utils/transactionsPagination";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
@@ -383,11 +384,11 @@ function Dashboard() {
         ?.map((category) => category.name);
 
       const expenses = docs
-        .filter((doc) => expensesCategories?.includes(doc?.category))
+        .filter((doc) => expensesCategories?.includes(doc?.category) && getTransactionCurrency(doc) === 'ARS')
         .map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
 
       const incomes = docs
-        .filter((doc) => !expensesCategories?.includes(doc?.category))
+        .filter((doc) => !expensesCategories?.includes(doc?.category) && getTransactionCurrency(doc) === 'ARS')
         .map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
 
       const currencyIncome = docs
@@ -442,7 +443,7 @@ function Dashboard() {
       scope: "current-view",
       spendingByCategory: summarizeSpendingByCategory(docs || [], categories || []),
       categories: (categories || []).filter((entry) => entry.active !== false)
-        .map(({ name, isExpense }) => ({ name, isExpense: Boolean(isExpense) })),
+        .map(({ name, isExpense, currency }) => ({ name, isExpense: Boolean(isExpense), currency: currency === 'USD' ? 'USD' : 'ARS' })),
       summary: {
         incomeArs: Number(income || 0),
         expensesArs: Number(expense || 0),
@@ -453,6 +454,7 @@ function Dashboard() {
         name: doc.expenseName || "",
         category: doc.category || "",
         amount: Number(doc.amount || 0),
+        transactionCurrency: getTransactionCurrency(doc),
         selectedDate: doc.selectedDate || "",
         comment: doc.comment || "",
         currencyQuantity: Number(doc.currencyQuantity || 0),
