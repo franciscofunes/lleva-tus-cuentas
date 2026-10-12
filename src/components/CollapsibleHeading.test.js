@@ -5,6 +5,7 @@ import CollapsibleSection from './CollapsibleSection';
 import FinancialOverviewPanel from './FinancialOverviewPanel';
 import {
   COLLAPSIBLE_HEADER_STYLES,
+  COLLAPSIBLE_SURFACE_STYLES,
   CollapsibleHeading,
   CollapsibleChevron,
 } from './CollapsibleHeading';
@@ -75,4 +76,42 @@ test('chevron rotates consistently and honors reduced-motion settings', () => {
   expect(collapsedClass).toContain('motion-reduce:transition-none');
   rerender(<CollapsibleChevron expanded />);
   expect(container.querySelector('svg')).toHaveClass('rotate-180');
+});
+
+test('Portfolio and Transactions widgets use the same visible surface and content divider', () => {
+  const { container } = render(
+    <>
+      <CollapsibleSection id='portfolio-summary' title='Resumen por moneda'
+        collapsed={false} onToggle={() => {}}><p>Saldo</p></CollapsibleSection>
+      <CollapsibleSection id='transactions-summary' title='Tu economía en ARS y USD'
+        collapsed={false} onToggle={() => {}}><p>Flujos</p></CollapsibleSection>
+      <FinancialOverviewPanel id='portfolio-overview' title='Portfolio de un vistazo'
+        collapsed={false} onToggle={() => {}} />
+    </>
+  );
+  for (const id of ['portfolio-summary', 'transactions-summary', 'portfolio-overview']) {
+    const el = container.querySelector('#' + id);
+    expect(el).toHaveClass(...COLLAPSIBLE_SURFACE_STYLES.root.split(' '));
+    expect(el.querySelector('button')).toHaveAttribute('aria-expanded', 'true');
+  }
+  expect(container.querySelector('#portfolio-summary-content')).toHaveClass('border-t','dark:border-slate-700');
+  expect(container.querySelector('#transactions-summary-content')).toHaveClass('border-t','dark:border-slate-700');
+});
+
+test('nested visualizations use subdued shared surfaces and semantic h3 labels', () => {
+  const { rerender, container } = render(
+    <CollapsibleSection id='portfolio-chart-allocation' variant='nested' title='Distribución por posición'
+      description='Por moneda' collapsed={false} onToggle={() => {}}>
+      <p>Lista por activo</p>
+    </CollapsibleSection>
+  );
+  const root = container.querySelector('#portfolio-chart-allocation');
+  expect(root).toHaveClass(...COLLAPSIBLE_SURFACE_STYLES.nested.split(' '));
+  expect(screen.getByRole('heading', { level:3, name:'Distribución por posición' })).toBeInTheDocument();
+  expect(screen.getByRole('button', {name:/Distribución por posición/})).toHaveAttribute('aria-expanded','true');
+  expect(screen.getByText('Lista por activo')).toBeInTheDocument();
+  rerender(<CollapsibleSection id='portfolio-chart-allocation' variant='nested' title='Distribución por posición'
+    collapsed onToggle={() => {}}><p>Lista por activo</p></CollapsibleSection>);
+  expect(screen.getByRole('button', {name:/Distribución por posición/})).toHaveAttribute('aria-expanded','false');
+  expect(screen.queryByText('Lista por activo')).not.toBeInTheDocument();
 });
