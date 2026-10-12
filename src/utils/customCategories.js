@@ -18,6 +18,28 @@ export const displayCategoryName = (canonicalName, categories = []) =>
   categoryLabel((categories || []).find((entry) => entry?.name === canonicalName)) ||
   String(canonicalName || '');
 
+// Optional human-readable category guidance shown by its info tooltip.
+// A category description is metadata, not a transaction comment or custom field.
+export const CATEGORY_DESCRIPTION_LIMIT = 500;
+export const normalizeCategoryDescription = (value = '') =>
+  String(value ?? '').replace(/\r\n?/g, '\n').trim();
+
+export const validateCategoryDescription = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string') return 'La descripción de la categoría debe ser texto.';
+  const description = normalizeCategoryDescription(value);
+  if (description.length > CATEGORY_DESCRIPTION_LIMIT)
+    return `La descripción puede tener hasta ${CATEGORY_DESCRIPTION_LIMIT} caracteres.`;
+  if (/[<>\x00-\x08\x0B\x0C\x0E-\x1F]/.test(description))
+    return 'La descripción contiene caracteres no permitidos.';
+  return null;
+};
+
+export const categoryDescription = (name, categories = []) => {
+  const found = (Array.isArray(categories) ? categories : []).find((entry) => entry?.name === name);
+  return typeof found?.description === 'string' ? found.description.trim() : '';
+};
+
 export const validateCategoryDisplayName = (name, categories = [], editingId = null) => {
   const clean = String(name || '').replace(/\s+/g, ' ').trim();
   if (clean.length < 2 || clean.length > 50)
