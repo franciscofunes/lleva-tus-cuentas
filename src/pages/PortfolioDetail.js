@@ -7,6 +7,8 @@ import { CollapsibleChevron, CollapsibleHeading } from '../components/Collapsibl
 import { deletePortfolioSnapshot, registerReconciliationTransaction, savePortfolioReconciliation, subscribePortfolioPositions, subscribePortfolioReconciliations, subscribePortfolioSnapshots, updatePortfolioSnapshot } from '../services/portfolioService';
 import AppFooter from '../components/AppFooter';
 import PortfolioHistoryModal from '../components/PortfolioHistoryModal';
+import PortfolioAccountOverview from '../components/PortfolioAccountOverview';
+import { accountMovementType, accountMovementLabel, groupAccountEarnings, sortedAccountSnapshots } from '../utils/portfolioAccountActivity';
 
 const money = (value, currency = 'USD') => new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(Number(value || 0));
 const asDate = (value) => value?.toDate ? value.toDate() : new Date(value);
@@ -27,16 +29,22 @@ const DetailSection = ({ id, title, subtitle, open, onToggle, children }) => (
 	</section>
 );
 
-const aggregate = (rows, mode) => Object.values(rows.reduce((acc,row) => {
-	const date=startOf(asDate(row.capturedAt),mode); const key=date.toISOString();
-	if(!acc[key]) acc[key]={date, earning:0, expected:0, checks:0};
-	acc[key].earning += Number(row.confirmedEarning ?? (row.changeType === 'earning' ? row.observedEarning : 0)); acc[key].expected += Number(row.expectedEarning || 0); acc[key].checks += 1; return acc;
-},{})).sort((a,b)=>a.date-b.date);
+const movementTone = (row) => {
+  const type = accountMovementType(row);
+  if (type === 'earning') return Number(row.observedEarning || 0) < 0
+    ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-400';
+  if (type === 'unclassified') return 'text-amber-700 dark:text-amber-300';
+  return 'text-slate-800 dark:text-slate-100';
+};
+const movementValue = (row, currency) =>
+  money(['withdrawal','deposit'].includes(accountMovementType(row))
+    ? Math.abs(Number(row.observedEarning || 0)) : row.observedEarning, currency);
 
 export default function PortfolioDetail() {
 	const { positionId } = useParams();
 	const user = useSelector((state) => state.auth.user);
 	const [positions,setPositions]=useState([]); const [snapshots,setSnapshots]=useState([]); const [reconciliations,setReconciliations]=useState([]); const [mode,setMode]=useState('day');
+	const [historyFilter,setHistoryFilter]=useState('all');
 	const [editing,setEditing]=useState(null); const [deleting,setDeleting]=useState(null); const [pendingAction,setPendingAction]=useState('');
 	const openEditModal = (row) => { if (pendingAction) return; setDeleting(null); setEditing({...row}); };
 	const openDeleteModal = (row) => { if (pendingAction) return; setEditing(null); setDeleting(row); };
@@ -48,11 +56,13 @@ export default function PortfolioDetail() {
 	const toggleSection=(key)=>setOpenSections((current)=>({...current,[key]:!current[key]}));
 	useEffect(() => { if(!user) return; const a=subscribePortfolioPositions(user.uid,setPositions,console.error); const b=subscribePortfolioSnapshots(user.uid,setSnapshots,console.error); const c=subscribePortfolioReconciliations(user.uid,setReconciliations,console.error); return()=>{a();b();c();}; },[user]);
 	const position=positions.find((item)=>item.id===positionId);
-	const history=useMemo(()=>snapshots.filter((item)=>item.positionId===positionId),[snapshots,positionId]);
-	const grouped=useMemo(()=>aggregate(history,mode),[history,mode]);
+	const history=useMemo(()=>sortedAccountSnapshots(snapshots.filter((item)=>item.positionId===positionId)),[snapshots,positionId]);
+	const filteredHistory=useMemo(()=>history.filter((row)=>historyFilter==='all' || (historyFilter==='earning' && accountMovementType(row)==='earning') || (historyFilter==='capital' && ['withdrawal','deposit'].includes(accountMovementType(row))) || (historyFilter==='other' && !['earning','withdrawal','deposit'].includes(accountMovementType(row)))),[history,historyFilter]);
+	const grouped=useMemo(()=>groupAccountEarnings(history,mode),[history,mode]);
 	const monthly=useMemo(()=>Object.values(history.reduce((acc,row)=>{ const d=asDate(row.capturedAt); const month=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; if(!acc[month]) acc[month]={month,rows:[],amount:0}; acc[month].rows.push(row); if(row.changeType==='earning') acc[month].amount += Number(row.confirmedEarning ?? row.observedEarning ?? 0); return acc; },{})).sort((a,b)=>b.month.localeCompare(a.month)),[history]);
-	const total=history.reduce((sum,item)=>sum+Number(item.confirmedEarning ?? (item.changeType === 'earning' ? item.observedEarning : 0)),0);
+	const total=history.reduce((sum,item)=>sum+(accountMovementType(item)==='earning' ? Number(item.confirmedEarning ?? item.observedEarning ?? 0) : 0),0);
 	const isFci = Boolean(position && (position.category === 'FCI' || position.trackingMode === 'NAV'));
+	const isRemunerated = Boolean(position && !isFci && (position.category === 'Cuenta remunerada' || position.trackingMode === 'DAILY_RATE'));
 	const valuationHistory = useMemo(() => {
 		const rows = history
 			.filter((row) => row.changeType === 'valuation' || Number(row.nav || 0) > 0)
@@ -92,9 +102,8 @@ export default function PortfolioDetail() {
 			<div className='max-w-5xl mx-auto'>
 				<Link to='/portfolio' className='text-purple-500 font-semibold'>← Volver al Portfolio</Link>
 				<DetailSection id='portfolio-overview' title={`${position.institution} · ${position.name}`} subtitle='Resumen de la posición' open={openSections.overview} onToggle={()=>toggleSection('overview')}>
-					<p className='uppercase text-sm font-bold text-purple-500'>{position.institution}</p>
-					<h1 className='text-3xl font-bold mt-1'>{position.name}</h1>
-					{isFci ? (
+					{isFci && <><p className='uppercase text-sm font-bold text-purple-500'>{position.institution}</p><h1 className='text-3xl font-bold mt-1'>{position.name}</h1></>}
+					{isRemunerated ? <PortfolioAccountOverview position={position} snapshots={history} /> : isFci ? (
 						<div className='grid grid-cols-2 md:grid-cols-4 gap-3 mt-5'>
 							<div><p className='text-xs text-gray-500'>Valuación actual</p><p className='text-xl font-bold'>{money(position.balance,position.currency)}</p></div>
 							<div><p className='text-xs text-gray-500'>Valor cuotaparte</p><p className='text-xl font-bold text-purple-500'>{Number(position.nav || 0) > 0 ? Number(position.nav).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</p><p className='text-xs text-gray-500'>{position.navDate || 'Sin fecha NAV'}</p></div>
@@ -112,8 +121,8 @@ export default function PortfolioDetail() {
 				</DetailSection>
 				<DetailSection
 					id='portfolio-earnings'
-					title={isFci ? 'Evolución de la cuotaparte' : 'Ganancias observadas'}
-					subtitle={isFci ? 'Seguimiento de NAV y valuación. No se trata como ganancia realizada hasta rescatar.' : 'Historial construido con las verificaciones de saldo.'}
+					title={isFci ? 'Evolución de la cuotaparte' : 'Rendimientos registrados'}
+					subtitle={isFci ? 'Seguimiento de NAV y valuación. No se trata como ganancia realizada hasta rescatar.' : 'Solo movimientos marcados como interés. Los retiros y aportes no son ganancias ni pérdidas.'}
 					open={openSections.earnings}
 					onToggle={()=>toggleSection('earnings')}
 				>
@@ -135,7 +144,7 @@ export default function PortfolioDetail() {
 					) : (
 						<>
 							<div className='flex flex-wrap items-center justify-end gap-3'><div className='flex gap-2'>{['day','week','month'].map((item)=><button key={item} onClick={()=>setMode(item)} className={`px-3 py-2 rounded-lg text-sm font-semibold ${mode===item?'bg-purple-600 text-white':'border dark:border-slate-600'}`}>{item==='day'?'Día':item==='week'?'Semana':'Mes'}</button>)}</div></div>
-							<div className='mt-4 space-y-3'>{grouped.length===0?<p className='text-gray-500'>Todavía no hay verificaciones para graficar.</p>:grouped.map((row)=>{const max=Math.max(...grouped.map(x=>Math.abs(x.earning)),1);return <div key={row.date.toISOString()}><div className='flex justify-between text-sm'><span>{row.date.toLocaleDateString('es-AR')}</span><strong className={row.earning>=0?'text-green-500':'text-red-500'}>{money(row.earning,position.currency)}</strong></div><div className='h-2 rounded bg-slate-200 dark:bg-slate-700 mt-1 overflow-hidden'><div className='h-full bg-purple-500' style={{width:`${Math.min(100,Math.abs(row.earning)/max*100)}%`}} /></div><p className='text-xs text-gray-500 mt-1'>{row.checks} verificación(es) · esperado {money(row.expected,position.currency)}</p></div>})}</div>
+							<p className='mt-3 text-xs text-slate-600 dark:text-slate-300'>El esperado es una estimación por día con datos cargados, no se duplica al verificar varias veces.</p><div className='mt-4 space-y-3'>{grouped.length===0?<p className='text-gray-500'>Todavía no hay verificaciones para graficar.</p>:grouped.map((row)=>{const max=Math.max(...grouped.map(x=>Math.abs(x.earning)),1);return <div key={row.date.toISOString()}><div className='flex justify-between text-sm'><span>{row.date.toLocaleDateString('es-AR')}</span><strong className={row.earning>=0?'text-green-500':'text-red-500'}>{money(row.earning,position.currency)}</strong></div><div className='h-2 rounded bg-slate-200 dark:bg-slate-700 mt-1 overflow-hidden'><div className='h-full bg-purple-500' style={{width:`${Math.min(100,Math.abs(row.earning)/max*100)}%`}} /></div><p className='text-xs text-gray-500 mt-1'>{row.checks} verificación(es) · esperado {money(row.expected,position.currency)}</p></div>})}</div>
 						</>
 					)}
 				</DetailSection>
@@ -183,8 +192,8 @@ export default function PortfolioDetail() {
 				</DetailSection>
 				<DetailSection
 					id='portfolio-history'
-					title={isFci ? 'Historial de valuaciones' : 'Historial de verificaciones'}
-					subtitle={isFci ? 'Cada registro representa un valor de cuotaparte observado y la valuación resultante.' : undefined}
+					title={isFci ? 'Historial de valuaciones' : 'Movimientos y verificaciones'}
+					subtitle={isFci ? 'Cada registro representa un valor de cuotaparte observado y la valuación resultante.' : 'Rendimientos, aportes, retiros y ajustes. Un retiro no es una pérdida de inversión.'}
 					open={openSections.history}
 					onToggle={()=>toggleSection('history')}
 				>
@@ -215,8 +224,17 @@ export default function PortfolioDetail() {
 						</>
 					) : (
 						<>
-							<div className='mt-4 space-y-3 md:hidden'>{[...history].reverse().map(row=><article key={row.id} className='rounded-xl border border-slate-200 dark:border-slate-700 p-4'><div className='flex items-start justify-between gap-3'><div className='min-w-0'><p className='text-xs text-gray-500'>Fecha</p><p className='font-semibold text-sm mt-0.5'>{asDate(row.capturedAt).toLocaleString('es-AR')}</p></div><div className='flex shrink-0 gap-2'><button type='button' onClick={()=>openEditModal(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' aria-label='Editar verificación'><FaPencilAlt /></button><button type='button' onClick={()=>openDeleteModal(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border border-red-400 text-red-500' aria-label='Eliminar verificación'><FaTrashAlt /></button></div></div><div className='grid grid-cols-2 gap-x-4 gap-y-3 mt-4'><div><p className='text-xs text-gray-500'>Saldo</p><p className='font-semibold whitespace-nowrap'>{money(row.balance,position.currency)}</p></div><div><p className='text-xs text-gray-500'>Cambio</p><p className={`font-semibold whitespace-nowrap ${Number(row.observedEarning||0)>=0?'text-green-500':'text-red-500'}`}>{money(row.observedEarning,position.currency)}</p></div><div><p className='text-xs text-gray-500'>Tipo</p><p className='font-medium'>{({earning:'Rendimiento',deposit:'Aporte',withdrawal:'Retiro',adjustment:'Ajuste',valuation:'Valuación NAV'}[row.changeType] || 'Sin clasificar')}</p></div><div><p className='text-xs text-gray-500'>Esperado</p><p className='font-medium whitespace-nowrap'>{money(row.expectedEarning,position.currency)}</p></div></div>{row.note && <p className='mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-gray-500 break-words'>{row.note}</p>}</article>)}</div>
-							<div className='mt-4 hidden md:block overflow-x-auto'><table className='w-full min-w-[760px] text-sm'><thead><tr className='text-left text-gray-500'><th className='py-2 pr-4'>Fecha</th><th className='pr-4'>Saldo</th><th className='pr-4'>Cambio</th><th className='pr-4'>Tipo</th><th className='pr-4'>Esperado</th><th className='text-right'>Acciones</th></tr></thead><tbody>{[...history].reverse().map(row=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3 pr-4 whitespace-nowrap'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td className='pr-4 whitespace-nowrap'>{money(row.balance,position.currency)}</td><td className='pr-4 whitespace-nowrap'>{money(row.observedEarning,position.currency)}</td><td className='pr-4 whitespace-nowrap'>{({earning:'Rendimiento',deposit:'Aporte',withdrawal:'Retiro',adjustment:'Ajuste',valuation:'Valuación NAV'}[row.changeType] || 'Sin clasificar')}</td><td className='pr-4 whitespace-nowrap'>{money(row.expectedEarning,position.currency)}</td><td><div className='flex justify-end gap-2'><button type='button' onClick={()=>openEditModal(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' aria-label='Editar verificación'><FaPencilAlt /></button><button type='button' onClick={()=>openDeleteModal(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border border-red-400 text-red-500' aria-label='Eliminar verificación'><FaTrashAlt /></button></div></td></tr>)}</tbody></table></div>
+							<div className='mt-4 flex flex-wrap gap-2' role='group' aria-label='Filtrar movimientos'>
+								{[['all','Todos'],['earning','Intereses'],['capital','Capital'],['other','Otros']].map(([key,label])=>(
+									<button key={key} type='button' onClick={()=>setHistoryFilter(key)} aria-pressed={historyFilter===key}
+										className={`min-h-[40px] rounded-lg border px-3 py-2 text-xs font-semibold focus-visible:ring-2 focus-visible:ring-violet-400 ${historyFilter===key?'border-violet-600 bg-violet-600 text-white':'border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100'}`}>
+										{label}
+									</button>
+								))}
+							</div>
+							<div className='mt-2 text-xs text-slate-600 dark:text-slate-300'>Los importes de aportes y retiros son movimientos de capital, no resultados. Registros ordenados por fecha y hora.</div>
+							<div className='mt-4 space-y-3 md:hidden'>{[...filteredHistory].reverse().map(row=><article key={row.id} className='rounded-xl border border-slate-200 dark:border-slate-700 p-4'><div className='flex items-start justify-between gap-3'><div className='min-w-0'><p className='text-xs text-gray-500'>Fecha</p><p className='font-semibold text-sm mt-0.5'>{asDate(row.capturedAt).toLocaleString('es-AR')}</p></div><div className='flex shrink-0 gap-2'><button type='button' onClick={()=>openEditModal(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' aria-label='Editar verificación'><FaPencilAlt /></button><button type='button' onClick={()=>openDeleteModal(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border border-red-400 text-red-500' aria-label='Eliminar verificación'><FaTrashAlt /></button></div></div><div className='grid grid-cols-2 gap-x-4 gap-y-3 mt-4'><div><p className='text-xs text-gray-500'>Saldo</p><p className='font-semibold whitespace-nowrap'>{money(row.balance,position.currency)}</p></div><div><p className='text-xs text-gray-500'>Cambio</p><p className={`font-semibold tabular-nums ${movementTone(row)}`}>{movementValue(row,position.currency)}</p></div><div><p className='text-xs text-gray-500'>Tipo</p><p className='font-medium'>{accountMovementLabel(accountMovementType(row))}</p></div><div><p className='text-xs text-gray-500'>Esperado</p><p className='font-medium whitespace-nowrap'>{money(row.expectedEarning,position.currency)}</p></div></div>{row.note && <p className='mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-gray-500 break-words'>{row.note}</p>}</article>)}</div>
+							<div className='mt-4 hidden md:block overflow-x-auto'><table className='w-full min-w-[760px] text-sm'><thead><tr className='text-left text-gray-500'><th className='py-2 pr-4'>Fecha</th><th className='pr-4'>Saldo</th><th className='pr-4'>Cambio</th><th className='pr-4'>Tipo</th><th className='pr-4'>Esperado</th><th className='text-right'>Acciones</th></tr></thead><tbody>{[...filteredHistory].reverse().map(row=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3 pr-4 whitespace-nowrap'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td className='pr-4 whitespace-nowrap'>{money(row.balance,position.currency)}</td><td className={`pr-4 whitespace-nowrap ${movementTone(row)}`}>{movementValue(row,position.currency)}</td><td className='pr-4 whitespace-nowrap'>{accountMovementLabel(accountMovementType(row))}</td><td className='pr-4 whitespace-nowrap'>{money(row.expectedEarning,position.currency)}</td><td><div className='flex justify-end gap-2'><button type='button' onClick={()=>openEditModal(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' aria-label='Editar verificación'><FaPencilAlt /></button><button type='button' onClick={()=>openDeleteModal(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border border-red-400 text-red-500' aria-label='Eliminar verificación'><FaTrashAlt /></button></div></td></tr>)}</tbody></table></div>
 						</>
 					)}
 				</DetailSection>
