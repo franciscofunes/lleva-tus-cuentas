@@ -1,5 +1,5 @@
 import React from "react";
-import { CollapsibleChevron, CollapsibleHeading } from "./CollapsibleHeading";
+import { COLLAPSIBLE_SURFACE_STYLES, CollapsibleChevron, CollapsibleHeading } from "./CollapsibleHeading";
 
 function CollapsibleSection({
   id,
@@ -12,30 +12,31 @@ function CollapsibleSection({
   children,
   className = "",
   contentClassName = "",
+  variant = "default",
 }) {
   const contentId = id ? `${id}-content` : undefined;
 
   return (
     <section
       id={id}
-      className={`scroll-mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 ${className}`}
+      className={`${variant === "nested" ? COLLAPSIBLE_SURFACE_STYLES.nested : COLLAPSIBLE_SURFACE_STYLES.root} ${className}`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex min-w-0 items-start gap-3">
         <button
           type="button"
           onClick={onToggle}
           aria-expanded={!collapsed}
           aria-controls={contentId}
-          className="min-w-0 flex flex-1 items-start justify-between gap-3 text-left"
+          className={`${COLLAPSIBLE_SURFACE_STYLES.header} flex-1`}
         >
-          <CollapsibleHeading eyebrow={eyebrow} title={title} description={description} />
+          <CollapsibleHeading eyebrow={eyebrow} title={title} description={description} level={variant === "nested" ? 3 : 2} />
           <CollapsibleChevron expanded={!collapsed} />
         </button>
-        {action && <div className="shrink-0">{action}</div>}
+        {action && <div className="shrink-0 self-center pr-4 sm:pr-5">{action}</div>}
       </div>
 
       {!collapsed && (
-        <div id={contentId} className={`mt-5 ${contentClassName}`}>
+        <div id={contentId} className={`${COLLAPSIBLE_SURFACE_STYLES.content} ${contentClassName}`}>
           {children}
         </div>
       )}
