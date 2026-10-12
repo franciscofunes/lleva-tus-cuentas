@@ -711,15 +711,15 @@ function Portfolio() {
 					collapsed={collapsedSections.summary}
 					onToggle={() => togglePortfolioSection('summary')}
 					className='mb-5'
-					contentClassName='grid sm:grid-cols-2 lg:grid-cols-3 gap-4'
+					contentClassName='grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3'
 				>
 					{Object.entries(totals).map(([currency, total]) => (
-						<div key={currency} className='bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-5'>
-							<p className='text-sm text-gray-500'>{currency}</p>
-							<p className='text-2xl font-bold'>{privateMoney(total.balance, currency)}</p>
-							<p className='text-sm text-green-600 dark:text-green-500 mt-2'>Estimado anual: {privateMoney(total.annual, currency)}</p>
-							<p className='text-xs text-gray-400'>Estimado mensual: {privateMoney(total.annual / 12, currency)}</p>
-							<p className='text-xs text-gray-400'>Tasa ponderada: {privatePercent(weightedRates[currency])}</p>
+						<div key={currency} className='min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/70'>
+							<p className='text-xs font-bold uppercase tracking-wider text-violet-700 dark:text-violet-200'>{currency}</p>
+							<p className='mt-1 break-words text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50'>{privateMoney(total.balance, currency)}</p>
+							<p className='mt-3 text-sm font-semibold text-emerald-700 dark:text-emerald-400'>Estimado anual: {privateMoney(total.annual, currency)}</p>
+							<p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>Estimado mensual: {privateMoney(total.annual / 12, currency)}</p>
+							<p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>Tasa ponderada: {privatePercent(weightedRates[currency])}</p>
 						</div>
 					))}
 					{!Object.keys(totals).length && <div className='text-gray-500'>Todavía no cargaste posiciones.</div>}
@@ -745,7 +745,7 @@ function Portfolio() {
 					collapsed={collapsedSections.positions}
 					onToggle={() => togglePortfolioSection('positions')}
 					className='mb-6 lg:mb-8'
-					contentClassName='space-y-4'
+					contentClassName='space-y-3'
 				>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
 						{!loading && !positions.length && (
@@ -762,7 +762,7 @@ function Portfolio() {
 								axis='y'
 								values={positions}
 								onReorder={handleReorderPositions}
-								className='space-y-4'
+								className='min-w-0 space-y-3'
 							>
 								{positions.map((position) => (
 									<SortablePortfolioPositionCard
@@ -771,22 +771,22 @@ function Portfolio() {
 										onDragEnd={persistPositionOrder}
 										onKeyboardMove={movePositionWithKeyboard}
 									>
-								<div className='grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start'>
+								<div className='grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,auto)] sm:items-start'>
 									<div>
-										<p className='text-sm font-bold uppercase tracking-wide text-purple-500'>{position.institution}</p>
+										<p className='text-xs font-bold uppercase tracking-wider text-violet-700 dark:text-violet-200'>{position.institution}</p>
 										<div className='flex items-start gap-2 mt-1'>
 											<Link to={`/portfolio/${position.id}`} className='group flex items-center gap-2 min-w-0 rounded-lg -ml-2 px-2 py-1 hover:bg-purple-500/10 focus:outline-none focus:ring-2 focus:ring-purple-500' aria-label={`Ver detalle de ${position.name}`}>
-												<span className='min-w-0'><span className='block text-xl sm:text-2xl font-bold leading-tight group-hover:text-purple-400'>{position.name}</span><span className='block mt-1 text-xs font-semibold text-purple-500'>Ver detalles <span aria-hidden='true'>›</span></span></span>
+												<span className='min-w-0'><span className='block break-words text-lg font-bold leading-snug text-slate-900 group-hover:text-violet-700 dark:text-slate-50 dark:group-hover:text-violet-200 sm:text-xl'>{position.name}</span><span className='block mt-1 text-xs font-semibold text-purple-500'>Ver detalles <span aria-hidden='true'>›</span></span></span>
 											</Link>
 											{position.notes && <InfoTooltip placement='top' content={position.notes} />}
 										</div>
-										<p className='text-xs uppercase text-gray-400 mt-1'>{position.category}</p>
-										<p className='text-3xl font-bold mt-3'>{privateMoney(position.balance, position.currency)}</p>
+										<p className='mt-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300'>{position.category}</p>
+										<p className='mt-3 break-words text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50 sm:text-3xl'>{privateMoney(position.balance, position.currency)}</p>
 									</div>
 									<div className='text-left sm:text-right sm:min-w-[14rem]'>
-										<p className='text-xs uppercase tracking-wide text-gray-400'>Rendimiento</p>
-										<p className='text-2xl font-bold text-green-600 dark:text-green-500'>{privatePercent(position.annualRate)} <span className='text-sm'>{position.rateType || ''}</span></p>
-										<p className='text-sm text-gray-500'>{position.liquidity || 'Liquidez no informada'}</p>
+										<p className='text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300'>Rendimiento</p>
+										<p className='text-xl font-bold text-emerald-700 dark:text-emerald-400 sm:text-2xl'>{privatePercent(position.annualRate)} <span className='text-sm'>{position.rateType || ''}</span></p>
+										<p className='text-sm text-slate-600 dark:text-slate-300'>{position.liquidity || 'Liquidez no informada'}</p>
 										<p className='text-sm text-green-600 mt-1'>≈ {privateMoney(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 12, position.currency)} / mes proyectado</p>
 										{position.trackingMode === 'DAILY_RATE' && <p className='text-xs text-gray-400'>Esperado hoy: {privateMoney(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 365, position.currency)}</p>}
 										{position.trackingMode === 'MATURITY' && position.maturityDate && <p className='text-xs text-gray-400'>Seguimiento al vencimiento: {position.maturityDate}</p>}
@@ -808,13 +808,13 @@ function Portfolio() {
 									</div>
 								</div>
 								<div className='flex flex-col gap-3 mt-4'>
-									<button className='w-full px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold' onClick={() => requestVerify(position)}>{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'Actualizar cuotaparte' : 'Verificar saldo'}</button>
-									<div className='flex items-center gap-3 w-full'>
-										{position.infoUrl && <button title='Información oficial del activo' aria-label='Información oficial del activo' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-blue-400' onClick={() => openInfo(position)}><FaBookOpen /></button>}
-										{(position.category === 'Cuenta remunerada' || /earn\s*vault/i.test(`${position.name || ''} ${position.category || ''}`)) && <button title='Actualizar tasa rápidamente' aria-label='Actualizar tasa rápidamente' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-green-400' onClick={() => requestRateUpdate(position)}><FaPercent /></button>}
-										{(position.appUrl || position.webUrl) && <button title='Abrir app / web' aria-label='Abrir app o web' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' onClick={() => openInstitution(position)}><FaExternalLinkAlt /></button>}
-										<button title='Editar posición' aria-label='Editar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg border dark:border-slate-600 hover:text-purple-500' onClick={() => edit(position)}><FaPencilAlt /></button>
-										<button title='Eliminar posición' aria-label='Eliminar posición' className='w-10 h-10 inline-flex items-center justify-center rounded-lg text-red-500 border border-red-300 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30' onClick={() => requestDelete(position)}><FaTrashAlt /></button>
+									<button className='min-h-[44px] w-full rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 sm:w-auto' onClick={() => requestVerify(position)}>{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'Actualizar cuotaparte' : 'Verificar saldo'}</button>
+									<div className='flex w-full flex-wrap items-center gap-2'>
+										{position.infoUrl && <button title='Información oficial del activo' aria-label='Información oficial del activo' className='inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 hover:text-blue-400' onClick={() => openInfo(position)}><FaBookOpen /></button>}
+										{(position.category === 'Cuenta remunerada' || /earn\s*vault/i.test(`${position.name || ''} ${position.category || ''}`)) && <button title='Actualizar tasa rápidamente' aria-label='Actualizar tasa rápidamente' className='inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 hover:text-green-400' onClick={() => requestRateUpdate(position)}><FaPercent /></button>}
+										{(position.appUrl || position.webUrl) && <button title='Abrir app / web' aria-label='Abrir app o web' className='inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100' onClick={() => openInstitution(position)}><FaExternalLinkAlt /></button>}
+										<button title='Editar posición' aria-label='Editar posición' className='inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 hover:text-purple-500' onClick={() => edit(position)}><FaPencilAlt /></button>
+										<button title='Eliminar posición' aria-label='Eliminar posición' className='inline-flex h-11 w-11 items-center justify-center rounded-xl border border-red-300 bg-white text-red-600 dark:bg-slate-800 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30' onClick={() => requestDelete(position)}><FaTrashAlt /></button>
 									</div>
 								</div>
 									</SortablePortfolioPositionCard>
