@@ -1,7 +1,8 @@
 import {
   categoryDocumentId, normalizeCategoryName, validateCustomCategory,
   mergeCategories, categoriesForNewTransactions, validateCustomCategoryDateBehavior,
-  categoryLabel, displayCategoryName, validateCategoryDisplayName,
+  categoryLabel, displayCategoryName, validateCategoryDisplayName, categoryDescription,
+  normalizeCategoryDescription, validateCategoryDescription, CATEGORY_DESCRIPTION_LIMIT,
 } from './customCategories';
 
 const shared = [
@@ -87,4 +88,26 @@ test('rejects rename collisions with both canonical and edited names and special
   expect(validateCategoryDisplayName('Mascotas', all, 'pets')).toBeNull();
   expect(validateCategoryDisplayName('Telefonía móvil', all, 'pets')).toBeNull();
   expect(validateCustomCategory({name:'Animalitos',isExpense:true},all)).toMatch(/existe/);
+});
+
+test('category descriptions are plain optional text and respect the Firestore size contract', () => {
+  expect(CATEGORY_DESCRIPTION_LIMIT).toBe(500);
+  expect(normalizeCategoryDescription('  Hola\r\nMundo  ')).toBe('Hola\nMundo');
+  expect(validateCategoryDescription()).toBeNull();
+  expect(validateCategoryDescription('  ')).toBeNull();
+  expect(validateCategoryDescription('Ejemplo permitido: tasas, plazos y cuotas.')).toBeNull();
+  expect(validateCategoryDescription('<iframe>')).toMatch(/caracteres no permitidos/);
+  expect(validateCategoryDescription('a'.repeat(501))).toMatch(/500/);
+  expect(validateCategoryDescription({ summary: 'not text' })).toMatch(/texto/);
+});
+
+test('description lookup keeps the shared catalog and the custom/archived category isolated', () => {
+  const merged = mergeCategories(
+    [{ name: 'Salud', description: 'Consultas médicas', isExpense: true }],
+    [{ name: 'Mascotas', description: 'Alimentos, vacunas y veterinaria', active: false, isExpense: true }]
+  );
+  expect(categoryDescription('Salud', merged)).toBe('Consultas médicas');
+  expect(categoryDescription('Mascotas', merged)).toBe('Alimentos, vacunas y veterinaria');
+  expect(categoryDescription('Desconocida', merged)).toBe('');
+  expect(categoryDescription(null, null)).toBe('');
 });
