@@ -13,7 +13,7 @@ jest.mock('react-redux', () => ({
   useDispatch: () => jest.fn(),
 }));
 jest.mock('./CardStatementDetails', () => () => null);
-jest.mock('./InfoTooltip', () => () => null);
+jest.mock('./InfoTooltip', () => ({ content }) => <span data-testid='category-tooltip'>{content}</span>);
 
 const basicProps = {
   id: 'test-movement',
@@ -186,4 +186,18 @@ test('legacy transactions remain displayed in ARS after their category defaults 
   render(<Card {...basicProps} category='Software USD'
     categories={[{name:'Software USD',isExpense:true,currency:'USD'}]} />);
   expect(screen.getByText(/\$AR -1,?250/)).toBeInTheDocument();
+});
+
+test('transaction card tooltip displays the private category description, not the transaction comment', () => {
+  render(<Card {...basicProps} category='Servicios bancarios USD' comment='Comisión del mes'
+    categories={[{ name: 'Servicios bancarios USD', isExpense: true,
+      description: 'Cargos de cuenta en moneda extranjera.' }]} />);
+  expect(screen.getByTestId('category-tooltip')).toHaveTextContent('Cargos de cuenta en moneda extranjera.');
+  expect(screen.getByText('Comisión del mes')).toBeInTheDocument();
+});
+
+test('legacy category without a description never creates an empty tooltip', () => {
+  render(<Card {...basicProps} category='Antigua'
+    categories={[{ name: 'Antigua', isExpense: true }]} />);
+  expect(screen.queryByTestId('category-tooltip')).not.toBeInTheDocument();
 });
