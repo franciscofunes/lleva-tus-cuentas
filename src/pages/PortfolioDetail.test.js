@@ -100,7 +100,7 @@ test('remunerated USD account presents capital and interest separately and provi
   expect(await screen.findByTestId('remunerated-account-overview')).toBeInTheDocument();
   expect(screen.getByText('Saldo disponible registrado')).toBeInTheDocument();
   expect(screen.getByText('Retiros de capital')).toBeInTheDocument();
-  expect(screen.getByText(/no es una pérdida/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/no es una pérdida/i).length).toBeGreaterThan(0);
   const capital = screen.getByRole('button', { name: 'Capital' });
   fireEvent.click(capital);
   expect(capital).toHaveAttribute('aria-pressed', 'true');
