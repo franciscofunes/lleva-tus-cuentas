@@ -1,4 +1,4 @@
-import { displayCategoryName } from '../utils/customCategories';
+import { displayCategoryName, categoryDescription } from '../utils/customCategories';
 import moment from 'moment';
 import React from 'react';
 import { useDispatch } from 'react-redux';
@@ -55,6 +55,7 @@ function Card({
 	const safeCategory = typeof category === 'string' ? category : '';
 	const safeCategories = Array.isArray(categories) ? categories.filter(Boolean) : [];
 	const isExpense = safeCategories.some((entry) => entry?.isExpense && entry.name === safeCategory);
+	const infoText = categoryDescription(safeCategory, safeCategories);
 	const selectedDateIsDueDate = usesSelectedDateAsDueDate(safeCategory, safeCategories);
 	const hasSeparateDueDate = usesSeparateDueDate(safeCategory, safeCategories);
 	const isPaidBill = paymentStatus === 'paid';
@@ -118,12 +119,7 @@ function Card({
 							Categoría:{' '}
 						</span>
 						{displayCategoryName(safeCategory, safeCategories) || 'Sin categoría'}{' '}
-						<InfoTooltip
-							placement={'top'}
-							content={safeCategories
-								.filter((c) => c.name === category)
-								.map((c) => c?.description)}
-						/>
+						{infoText && <InfoTooltip placement='top' content={infoText} />}
 					</p>
 				</div>
 
