@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { FaArrowDown, FaFileExport, FaRegCopy } from 'react-icons/fa';
-import { CollapsibleChevron, CollapsibleHeading } from './CollapsibleHeading';
+import { COLLAPSIBLE_SURFACE_STYLES, CollapsibleChevron, CollapsibleHeading } from './CollapsibleHeading';
 
 const actionIcons = { excel: FaFileExport, markdown: FaRegCopy };
 const KPI_VALUE_TRANSITION_MS = 180;
@@ -69,7 +69,7 @@ export default function FinancialOverviewPanel({
       id={id}
       aria-label={title}
       aria-busy={isLoading}
-      className='mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800'
+      className={`mb-5 ${COLLAPSIBLE_SURFACE_STYLES.root}`}
     >
       <button
         type='button'
@@ -77,7 +77,7 @@ export default function FinancialOverviewPanel({
         aria-expanded={!collapsed}
         aria-controls={contentId}
         aria-label={`${title}: ${collapsed ? 'expandir' : 'contraer'}`}
-        className='flex w-full items-start justify-between gap-3 p-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500'
+        className={COLLAPSIBLE_SURFACE_STYLES.header}
       >
         <CollapsibleHeading eyebrow={eyebrow} title={title} description={description} />
         <CollapsibleChevron expanded={!collapsed} />
@@ -91,7 +91,7 @@ export default function FinancialOverviewPanel({
             animate={{ height: 'auto', opacity: 1 }}
             exit={reduceMotion ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.18, ease: 'easeOut' }}
-            className='overflow-hidden'
+            className='min-w-0 overflow-hidden'
           >
             <div className='border-t border-slate-200 px-4 pb-4 pt-4 sm:px-5 dark:border-slate-700/80'>
               <div className='grid grid-cols-2 gap-2 sm:max-w-md'>
@@ -108,12 +108,12 @@ export default function FinancialOverviewPanel({
                       {...itemMotion(reduceMotion, index)}
                       whileTap={reduceMotion ? undefined : { scale: 0.975 }}
                       whileHover={reduceMotion ? undefined : { y: -1 }}
-                      className='group flex min-w-0 items-center gap-2.5 rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 text-left text-sm font-semibold text-slate-900 transition-colors hover:border-violet-400 hover:bg-violet-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900/40 dark:text-white dark:hover:border-violet-400/70'
+                      className='group flex min-h-[64px] min-w-0 items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-3 text-left text-xs font-semibold sm:gap-2.5 sm:px-3 sm:text-sm text-slate-900 transition-colors hover:border-violet-400 hover:bg-violet-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900/40 dark:text-white dark:hover:border-violet-400/70'
                     >
                       <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-violet-700 dark:text-violet-300'>
                         <Icon size={15} aria-hidden='true' />
                       </span>
-                      <span className='min-w-0 truncate'>{action.label}</span>
+                      <span className='min-w-0 break-words leading-snug'>{action.label}</span>
                     </motion.button>
                   );
                 })}
@@ -132,7 +132,7 @@ export default function FinancialOverviewPanel({
                   <motion.div
                     key={metric.id}
                     {...itemMotion(reduceMotion, index + actions.length)}
-                    className='min-w-0 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3 sm:px-4 sm:py-4 dark:border-slate-700/90 dark:bg-slate-900/50'
+                    className='min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 sm:px-4 sm:py-4 dark:border-slate-700 dark:bg-slate-900/70'
                   >
                     <span className='mb-3 flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10 text-violet-700 dark:text-violet-300'>
                       {Icon && <Icon size={15} aria-hidden='true' />}
