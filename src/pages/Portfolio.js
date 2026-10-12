@@ -19,6 +19,7 @@ import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
 import { preparePortfolioExport, buildPortfolioLlmMarkdown } from '../utils/portfolioExport';
 import PortfolioExportReady from '../components/PortfolioExportReady';
 import { auditPortfolioEarnings } from '../utils/portfolioEarningsAudit';
+import { sortedAccountSnapshots, summarizeAccountActivity } from '../utils/portfolioAccountActivity';
 import eyeHide from '../imgs/eyeHide.svg';
 import closeEye from '../imgs/closeEye.svg';
 import {
@@ -245,8 +246,9 @@ function Portfolio() {
 
 		return Object.entries(grouped).reduce((acc, [positionId, history]) => {
 			if (history.length < 2) return acc;
-			const first = history[0];
-			const last = history[history.length - 1];
+			const chronologically = sortedAccountSnapshots(history);
+			const first = chronologically[0];
+			const last = chronologically[chronologically.length - 1];
 			const change = Number(last.balance || 0) - Number(first.balance || 0);
 			const percent = Number(first.balance || 0) > 0
 				? (change / Number(first.balance)) * 100
@@ -255,6 +257,14 @@ function Portfolio() {
 			return acc;
 		}, {});
 	}, [snapshots]);
+
+
+	const accountActivityByPosition = useMemo(() => positions.reduce((acc, position) => {
+		if (position.category === 'Cuenta remunerada' || position.trackingMode === 'DAILY_RATE') {
+			acc[position.id] = summarizeAccountActivity(position, snapshots.filter((row)=>row.positionId === position.id));
+		}
+		return acc;
+	}, {}), [positions, snapshots]);
 
 	const totals = useMemo(() => {
 		return positions.reduce((acc, position) => {
@@ -795,15 +805,26 @@ function Portfolio() {
 										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {hideValues ? '••••••' : Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
 										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-green-600 dark:text-green-500'>Rend. 1A: {privatePercent(position.performance1Y)}</p>}
 										{position.category === 'FCI' && position.monthlyReturns && Object.keys(position.monthlyReturns).length > 0 && <p className='text-sm font-bold text-green-600 dark:text-green-400'>YTD compuesto: {hideValues ? '••••' : `${((Object.values(position.monthlyReturns).map(Number).filter(Number.isFinite).reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100).toFixed(2)}%`}</p>}
-										{Number(position.realizedEarnings || 0) !== 0 && <p className={`text-sm font-semibold mt-1 ${Number(position.realizedEarnings) < 0 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-500'}`}>{Number(position.realizedEarnings) < 0 ? 'Ganancias cargadas · revisar:' : 'Ganancias cargadas (sin conciliar):'} {privateMoney(position.realizedEarnings, position.currency)}</p>}
-										{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-gray-400'>Tasa efectiva: {privatePercent(position.effectiveRate)}</p>}
-										{performanceByPosition[position.id] && (
-											<div className='mt-2 text-sm'>
-												<p className={performanceByPosition[position.id].change >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500'}>
-													{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'Variación de valuación' : 'Variación del saldo (incluye transferencias)'}: {privateMoney(performanceByPosition[position.id].change, position.currency)}{(position.category === 'FCI' || position.trackingMode === 'NAV') ? ` (${privatePercent(performanceByPosition[position.id].percent)})` : ''}
-												</p>
-												<p className='text-xs text-gray-400'>{privateCount(performanceByPosition[position.id].count)} snapshots</p>
+										{accountActivityByPosition[position.id] ? (
+											<div className='mt-2 space-y-1 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800'>
+												<p className='font-semibold text-slate-900 dark:text-slate-50'>Rendimientos clasificados: <span className='text-emerald-700 dark:text-emerald-400'>{privateMoney(accountActivityByPosition[position.id].userTaggedEarnings,position.currency)}</span></p>
+												{accountActivityByPosition[position.id].withdrawals > 0 && <p className='text-slate-700 dark:text-slate-200'>Retiros de capital: {privateMoney(accountActivityByPosition[position.id].withdrawals,position.currency)} <span className='text-xs text-slate-600 dark:text-slate-300'>· no son pérdidas</span></p>}
+												{accountActivityByPosition[position.id].deposits > 0 && <p className='text-slate-700 dark:text-slate-200'>Aportes de capital: {privateMoney(accountActivityByPosition[position.id].deposits,position.currency)}</p>}
+												{accountActivityByPosition[position.id].needsReview && <p className='font-semibold text-amber-700 dark:text-amber-300'>Historial de ganancias pendiente de conciliación{accountActivityByPosition[position.id].negativeLegacyEarnings ? ` · ${privateMoney(position.realizedEarnings,position.currency)} cargados` : ''}</p>}
 											</div>
+										) : (
+											<>
+												{Number(position.realizedEarnings || 0) !== 0 && <p className={`mt-1 text-sm font-semibold ${Number(position.realizedEarnings) < 0 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-500'}`}>{Number(position.realizedEarnings) < 0 ? 'Ganancias cargadas · revisar:' : 'Ganancias cargadas (sin conciliar):'} {privateMoney(position.realizedEarnings, position.currency)}</p>}
+												{Number(position.effectiveRate || 0) > 0 && <p className='text-xs text-slate-600 dark:text-slate-300'>Tasa efectiva: {privatePercent(position.effectiveRate)}</p>}
+												{performanceByPosition[position.id] && (
+													<div className='mt-2 text-sm'>
+														<p className={performanceByPosition[position.id].change >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-500'}>
+															{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'Variación de valuación' : 'Variación del saldo (incluye transferencias)'}: {privateMoney(performanceByPosition[position.id].change, position.currency)}
+														</p>
+														<p className='text-xs text-slate-600 dark:text-slate-300'>{privateCount(performanceByPosition[position.id].count)} snapshots</p>
+													</div>
+												)}
+											</>
 										)}
 									</div>
 								</div>
