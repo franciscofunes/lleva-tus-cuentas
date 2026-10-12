@@ -39,6 +39,7 @@ export const summarizeAccountActivity = (position = {}, snapshots = []) => {
     withdrawals: 0,
     adjustments: 0,
     unclassifiedCount: 0,
+    sequenceMismatchCount: 0,
     earningCount: 0,
     capitalCount: 0,
     snapshotCount: rows.length,
@@ -51,8 +52,20 @@ export const summarizeAccountActivity = (position = {}, snapshots = []) => {
       ? finite(validNumber(position.balance)) * finite(validNumber(position.annualRate)) / 36500
       : null,
   };
-  rows.forEach((row) => {
+  rows.forEach((row, index) => {
     const change = validNumber(row.observedEarning);
+    if (index > 0 && snapshotDate(row).getTime() > 0 &&
+      snapshotDate(rows[index - 1]).getTime() > 0) {
+      const previousBalance = validNumber(rows[index - 1].balance);
+      const currentBalance = validNumber(row.balance);
+      if (Number.isFinite(change) && Number.isFinite(previousBalance)
+        && Number.isFinite(currentBalance)
+        && Math.abs((currentBalance - previousBalance) - change) > 0.02) {
+        // Data may have been edited, deleted or timestamped out of sequence.
+        // Warn only; never alter saved balance, type or investment return.
+        summary.sequenceMismatchCount += 1;
+      }
+    }
     const type = accountMovementType(row);
     if (type === 'earning') {
       const amount = validNumber(row.confirmedEarning);
@@ -79,7 +92,8 @@ export const summarizeAccountActivity = (position = {}, snapshots = []) => {
     && summary.earningCount > 0
     && Math.abs(summary.reportedEarnings - summary.userTaggedEarnings) > 0.01;
   summary.needsReview = summary.negativeLegacyEarnings
-    || summary.earningsMismatch || summary.unclassifiedCount > 0;
+    || summary.earningsMismatch || summary.unclassifiedCount > 0
+    || summary.sequenceMismatchCount > 0;
   return summary;
 };
 
