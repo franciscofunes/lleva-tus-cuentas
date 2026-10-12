@@ -39,3 +39,13 @@ For financial amounts, keep a visible +/− sign and currency, using rose/red fo
 2. Test ordinary transactions, currency purchases/sales, statement summaries, due dates, paid status and controlled custom-category details.
 3. Run component tests and production build; review the resulting CSS and Netlify preview.
 4. Merge only after required checks succeed. Confirm production matches the merged commit before claiming it has shipped.
+
+## Collapsible widget system: Portfolio and Transacciones
+
+- All primary widgets must use `CollapsibleSection` for **the same** outer surface, padding, border, heading hierarchy, description and chevron. `FinancialOverviewPanel` reuses `COLLAPSIBLE_SURFACE_STYLES` from `CollapsibleHeading.js`.
+- Nested visualizations (e.g. Portfolio allocation and performance) use `CollapsibleSection variant="nested"`, semantic **h3**, subdued `dark:bg-slate-900/60` and the same disclosure controls. Do not nest a third-party Tremor `Card` inside the section: its own border/padding violates theme consistency on Android.
+- Shared wrapper tokens should be updated in one place, not duplicated for Portfolio and Transactions. The collapsed state stays controlled by its owning page/component and respects existing user preferences.
+- Position cards use a nested slate surface, legible violet institution labels, financial values with tabular digits and 44px action/drag targets. Never truncate a financial amount to make the layout fit mobile.
+- On 360–390px mobile, action labels **wrap** instead of clipping (e.g. "Exportar archivos"); the nested chart selector and rows must not cause horizontal overflow.
+- Chart axis labels may be abbreviated for space, but position balances, gain/loss values and transaction data must remain unchanged and exact; axis shortening is display-only.
+- Test Portfolio and Transacciones in both modes after changing any shared widget component. Avoid CSS selectors targeting just one page to paper over common layout issues.
