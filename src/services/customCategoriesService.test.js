@@ -1,4 +1,4 @@
-import { saveCustomCategory, updateCustomCategoryLabel, updateCustomCategoryCurrency } from './customCategoriesService';
+import { saveCustomCategory, updateCustomCategoryLabel, updateCustomCategoryCurrency, updateCustomCategoryDescription } from './customCategoriesService';
 import firebase from 'firebase/compat/app';
 import { firestore } from '../shared/config/firebase/firebase.config';
 
@@ -109,4 +109,40 @@ test('updates future-only currency via owner category reference and never histor
   expect(update.mock.calls[0][0].name).toBeUndefined();
   expect(update.mock.calls[0][0].isExpense).toBeUndefined();
   await expect(updateCustomCategoryCurrency('userA', entry, 'EUR')).rejects.toThrow(/Moneda inválida/);
+});
+
+test('description is validated, normalized and stored only in user customCategories', async () => {
+  await saveCustomCategory('userA', {
+    name: 'Gastos bancarios', isExpense: true,
+    description: '  Mantenimiento de cuenta\r\nComisiones  ',
+  }, customCategories);
+  expect(set).toHaveBeenCalledWith(expect.objectContaining({
+    name: 'Gastos bancarios', description: 'Mantenimiento de cuenta\nComisiones',
+  }));
+  set.mockClear();
+  await expect(saveCustomCategory('userA', {
+    name: 'Servicios', isExpense: true, description: '<img>',
+  }, customCategories)).rejects.toThrow(/caracteres no permitidos/);
+  expect(set).not.toHaveBeenCalled();
+});
+
+test('editing or clearing description touches neither canonical identity nor financial movements', async () => {
+  const entry = { id: 'pets', name: 'Mascotas', origin: 'custom', isCustom: true };
+  await updateCustomCategoryDescription('userA', entry, 'Gastos veterinarios');
+  expect(update).toHaveBeenCalledWith({ description: 'Gastos veterinarios', updatedAt: 'server-time' });
+  expect(update.mock.calls[0][0].name).toBeUndefined();
+  expect(update.mock.calls[0][0].currency).toBeUndefined();
+  update.mockClear();
+  await updateCustomCategoryDescription('userA', entry, '  ');
+  expect(update).toHaveBeenCalledWith({ description: '', updatedAt: 'server-time' });
+});
+
+test('shared category and invalid description cannot be modified', async () => {
+  await expect(updateCustomCategoryDescription('userA',
+    { id: 'food', origin: 'shared', isCustom: false }, 'Nuevo texto'))
+    .rejects.toThrow(/personales/);
+  await expect(updateCustomCategoryDescription('userA',
+    { id: 'pets', origin: 'custom', isCustom: true }, 'x'.repeat(501)))
+    .rejects.toThrow(/500/);
+  expect(update).not.toHaveBeenCalled();
 });
