@@ -1,6 +1,6 @@
 import firebase from 'firebase/compat/app';
 import { firestore } from '../shared/config/firebase/firebase.config';
-import { categoryDocumentId, validateCategoryDisplayName, validateCustomCategory, validateCustomCategoryDateBehavior, CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, validCategoryCurrency } from '../utils/customCategories';
+import { categoryDocumentId, validateCategoryDisplayName, validateCustomCategory, validateCustomCategoryDateBehavior, CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, validCategoryCurrency, normalizeCategoryDescription, validateCategoryDescription } from '../utils/customCategories';
 import { validateCategoryExtraFields } from '../utils/categoryExtraFields';
 
 const collectionForUser = (uid) => firestore.collection('users').doc(uid).collection('customCategories');
@@ -12,13 +12,15 @@ export const saveCustomCategory = async (uid, draft, categories = []) => {
   const invalid = validateCustomCategory({ name, isExpense: draft.isExpense }, categories)
     || validateCategoryExtraFields(extraFieldIds)
     || validateCustomCategoryDateBehavior(draft.dateBehavior)
-    || (!validCategoryCurrency(draft.currency) ? 'Elegí ARS o USD.' : null);
+    || (!validCategoryCurrency(draft.currency) ? 'Elegí ARS o USD.' : null)
+    || validateCategoryDescription(draft.description);
   if (invalid) throw new Error(invalid);
   const id = categoryDocumentId(name);
   // Deterministic ID plus create() prevents racing tabs creating duplicate categories.
   await collectionForUser(uid).doc(id).set({
     name, isExpense: draft.isExpense, active: true,
     currency: draft.currency === 'USD' ? 'USD' : 'ARS',
+    ...(normalizeCategoryDescription(draft.description) ? { description: normalizeCategoryDescription(draft.description) } : {}),
     ...(extraFieldIds.length ? { extraFieldIds } : {}),
     ...([CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, LEGACY_CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR].includes(draft.dateBehavior)
       ? { dateBehavior: draft.dateBehavior } : {}),
@@ -66,4 +68,19 @@ export const updateCustomCategoryCurrency = async (uid, entry, nextCurrency) => 
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   });
   return nextCurrency;
+};
+
+// Description only changes category guidance. Canonical IDs, transaction
+// classifications and historical movement descriptions stay unchanged.
+export const updateCustomCategoryDescription = async (uid, entry, nextDescription) => {
+  if (!uid || !entry?.id || entry?.origin !== 'custom' || entry?.isCustom !== true)
+    throw new Error('Solo podés editar categorías personales.');
+  const error = validateCategoryDescription(nextDescription);
+  if (error) throw new Error(error);
+  const description = normalizeCategoryDescription(nextDescription);
+  await collectionForUser(uid).doc(entry.id).update({
+    description,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+  return description;
 };
