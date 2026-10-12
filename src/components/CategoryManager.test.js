@@ -2,13 +2,14 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import CategoryManager from './CategoryManager';
-import { saveCustomCategory, setCustomCategoryActive, updateCustomCategoryCurrency, updateCustomCategoryLabel } from '../services/customCategoriesService';
+import { saveCustomCategory, setCustomCategoryActive, updateCustomCategoryCurrency, updateCustomCategoryLabel, updateCustomCategoryDescription } from '../services/customCategoriesService';
 
 jest.mock('../services/customCategoriesService', () => ({
   saveCustomCategory: jest.fn().mockResolvedValue('id-mascotas'),
   setCustomCategoryActive: jest.fn().mockResolvedValue(undefined),
   updateCustomCategoryLabel: jest.fn().mockResolvedValue('Telefonía móvil'),
   updateCustomCategoryCurrency: jest.fn().mockResolvedValue('USD'),
+  updateCustomCategoryDescription: jest.fn().mockResolvedValue(''),
 }));
 jest.mock('react-toastify', () => ({ toast: { success: jest.fn() } }));
 
@@ -197,4 +198,52 @@ test('editing category currency updates defaults only and does not mutate histor
   fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
   await waitFor(() => expect(updateCustomCategoryCurrency).toHaveBeenCalledWith('userA', categories[1], 'USD'));
   expect(updateCustomCategoryLabel).not.toHaveBeenCalled();
+});
+
+test('description entered for a new category is persisted, then cleared from the form', async () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  fireEvent.change(screen.getByLabelText('Nombre de la categoría'), { target: { value: 'Servicios bancarios' } });
+  fireEvent.change(screen.getByLabelText('Descripción de la categoría (opcional)'), {
+    target: { value: '  Cargos de mantenimiento y comisiones  ' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
+  await waitFor(() => expect(saveCustomCategory).toHaveBeenCalledWith('userA',
+    { name: 'Servicios bancarios', isExpense: true, currency: 'ARS',
+      description: 'Cargos de mantenimiento y comisiones' }, categories));
+  await waitFor(() => expect(screen.getByLabelText('Descripción de la categoría (opcional)')).toHaveValue(''));
+});
+
+test('existing custom category description can be updated without renaming or changing its currency', async () => {
+  const withDescription = [{ ...categories[1], description: 'Gastos veterinarios' }, categories[0]];
+  render(<CategoryManager userId='userA' categories={withDescription} />);
+  expect(screen.getByText('Gastos veterinarios')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Editar Mascotas' }));
+  const field = screen.getByLabelText('Descripción de la categoría (opcional)', { selector: 'textarea#edit-personal-category-description' });
+  expect(field).toHaveValue('Gastos veterinarios');
+  fireEvent.change(field, { target: { value: 'Veterinaria, alimentos y cuidados' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+  await waitFor(() => expect(updateCustomCategoryDescription).toHaveBeenCalledWith(
+    'userA', withDescription[0], 'Veterinaria, alimentos y cuidados'
+  ));
+  expect(updateCustomCategoryLabel).not.toHaveBeenCalled();
+  expect(updateCustomCategoryCurrency).not.toHaveBeenCalled();
+});
+
+test('existing description can be cleared even for archived categories', async () => {
+  const archived = [{ ...categories[2], description: 'Curso personal' }];
+  render(<CategoryManager userId='userA' categories={archived} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Editar Educación' }));
+  const field = screen.getByLabelText('Descripción de la categoría (opcional)', { selector: 'textarea#edit-personal-category-description' });
+  fireEvent.change(field, { target: { value: '' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+  await waitFor(() => expect(updateCustomCategoryDescription).toHaveBeenCalledWith('userA', archived[0], ''));
+});
+
+test('invalid markup is rejected for category descriptions before saving', () => {
+  render(<CategoryManager userId='userA' categories={categories} />);
+  fireEvent.change(screen.getByLabelText('Nombre de la categoría'), { target: { value: 'Nueva' } });
+  fireEvent.change(screen.getByLabelText('Descripción de la categoría (opcional)'), { target: { value: '<script>x</script>' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
+  expect(screen.getByRole('alert')).toHaveTextContent(/caracteres no permitidos/);
+  expect(saveCustomCategory).not.toHaveBeenCalled();
 });
