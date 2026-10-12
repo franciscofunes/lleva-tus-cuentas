@@ -94,3 +94,20 @@ test('mobile delete action opens confirmation modal and does not delete on Cance
 	fireEvent.click(screen.getByRole('button', { name: 'Eliminar verificación' }));
 	await waitFor(() => expect(deletePortfolioSnapshot).toHaveBeenCalledWith('user-1', 'snapshot-1'));
 });
+
+test('remunerated USD account presents capital and interest separately and provides activity filters', async () => {
+  render(<PortfolioDetail />);
+  expect(await screen.findByTestId('remunerated-account-overview')).toBeInTheDocument();
+  expect(screen.getByText('Saldo disponible registrado')).toBeInTheDocument();
+  expect(screen.getByText('Retiros de capital')).toBeInTheDocument();
+  expect(screen.getByText(/no es una pérdida/i)).toBeInTheDocument();
+  const capital = screen.getByRole('button', { name: 'Capital' });
+  fireEvent.click(capital);
+  expect(capital).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getAllByText('Retiro de capital').length).toBeGreaterThan(0);
+  expect(screen.getAllByRole('button', { name: 'Editar verificación' }).length).toBe(2);
+  fireEvent.click(screen.getByRole('button', { name: 'Intereses' }));
+  expect(screen.queryByRole('button', { name: 'Editar verificación' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Todos' }));
+  expect(screen.getAllByRole('button', { name: 'Editar verificación' }).length).toBe(2);
+});
