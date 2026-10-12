@@ -9,15 +9,28 @@ export const COLLAPSIBLE_HEADER_STYLES = Object.freeze({
   description: 'mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400',
 });
 
-export function CollapsibleHeading({ eyebrow, title, description }) {
+// One shell and spacing rhythm for Portfolio and Transactions widgets.
+// The nested variant is reserved for collapsibles inside a main section.
+export const COLLAPSIBLE_SURFACE_STYLES = Object.freeze({
+  root: 'scroll-mt-4 min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800',
+  nested: 'min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/60',
+  header: 'flex w-full min-w-0 items-start justify-between gap-3 p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500 sm:p-5',
+  content: 'min-w-0 border-t border-slate-200 px-4 pb-4 pt-4 dark:border-slate-700 sm:px-5 sm:pb-5 sm:pt-5',
+});
+
+export function CollapsibleHeading({ eyebrow, title, description, level = 2 }) {
+  const HeadingTag = level === 3 ? 'h3' : 'h2';
+  const titleClass = level === 3
+    ? 'text-base font-bold leading-snug text-slate-900 dark:text-slate-50 sm:text-lg'
+    : COLLAPSIBLE_HEADER_STYLES.title;
   return (
     <div className='min-w-0'>
       {eyebrow && (
         <p className={COLLAPSIBLE_HEADER_STYLES.eyebrow}>{eyebrow}</p>
       )}
-      <h2 className={`${COLLAPSIBLE_HEADER_STYLES.title} ${eyebrow ? 'mt-1' : ''}`}>
+      <HeadingTag className={`${titleClass} ${eyebrow ? 'mt-1' : ''}`}>
         {title}
-      </h2>
+      </HeadingTag>
       {description && (
         <p className={COLLAPSIBLE_HEADER_STYLES.description}>{description}</p>
       )}
