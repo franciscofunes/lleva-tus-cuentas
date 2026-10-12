@@ -75,3 +75,15 @@ test('negative snapshot change with adjustment is neutral and never yield', () =
   expect(m.userTaggedEarnings).toBe(0);
   expect(m.withdrawals).toBe(0);
 });
+
+test('historical snapshots with contradictory timestamps are flagged but never recalculated', () => {
+  const result=summarizeAccountActivity(position, [
+    {id:'start',capturedAt:at('08','08','48'),balance:11128.53,changeType:'earning',observedEarning:0.53,confirmedEarning:0.53},
+    {id:'second',capturedAt:at('08','09','03'),balance:10500,changeType:'withdrawal',observedEarning:-500},
+    {id:'third',capturedAt:at('08','11','41'),balance:11000,changeType:'withdrawal',observedEarning:-128.53},
+  ]);
+  expect(result.sequenceMismatchCount).toBe(2);
+  expect(result.withdrawals).toBeCloseTo(628.53);
+  expect(result.userTaggedEarnings).toBeCloseTo(0.53);
+  expect(result.needsReview).toBe(true);
+});
