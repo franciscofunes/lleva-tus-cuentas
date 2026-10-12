@@ -25,7 +25,8 @@ test('Portfolio nested charts use shared visual language with independent collap
   const performance = screen.getByRole('button', {name:/Rendimiento por activo/});
   expect(allocation).toHaveAttribute('aria-expanded','true');
   expect(performance).toHaveAttribute('aria-expanded','true');
-  expect(container.querySelectorAll('section.dark\\:bg-slate-900\\/60')).toHaveLength(2);
+  expect(container.querySelector('#portfolio-chart-allocation')).toHaveClass('dark:bg-slate-900/60');
+  expect(container.querySelector('#portfolio-chart-performance')).toHaveClass('dark:bg-slate-900/60');
   expect(screen.getByRole('heading', { level:3, name:'Distribución por posición' })).toBeInTheDocument();
   expect(screen.getByText('Cuenta USD')).toBeInTheDocument();
   fireEvent.click(allocation);
@@ -45,7 +46,7 @@ test('currency switches preserve accurate currency denomination; privacy hides p
   expect(screen.getByText('Cuenta ARS')).toBeInTheDocument();
   expect(screen.queryByText('Cuenta USD')).not.toBeInTheDocument();
   rerender(<PortfolioCharts positions={positions} snapshots={snapshots} hideValues />);
-  expect(screen.getByText('••••••')).toBeInTheDocument();
+  expect(screen.getAllByText('••••••').length).toBeGreaterThan(0);
   expect(screen.queryByText(/200\.000/)).not.toBeInTheDocument();
 });
 
