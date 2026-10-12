@@ -12,7 +12,7 @@ The account view applies to **Cuenta remunerada** or **DAILY_RATE** positions, i
 - `withdrawal` and `deposit` are movements of **capital**; neither is investment profit/loss. Moving USD from one remunerated account to another is not evidence of a rate reduction.
 - The previous `realizedEarnings` field remains untouched. If negative or inconsistent with available tagged snapshots, show a **reconciliation warning**, not a calculated loss. Never auto-correct, delete or migrate financial history.
 - Daily expected interest is an estimate calculated from loaded TNA/balance; it is **not** guaranteed or confirmed. The earnings timeline uses at most one expectation (latest valid sample) per calendar day. Weekly and monthly expectations add distinct day samples.
-- Sort verification records using their **actual timestamps**, never Firestore insertion order or array reversal assumptions. The account history may be filtered by **Todos, Intereses, Capital, Otros**.
+- Sort verification records using their **actual timestamps**, never Firestore insertion order or array reversal assumptions. If chronologically consecutive balances do not match the stored observed change, flag the discrepancy for manual reconciliation; never rewrite snapshots. The account history may be filtered by **Todos, Intereses, Capital, Otros**.
 - Display retirement and capital transfer changes with neutral text rather than negative performance red. Keep money amounts denominated in the position's stored currency.
 
 ## UX hierarchy
