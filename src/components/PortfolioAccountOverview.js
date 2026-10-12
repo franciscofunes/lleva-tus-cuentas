@@ -57,6 +57,12 @@ export default function PortfolioAccountOverview({ position, snapshots }) {
               El acumulado histórico no coincide con los rendimientos clasificados en las verificaciones disponibles.
             </p>
           )}
+          {activity.sequenceMismatchCount > 0 && (
+            <p className='mt-1 text-amber-900 dark:text-amber-200'>
+              {activity.sequenceMismatchCount} verificación(es) tienen una variación que no coincide
+              con los saldos consecutivos ordenados por hora. Revisá fechas, ediciones o registros faltantes.
+            </p>
+          )}
           {activity.unclassifiedCount > 0 && (
             <p className='mt-1 text-amber-900 dark:text-amber-200'>
               {activity.unclassifiedCount} movimiento(s) sin clasificar requieren revisión.
