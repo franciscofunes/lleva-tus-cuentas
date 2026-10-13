@@ -50,3 +50,10 @@ test('only approved nonempty metadata keys are written on existing transaction e
   expect(saved.customDetails).toEqual({ paymentMethod: 'debito', reference: 'A-23' });
   expect(saved.amount).toBe('2500');
 });
+
+test('a credit-card summary with ARS 0 keeps the exact zero amount instead of leaving stale expense values', async () => {
+  await updateDataAction({ ...base, amount: 0, category: 'Resumen tarjeta 💳' }, 'expense-1')(jest.fn());
+  const saved = update.mock.calls[0][0];
+  expect(saved.amount).toBe(0);
+  expect(saved.category).toBe('Resumen tarjeta 💳');
+});
