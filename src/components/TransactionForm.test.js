@@ -19,6 +19,8 @@ jest.mock('../services/cardStatementService', () => ({
   saveReviewedStatement: jest.fn(),
   verifyStatementDraft: jest.fn(),
 }));
+jest.mock('../services/bankingService', () => ({ saveStatementBankLink: jest.fn() }));
+jest.mock('./BankStatementSelector', () => () => null);
 jest.mock('./CardStatementPdfReview', () => () => null);
 jest.mock('./InfoTooltip', () => () => null);
 
