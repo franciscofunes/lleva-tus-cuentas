@@ -48,6 +48,19 @@ export default function Banks() {
   const [busy, setBusy] = useState(false);
   const [openBank, setOpenBank] = useState('santander');
   const [showUnlinked, setShowUnlinked] = useState(false);
+  const [visibility, setVisibility] = useState({ uid: null, visible: false });
+  const showValues = visibility.uid === uid && visibility.visible;
+  const displayMoney = (amount, currency) => showValues ? money(amount, currency) : '••••';
+  useEffect(() => {
+    try { setVisibility({ uid, visible: Boolean(uid && window.localStorage.getItem('ltc-bank-visible:' + uid) === '1') }); }
+    catch { setVisibility({ uid, visible: false }); }
+  }, [uid]);
+  const toggleVisibility = () => {
+    const visible = !showValues;
+    setVisibility({ uid, visible });
+    try { window.localStorage.setItem('ltc-bank-visible:' + uid, visible ? '1' : '0'); }
+    catch { /* Privacy controls still work without localStorage. */ }
+  };
   const [accountDraft, setAccountDraft] = useState(null);
   const [accountEditingId, setAccountEditingId] = useState(null);
   const [cardDraft, setCardDraft] = useState(null);
@@ -161,7 +174,13 @@ export default function Banks() {
           <h1 className='mt-1 text-2xl font-extrabold sm:text-3xl'>Bancos y tarjetas</h1>
           <p className='mt-2 text-sm text-slate-600 dark:text-slate-300'>Cuentas y saldos manuales, tarjetas, consumos y resúmenes vinculados a Transacciones.</p>
           <p className='mt-2 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300'><FiShield aria-hidden='true' /> Solo vos podés consultar estos datos; no vinculamos tu home banking ni solicitamos contraseñas, CVV o números completos de tarjeta.</p>
-          <Link to='/transacciones' className='mt-3 inline-flex min-h-[40px] items-center text-sm font-bold text-purple-700 dark:text-purple-300'>Ver transacciones →</Link>
+          <div className='mt-3 flex flex-wrap items-center gap-3'>
+            <Link to='/transacciones' className='inline-flex min-h-[40px] items-center text-sm font-bold text-purple-700 dark:text-purple-300'>Ver transacciones →</Link>
+            <button type='button' aria-pressed={!showValues} onClick={toggleVisibility} className={secondary}>
+              {showValues ? <FiEyeOff aria-hidden='true'/> : <FiEye aria-hidden='true'/>}
+              {showValues ? 'Ocultar importes' : 'Mostrar importes'}
+            </button>
+          </div>
         </header>
         <ErrorMessage error={error} />
         {pending && <div role='status' className={surface + ' animate-pulse'}>Cargando bancos y tarjetas…</div>}
@@ -169,7 +188,7 @@ export default function Banks() {
           {['ARS','USD'].map((currency) => (
             <div className={surface} key={currency}>
               <p className='text-xs font-semibold text-slate-600 dark:text-slate-300'>Saldos registrados · {currency}</p>
-              <p className='mt-2 break-words text-xl font-extrabold tabular-nums'>{money(totals[currency], currency)}</p>
+              <p className='mt-2 break-words text-xl font-extrabold tabular-nums'>{displayMoney(totals[currency], currency)}</p>
               <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>No incluye deuda de tarjetas ni inversiones de Portfolio.</p>
             </div>
           ))}
@@ -203,7 +222,7 @@ export default function Banks() {
                       <article key={a.id} className={surface}>
                         <p className='font-bold'>{a.name}</p>
                         <p className='text-xs text-slate-600 dark:text-slate-300'>{a.type === 'cuenta_corriente' ? 'Cuenta corriente' : a.type === 'caja_ahorro' ? 'Caja de ahorro' : 'Otra cuenta'} · {a.currency}</p>
-                        <p className='mt-2 text-lg font-extrabold tabular-nums'>{money(a.balance, a.currency)}</p>
+                        <p className='mt-2 text-lg font-extrabold tabular-nums'>{displayMoney(a.balance, a.currency)}</p>
                         {a.alias && <p className='mt-2 break-all text-sm'>Alias: {a.alias}</p>}
                         <p className='mt-1 text-xs'>CBU/CVU: {revealedAccount === a.id ? (a.cbu || 'No informado') : maskCbu(a.cbu)}</p>
                         {a.cbu && <button type='button' onClick={() => setRevealedAccount(revealedAccount === a.id ? null : a.id)}
@@ -264,7 +283,7 @@ export default function Banks() {
                         {chargesForCard(card.id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>No hay consumos manuales.</p>}
                         {chargesForCard(card.id).map((charge) => <div key={charge.id} className='flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
                           <div><p className='font-semibold'>{charge.merchant}</p><p className='text-xs text-slate-600 dark:text-slate-300'>{charge.purchaseDate} · {charge.installments} cuota(s)</p></div>
-                          <span className='font-extrabold tabular-nums'>{money(charge.amount, charge.currency)}</span>
+                          <span className='font-extrabold tabular-nums'>{displayMoney(charge.amount, charge.currency)}</span>
                           <button type='button' className='min-h-[40px] text-xs text-rose-600 dark:text-rose-300' onClick={() => run(() => deleteManualCardCharge(uid, charge.id), 'Consumo eliminado')}>Eliminar</button>
                         </div>)}
                         {chargeDraft?.cardId === card.id && (
@@ -284,7 +303,7 @@ export default function Banks() {
                         {statementsForCard(card.id).map((statement) => <article key={statement.id} className='rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
                           <p className='font-bold'>Resumen {statement.period} · {statement.cardBrand}</p>
                           <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>Cierre {statement.closingDate} · Vencimiento {statement.dueDate} · {statement.itemCount} consumos</p>
-                          <p className='mt-1 text-sm font-bold'>{money(statement.totals?.ARS,'ARS')} · {money(statement.totals?.USD,'USD')}</p>
+                          <p className='mt-1 text-sm font-bold'>{displayMoney(statement.totals?.ARS,'ARS')} · {displayMoney(statement.totals?.USD,'USD')}</p>
                           <CardStatementDetails expenseId={statement.expenseId}/>
                         </article>)}
                         <button type='button' className={secondary} onClick={()=>{setPdfCardId(card.id);setPdfDraft(null);setPendingExpenseId(null);}}>
@@ -329,7 +348,7 @@ export default function Banks() {
             return <div key={statement.id} className='mb-3 space-y-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
               <p className='font-extrabold'>{statement.institution} · {statement.cardBrand} · {statement.period}</p>
               <p className='text-xs text-slate-600 dark:text-slate-300'>Cierre: {statement.closingDate} · Vencimiento: {statement.dueDate}</p>
-              <p className='text-sm font-semibold'>{money(statement.totals?.ARS,'ARS')} · {money(statement.totals?.USD,'USD')}</p>
+              <p className='text-sm font-semibold'>{displayMoney(statement.totals?.ARS,'ARS')} · {displayMoney(statement.totals?.USD,'USD')}</p>
               <CardStatementDetails expenseId={statement.expenseId}/>
               <div className='grid gap-3 sm:grid-cols-2'>
                 <Field title='Banco'><select className={inputClass} value={chosen.bankId} onChange={(e)=>setAssignments({...assignments,[statement.expenseId]:{bankId:e.target.value,cardId:''}})}><option value=''>Elegí banco</option>{banks.map((bank)=><option key={bank.code} value={bank.code}>{bank.name}</option>)}</select></Field>
