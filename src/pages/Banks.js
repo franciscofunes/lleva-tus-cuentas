@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -34,6 +34,11 @@ function ErrorMessage({ error }) { return error ? <p role='alert' className='rou
 
 export default function Banks() {
   const user = useSelector((state) => state.auth.user);
+  // A new session remounts the entire state tree before rendering prior-user data.
+  return <BanksWorkspace key={user?.uid || 'guest'} user={user} />;
+}
+
+function BanksWorkspace({ user }) {
   const categories = useSelector((state) => state.database.categories);
   const dispatch = useDispatch();
   const uid = user?.uid;
@@ -69,6 +74,7 @@ export default function Banks() {
   const [revealedAccount, setRevealedAccount] = useState(null);
   const [pdfCardId, setPdfCardId] = useState('');
   const [pdfDraft, setPdfDraft] = useState(null);
+  const lastPdfShaRef = useRef(null);
   const [pendingExpenseId, setPendingExpenseId] = useState(null);
   const [assignments, setAssignments] = useState({});
 
@@ -77,20 +83,21 @@ export default function Banks() {
     setStatements([]); setLinks([]); setPending(true); setError('');
     if (!uid) return undefined;
     let active = true;
-    let received = 0;
+    const received = new Set();
     const report = (e) => { if (active) { setError('No pudimos cargar los bancos. Revisá las reglas de Firestore.'); setPending(false); console.error('[ltc-banks] subscription', e?.code || 'error'); } };
-    const connect = (subscribe, save) => subscribe(uid, (items) => {
+    const connect = (index, subscribe, save) => subscribe(uid, (items) => {
       if (!active) return;
-      save(items); received += 1;
-      if (received >= 6) setPending(false);
+      save(items);
+      received.add(index);
+      if (received.size === 6) setPending(false);
     }, report);
     const clean = [
-      connect(subscribeBanks, setBanks),
-      connect(subscribeBankAccounts, setAccounts),
-      connect(subscribeBankCards, setCards),
-      connect(subscribeBankCharges, setCharges),
-      connect(subscribeImportedStatements, setStatements),
-      connect(subscribeBankStatementLinks, setLinks),
+      connect(0, subscribeBanks, setBanks),
+      connect(1, subscribeBankAccounts, setAccounts),
+      connect(2, subscribeBankCards, setCards),
+      connect(3, subscribeBankCharges, setCharges),
+      connect(4, subscribeImportedStatements, setStatements),
+      connect(5, subscribeBankStatementLinks, setLinks),
     ];
     const unsubscribeCategories = dispatch(getCategoriesDataAction(uid));
     return () => { active = false; clean.forEach((stop) => stop?.()); unsubscribeCategories?.(); };
@@ -133,13 +140,14 @@ export default function Banks() {
   const bankCards = (bankId) => cards.filter((card) => card.bankId === bankId);
   const statementsForCard = (id) => statementForCard(statements, links, id);
   const chargesForCard = (id) => charges.filter((charge) => charge.cardId === id);
-  // Preserve a successfully created expense ID across upload retries.
-  // Clear it only when switching to a different source document.
+  // An intermediate onDraft(null) during file selection is not a new PDF.
+  // Preserve the already-created expense ID for retries of the same SHA.
   const resetPDF = (draft) => {
-    setPdfDraft((previous) => {
-      if (draft?.fileSha256 && previous?.fileSha256 !== draft.fileSha256) setPendingExpenseId(null);
-      return draft;
-    });
+    if (draft?.fileSha256 && lastPdfShaRef.current !== draft.fileSha256) {
+      setPendingExpenseId(null);
+      lastPdfShaRef.current = draft.fileSha256;
+    }
+    setPdfDraft(draft);
   };
   const storePdf = async () => {
     if (!uid || !selectedPdfCard || !pdfDraft || busy) return;
