@@ -15,7 +15,7 @@ function QuickAccessCard({ eyebrow, title, description, children }) {
             </p>
           )}
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:flex">{children}</div>
+        <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap">{children}</div>
       </div>
     </section>
   );
