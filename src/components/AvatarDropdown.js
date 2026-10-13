@@ -7,6 +7,7 @@ import {
 	AiOutlineUser,
 } from 'react-icons/ai';
 import { MdOutlineExitToApp } from 'react-icons/md';
+import { FiCreditCard } from 'react-icons/fi';
 import { RiLockPasswordFill } from 'react-icons/ri';
 import { NavLink } from 'react-router-dom';
 
@@ -117,6 +118,9 @@ const AvatarDropdown = ({ user, handleLogout }) => {
 						>
 							<span>Portfolio</span>
 							<AiOutlineFund className='text-lg' />
+						</NavLink>
+						<NavLink className={itemClass} role='menuitem' to='/bancos' onClick={closeDropdown}>
+							<span>Bancos y tarjetas</span><FiCreditCard className='text-lg'/>
 						</NavLink>
 					</div>
 
