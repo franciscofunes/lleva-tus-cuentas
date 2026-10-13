@@ -47,6 +47,7 @@ export default function Banks() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [openBank, setOpenBank] = useState('santander');
+  const [showUnlinked, setShowUnlinked] = useState(false);
   const [accountDraft, setAccountDraft] = useState(null);
   const [accountEditingId, setAccountEditingId] = useState(null);
   const [cardDraft, setCardDraft] = useState(null);
@@ -119,7 +120,14 @@ export default function Banks() {
   const bankCards = (bankId) => cards.filter((card) => card.bankId === bankId);
   const statementsForCard = (id) => statementForCard(statements, links, id);
   const chargesForCard = (id) => charges.filter((charge) => charge.cardId === id);
-  const resetPDF = (draft) => { setPdfDraft(draft); setPendingExpenseId(null); };
+  // Preserve a successfully created expense ID across upload retries.
+  // Clear it only when switching to a different source document.
+  const resetPDF = (draft) => {
+    setPdfDraft((previous) => {
+      if (draft?.fileSha256 && previous?.fileSha256 !== draft.fileSha256) setPendingExpenseId(null);
+      return draft;
+    });
+  };
   const storePdf = async () => {
     if (!uid || !selectedPdfCard || !pdfDraft || busy) return;
     await run(async () => {
@@ -312,7 +320,7 @@ export default function Banks() {
 
         <CollapsibleSection id='bank-imported-statements' eyebrow='Análisis' title='Resúmenes importados sin vincular'
           description={unlinked.length + ' resúmenes PDF sin banco/tarjeta asignados'}
-          collapsed={false} onToggle={() => {}}>
+          collapsed={!showUnlinked} onToggle={() => setShowUnlinked((value) => !value)}>
           <p className='mb-3 text-sm text-slate-600 dark:text-slate-300'>Estos resúmenes ya existen en Transacciones. Vincularlos no crea nuevos gastos ni vuelve a importar el PDF.</p>
           {unlinked.length === 0 && <p className='text-sm'>No hay resúmenes pendientes de vincular.</p>}
           {unlinked.map((statement) => {
