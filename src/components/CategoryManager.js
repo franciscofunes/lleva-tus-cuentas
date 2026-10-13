@@ -1,14 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { FaCheck, FaEdit, FaPlus, FaTag } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { saveCustomCategory, setCustomCategoryActive, updateCustomCategoryCurrency, updateCustomCategoryLabel } from '../services/customCategoriesService';
-import { CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, categoryLabel, normalizeCategoryName, validateCategoryDisplayName, validateCustomCategory } from '../utils/customCategories';
+import { saveCustomCategory, setCustomCategoryActive, updateCustomCategoryCurrency, updateCustomCategoryLabel, updateCustomCategoryDescription } from '../services/customCategoriesService';
+import { CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR, categoryLabel, normalizeCategoryName, validateCategoryDisplayName, validateCustomCategory, normalizeCategoryDescription, validateCategoryDescription, CATEGORY_DESCRIPTION_LIMIT } from '../utils/customCategories';
 import { CATEGORY_EXTRA_FIELD_CATALOG, MAX_EXTRA_FIELDS, validateCategoryExtraFields } from '../utils/categoryExtraFields';
 
 const fieldClass = 'w-full min-h-[44px] rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white';
 
 const CategoryManager = ({ userId, categories = [], onCreated }) => {
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [isExpense, setIsExpense] = useState(true);
   const [currency, setCurrency] = useState('ARS');
   const [extraFieldIds, setExtraFieldIds] = useState([]);
@@ -16,6 +17,7 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
   const [working, setWorking] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editingLabel, setEditingLabel] = useState('');
+  const [editingDescription, setEditingDescription] = useState('');
   const [editingCurrency, setEditingCurrency] = useState('ARS');
   const [editError, setEditError] = useState('');
   const [error, setError] = useState('');
@@ -35,17 +37,20 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
       return;
     }
     const validation = validateCustomCategory({ name, isExpense }, categories)
-      || validateCategoryExtraFields(extraFieldIds);
+      || validateCategoryExtraFields(extraFieldIds)
+      || validateCategoryDescription(description);
     if (validation) { setError(validation); return; }
     setWorking('create');
     setError('');
     try {
       await saveCustomCategory(userId, {
         name, isExpense, currency,
+        ...(normalizeCategoryDescription(description) ? { description: normalizeCategoryDescription(description) } : {}),
         ...(extraFieldIds.length ? { extraFieldIds } : {}),
         ...(hasDueDate ? { dateBehavior: CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR } : {}),
       }, categories);
       setName('');
+      setDescription('');
       setExtraFieldIds([]);
       setHasDueDate(false);
       setCurrency('ARS');
@@ -64,19 +69,22 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
     if (working) return;
     setEditingId(entry.id);
     setEditingLabel(categoryLabel(entry));
+    setEditingDescription(entry.description || '');
     setEditingCurrency(entry.currency === 'USD' ? 'USD' : 'ARS');
     setEditError('');
   };
   const cancelEditing = () => {
     setEditingId(null);
     setEditingLabel('');
+    setEditingDescription('');
     setEditingCurrency('ARS');
     setEditError('');
   };
   const rename = async (event, entry) => {
     event.preventDefault();
     if (working) return;
-    const validation = validateCategoryDisplayName(editingLabel, categories, entry.id);
+    const validation = validateCategoryDisplayName(editingLabel, categories, entry.id)
+      || validateCategoryDescription(editingDescription);
     if (validation) { setEditError(validation); return; }
     setWorking(entry.id);
     setEditError('');
@@ -87,7 +95,10 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
       if (editingCurrency !== (entry.currency === 'USD' ? 'USD' : 'ARS')) {
         await updateCustomCategoryCurrency(userId, entry, editingCurrency);
       }
-      toast.success('Nombre de categoría actualizado');
+      if (normalizeCategoryDescription(editingDescription) !== normalizeCategoryDescription(entry.description)) {
+        await updateCustomCategoryDescription(userId, entry, editingDescription);
+      }
+      toast.success('Categoría actualizada');
       cancelEditing();
     } catch (err) {
       setEditError(err.message || 'No se pudo editar. Verificá las reglas de Firestore.');
@@ -122,6 +133,16 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
         <label htmlFor='personal-category-name' className='block text-sm font-semibold'>Nombre de la categoría</label>
         <input id='personal-category-name' value={name} maxLength={50} placeholder='Ej.: Mascotas, Educación, Freelance…'
           autoComplete='off' onChange={(event) => { setName(event.target.value); setError(''); }} className={fieldClass} />
+        <label htmlFor='personal-category-description' className='block text-sm font-semibold'>Descripción de la categoría (opcional)</label>
+        <textarea id='personal-category-description' value={description}
+          maxLength={CATEGORY_DESCRIPTION_LIMIT} rows={3}
+          placeholder='Ej.: Gastos mensuales por mantenimiento, comisiones y servicios bancarios.'
+          onChange={(event) => { setDescription(event.target.value); setError(''); }}
+          className={fieldClass + ' resize-y'} />
+        <p className='text-xs text-slate-600 dark:text-slate-300'>
+          Se muestra al tocar el ícono de información de la categoría. No es la descripción de una transacción.
+          <span className='ml-1 tabular-nums'>{description.length}/{CATEGORY_DESCRIPTION_LIMIT}</span>
+        </p>
         <fieldset className='flex gap-3'>
           <legend className='mb-1 text-sm font-semibold'>Tipo de movimiento</legend>
           <label className='flex min-h-[44px] flex-1 items-center gap-2 rounded-xl border border-slate-300 px-3 text-sm dark:border-slate-600'>
@@ -195,6 +216,7 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
             <div className='flex min-w-0 flex-wrap items-center justify-between gap-3'>
             <div className='min-w-0'>
               <p className='break-words text-sm font-bold text-slate-900 dark:text-white'>{categoryLabel(entry)}</p>
+              {entry.description && <p className='mt-1 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-600 dark:text-slate-300'>{entry.description}</p>}
               <p className='text-xs text-slate-500 dark:text-slate-400'>{entry.isExpense ? 'Gasto' : 'Ingreso'} · {entry.currency === 'USD' ? 'USD' : 'ARS'} · {entry.active === false ? 'Archivada' : 'Activa'}{['due-date', CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR].includes(entry.dateBehavior) ? ' · Con vencimiento' : ''}</p>
               {Array.isArray(entry.extraFieldIds) && entry.extraFieldIds.length > 0 && (
                 <p className='mt-1 text-xs text-purple-700 dark:text-purple-300'>{entry.extraFieldIds.length} campos adicionales</p>
@@ -224,6 +246,15 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
                   disabled={Boolean(working)} value={editingLabel}
                   onChange={(event) => { setEditingLabel(event.target.value); setEditError(''); }}
                   className={fieldClass} />
+                <label htmlFor='edit-personal-category-description' className='block text-sm font-semibold'>Descripción de la categoría (opcional)</label>
+                <textarea id='edit-personal-category-description' rows={3} maxLength={CATEGORY_DESCRIPTION_LIMIT}
+                  value={editingDescription} disabled={Boolean(working)}
+                  onChange={(event) => { setEditingDescription(event.target.value); setEditError(''); }}
+                  className={fieldClass + ' resize-y'} />
+                <p className='text-xs text-slate-600 dark:text-slate-300'>
+                  Texto del tooltip de información · {editingDescription.length}/{CATEGORY_DESCRIPTION_LIMIT} caracteres.
+                  Podés dejarlo vacío para quitar la descripción.
+                </p>
                 <label htmlFor='edit-personal-category-currency' className='block text-sm font-semibold'>Moneda para nuevos movimientos</label>
                 <select id='edit-personal-category-currency' value={editingCurrency}
                   onChange={(event) => setEditingCurrency(event.target.value)} disabled={Boolean(working)}
@@ -254,7 +285,7 @@ const CategoryManager = ({ userId, categories = [], onCreated }) => {
           </div>
         ))}
         <p className='text-xs leading-relaxed text-slate-500 dark:text-slate-400'>
-          Editar cambia el nombre visible sin reescribir movimientos anteriores. El tipo, los campos adicionales y la configuración de fechas no cambian. Archivar solo impide seleccionar la categoría para nuevas transacciones.
+          Editar cambia el nombre visible y la descripción del tooltip sin reescribir movimientos anteriores. El tipo, los campos adicionales y la configuración de fechas no cambian. Archivar solo impide seleccionar la categoría para nuevas transacciones.
         </p>
       </section>
     </div>

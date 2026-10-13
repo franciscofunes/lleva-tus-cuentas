@@ -13,7 +13,7 @@ import {
 import InfoTooltip from "../components/InfoTooltip";
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from "../shared/constants/tooltip-messages.const";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
-import { categoriesForNewTransactions, categoryLabel, getCategoryCurrency } from "../utils/customCategories";
+import { categoriesForNewTransactions, categoryLabel, getCategoryCurrency, categoryDescription } from "../utils/customCategories";
 import { getCategoryExtraFields, sanitizeTransactionCustomDetails } from "../utils/categoryExtraFields";
 import { parseTransactionsMarkdown } from "../utils/transactionsMarkdown";
 import {
@@ -284,7 +284,7 @@ const TransactionForm = ({
             htmlFor="category"
             className="text-sm font-medium text-gray-700 dark:text-white"
           >
-            Categoría <InfoTooltip content={CATEGORY_INFO_TOOLTIP_MESSAGE} />
+            Categoría <InfoTooltip content={categoryDescription(category, categories) || CATEGORY_INFO_TOOLTIP_MESSAGE} />
           </label>
           {onManageCategories && (
             <button type="button" onClick={onManageCategories} disabled={!categories}

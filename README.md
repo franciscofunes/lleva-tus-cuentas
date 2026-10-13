@@ -13,7 +13,7 @@ LTC is a responsive **React 18** single-page application hosted on **Netlify**. 
 | Area | What you can do | Key implementation |
 | --- | --- | --- |
 | Transactions | Record, edit, categorize, search and filter money movements; navigate months; export XLSX/Markdown | `src/pages/Dashboard.js`, Redux and `users/{uid}/expenses` |
-| Categories | Use shared categories or create private, archivable categories with up to three **approved** optional fields | `CategoryManager`, `categoryExtraFields`, Firestore |
+| Categories | Use shared categories or create private, archivable categories with editable tooltip descriptions and up to three **approved** optional fields | `CategoryManager`, `categoryExtraFields`, Firestore |
 | Due dates | Track bill/card due dates, payment state and reminders | `transactionDueDates`, `notificationService` |
 | Portfolio | Manage ARS/USD positions, valuation snapshots and reconciliation records | `Portfolio`, `PortfolioDetail`, `portfolioService` |
 | Card statements | Analyze supported **digital Visa PDFs**, review purchases and totals, attach details to one card-payment transaction | Lita PDF API + `cardStatementService` |
@@ -91,6 +91,7 @@ The web API key is **not** an authorization boundary: enforce ownership in Fires
 - **Netlify** serves the SPA; `netlify.toml` rewrites deep links to `index.html`.
 - **Firestore** data is organized under `users/{uid}`. Security Rules, not client-side filtering, must enforce user isolation.
 - **Firebase Rules are not automatically deployed** from this repository. Merge fragments into the *existing live ruleset*, validate with owner/non-owner tests, then publish via Firebase Console/CLI.
+- **Personal category tooltip descriptions:** Category management supports an optional, editable `description` (max 500 characters) stored only in `users/{uid}/customCategories/{categoryId}`. Publish the updated `firestore.rules.customCategories` fragment **before releasing the new UI**, otherwise Firestore will reject description writes. The change does not modify shared categories, transaction comments, category identity, or existing expenses.
 - Card PDFs are analyzed on **Lita**, not uploaded to a client-side AI provider. The Lita API authenticates the upload and rejects unsupported/irreconcilable layouts.
 - Never commit real bank PDFs, transaction exports, account numbers, ID tokens, API keys or provider response logs containing private financial information.
 

@@ -32,7 +32,7 @@ The targeted GitHub workflow is `.github/workflows/card-statements.yml`, which r
 | If you change... | Review and test... |
 | --- | --- |
 | Transaction create/update | `databaseActions.js`, `TransactionForm.js`, date helpers, existing payment/reminder data, `TransactionForm.test.js` |
-| Custom categories | `customCategoriesService.js`, `categoryExtraFields.js`, category owner-scoped rules, `CategoryManager.test.js` |
+| Custom categories | `customCategoriesService.js`, `categoryExtraFields.js`, editable `description` (max 500), category owner-scoped rules, `CategoryManager.test.js` |
 | Credit-card PDF review | `cardStatementService.js`, `CardStatementPdfReview.js`, Lita API contract, Firestore statements rules and idempotent retry |
 | Portfolio math | `portfolioService.js`, `portfolioEarningsAudit.js`, snapshots, reconciliation transaction tests and ARS/USD separation |
 | Lita chat | `LitaAssitantPanel.js`, `litaChatService.js`, parent and iframe origin checks, Lita `/api/chat` compatibility |
@@ -63,7 +63,7 @@ The repository contains `firestore.rules.portfolio`, `firestore.rules.cardStatem
 2. Write tests for both ordinary and financial edge cases (month boundaries, currency, zero/empty values, duplicate requests, existing records).
 3. Run relevant tests and `npm run build`; require GitHub checks and the **Netlify deploy preview** to finish successfully.
 4. Review browser/network behavior using a test user; check light/dark themes, mobile form controls and keyboard overlays where relevant.
-5. For schema changes, **publish verified Firestore rules before merging the UI**, or leave the PR in draft. Use synthetic data, never real statements.
+5. For schema changes, **publish verified Firestore rules before merging the UI**, or leave the PR in draft. Use synthetic data, never real statements. For category descriptions, verify that owners may create/edit/clear up to 500 characters, non-owners cannot write, and no arbitrary keys are permitted. Older documents without `description` remain valid.
 6. Merge into `main`; verify the **actual Netlify production deployment commit**, not only a ready branch preview.
 7. Smoke-test login, transaction create/edit, portfolio read, Lita iframe and authenticated PDF analysis (if changed).
 
