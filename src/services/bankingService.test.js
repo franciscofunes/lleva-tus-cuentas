@@ -73,10 +73,10 @@ test('link writes only when the owner bank, card and expense summary actually ex
   expect(mockLink.set).not.toHaveBeenCalled();
 });
 
-test('cross-user bank data cannot be read or written', () => {
+test('cross-user bank data cannot be read or written', async () => {
   expect(() => saveBankAccount('bob', { bankId:'santander',name:'Cuenta',type:'caja_ahorro',
     currency:'ARS',balance:'25',alias:'',cbu:'' })).toThrow(/Iniciá sesión/);
-  expect(() => getStatementLink('bob','expense1')).toThrow(/Iniciá sesión/);
+  await expect(getStatementLink('bob','expense1')).rejects.toThrow(/Iniciá sesión/);
   expect(() => subscribeBankStatementLinks('bob',jest.fn())).toThrow(/Iniciá sesión/);
 });
 
