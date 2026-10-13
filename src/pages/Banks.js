@@ -312,7 +312,7 @@ function BanksWorkspace({ user }) {
                           <p className='font-bold'>Resumen {statement.period} · {statement.cardBrand}</p>
                           <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>Cierre {statement.closingDate} · Vencimiento {statement.dueDate} · {statement.itemCount} consumos</p>
                           <p className='mt-1 text-sm font-bold'>{displayMoney(statement.totals?.ARS,'ARS')} · {displayMoney(statement.totals?.USD,'USD')}</p>
-                          <CardStatementDetails expenseId={statement.expenseId}/>
+                          {showValues ? <CardStatementDetails expenseId={statement.expenseId}/> : <p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>Mostrá los importes para consultar el desglose.</p>}
                         </article>)}
                         <button type='button' className={secondary} onClick={()=>{setPdfCardId(card.id);setPdfDraft(null);setPendingExpenseId(null);}}>
                           <FiUploadCloud/> Importar resumen PDF de esta tarjeta
@@ -333,7 +333,7 @@ function BanksWorkspace({ user }) {
               <button type='button' className={secondary} onClick={()=>{setPdfCardId('');setPdfDraft(null);setPendingExpenseId(null);}}>Cerrar</button>
             </div>
             <CardStatementPdfReview categories={categories || []} onDraft={resetPDF}
-              onApply={() => toast.info('Revisá el detalle y confirmá el guardado a continuación.')} disabled={busy}/>
+              showApplyButton={false} disabled={busy}/>
             {pdfDraft && <div className='space-y-2 rounded-xl border border-amber-300 p-3 text-sm dark:border-amber-800'>
               <p className='font-bold'>Confirmar resumen {pdfDraft.statement?.period}</p>
               <p>Se creará una única transacción Resumen tarjeta con el importe ARS declarado, y el detalle quedará excluido de los totales de gastos. El USD no se convertirá automáticamente.</p>
@@ -357,7 +357,7 @@ function BanksWorkspace({ user }) {
               <p className='font-extrabold'>{statement.institution} · {statement.cardBrand} · {statement.period}</p>
               <p className='text-xs text-slate-600 dark:text-slate-300'>Cierre: {statement.closingDate} · Vencimiento: {statement.dueDate}</p>
               <p className='text-sm font-semibold'>{displayMoney(statement.totals?.ARS,'ARS')} · {displayMoney(statement.totals?.USD,'USD')}</p>
-              <CardStatementDetails expenseId={statement.expenseId}/>
+              {showValues ? <CardStatementDetails expenseId={statement.expenseId}/> : <p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>Mostrá los importes para consultar el desglose.</p>}
               <div className='grid gap-3 sm:grid-cols-2'>
                 <Field title='Banco'><select className={inputClass} value={chosen.bankId} onChange={(e)=>setAssignments({...assignments,[statement.expenseId]:{bankId:e.target.value,cardId:''}})}><option value=''>Elegí banco</option>{banks.map((bank)=><option key={bank.code} value={bank.code}>{bank.name}</option>)}</select></Field>
                 <Field title='Tarjeta'><select className={inputClass} value={chosen.cardId} disabled={!chosen.bankId} onChange={(e)=>setAssignments({...assignments,[statement.expenseId]:{...chosen,cardId:e.target.value}})}><option value=''>Elegí tarjeta</option>{candidateCards.map((card)=><option key={card.id} value={card.id}>{card.nickname} {card.lastFour ? '•••• '+card.lastFour : ''}</option>)}</select></Field>
