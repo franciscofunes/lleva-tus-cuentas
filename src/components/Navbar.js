@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { FaChartPie, FaExchangeAlt } from 'react-icons/fa';
+import { FaChartPie, FaExchangeAlt, FaUniversity } from 'react-icons/fa';
 import { FiUserPlus } from 'react-icons/fi';
 import { ImEnter } from 'react-icons/im';
 import { useDispatch, useSelector } from 'react-redux';
@@ -97,6 +97,10 @@ function Navbar() {
 						<NavLink to='/portfolio' className={navItemClass}>
 							<FaChartPie />
 							Portfolio
+						</NavLink>
+						<NavLink to='/bancos' className={navItemClass}>
+							<FaUniversity />
+							Bancos
 						</NavLink>
 					</div>
 				)}
