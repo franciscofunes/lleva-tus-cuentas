@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import CardStatementPdfReview from "./CardStatementPdfReview";
+import BankStatementSelector from "./BankStatementSelector";
+import { saveStatementBankLink } from "../services/bankingService";
 import { getImportedStatement, saveReviewedStatement, verifyStatementDraft } from "../services/cardStatementService";
 import { useForm } from "react-hook-form";
 import "react-loading-skeleton/dist/skeleton.css";
@@ -75,6 +77,8 @@ const TransactionForm = ({
   const [markdownMessage, setMarkdownMessage] = useState("");
   const [statementDraft, setStatementDraft] = useState(null);
   const [draftExpenseId, setDraftExpenseId] = useState(null);
+  const [statementBankId, setStatementBankId] = useState("");
+  const [statementCardId, setStatementCardId] = useState("");
   const selectedDateIsDueDate = usesSelectedDateAsDueDate(category, categories);
   const hasSeparateDueDate = usesSeparateDueDate(category, categories);
   const categoryDefinition = categories?.find((entry) => entry.name === category);
@@ -168,6 +172,9 @@ const TransactionForm = ({
     setIsSubmitting(true);
     setMarkdownMessage("");
     try {
+      if (isCreditCardCategory && statementBankId && !statementCardId) {
+        throw new Error("Elegí una tarjeta o dejá el banco sin asignar.");
+      }
       let savedId = edit ? expenseId : draftExpenseId;
       if (statementDraft && isCreditCardCategory) {
         verifyStatementDraft(statementDraft);
@@ -199,6 +206,12 @@ const TransactionForm = ({
       if (statementDraft && isCreditCardCategory) {
         await saveReviewedStatement({ uid: user.uid, expenseId: savedId, draft: statementDraft });
       }
+      if (isCreditCardCategory && statementBankId && statementCardId) {
+        // Owner-verified association, never another expense or extra spending.
+        await saveStatementBankLink(user.uid, savedId, statementBankId, statementCardId);
+      }
+      setStatementBankId("");
+      setStatementCardId("");
       setStatementDraft(null);
       setDraftExpenseId(null);
       setName("");
@@ -392,6 +405,14 @@ const TransactionForm = ({
           </p>
         )}
 
+        {isCreditCardCategory && (
+          <BankStatementSelector
+            uid={user?.uid} expenseId={edit ? expenseId : null}
+            bankId={statementBankId} cardId={statementCardId}
+            onBankChange={setStatementBankId} onCardChange={setStatementCardId}
+            disabled={isSubmitting}
+          />
+        )}
         {isCreditCardCategory && (
           <CardStatementPdfReview
             categories={categories}
