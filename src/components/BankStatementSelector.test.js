@@ -34,13 +34,22 @@ function Form({ expenseId = null }) {
 beforeEach(() => {
   jest.clearAllMocks();
   getStatementLink.mockResolvedValue(null);
+  subscribeBanks.mockImplementation((uid, onData) => {
+    onData([{ code:'santander', name:'Banco Santander', active:true }, { code:'ciudad', name:'Banco Ciudad', active:true }]);
+    return jest.fn();
+  });
+  subscribeBankCards.mockImplementation((uid, onData) => {
+    onData([{ id:'visa',bankId:'santander',nickname:'Visa Gold',lastFour:'1234' },
+      { id:'cityvisa',bankId:'ciudad',nickname:'Visa Ciudad',lastFour:'4321' }]);
+    return jest.fn();
+  });
 });
 
 test('a summary can remain unlinked and category/amount is not changed', () => {
   render(<Form/>);
   expect(screen.getByLabelText('Banco del resumen')).toHaveValue('');
   expect(screen.getByLabelText('Tarjeta del resumen')).toBeDisabled();
-  expect(screen.getByText(/no registrar de nuevo/)).toBeInTheDocument();
+  expect(screen.getByText(/sin registrar de nuevo/)).toBeInTheDocument();
 });
 
 test('selecting bank filters cards to its institution, changing bank resets card', () => {
