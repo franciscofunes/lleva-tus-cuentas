@@ -14,7 +14,7 @@ const observable = (uid, name, onData, onError) =>
 export const subscribeBanks = (uid, onData, onError) => observable(uid, 'banks', onData, onError);
 export const subscribeBankAccounts = (uid, onData, onError) => observable(uid, 'bankAccounts', onData, onError);
 export const subscribeBankCards = (uid, onData, onError) => observable(uid, 'bankCards', onData, onError);
-export const subscribeBankCharges = (uid, onData, onError) => observable(uid, 'bankCharges', onData, onError);
+export const subscribeBankCharges = (uid, onData, onError) => observable(uid, 'bankCardCharges', onData, onError);
 export const subscribeBankStatementLinks = (uid, onData, onError) => observable(uid, 'bankStatementLinks', onData, onError);
 export const subscribeImportedStatements = (uid, onData, onError) => observable(uid, 'cardStatements', onData, onError);
 
