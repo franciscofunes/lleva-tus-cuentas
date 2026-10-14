@@ -20,6 +20,7 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailed from './pages/PaymentFailed';
 import Portfolio from './pages/Portfolio';
 import PortfolioDetail from './pages/PortfolioDetail';
+import Banks from './pages/Banks';
 
 const store = createStore(rootReducer, applyMiddleware(thunk));
 
@@ -45,6 +46,7 @@ root.render(
 								</ProtectedRoute>
 							}
 						/>
+						<Route path='/bancos' element={<ProtectedRoute><Banks /></ProtectedRoute>} />
 						<Route
 							path='/portfolio'
 							element={

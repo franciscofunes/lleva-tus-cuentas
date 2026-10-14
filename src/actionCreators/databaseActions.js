@@ -85,7 +85,7 @@ export const storeDataAction = (data) => {
 				category: data.category,
 				transactionCurrency: data.transactionCurrency === 'USD' ? 'USD' : 'ARS',
 				...(Object.keys(safeCustomDetails(data)).length ? { customDetails: safeCustomDetails(data) } : {}),
-				...(data?.amount && {
+				...(data?.amount !== undefined && data?.amount !== null && data?.amount !== '' && {
 					amount: data?.amount,
 				}),
 				selectedDate: data.selectedDate,
@@ -140,7 +140,7 @@ export const updateDataAction = (data, docId) => {
 				...(Object.keys(safeCustomDetails(data)).length
 					? { customDetails: safeCustomDetails(data) }
 					: data.clearCustomDetails ? { customDetails: {} } : {}),
-				...(data?.amount && {
+				...(data?.amount !== undefined && data?.amount !== null && data?.amount !== '' && {
 					amount: data?.amount,
 				}),
 				selectedDate: data.selectedDate,

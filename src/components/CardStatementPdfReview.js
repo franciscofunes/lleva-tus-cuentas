@@ -26,7 +26,7 @@ const guessCategory = (merchant, names) => {
 }
 
 /** Intentionally a review form, not an automatic transaction import. */
-export default function CardStatementPdfReview({ categories = [], onDraft, onApply, disabled = false }) {
+export default function CardStatementPdfReview({ categories = [], onDraft, onApply, disabled = false, showApplyButton = true }) {
   const [state, setState] = useState('idle')
   const [error, setError] = useState('')
   const [draft, setDraft] = useState(null)
@@ -165,10 +165,12 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
             <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Estado</span>
               <strong className='text-emerald-600 dark:text-emerald-400'>Totales conciliados</strong></div>
           </div>
-          <button type='button' onClick={() => onApply(draft.statement)}
-            className='w-full rounded-lg border border-purple-500 bg-purple-600 px-3 py-2.5 font-bold text-white hover:bg-purple-700'>
-            Completar campos del formulario (revisar antes de guardar)
-          </button>
+          {showApplyButton && (
+            <button type='button' onClick={() => onApply(draft.statement)}
+              className='w-full rounded-lg border border-purple-500 bg-purple-600 px-3 py-2.5 font-bold text-white hover:bg-purple-700'>
+              Completar campos del formulario (revisar antes de guardar)
+            </button>
+          )}
           <button type='button' aria-expanded={expanded} onClick={() => setExpanded(!expanded)}
             className='flex w-full items-center justify-between rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold dark:border-slate-600'>
             <span>Revisar y categorizar consumos ({draft.items.length})</span><span>{expanded ? '▲' : '▼'}</span>
