@@ -8,7 +8,6 @@ import FinancialOverviewPanel from '../components/FinancialOverviewPanel';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt } from 'react-icons/fa';
 import QuickAccessCard from '../components/QuickAccessCard';
 import CollapsibleSection from '../components/CollapsibleSection';
-import AppFooter from '../components/AppFooter';
 import InfoTooltip from '../components/InfoTooltip';
 import PortfolioCharts from '../components/PortfolioCharts';
 import GenericModal from '../components/GenericModal';
@@ -846,7 +845,6 @@ function Portfolio() {
 				</CollapsibleSection>
 				</>}
 			</div>
-			{!loading && <AppFooter />}
 
 			<GenericModal
 				show={showForm}
