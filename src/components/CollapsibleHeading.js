@@ -18,6 +18,11 @@ export const COLLAPSIBLE_SURFACE_STYLES = Object.freeze({
   content: 'min-w-0 border-t border-slate-200 px-4 pb-4 pt-4 dark:border-slate-700 sm:px-5 sm:pb-5 sm:pt-5',
 });
 
+// Shared record-card surface for individual transactions and bank accounts.
+// Keep hover, radius, and spacing consistent across modules.
+export const FINANCIAL_ITEM_SURFACE_STYLES =
+  'ltc-transaction-card w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3.5 py-3.5 shadow-sm transition-colors hover:border-violet-300 sm:px-4 sm:py-4 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-violet-500/60';
+
 export function CollapsibleHeading({ eyebrow, title, description, level = 2 }) {
   const HeadingTag = level === 3 ? 'h3' : 'h2';
   const titleClass = level === 3

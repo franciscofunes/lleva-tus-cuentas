@@ -1,9 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useReducedMotion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff } from 'react-icons/fi';
 import CollapsibleSection from '../components/CollapsibleSection';
+import QuickAccessCard from '../components/QuickAccessCard';
+import PageDataSkeleton from '../components/PageDataSkeleton';
+import { FinancialMetricCard } from '../components/FinancialOverviewPanel';
+import { FINANCIAL_ITEM_SURFACE_STYLES, COLLAPSIBLE_SURFACE_STYLES, CollapsibleHeading } from '../components/CollapsibleHeading';
 import CardStatementDetails from '../components/CardStatementDetails';
 import CardStatementPdfReview from '../components/CardStatementPdfReview';
 import { getCategoriesDataAction, storeDataAction } from '../actionCreators/databaseActions';
@@ -22,8 +27,8 @@ const initialCharge = { cardId: '', bankId: '', merchant: '', amount: '', curren
 
 const inputClass = 'min-h-[44px] w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
 const buttonClass = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-700 disabled:opacity-50';
-const secondary = 'inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 dark:border-slate-600 dark:text-slate-200';
-const surface = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-5';
+const secondary = 'inline-flex min-h-[44px] min-w-0 items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-purple-400 hover:bg-purple-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:text-slate-200';
+const surface = FINANCIAL_ITEM_SURFACE_STYLES;
 const money = (value, currency) => new Intl.NumberFormat('es-AR', { style: 'currency', currency, maximumFractionDigits: 2 }).format(Number(value || 0));
 const maskCbu = (cbu) => cbu ? '•••• •••• •••• •••• ' + String(cbu).slice(-4) : 'No informado';
 function Field({ title, children }) {
@@ -40,6 +45,7 @@ export default function Banks() {
 function BanksWorkspace({ user }) {
   const categories = useSelector((state) => state.database.categories);
   const dispatch = useDispatch();
+  const reduceMotion = useReducedMotion();
   const uid = user?.uid;
   const [banks, setBanks] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -51,6 +57,9 @@ function BanksWorkspace({ user }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [openBank, setOpenBank] = useState(null);
+  const [openCard, setOpenCard] = useState(null);
+  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
+  const [manageCollapsed, setManageCollapsed] = useState(false);
   const [newBankName, setNewBankName] = useState('');
   const [renameBank, setRenameBank] = useState(null);
   const [showUnlinked, setShowUnlinked] = useState(false);
@@ -177,33 +186,70 @@ function BanksWorkspace({ user }) {
   return (
     <main className='min-h-screen bg-slate-50 px-3 py-5 text-slate-900 dark:bg-gray-900 dark:text-slate-100 sm:px-5 lg:px-8'>
       <div className='mx-auto max-w-7xl space-y-5'>
-        <header className={surface}>
-          <p className='text-xs font-extrabold uppercase tracking-[0.13em] text-purple-700 dark:text-purple-300'>Organización financiera</p>
-          <h1 className='mt-1 text-2xl font-extrabold sm:text-3xl'>Bancos y tarjetas</h1>
-          <p className='mt-2 text-sm text-slate-600 dark:text-slate-300'>Cuentas y saldos manuales, tarjetas, consumos y resúmenes vinculados a Transacciones.</p>
-          <p className='mt-2 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300'><FiShield aria-hidden='true' /> Solo vos podés consultar estos datos; no vinculamos tu home banking ni solicitamos contraseñas, CVV o números completos de tarjeta.</p>
-          <div className='mt-3 flex flex-wrap items-center gap-3'>
-            <Link to='/transacciones' className='inline-flex min-h-[40px] items-center text-sm font-bold text-purple-700 dark:text-purple-300'>Ver transacciones →</Link>
-            <button type='button' aria-pressed={!showValues} onClick={toggleVisibility} className={secondary}>
-              {showValues ? <FiEyeOff aria-hidden='true'/> : <FiEye aria-hidden='true'/>}
-              {showValues ? 'Ocultar importes' : 'Mostrar importes'}
-            </button>
-          </div>
-        </header>
+        <QuickAccessCard
+          eyebrow='Organización financiera'
+          title='Bancos y tarjetas'
+          description='Administrá tus cuentas, tarjetas, consumos y resúmenes vinculados a Transacciones.'
+          actionsClassName='grid grid-cols-2 gap-2 sm:flex sm:flex-wrap'
+          note={<span className='inline-flex items-start gap-2'><FiShield className='mt-0.5 shrink-0' aria-hidden='true' />Solo vos podés ver estos datos. No solicitamos claves, CVV ni números completos de tarjeta.</span>}
+        >
+          <Link to='/transacciones'
+            className='inline-flex min-h-[44px] min-w-0 items-center justify-center rounded-xl border border-purple-500 px-2 py-2 text-center text-xs font-bold text-purple-600 transition-colors hover:bg-purple-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300 sm:px-3 sm:text-sm'>
+            Transacciones →
+          </Link>
+          <button type='button' aria-pressed={!showValues} onClick={toggleVisibility} className={secondary}>
+            {showValues ? <FiEyeOff aria-hidden='true'/> : <FiEye aria-hidden='true'/>}
+            <span className='text-xs sm:text-sm'>{showValues ? 'Ocultar importes' : 'Mostrar importes'}</span>
+          </button>
+        </QuickAccessCard>
         <ErrorMessage error={error} />
-        {pending && <div role='status' className={surface + ' animate-pulse'}>Cargando bancos y tarjetas…</div>}
-        <div className='grid gap-3 sm:grid-cols-2' aria-label='Saldos manuales por moneda'>
-          {['ARS','USD'].map((currency) => (
-            <div className={surface} key={currency}>
-              <p className='text-xs font-semibold text-slate-600 dark:text-slate-300'>Saldos registrados · {currency}</p>
-              <p className='mt-2 break-words text-xl font-extrabold tabular-nums'>{displayMoney(totals[currency], currency)}</p>
-              <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>No incluye deuda de tarjetas ni inversiones de Portfolio.</p>
-            </div>
-          ))}
-        </div>
+        {pending ? (
+          <PageDataSkeleton variant='banks' />
+        ) : (
+          <>
+            <CollapsibleSection
+              id='bank-balances'
+              eyebrow='Resumen'
+              title='Saldos bancarios'
+              description='Totales registrados manualmente, separados por moneda.'
+              collapsed={summaryCollapsed}
+              onToggle={() => setSummaryCollapsed((value) => !value)}
+              className='mb-5'
+            >
+              <div className='grid min-w-0 grid-cols-2 gap-2 sm:gap-3' aria-label='Saldos manuales por moneda'>
+                {['ARS', 'USD'].map((currency, index) => (
+                  <FinancialMetricCard
+                    key={currency}
+                    metric={{
+                      id: currency,
+                      label: `Saldos registrados · ${currency}`,
+                      value: displayMoney(totals[currency], currency),
+                      icon: FiCreditCard,
+                    }}
+                    index={index}
+                    reduceMotion={Boolean(reduceMotion)}
+                    privacyHidden={!showValues}
+                  />
+                ))}
+              </div>
+              <p className='mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400'>
+                No incluye deuda de tarjetas ni inversiones de Portfolio. Los saldos en pesos y dólares no se convierten ni se suman entre sí.
+              </p>
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              id='bank-management'
+              eyebrow='Actividad'
+              title='Mis bancos'
+              description={`${banks.filter((bank) => bank.active).length} bancos · ${accounts.length} cuentas · ${cards.length} tarjetas`}
+              collapsed={manageCollapsed}
+              onToggle={() => setManageCollapsed((value) => !value)}
+              className='mb-5'
+            >
+              <div className='space-y-4'>
         {!pending && (
-          <section className={surface}>
-            <h2 className='text-base font-bold'>Agregar banco</h2>
+          <section className={`${COLLAPSIBLE_SURFACE_STYLES.nested} p-3 sm:p-4`}>
+            <h3 className='text-base font-bold text-slate-900 dark:text-slate-50'>Agregar banco</h3>
             <p className='mt-1 text-sm text-slate-600 dark:text-slate-300'>
               Creá las entidades que usás. No agregamos ningún banco, cuenta ni tarjeta por defecto.
             </p>
@@ -217,6 +263,7 @@ function BanksWorkspace({ user }) {
                 const id = await addUserBank(uid, name);
                 setNewBankName('');
                 setOpenBank(id);
+                setManageCollapsed(false);
               }, 'Banco agregado');
             }}>
               <div className='min-w-0 flex-1'>
@@ -236,6 +283,7 @@ function BanksWorkspace({ user }) {
           const id = bank.code;
           return (
             <CollapsibleSection key={id} id={'bank-' + id} eyebrow='Banco' title={bank.name}
+              variant='nested'
               description={bankAccounts(id).length + ' cuentas · ' + bankCards(id).length + ' tarjetas'}
               collapsed={openBank !== id} onToggle={() => setOpenBank(openBank === id ? null : id)}>
               <div className='space-y-5'>
@@ -315,12 +363,14 @@ function BanksWorkspace({ user }) {
                     </form>
                   )}
                   {bankCards(id).map((card) => (
-                    <details key={card.id} className={surface + ' group'}>
-                      <summary className='flex cursor-pointer list-none flex-wrap items-center justify-between gap-3'>
-                        <span className='inline-flex items-center gap-2 font-extrabold'><FiCreditCard className='text-purple-600 dark:text-purple-300'/> {card.nickname} {card.lastFour && <span className='text-xs font-semibold text-slate-600 dark:text-slate-300'>•••• {card.lastFour}</span>}</span>
-                        <span className='text-xs text-slate-600 dark:text-slate-300'>Cierre día {card.closingDay} · Vence día {card.dueDay} ▾</span>
-                      </summary>
-                      <div className='mt-4 space-y-3 border-t border-slate-200 pt-4 dark:border-slate-700'>
+                    <CollapsibleSection key={card.id} id={'bank-card-' + card.id}
+                      variant='nested'
+                      eyebrow={card.brand}
+                      title={card.nickname + (card.lastFour ? ' · •••• ' + card.lastFour : '')}
+                      description={`Cierre día ${card.closingDay} · Vence día ${card.dueDay}`}
+                      collapsed={openCard !== card.id}
+                      onToggle={() => setOpenCard((value) => value === card.id ? null : card.id)}>
+                      <div className='min-w-0 space-y-3'>
                         <button type='button' className={secondary} onClick={() => startCard(id, card)}>Editar tarjeta</button>
                         <div className='flex flex-wrap items-center justify-between gap-2'>
                           <h4 className='font-bold'>Consumos registrados</h4>
@@ -357,7 +407,7 @@ function BanksWorkspace({ user }) {
                           <FiUploadCloud/> Importar resumen PDF de esta tarjeta
                         </button>
                       </div>
-                    </details>
+                    </CollapsibleSection>
                   ))}
                 </section>
               </div>
@@ -365,14 +415,18 @@ function BanksWorkspace({ user }) {
           );
         })}
 
+              </div>
+            </CollapsibleSection>
         {pdfCardId && selectedPdfCard && (
-          <section className={surface + ' space-y-3'}>
-            <div className='flex flex-wrap items-center justify-between gap-3'>
-              <h2 className='text-lg font-extrabold'>Importar resumen · {banks.find((bank) => bank.code === selectedPdfCard.bankId)?.name || 'Banco'} / {selectedPdfCard.nickname}</h2>
+          <section className={`${COLLAPSIBLE_SURFACE_STYLES.root} p-4 sm:p-5`}>
+            <div className='flex flex-wrap items-start justify-between gap-3'>
+              <CollapsibleHeading eyebrow='Importación' title='Analizar resumen PDF'
+                description={`${banks.find((bank) => bank.code === selectedPdfCard.bankId)?.name || 'Banco'} · ${selectedPdfCard.nickname}`} />
               <button type='button' className={secondary} onClick={()=>{setPdfCardId('');setPdfDraft(null);setPendingExpenseId(null);}}>Cerrar</button>
             </div>
-            <CardStatementPdfReview categories={categories || []} onDraft={resetPDF}
-              showApplyButton={false} disabled={busy}/>
+            <div className='mt-4 space-y-3 border-t border-slate-200 pt-4 dark:border-slate-700'>
+              <CardStatementPdfReview categories={categories || []} onDraft={resetPDF}
+                showApplyButton={false} disabled={busy}/>
             {pdfDraft && <div className='space-y-2 rounded-xl border border-amber-300 p-3 text-sm dark:border-amber-800'>
               <p className='font-bold'>Confirmar resumen {pdfDraft.statement?.period}</p>
               <p>Se creará una única transacción Resumen tarjeta con el importe ARS declarado, y el detalle quedará excluido de los totales de gastos. El USD no se convertirá automáticamente.</p>
@@ -381,6 +435,7 @@ function BanksWorkspace({ user }) {
                 Guardar resumen revisado y vincular
               </button>
             </div>}
+            </div>
           </section>
         )}
 
@@ -405,6 +460,8 @@ function BanksWorkspace({ user }) {
             </div>;
           })}
         </CollapsibleSection>
+          </>
+        )}
       </div>
     </main>
   );

@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { FaCheckCircle } from 'react-icons/fa';
 import { FiEdit3, FiTrash2 } from 'react-icons/fi';
 import InfoTooltip from '../components/InfoTooltip';
+import { FINANCIAL_ITEM_SURFACE_STYLES } from './CollapsibleHeading';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 import { usesSelectedDateAsDueDate, usesSeparateDueDate } from '../utils/transactionDueDates';
 import { displayTransactionCustomDetails } from '../utils/categoryExtraFields';
@@ -99,7 +100,7 @@ function Card({
 			transition={{ duration: 0.4, type: 'tween', delay: 0.2 }}
 			role='article'
 			aria-label={`Movimiento: ${name || 'Sin nombre'}`}
-			className='ltc-transaction-card mb-3 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3.5 py-3.5 shadow-sm transition-colors hover:border-violet-300 sm:px-4 sm:py-4 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-violet-500/60'
+			className={`${FINANCIAL_ITEM_SURFACE_STYLES} mb-3`}
 		>
 			<div className='min-w-0 space-y-1.5'>
 				<p className='min-w-0 break-words text-base font-bold leading-relaxed text-slate-900 dark:text-slate-50'>

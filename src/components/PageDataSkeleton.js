@@ -60,13 +60,27 @@ const ChartCard = () => (
 const PageDataSkeleton = ({ variant = 'transactions', withKpiCards = true }) => (
   <div
     role='status'
-    aria-label={variant === 'portfolio' ? 'Cargando portfolio' : 'Cargando transacciones'}
+    aria-label={variant === 'banks' ? 'Cargando bancos' : variant === 'portfolio' ? 'Cargando portfolio' : 'Cargando transacciones'}
     className='animate-pulse motion-reduce:animate-none'
   >
     <span className='sr-only'>
-      {variant === 'portfolio' ? 'Cargando datos del portfolio' : 'Cargando datos de transacciones'}
+      {variant === 'banks' ? 'Cargando cuentas, bancos y tarjetas' : variant === 'portfolio' ? 'Cargando datos del portfolio' : 'Cargando datos de transacciones'}
     </span>
-    {variant === 'portfolio' ? (
+    {variant === 'banks' ? (
+      <div className='space-y-5'>
+        <Surface>
+          <SectionHeading />
+          <div className='mt-4 grid grid-cols-2 gap-2 sm:gap-3'>
+            {[0, 1].map((item) => (
+              <div key={item} className='rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
+                <Block className='h-7 w-7' /><Block className='mt-3 h-7 w-24 max-w-full' /><Block className='mt-2 h-3 w-16' />
+              </div>
+            ))}
+          </div>
+        </Surface>
+        <Surface><SectionHeading /><ListRows /></Surface>
+      </div>
+    ) : variant === 'portfolio' ? (
       <div className='space-y-5'>
         {withKpiCards && <div className='grid grid-cols-3 gap-2 sm:gap-4'>
           {[0, 1, 2].map((item) => (
