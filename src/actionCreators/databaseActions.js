@@ -1,4 +1,6 @@
 import moment from 'moment';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 import { toast } from 'react-toastify';
 import { firestore } from '../shared/config/firebase/firebase.config';
 import { mergeCategories } from '../utils/customCategories';
@@ -144,9 +146,11 @@ export const updateDataAction = (data, docId) => {
 					amount: data?.amount,
 				}),
 				selectedDate: data.selectedDate,
-				...(data?.selectedExpirationDate && {
-					selectedExpirationDate: data?.selectedExpirationDate,
-				}),
+				...(data?.selectedExpirationDate === ''
+					? { selectedExpirationDate: firebase.firestore.FieldValue.delete() }
+					: data?.selectedExpirationDate
+						? { selectedExpirationDate: data.selectedExpirationDate }
+						: {}),
 				...(data?.selectedCloseDate && {
 					selectedCloseDate: data?.selectedCloseDate,
 				}),
