@@ -1,5 +1,5 @@
 import {
-  addUserBank, saveBankAccount, saveBankCard, saveManualCardCharge, saveStatementBankLink,
+  addUserBank, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge, saveStatementBankLink,
   getStatementLink, subscribeBankStatementLinks,
 } from './bankingService';
 import { auth, firestore } from '../shared/config/firebase/firebase.config';
@@ -16,7 +16,8 @@ beforeEach(() => {
   mockBank = { exists: true, data: () => ({ bankId:'santander' }) };
   mockCard = { exists: true, data: () => ({ bankId:'santander' }) };
   mockExpense = { exists: true, data: () => ({ category:'Resumen tarjeta 💳' }) };
-  const bankRef = { set: jest.fn().mockResolvedValue(undefined), get: jest.fn(async () => mockBank) };
+  const bankRef = { id: 'bankGenerated20', set: jest.fn().mockResolvedValue(undefined),
+    update: jest.fn().mockResolvedValue(undefined), get: jest.fn(async () => mockBank) };
   const cardRef = { get: jest.fn(async () => mockCard), update: jest.fn().mockResolvedValue(undefined) };
   const expenseRef = { get: jest.fn(async () => mockExpense) };
   mockLink = { get: jest.fn(async () => ({ exists:false })), set: jest.fn().mockResolvedValue(undefined) };
@@ -33,10 +34,16 @@ beforeEach(() => {
   firestore.collection.mockReturnValue({ doc: jest.fn(() => mockUser) });
 });
 
-test('bank creation has deterministic document IDs to make repeated taps idempotent', async () => {
-  await addUserBank('alice','santander');
+test('user names the bank; Firestore generates a private ID and no presets are seeded', async () => {
+  await expect(addUserBank('alice',' Banco Galicia ')).resolves.toBe('bankGenerated20');
   expect(mockUser.collection).toHaveBeenCalledWith('banks');
-  expect(() => addUserBank('alice','other')).toThrow('Banco no admitido.');
+  const bankRef = mockUser.collection('banks').doc();
+  expect(bankRef.set).toHaveBeenCalledWith(expect.objectContaining({
+    code:'bankGenerated20',name:'Banco Galicia',active:true,updatedAt:expect.any(Date),
+  }));
+  await renameUserBank('alice','bankGenerated20',' BBVA ');
+  expect(bankRef.update).toHaveBeenCalledWith(expect.objectContaining({name:'BBVA'}));
+  await expect(addUserBank('alice',' ')).rejects.toThrow(/2 a 70/);
 });
 
 test('owner-scoped bank account saves a numeric balance, not another transaction', async () => {
