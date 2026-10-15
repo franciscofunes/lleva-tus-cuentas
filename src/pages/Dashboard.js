@@ -43,7 +43,6 @@ import cotoAd from "../imgs/ads/cotoAd.png";
 import eyeHide from "../imgs/eyeHide.svg";
 import closeEye from "../imgs/closeEye.svg";
 
-import AppFooter from "../components/AppFooter";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
 import ChartViewer from "../components/ChartViewer";
 import IncomeChartWrapper from "../components/IncomeChartWrapper";
@@ -827,7 +826,6 @@ function Dashboard() {
         </div>
       </div>
 
-      <AppFooter />
 
       <motion.div
         animate={{ opacity: 1 }}
