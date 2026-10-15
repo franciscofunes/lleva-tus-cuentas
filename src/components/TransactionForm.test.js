@@ -198,7 +198,7 @@ test('legacy ARS categories keep ARS amount field', () => {
 
 test('Hogar enables a separate optional expiration picker with a five-day notification explanation', () => {
   render(<TransactionHarness initialCategory='Hogar 🏡' />);
-  expect(screen.getByLabelText('Fecha')).toHaveValue('2026-10-10');
+  expect(screen.getByLabelText('Fecha de transacción')).toHaveValue('2026-10-10');
   const expiration = screen.getByLabelText('Fecha de vencimiento (opcional)');
   expect(expiration).not.toBeRequired();
   expect(expiration).toHaveValue('');
@@ -206,7 +206,7 @@ test('Hogar enables a separate optional expiration picker with a five-day notifi
   expect(screen.getByText(/LTC te avisará 5 días antes/)).toBeInTheDocument();
   fireEvent.change(expiration, { target: { value: '2026-10-20' } });
   expect(expiration).toHaveValue('2026-10-20');
-  expect(screen.getByLabelText('Fecha')).toHaveValue('2026-10-10');
+  expect(screen.getByLabelText('Fecha de transacción')).toHaveValue('2026-10-10');
   fireEvent.change(expiration, { target: { value: '' } });
   expect(expiration).toHaveValue('');
 });
