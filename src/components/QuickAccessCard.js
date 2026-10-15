@@ -1,6 +1,6 @@
 import React from "react";
 
-function QuickAccessCard({ eyebrow, title, description, children }) {
+function QuickAccessCard({ eyebrow, title, description, children, note, actionsClassName = 'grid grid-cols-4 gap-2 sm:flex sm:flex-wrap' }) {
   return (
     <section className="mb-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-sm">
       <p className="text-sm font-bold uppercase tracking-wider text-purple-500">
@@ -15,8 +15,9 @@ function QuickAccessCard({ eyebrow, title, description, children }) {
             </p>
           )}
         </div>
-        <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap">{children}</div>
+        <div className={actionsClassName}>{children}</div>
       </div>
+      {note && <p className='mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400'>{note}</p>}
     </section>
   );
 }
