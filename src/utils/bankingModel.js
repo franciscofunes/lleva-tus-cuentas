@@ -1,10 +1,11 @@
 // Domain validation stays independent of React/Firebase for auditability.
-export const BANK_OPTIONS = [
-  { id: 'santander', name: 'Banco Santander' },
-  { id: 'ciudad', name: 'Banco Ciudad' },
-];
-export const bankName = (id) => BANK_OPTIONS.find((bank) => bank.id === id)?.name || '';
-export const validBankId = (id) => BANK_OPTIONS.some((bank) => bank.id === id);
+// Bank identities are owner-created Firestore document IDs, not a fixed catalog.
+export const validBankId = (id) => typeof id === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(id);
+export const validateBankName = (value) => {
+  const name = typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
+  if (name.length < 2 || name.length > 70) throw new Error('Ingresá un nombre de banco de 2 a 70 caracteres.');
+  return name;
+};
 export const validDate = (value) => typeof value === 'string' && /^20\d{2}-\d{2}-\d{2}$/.test(value)
   && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
 const length = (value, min, max) => typeof value === 'string' && value.trim().length >= min && value.trim().length <= max;
