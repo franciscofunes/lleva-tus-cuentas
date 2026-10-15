@@ -26,10 +26,21 @@ export const isPublicServiceCategory = (categoryName) => {
 	return PUBLIC_SERVICE_PATTERNS.some((pattern) => pattern.test(normalized));
 };
 
+// The shared Hogar category covers household expenses (expensas, rent, etc.)
+// and optionally uses a SECOND date for payment reminders. This must not
+// reinterpret the historical transaction date or alter custom-category choices.
+export const isHomeCategory = (categoryName, categories = []) => {
+  const definition = getCategoryDefinition(categoryName, categories);
+  if (definition?.origin === 'custom' || definition?.isCustom === true) return false;
+  return /^hogar(?:\s|$)/.test(normalizeCategoryName(categoryName));
+};
+
 // Versioned custom-category setting: transaction date and expiration date
-// are stored independently for new categories.
+// are stored independently for new categories. Hogar shares the same existing
+// model without adding fields or modifying the global category collection.
 export const usesSeparateDueDate = (categoryName, categories = []) =>
-  getCategoryDefinition(categoryName, categories)?.dateBehavior === CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR;
+  getCategoryDefinition(categoryName, categories)?.dateBehavior === CUSTOM_CATEGORY_DUE_DATE_BEHAVIOR
+  || isHomeCategory(categoryName, categories);
 
 export const usesSelectedDateAsDueDate = (categoryName, categories = []) => {
 	const definition = getCategoryDefinition(categoryName, categories);
