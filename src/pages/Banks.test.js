@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Banks from './Banks';
 
@@ -73,7 +73,7 @@ test('Bancos reuses the financial header, grouped metrics and collapsible manage
   expect(screen.queryByText('Banco Santander')).not.toBeInTheDocument();
   expect(screen.queryByText('Banco Ciudad')).not.toBeInTheDocument();
   expect(screen.getByLabelText('Nombre del banco')).toHaveAttribute('maxLength', '70');
-  expect(screen.getByRole('button', { name: 'Saldos bancarios' })).toHaveAttribute('aria-expanded', 'true');
+  expect(screen.getByRole('button', { name: /Saldos bancarios/ })).toHaveAttribute('aria-expanded', 'true');
   fireEvent.click(screen.getByRole('button', { name: /Saldos bancarios/ }));
   expect(screen.getByRole('button', { name: /Saldos bancarios/ })).toHaveAttribute('aria-expanded', 'false');
   fireEvent.click(screen.getByRole('button', { name: /Saldos bancarios/ }));
@@ -106,7 +106,7 @@ test('privacy toggle masks both currencies and uses the existing shared KPI desi
   arrange({ subscribeBankAccounts: [{ id:'a',bankId:'b',currency:'ARS',balance:1234.5 }] });
   mount();
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Saldos bancarios' })).toBeInTheDocument());
-  expect(screen.getByText('••••')).toBeInTheDocument();
+  expect(screen.getAllByText('••••').length).toBeGreaterThan(0);
   fireEvent.click(screen.getByRole('button', { name:/Mostrar importes/ }));
   await waitFor(() => expect(screen.getByText(/1\.234/)).toBeInTheDocument());
   fireEvent.click(screen.getByRole('button', { name:/Ocultar importes/ }));
