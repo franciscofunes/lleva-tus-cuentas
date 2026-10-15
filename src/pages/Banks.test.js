@@ -122,20 +122,23 @@ test('privacy toggle masks both currencies and uses the existing shared KPI desi
   expect(screen.queryByText(/1\.234/)).not.toBeInTheDocument();
 });
 
-test('floating quick actions are shared with Portfolio: add bank and financial LITA', async () => {
+test('floating plus offers the same Add bank modal as the header', async () => {
   mount();
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Mis bancos' })).toBeInTheDocument());
-  const open = () => fireEvent.click(screen.getByRole('button', { name: 'Abrir acciones rápidas' }));
-  open();
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir acciones rápidas' }));
   fireEvent.click(within(document.getElementById('ltc-floating-actions'))
     .getByRole('button', { name: /Agregar banco/ }));
   expect(screen.getByRole('dialog', { name: 'Crear banco y completar datos' })).toBeInTheDocument();
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Abrir acciones rápidas' })).not.toBeInTheDocument());
-  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Abrir acciones rápidas' })).toBeInTheDocument());
-  open();
-  fireEvent.click(screen.getByRole('button', { name: 'Preguntar a LITA' }));
+});
+
+test('floating LITA action sends an owner-scoped banking context', async () => {
+  mount();
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Mis bancos' })).toBeInTheDocument());
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir acciones rápidas' }));
+  fireEvent.click(within(document.getElementById('ltc-floating-actions'))
+    .getByRole('button', { name: 'Preguntar a LITA' }));
   expect(screen.getByTestId('lita-panel')).toHaveTextContent('banks');
   expect(screen.getByTestId('lita-panel')).toHaveAttribute('data-scope', 'banks-current-state');
-  expect(screen.queryByRole('button', { name: 'Abrir acciones rápidas' })).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'Abrir acciones rápidas' })).not.toBeInTheDocument());
 });
