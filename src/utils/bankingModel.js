@@ -23,9 +23,16 @@ export const validateBankAccount = (item) => {
   if (!['ARS','USD'].includes(item.currency)) throw new Error('Moneda inválida.');
   if (item.alias && !length(item.alias, 1, 80)) throw new Error('Alias demasiado largo.');
   if (item.cbu && !/^\d{22}$/.test(item.cbu)) throw new Error('CBU/CVU debe tener 22 dígitos.');
+  const extras = {};
+  for (const [key, max] of [['accountNumber', 60], ['holder', 100], ['holderTaxId', 24], ['branch', 70]]) {
+    const value = String(item[key] || '').trim();
+    if (value.length > max) throw new Error('El campo ' + key + ' es demasiado largo.');
+    if (key === 'holderTaxId' && value && !/^[0-9-]{8,24}$/.test(value)) throw new Error('CUIT/CUIL inválido.');
+    if (value) extras[key] = value;
+  }
   return { bankId: item.bankId, name: item.name.trim(), type: item.type, currency: item.currency,
     balance: parseAmount(item.balance, { canBeNegative: true }),
-    alias: (item.alias || '').trim(), cbu: item.cbu || '' };
+    alias: (item.alias || '').trim(), cbu: item.cbu || '', ...extras };
 };
 export const validateBankCard = (item) => {
   if (!validBankId(item.bankId)) throw new Error('Banco inválido.');
@@ -36,8 +43,20 @@ export const validateBankCard = (item) => {
     if (!Number.isInteger(Number(item[k])) || Number(item[k]) < 1 || Number(item[k]) > 31)
       throw new Error('El día de cierre o vencimiento debe estar entre 1 y 31.');
   }
+  const snapshot = {};
+  for (const key of ['closingDate', 'dueDate', 'asOf']) {
+    const value = String(item[key] || '').trim();
+    if (value && !validDate(value)) throw new Error('Fecha inválida: ' + key);
+    if (value) snapshot[key] = value;
+  }
+  for (const key of ['lastStatementARS', 'lastStatementUSD', 'minimumPaymentARS',
+    'currentConsumptionARS', 'currentConsumptionUSD', 'availableLimitARS']) {
+    const value = String(item[key] ?? '').trim();
+    if (value !== '') snapshot[key] = parseAmount(value);
+  }
   return { bankId: item.bankId, nickname: item.nickname.trim(), brand: item.brand,
-    lastFour: item.lastFour || '', closingDay: Number(item.closingDay), dueDay: Number(item.dueDay) };
+    lastFour: item.lastFour || '', closingDay: Number(item.closingDay), dueDay: Number(item.dueDay),
+    ...(Object.keys(snapshot).length ? { statementSnapshot: snapshot } : {}) };
 };
 export const validateBankCharge = (item) => {
   if (!validBankId(item.bankId) || !length(item.cardId, 1, 128)) throw new Error('Seleccioná una tarjeta.');
