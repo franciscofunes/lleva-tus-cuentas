@@ -1,6 +1,7 @@
 import {
 	getNotificationSettings,
 	isPublicServiceCategory,
+  isHomeCategory,
 	resolveTransactionDueDate,
 	usesSelectedDateAsDueDate,
 	usesSeparateDueDate,
@@ -122,5 +123,36 @@ describe('new separate expiration date behavior', () => {
       category: 'Servicio heredado', categories,
       selectedDate: '2026-10-18', selectedExpirationDate: '2026-10-30',
     })).toBe('2026-10-18');
+  });
+});
+
+describe('shared Hogar: optional expiration and the existing reminder pipeline', () => {
+  const categories = [
+    { id: 'home', name: 'Hogar 🏡', origin: 'shared', active: true, isExpense: true },
+    { id: 'salary', name: 'Salario', origin: 'shared', isExpense: false },
+    { id: 'custom-home', name: 'Hogar oficina', origin: 'custom', isCustom: true, isExpense: true },
+  ];
+
+  test('shared Hogar keeps the historical movement date separate from optional due dates', () => {
+    expect(isHomeCategory('Hogar 🏡', categories)).toBe(true);
+    expect(isHomeCategory('Hogar oficina', categories)).toBe(false);
+    expect(usesSeparateDueDate('Hogar 🏡', categories)).toBe(true);
+    expect(usesSelectedDateAsDueDate('Hogar 🏡', categories)).toBe(false);
+    expect(resolveTransactionDueDate({
+      category: 'Hogar 🏡', categories,
+      selectedDate: '2026-10-19', selectedExpirationDate: '2026-10-25',
+    })).toBe('2026-10-25');
+    expect(getNotificationSettings('Hogar 🏡', categories)).toEqual({
+      enabled: true, leadDays: 5,
+    });
+  });
+
+  test('old Hogar transactions without a due date never acquire an alert implicitly', () => {
+    expect(resolveTransactionDueDate({
+      category: 'Hogar 🏡', categories,
+      selectedDate: '2026-10-19', selectedExpirationDate: '',
+    })).toBe('');
+    expect(usesSeparateDueDate('Salario', categories)).toBe(false);
+    expect(usesSeparateDueDate('Hogar oficina', categories)).toBe(false);
   });
 });
