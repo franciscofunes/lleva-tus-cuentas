@@ -57,3 +57,30 @@ test('a credit-card summary with ARS 0 keeps the exact zero amount instead of le
   expect(saved.amount).toBe(0);
   expect(saved.category).toBe('Resumen tarjeta 💳');
 });
+
+test('editing Hogar clears the old due date and removes its notification when user empties the optional field', async () => {
+  await updateDataAction({
+    ...base, name: 'GarboSSA', category: 'Hogar 🏡',
+    selectedExpirationDate: '', dueDate: null, notificationEnabled: false,
+  }, 'expense-home')(jest.fn());
+  const saved = update.mock.calls[0][0];
+  expect(saved.category).toBe('Hogar 🏡');
+  expect(saved.selectedDate).toBe('2026-10-10');
+  expect(saved.dueDate).toBeNull();
+  expect(saved.notificationEnabled).toBe(false);
+  expect(saved).toHaveProperty('selectedExpirationDate');
+  expect(typeof saved.selectedExpirationDate.isEqual).toBe('function');
+  expect(removeReminder).toHaveBeenCalledTimes(1);
+});
+
+test('editing Hogar with a due date retains that exact date and marks reminder as enabled', async () => {
+  await updateDataAction({
+    ...base, category: 'Hogar 🏡', selectedExpirationDate: '2026-10-21',
+    dueDate: '2026-10-21', notificationEnabled: true,
+  }, 'expense-home')(jest.fn());
+  const saved = update.mock.calls[0][0];
+  expect(saved.selectedExpirationDate).toBe('2026-10-21');
+  expect(saved.dueDate).toBe('2026-10-21');
+  expect(saved.notificationEnabled).toBe(true);
+  expect(removeReminder).not.toHaveBeenCalled();
+});
