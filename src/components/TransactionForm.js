@@ -23,6 +23,7 @@ import {
   resolveTransactionDueDate,
   usesSelectedDateAsDueDate,
   usesSeparateDueDate,
+  isHomeCategory,
 } from "../utils/transactionDueDates";
 
 // A command inside the native category picker, never a category persisted to Firestore.
@@ -799,8 +800,13 @@ const TransactionForm = ({
               className="w-full min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             />
             <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-              La fecha de la transacción se mantiene. Si completás el vencimiento,
-              LTC podrá avisarte {notificationSettings.leadDays} días antes.
+              {isHomeCategory(category, categories)
+                ? 'Para expensas, alquiler u otros gastos del hogar, mantené la fecha del movimiento y agregá el vencimiento solo si lo necesitás. '
+                : 'La fecha de la transacción se mantiene. '}
+              {notificationSettings.enabled
+                ? `LTC te avisará ${notificationSettings.leadDays} día${notificationSettings.leadDays === 1 ? '' : 's'} antes si ingresás una fecha.`
+                : 'Los avisos para esta categoría están desactivados.'}
+              {' '}Podés marcarlo como pagado desde Notificaciones.
             </p>
           </div>
         )}
