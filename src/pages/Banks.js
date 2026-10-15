@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { useReducedMotion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiPieChart } from 'react-icons/fi';
+import GenericModal from '../components/GenericModal';
+import BankOnboardingForm from '../components/BankOnboardingForm';
 import CollapsibleSection from '../components/CollapsibleSection';
 import QuickAccessCard from '../components/QuickAccessCard';
 import PageDataSkeleton from '../components/PageDataSkeleton';
@@ -16,7 +18,7 @@ import { getImportedStatement, saveReviewedStatement, verifyStatementDraft } fro
 import {
   subscribeBanks, subscribeBankAccounts, subscribeBankCards, subscribeBankCharges,
   subscribeBankStatementLinks, subscribeImportedStatements,
-  addUserBank, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge,
+  createBankBundle, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge,
   deleteManualCardCharge, saveStatementBankLink,
 } from '../services/bankingService';
 import { sumBankBalances, statementForCard } from '../utils/bankingModel';
@@ -60,7 +62,7 @@ function BanksWorkspace({ user }) {
   const [openCard, setOpenCard] = useState(null);
   const [summaryCollapsed, setSummaryCollapsed] = useState(false);
   const [manageCollapsed, setManageCollapsed] = useState(false);
-  const [newBankName, setNewBankName] = useState('');
+  const [showBankForm, setShowBankForm] = useState(false);
   const [renameBank, setRenameBank] = useState(null);
   const [showUnlinked, setShowUnlinked] = useState(false);
   const [visibility, setVisibility] = useState({ uid: null, visible: false });
@@ -118,6 +120,21 @@ function BanksWorkspace({ user }) {
   const selectedPdfCard = cards.find((card) => card.id === pdfCardId);
   const statementCategory = (Array.isArray(categories) ? categories : []).find((c) => c.isExpense && /Resumen tarjeta/.test(c.name))?.name;
 
+  const saveNewBank = async (bundle) => {
+    if (busy) return;
+    setBusy(true); setError('');
+    try {
+      if (banks.some((bank) => bank.name?.toLocaleLowerCase() === bundle.name?.trim().toLocaleLowerCase()))
+        throw new Error('Ya existe un banco con ese nombre.');
+      const id = await createBankBundle(uid, bundle);
+      setOpenBank(id);
+      setManageCollapsed(false);
+      setShowBankForm(false);
+      toast.success('Banco, cuentas y tarjetas guardados.');
+    } catch (err) {
+      throw err; // The modal owns actionable form feedback.
+    } finally { setBusy(false); }
+  };
   const run = async (fn, success) => {
     if (busy) return;
     setBusy(true); setError('');
@@ -129,6 +146,7 @@ function BanksWorkspace({ user }) {
     setAccountDraft(account ? {
       bankId: account.bankId, name: account.name, type: account.type, currency: account.currency,
       balance: String(account.balance), alias: account.alias || '', cbu: account.cbu || '',
+      accountNumber: account.accountNumber || '', holder: account.holder || '', holderTaxId: account.holderTaxId || '', branch: account.branch || '',
     } : { ...initialAccount, bankId });
     setAccountEditingId(account?.id || null);
     setCardDraft(null); setChargeDraft(null);
@@ -137,6 +155,9 @@ function BanksWorkspace({ user }) {
     setCardDraft(card ? {
       bankId: card.bankId, nickname: card.nickname, brand: card.brand, lastFour: card.lastFour || '',
       closingDay: String(card.closingDay), dueDay: String(card.dueDay),
+      closingDate: card.statementSnapshot?.closingDate || '', dueDate: card.statementSnapshot?.dueDate || '',
+      asOf: card.statementSnapshot?.asOf || '',
+      ...Object.fromEntries(['lastStatementARS','lastStatementUSD','minimumPaymentARS','currentConsumptionARS','currentConsumptionUSD','availableLimitARS'].map((key) => [key, card.statementSnapshot?.[key] ?? ''])),
     } : { ...initialCard, bankId });
     setCardEditingId(card?.id || null);
     setAccountDraft(null); setChargeDraft(null);
@@ -190,16 +211,24 @@ function BanksWorkspace({ user }) {
           eyebrow='Organización financiera'
           title='Bancos y tarjetas'
           description='Administrá tus cuentas, tarjetas, consumos y resúmenes vinculados a Transacciones.'
-          actionsClassName='grid grid-cols-2 gap-2 sm:flex sm:flex-wrap'
           note={<span className='inline-flex items-start gap-2'><FiShield className='mt-0.5 shrink-0' aria-hidden='true' />Solo vos podés ver estos datos. No solicitamos claves, CVV ni números completos de tarjeta.</span>}
         >
-          <Link to='/transacciones'
-            className='inline-flex min-h-[44px] min-w-0 items-center justify-center rounded-xl border border-purple-500 px-2 py-2 text-center text-xs font-bold text-purple-600 transition-colors hover:bg-purple-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300 sm:px-3 sm:text-sm'>
-            Transacciones →
+          <button type='button' disabled={pending} onClick={() => setShowBankForm(true)}
+            aria-label='Agregar banco' className={buttonClass}>
+            <FiPlus aria-hidden='true'/> <span className='hidden sm:inline'>Banco</span>
+          </button>
+          <Link to='/transacciones' title='Transacciones' aria-label='Transacciones'
+            className='inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-600 dark:text-purple-300'>
+            <FiCreditCard aria-hidden='true'/> <span className='hidden sm:inline'>Transacciones</span>
           </Link>
-          <button type='button' aria-pressed={!showValues} onClick={toggleVisibility} className={secondary}>
+          <Link to='/portfolio' title='Portfolio' aria-label='Portfolio'
+            className='inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-600 dark:text-purple-300'>
+            <FiPieChart aria-hidden='true'/> <span className='hidden sm:inline'>Portfolio</span>
+          </Link>
+          <button type='button' aria-label={showValues?'Ocultar importes':'Mostrar importes'}
+            aria-pressed={!showValues} onClick={toggleVisibility} className={secondary}>
             {showValues ? <FiEyeOff aria-hidden='true'/> : <FiEye aria-hidden='true'/>}
-            <span className='text-xs sm:text-sm'>{showValues ? 'Ocultar importes' : 'Mostrar importes'}</span>
+            <span className='hidden sm:inline'>{showValues ? 'Ocultar' : 'Mostrar'}</span>
           </button>
         </QuickAccessCard>
         <ErrorMessage error={error} />
@@ -247,37 +276,10 @@ function BanksWorkspace({ user }) {
               className='mb-5'
             >
               <div className='space-y-4'>
-        {!pending && (
-          <section className={`${COLLAPSIBLE_SURFACE_STYLES.nested} p-3 sm:p-4`}>
-            <h3 className='text-base font-bold text-slate-900 dark:text-slate-50'>Agregar banco</h3>
-            <p className='mt-1 text-sm text-slate-600 dark:text-slate-300'>
-              Creá las entidades que usás. No agregamos ningún banco, cuenta ni tarjeta por defecto.
-            </p>
-            {banks.length === 0 && <p className='mt-3 text-sm'>Todavía no agregaste bancos. Empezá por escribir el nombre de uno.</p>}
-            <form className='mt-3 flex flex-col gap-2 sm:flex-row sm:items-end' onSubmit={(event) => {
-              event.preventDefault();
-              run(async () => {
-                const name = newBankName.trim();
-                if (banks.some((bank) => bank.name?.toLocaleLowerCase() === name.toLocaleLowerCase()))
-                  throw new Error('Ese banco ya está registrado.');
-                const id = await addUserBank(uid, name);
-                setNewBankName('');
-                setOpenBank(id);
-                setManageCollapsed(false);
-              }, 'Banco agregado');
-            }}>
-              <div className='min-w-0 flex-1'>
-                <Field title='Nombre del banco'>
-                  <input className={inputClass} required minLength={2} maxLength={70}
-                    autoComplete='off' placeholder='Ej.: Banco Galicia, Brubank, BBVA'
-                    value={newBankName} onChange={(event) => setNewBankName(event.target.value)}/>
-                </Field>
-              </div>
-              <button type='submit' className={buttonClass} disabled={busy || !newBankName.trim()}>
-                <FiPlus aria-hidden='true'/> Agregar banco
-              </button>
-            </form>
-          </section>
+        {banks.length === 0 && (
+          <div className='rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300'>
+            Todavía no agregaste bancos. Usá el botón + del encabezado para crear uno o rellenar sus datos con Markdown.
+          </div>
         )}
         {banks.filter((bank) => bank.active).map((bank) => {
           const id = bank.code;
@@ -319,6 +321,10 @@ function BanksWorkspace({ user }) {
                         <p className='text-xs text-slate-600 dark:text-slate-300'>{a.type === 'cuenta_corriente' ? 'Cuenta corriente' : a.type === 'caja_ahorro' ? 'Caja de ahorro' : 'Otra cuenta'} · {a.currency}</p>
                         <p className='mt-2 text-lg font-extrabold tabular-nums'>{displayMoney(a.balance, a.currency)}</p>
                         {a.alias && <p className='mt-2 break-all text-sm'>Alias: {a.alias}</p>}
+                        {a.accountNumber && <p className='mt-1 text-xs'>N.º de cuenta: {revealedAccount === a.id ? a.accountNumber : '•••• ' + a.accountNumber.slice(-4)}</p>}
+                        {a.holder && <p className='mt-1 text-xs'>Titular: {a.holder}</p>}
+                        {a.holderTaxId && <p className='mt-1 text-xs'>CUIT/CUIL: {revealedAccount === a.id ? a.holderTaxId : '••••'}</p>}
+                        {a.branch && <p className='mt-1 text-xs'>Sucursal: {a.branch}</p>}
                         <p className='mt-1 text-xs'>CBU/CVU: {revealedAccount === a.id ? (a.cbu || 'No informado') : maskCbu(a.cbu)}</p>
                         {a.cbu && <button type='button' onClick={() => setRevealedAccount(revealedAccount === a.id ? null : a.id)}
                           className='mt-2 inline-flex min-h-[40px] items-center gap-1 text-xs font-semibold text-purple-700 dark:text-purple-300'>
@@ -338,6 +344,10 @@ function BanksWorkspace({ user }) {
                       <Field title='Saldo actual (manual)'><input className={inputClass} required inputMode='decimal' value={accountDraft.balance} onChange={(e)=>setAccountDraft({ ...accountDraft, balance:e.target.value })}/></Field>
                       <Field title='Alias (opcional)'><input className={inputClass} maxLength={80} value={accountDraft.alias} onChange={(e)=>setAccountDraft({ ...accountDraft, alias:e.target.value })}/></Field>
                       <Field title='CBU/CVU de 22 dígitos (opcional)'><input className={inputClass} inputMode='numeric' pattern='[0-9]{22}' autoComplete='off' placeholder='Solo si querés guardarlo' value={accountDraft.cbu} onChange={(e)=>setAccountDraft({ ...accountDraft, cbu:e.target.value })}/></Field>
+                      <Field title='Número de cuenta'><input className={inputClass} maxLength={60} value={accountDraft.accountNumber || ''} onChange={(e)=>setAccountDraft({ ...accountDraft, accountNumber:e.target.value })}/></Field>
+                      <Field title='Titular'><input className={inputClass} maxLength={100} value={accountDraft.holder || ''} onChange={(e)=>setAccountDraft({ ...accountDraft, holder:e.target.value })}/></Field>
+                      <Field title='CUIT/CUIL titular'><input className={inputClass} maxLength={24} value={accountDraft.holderTaxId || ''} onChange={(e)=>setAccountDraft({ ...accountDraft, holderTaxId:e.target.value })}/></Field>
+                      <Field title='Sucursal'><input className={inputClass} maxLength={70} value={accountDraft.branch || ''} onChange={(e)=>setAccountDraft({ ...accountDraft, branch:e.target.value })}/></Field>
                       <div className='sm:col-span-2 flex flex-wrap gap-2'><button className={buttonClass} disabled={busy}>Guardar cuenta</button><button type='button' className={secondary} onClick={() => setAccountDraft(null)}>Cancelar</button></div>
                     </form>
                   )}
@@ -359,6 +369,20 @@ function BanksWorkspace({ user }) {
                       <Field title='Día habitual de cierre'><input required className={inputClass} type='number' min='1' max='31' value={cardDraft.closingDay} onChange={(e)=>setCardDraft({ ...cardDraft, closingDay:e.target.value })}/></Field>
                       <Field title='Día habitual de vencimiento'><input required className={inputClass} type='number' min='1' max='31' value={cardDraft.dueDay} onChange={(e)=>setCardDraft({ ...cardDraft, dueDay:e.target.value })}/></Field>
                       <p className='text-xs text-slate-600 dark:text-slate-300 sm:col-span-2'>Estos días son orientativos. Cada resumen PDF conserva sus fechas reales de cierre y vencimiento.</p>
+                      <details className='sm:col-span-2 rounded-xl border border-slate-300 p-3 dark:border-slate-600'>
+                        <summary className='cursor-pointer text-sm font-bold'>Referencia del home banking (opcional)</summary>
+                        <div className='mt-3 grid gap-3 sm:grid-cols-2'>
+                          {[
+                            ['closingDate','Cierre mostrado','date'],['dueDate','Vencimiento mostrado','date'],['asOf','Fecha de consulta','date'],
+                            ['lastStatementARS','Último resumen ARS'],['lastStatementUSD','Último resumen USD'],
+                            ['minimumPaymentARS','Pago mínimo ARS'],['currentConsumptionARS','Consumos actuales ARS'],
+                            ['currentConsumptionUSD','Consumos actuales USD'],['availableLimitARS','Límite disponible ARS'],
+                          ].map(([key,label,type]) => (
+                            <Field key={key} title={label}><input className={inputClass} type={type || 'text'} inputMode={type ? undefined : 'decimal'}
+                              value={cardDraft[key] ?? ''} onChange={(e)=>setCardDraft({...cardDraft,[key]:e.target.value})}/></Field>
+                          ))}
+                        </div>
+                      </details>
                       <div className='sm:col-span-2 flex gap-2'><button className={buttonClass} disabled={busy}>Guardar tarjeta</button><button type='button' className={secondary} onClick={()=>setCardDraft(null)}>Cancelar</button></div>
                     </form>
                   )}
@@ -372,6 +396,19 @@ function BanksWorkspace({ user }) {
                       onToggle={() => setOpenCard((value) => value === card.id ? null : card.id)}>
                       <div className='min-w-0 space-y-3'>
                         <button type='button' className={secondary} onClick={() => startCard(id, card)}>Editar tarjeta</button>
+                        {card.statementSnapshot && <div className='grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs dark:border-slate-700 dark:bg-slate-900/50'>
+                          {[
+                            ['lastStatementARS','Último resumen ARS','ARS'],['lastStatementUSD','Último resumen USD','USD'],
+                            ['minimumPaymentARS','Pago mínimo ARS','ARS'],['currentConsumptionARS','Consumos actuales ARS','ARS'],
+                            ['currentConsumptionUSD','Consumos actuales USD','USD'],['availableLimitARS','Disponible ARS','ARS'],
+                          ].filter(([key])=>card.statementSnapshot[key]!==undefined).map(([key,label,currency])=>(
+                            <p className='min-w-0 break-words' key={key}><span className='block text-slate-600 dark:text-slate-300'>{label}</span>
+                              <strong className='text-sm'>{displayMoney(card.statementSnapshot[key],currency)}</strong></p>
+                          ))}
+                          {card.statementSnapshot.closingDate && <p>Cierre mostrado: {card.statementSnapshot.closingDate}</p>}
+                          {card.statementSnapshot.dueDate && <p>Vencimiento mostrado: {card.statementSnapshot.dueDate}</p>}
+                          <p className='col-span-2 text-slate-500 dark:text-slate-400'>Datos manuales de referencia; no se agregan a gastos o saldo de cuenta.</p>
+                        </div>}
                         <div className='flex flex-wrap items-center justify-between gap-2'>
                           <h4 className='font-bold'>Consumos registrados</h4>
                           <button type='button' className={secondary} onClick={() => startCharge(card)}><FiPlus/> Agregar consumo manual</button>
@@ -462,6 +499,16 @@ function BanksWorkspace({ user }) {
         </CollapsibleSection>
           </>
         )}
+        <GenericModal
+          show={showBankForm}
+          dialogLabel='Crear banco y completar datos'
+          component={BankOnboardingForm}
+          onSave={saveNewBank}
+          onCancel={() => { if(!busy) setShowBankForm(false); }}
+          closeModal={() => { if(!busy) setShowBankForm(false); }}
+          existingBanks={banks}
+          busy={busy}
+        />
       </div>
     </main>
   );

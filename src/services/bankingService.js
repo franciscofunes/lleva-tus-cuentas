@@ -18,6 +18,35 @@ export const subscribeBankCharges = (uid, onData, onError) => observable(uid, 'b
 export const subscribeBankStatementLinks = (uid, onData, onError) => observable(uid, 'bankStatementLinks', onData, onError);
 export const subscribeImportedStatements = (uid, onData, onError) => observable(uid, 'cardStatements', onData, onError);
 
+// Atomic first-time bank onboarding: account/card docs reference the new bank.
+// Firestore rules use existsAfter for owner-scoped child writes in the same batch.
+// No expenses/transactions/portfolio writes and no banking API calls.
+export const createBankBundle = async (uid, { name, accounts = [], cards = [] }) => {
+  const bankName = validateBankName(name);
+  if (!Array.isArray(accounts) || !Array.isArray(cards) || accounts.length + cards.length > 20)
+    throw new Error('Importá hasta 20 cuentas y tarjetas por banco.');
+  const user = mine(uid);
+  const bankRef = user.collection('banks').doc();
+  const id = bankRef.id;
+  const validAccounts = accounts.map((a) => validateBankAccount({ ...a, bankId: id }));
+  const validCards = cards.map((c) => validateBankCard({ ...c, bankId: id }));
+  const batch = firestore.batch();
+  const now = new Date();
+  batch.set(bankRef, { name: bankName, code: id, active: true, updatedAt: now });
+  validAccounts.forEach((account) => {
+    batch.set(user.collection('bankAccounts').doc(), {
+      ...account, createdAt: now, updatedAt: now, balanceUpdatedAt: now,
+    });
+  });
+  validCards.forEach((card) => {
+    batch.set(user.collection('bankCards').doc(), {
+      ...card, createdAt: now, updatedAt: now,
+    });
+  });
+  await batch.commit();
+  return id;
+};
+
 // IDs are generated per owner; the user chooses the name and we never seed any institution.
 export const addUserBank = async (uid, nameInput) => {
   const name = validateBankName(nameInput);

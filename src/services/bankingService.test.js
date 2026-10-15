@@ -1,12 +1,12 @@
 import {
-  addUserBank, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge, saveStatementBankLink,
+  createBankBundle, addUserBank, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge, saveStatementBankLink,
   getStatementLink, subscribeBankStatementLinks,
 } from './bankingService';
 import { auth, firestore } from '../shared/config/firebase/firebase.config';
 
 jest.mock('../shared/config/firebase/firebase.config', () => ({
   auth: { currentUser: { uid: 'alice' } },
-  firestore: { collection: jest.fn() },
+  firestore: { collection: jest.fn(), batch: jest.fn() },
 }));
 
 let mockBank, mockCard, mockExpense, mockLink, mockAccount, mockCharge, mockUser;
@@ -21,8 +21,9 @@ beforeEach(() => {
   const cardRef = { get: jest.fn(async () => mockCard), update: jest.fn().mockResolvedValue(undefined) };
   const expenseRef = { get: jest.fn(async () => mockExpense) };
   mockLink = { get: jest.fn(async () => ({ exists:false })), set: jest.fn().mockResolvedValue(undefined) };
-  mockAccount = { add: jest.fn(async () => ({ id:'account1' })) };
+  mockAccount = { add: jest.fn(async () => ({ id:'account1' })), doc: jest.fn(() => ({id:'account1'})) };
   mockCharge = { add: jest.fn(async () => ({ id:'charge1' })) };
+  firestore.batch.mockReturnValue({ set: jest.fn(), commit: jest.fn().mockResolvedValue(undefined) });
   const refs = {
     banks: { doc: jest.fn(() => bankRef) },
     bankCards: { doc: jest.fn(() => cardRef), add: jest.fn(async () => ({ id:'card1' })) },
@@ -90,4 +91,29 @@ test('cross-user bank data cannot be read or written', async () => {
 test('a statement association is optional, and absent links resolve to null', async () => {
   await expect(getStatementLink('alice','expense1')).resolves.toBeNull();
   await expect(getStatementLink('alice','../unsafe')).resolves.toBeNull();
+});
+
+test('first-time bank plus multiple account/card records are atomic, never financial transactions',async()=>{
+ const id=await createBankBundle('alice',{
+   name:' Banco Ciudad ',
+   accounts:[{name:'Caja ARS',type:'caja_ahorro',currency:'ARS',balance:'538.17',cbu:'',alias:'',
+      holder:'Titular de prueba',accountNumber:'0000659'}],
+   cards:[{nickname:'Visa crédito',brand:'Visa',lastFour:'4555',closingDay:'29',dueDay:'13',
+      currentConsumptionARS:'59245.69'}],
+ });
+ expect(id).toBe('bankGenerated20');
+ const batch=firestore.batch.mock.results[0].value;
+ expect(batch.set).toHaveBeenCalledTimes(3);
+ expect(batch.commit).toHaveBeenCalledTimes(1);
+ expect(batch.set).toHaveBeenCalledWith(expect.anything(),expect.objectContaining({name:'Banco Ciudad',code:id}));
+ expect(batch.set).toHaveBeenCalledWith(expect.anything(),expect.objectContaining({balance:538.17,accountNumber:'0000659',bankId:id}));
+ expect(batch.set).toHaveBeenCalledWith(expect.anything(),expect.objectContaining({
+    lastFour:'4555',statementSnapshot:expect.objectContaining({currentConsumptionARS:59245.69}),bankId:id}));
+ expect(mockUser.collection).not.toHaveBeenCalledWith('expenses');
+});
+test('bundle rejects invalid data before any Firestore commit',async()=>{
+ await expect(createBankBundle('alice',{name:'Banco',cards:[{nickname:'Visa',
+   brand:'Visa',lastFour:'4111111111111111',closingDay:29,dueDay:12}]})).rejects.toThrow(/4 dígitos/);
+ expect(firestore.batch).not.toHaveBeenCalled();
+ await expect(createBankBundle('bob',{name:'Banco'})).rejects.toThrow(/Iniciá sesión/);
 });

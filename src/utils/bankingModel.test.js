@@ -65,3 +65,24 @@ test('statement details link to the card through existing expenseId without re-c
   expect(isStatementCategory('Resumen tarjeta 💳')).toBe(true);
   expect(isStatementCategory('Venta divisas')).toBe(false);
 });
+
+test('optional banking identifiers remain typed and snapshot values are reference-only', () => {
+  const account=validateBankAccount({
+    bankId:'private',name:'Caja ahorro',type:'caja_ahorro',currency:'ARS',
+    balance:'538.17',alias:'alias123',cbu:'',
+    accountNumber:'210-371720/6', holder:'Titular de prueba',holderTaxId:'20-35324183-5',branch:'Centro',
+  });
+  expect(account.accountNumber).toBe('210-371720/6');
+  expect(account.holderTaxId).toBe('20-35324183-5');
+  expect(() => validateBankAccount({...account,holderTaxId:'secret-password-123'})).toThrow(/CUIT/);
+  const card=validateBankCard({
+    bankId:'private',nickname:'Visa Gold',brand:'Visa',lastFour:'6492',
+    closingDay:'29',dueDay:'11',closingDate:'2026-10-29',dueDate:'2026-11-11',
+    currentConsumptionARS:'929462.40',currentConsumptionUSD:'20.00',availableLimitARS:'2206307.35',
+  });
+  expect(card.statementSnapshot).toEqual({
+    closingDate:'2026-10-29',dueDate:'2026-11-11',
+    currentConsumptionARS:929462.4,currentConsumptionUSD:20,availableLimitARS:2206307.35,
+  });
+  expect(() => validateBankCard({...card,lastFour:'4111111111111111'})).toThrow(/4 dígitos/);
+});

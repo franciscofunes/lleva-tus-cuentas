@@ -27,7 +27,7 @@ jest.mock('../services/bankingService', () => ({
   subscribeBankCharges: jest.fn(),
   subscribeBankStatementLinks: jest.fn(),
   subscribeImportedStatements: jest.fn(),
-  addUserBank: jest.fn(),
+  createBankBundle: jest.fn(),
   renameUserBank: jest.fn(),
   saveBankAccount: jest.fn(),
   saveBankCard: jest.fn(),
@@ -69,10 +69,14 @@ test('Bancos reuses the financial header, grouped metrics and collapsible manage
   expect(screen.getByRole('heading', { name: 'Bancos y tarjetas' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Saldos bancarios' })).toBeInTheDocument();
   expect(screen.getByText(/0 bancos · 0 cuentas · 0 tarjetas/)).toBeInTheDocument();
-  expect(screen.getByText(/No agregamos ningún banco/)).toBeInTheDocument();
+  expect(screen.getByText(/Usá el botón \+ del encabezado/)).toBeInTheDocument();
   expect(screen.queryByText('Banco Santander')).not.toBeInTheDocument();
   expect(screen.queryByText('Banco Ciudad')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Nombre del banco')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Agregar banco' }));
+  expect(screen.getByRole('dialog', { name: 'Crear banco y completar datos' })).toBeInTheDocument();
   expect(screen.getByLabelText('Nombre del banco')).toHaveAttribute('maxLength', '70');
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
   expect(screen.getByRole('button', { name: /Saldos bancarios/ })).toHaveAttribute('aria-expanded', 'true');
   fireEvent.click(screen.getByRole('button', { name: /Saldos bancarios/ }));
   expect(screen.getByRole('button', { name: /Saldos bancarios/ })).toHaveAttribute('aria-expanded', 'false');
