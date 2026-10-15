@@ -56,6 +56,30 @@ export function FinancialKpiValue({ value, label, loading = false, privacyHidden
   );
 }
 
+export function FinancialMetricCard({ metric, index = 0, reduceMotion = false, isLoading = false, privacyHidden = false }) {
+  const Icon = metric.icon;
+  return (
+    <motion.div
+      {...itemMotion(reduceMotion, index)}
+      className='min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 sm:px-4 sm:py-4 dark:border-slate-700 dark:bg-slate-900/70'
+    >
+      <span className='mb-3 flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10 text-violet-700 dark:text-violet-300'>
+        {Icon && <Icon size={15} aria-hidden='true' />}
+      </span>
+      <p className='min-w-0 break-words text-xl font-extrabold tabular-nums tracking-tight text-slate-950 sm:text-2xl dark:text-white'>
+        <FinancialKpiValue
+          value={metric.value}
+          label={metric.label}
+          loading={isLoading || Boolean(metric.loading)}
+          privacyHidden={privacyHidden}
+          reduceMotion={Boolean(reduceMotion)}
+        />
+      </p>
+      <p className='mt-1 text-[11px] leading-tight text-slate-600 sm:text-xs dark:text-slate-400'>{metric.label}</p>
+    </motion.div>
+  );
+}
+
 export default function FinancialOverviewPanel({
   title, eyebrow = 'Herramientas y métricas', description,
   metrics = [], actions = [], privacyHidden = false, isLoading = false,
@@ -126,30 +150,14 @@ export default function FinancialOverviewPanel({
             </div>
 
             <div className='grid grid-cols-3 gap-2 p-3 sm:gap-3 sm:p-4'>
-              {metrics.map((metric, index) => {
-                const Icon = metric.icon;
-                return (
-                  <motion.div
-                    key={metric.id}
-                    {...itemMotion(reduceMotion, index + actions.length)}
-                    className='min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 sm:px-4 sm:py-4 dark:border-slate-700 dark:bg-slate-900/70'
-                  >
-                    <span className='mb-3 flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10 text-violet-700 dark:text-violet-300'>
-                      {Icon && <Icon size={15} aria-hidden='true' />}
-                    </span>
-                    <p className='truncate text-xl font-extrabold tabular-nums tracking-tight text-slate-950 sm:text-2xl dark:text-white'>
-                      <FinancialKpiValue
-                        value={metric.value}
-                        label={metric.label}
-                        loading={isLoading || Boolean(metric.loading)}
-                        privacyHidden={privacyHidden}
-                        reduceMotion={Boolean(reduceMotion)}
-                      />
-                    </p>
-                    <p className='mt-1 text-[11px] leading-tight text-slate-600 sm:text-xs dark:text-slate-400'>{metric.label}</p>
-                  </motion.div>
-                );
-              })}
+              {metrics.map((metric, index) => (
+                <FinancialMetricCard
+                  key={metric.id} metric={metric}
+                  index={index + actions.length}
+                  reduceMotion={Boolean(reduceMotion)}
+                  isLoading={isLoading} privacyHidden={privacyHidden}
+                />
+              ))}
             </div>
           </motion.div>
         )}
