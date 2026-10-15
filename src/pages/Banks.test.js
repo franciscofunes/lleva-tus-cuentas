@@ -137,7 +137,7 @@ test('floating LITA action sends an owner-scoped banking context', async () => {
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Mis bancos' })).toBeInTheDocument());
   fireEvent.click(screen.getByRole('button', { name: 'Abrir acciones rápidas' }));
   fireEvent.click(within(document.getElementById('ltc-floating-actions'))
-    .getByRole('button', { name: 'Preguntar a LITA' }));
+    .getByRole('button', { name: /Preguntar a LITA/ }));
   expect(screen.getByTestId('lita-panel')).toHaveTextContent('banks');
   expect(screen.getByTestId('lita-panel')).toHaveAttribute('data-scope', 'banks-current-state');
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Abrir acciones rápidas' })).not.toBeInTheDocument());
