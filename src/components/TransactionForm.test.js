@@ -26,6 +26,7 @@ jest.mock('./InfoTooltip', () => () => null);
 
 const initialCategories = [
   { id: 'transport', name: 'Transporte 🚌', isExpense: true, active: true },
+  { id: 'home', name: 'Hogar 🏡', origin: 'shared', isExpense: true, active: true },
   { id: 'salary', name: 'Salario 💲', isExpense: false, active: true },
   { id: 'usd', name: 'Software USD', isExpense: true, currency: 'USD', isCustom: true, origin: 'custom' },
   { id: 'rent2', name: 'Alquiler comercial', isExpense: true, active: true,
@@ -193,4 +194,24 @@ test('USD custom expenses use their own currency and do not show exchange-rate i
 test('legacy ARS categories keep ARS amount field', () => {
   render(<TransactionHarness initialCategory='Transporte 🚌' />);
   expect(screen.getByText('Monto (ARS)')).toBeInTheDocument();
+});
+
+test('Hogar enables a separate optional expiration picker with a five-day notification explanation', () => {
+  render(<TransactionHarness initialCategory='Hogar 🏡' />);
+  expect(screen.getByLabelText('Fecha')).toHaveValue('2026-10-10');
+  const expiration = screen.getByLabelText('Fecha de vencimiento (opcional)');
+  expect(expiration).not.toBeRequired();
+  expect(expiration).toHaveValue('');
+  expect(screen.getByText(/Para expensas, alquiler u otros gastos del hogar/)).toBeInTheDocument();
+  expect(screen.getByText(/LTC te avisará 5 días antes/)).toBeInTheDocument();
+  fireEvent.change(expiration, { target: { value: '2026-10-20' } });
+  expect(expiration).toHaveValue('2026-10-20');
+  expect(screen.getByLabelText('Fecha')).toHaveValue('2026-10-10');
+  fireEvent.change(expiration, { target: { value: '' } });
+  expect(expiration).toHaveValue('');
+});
+
+test('a regular transaction continues without a due-date picker', () => {
+  render(<TransactionHarness initialCategory='Transporte 🚌' />);
+  expect(screen.queryByLabelText('Fecha de vencimiento (opcional)')).not.toBeInTheDocument();
 });
