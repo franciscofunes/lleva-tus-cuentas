@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { BrowserRouter as Router, Route } from 'react-router-dom';
 import AnimatedRoutes from './components/AnimatedRoutes';
+import FinancialPageLayout from './components/FinancialPageLayout';
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
 import App from './App';
@@ -38,31 +39,12 @@ root.render(
 						<Route path='/registrarse' element={<SignUp />} />
 						<Route path='/ingresar' element={<LogIn />} />
 						<Route path='/recupero' element={<ForgotPassword />} />
-						<Route
-							path='/transacciones'
-							element={
-								<ProtectedRoute>
-									<Dashboard />
-								</ProtectedRoute>
-							}
-						/>
-						<Route path='/bancos' element={<ProtectedRoute><Banks /></ProtectedRoute>} />
-						<Route
-							path='/portfolio'
-							element={
-								<ProtectedRoute>
-									<Portfolio />
-								</ProtectedRoute>
-							}
-						/>
-						<Route
-							path='/portfolio/:positionId'
-							element={
-								<ProtectedRoute>
-									<PortfolioDetail />
-								</ProtectedRoute>
-							}
-						/>
+						<Route element={<ProtectedRoute><FinancialPageLayout /></ProtectedRoute>}>
+							<Route path='/transacciones' element={<Dashboard />} />
+							<Route path='/portfolio' element={<Portfolio />} />
+							<Route path='/portfolio/:positionId' element={<PortfolioDetail />} />
+							<Route path='/bancos' element={<Banks />} />
+						</Route>
 						<Route
 							path='/subscripcion'
 							element={
