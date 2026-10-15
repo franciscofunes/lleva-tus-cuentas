@@ -17,6 +17,11 @@ jest.mock('../actionCreators/databaseActions', () => ({
 }));
 jest.mock('../components/CardStatementDetails', () => () => null);
 jest.mock('../components/CardStatementPdfReview', () => () => null);
+jest.mock('../components/LitaAssitantPanel', () => ({
+  __esModule: true,
+  default: ({section, context}) => require('react').createElement('div',
+    {'data-testid':'lita-panel','data-scope':context.scope}, section),
+}));
 jest.mock('../services/cardStatementService', () => ({
   getImportedStatement: jest.fn(), saveReviewedStatement: jest.fn(), verifyStatementDraft: jest.fn(),
 }));
@@ -115,4 +120,21 @@ test('privacy toggle masks both currencies and uses the existing shared KPI desi
   await waitFor(() => expect(screen.getByText(/1\.234/)).toBeInTheDocument());
   fireEvent.click(screen.getByRole('button', { name:/Ocultar importes/ }));
   expect(screen.queryByText(/1\.234/)).not.toBeInTheDocument();
+});
+
+test('floating quick actions are shared with Portfolio: add bank and financial LITA', async () => {
+  mount();
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Mis bancos' })).toBeInTheDocument());
+  const open = () => fireEvent.click(screen.getByRole('button', { name: 'Abrir acciones rápidas' }));
+  open();
+  fireEvent.click(screen.getByRole('button', { name: /Agregar banco/ }));
+  expect(screen.getByRole('dialog', { name: 'Crear banco y completar datos' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Abrir acciones rápidas' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Abrir acciones rápidas' })).toBeInTheDocument());
+  open();
+  fireEvent.click(screen.getByRole('button', { name: 'Preguntar a LITA' }));
+  expect(screen.getByTestId('lita-panel')).toHaveTextContent('banks');
+  expect(screen.getByTestId('lita-panel')).toHaveAttribute('data-scope', 'banks-current-state');
+  expect(screen.queryByRole('button', { name: 'Abrir acciones rápidas' })).not.toBeInTheDocument();
 });
