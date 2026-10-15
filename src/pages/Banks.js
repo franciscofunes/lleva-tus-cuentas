@@ -6,6 +6,8 @@ import { toast } from 'react-toastify';
 import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiPieChart } from 'react-icons/fi';
 import GenericModal from '../components/GenericModal';
 import BankOnboardingForm from '../components/BankOnboardingForm';
+import FloatingMenu from '../components/FloatingMenu';
+import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
 import QuickAccessCard from '../components/QuickAccessCard';
 import PageDataSkeleton from '../components/PageDataSkeleton';
@@ -22,6 +24,7 @@ import {
   deleteManualCardCharge, saveStatementBankLink,
 } from '../services/bankingService';
 import { sumBankBalances, statementForCard } from '../utils/bankingModel';
+import { buildBanksLitaContext } from '../utils/banksLitaContext';
 
 const initialAccount = { bankId: '', name: 'Caja de ahorro', type: 'caja_ahorro', currency: 'ARS', balance: '0', alias: '', cbu: '' };
 const initialCard = { bankId: '', nickname: '', brand: 'Visa', lastFour: '', closingDay: '25', dueDay: '10' };
@@ -63,6 +66,7 @@ function BanksWorkspace({ user }) {
   const [summaryCollapsed, setSummaryCollapsed] = useState(false);
   const [manageCollapsed, setManageCollapsed] = useState(false);
   const [showBankForm, setShowBankForm] = useState(false);
+  const [showLita, setShowLita] = useState(false);
   const [renameBank, setRenameBank] = useState(null);
   const [showUnlinked, setShowUnlinked] = useState(false);
   const [visibility, setVisibility] = useState({ uid: null, visible: false });
@@ -116,6 +120,9 @@ function BanksWorkspace({ user }) {
   }, [dispatch, uid]);
 
   const totals = useMemo(() => sumBankBalances(accounts), [accounts]);
+  const litaBankContext = useMemo(() => buildBanksLitaContext({
+    banks, accounts, cards, charges, statements, links,
+  }), [banks, accounts, cards, charges, statements, links]);
   const unlinked = statements.filter((statement) => !links.some((link) => link.expenseId === statement.expenseId));
   const selectedPdfCard = cards.find((card) => card.id === pdfCardId);
   const statementCategory = (Array.isArray(categories) ? categories : []).find((c) => c.isExpense && /Resumen tarjeta/.test(c.name))?.name;
@@ -509,6 +516,22 @@ function BanksWorkspace({ user }) {
           existingBanks={banks}
           busy={busy}
         />
+        {!pending && (
+          <FloatingMenu
+            openTransactionModal={() => setShowBankForm(true)}
+            openLitaModal={() => setShowLita(true)}
+            primaryMessage='Banco'
+            isModalOpen={showBankForm || showLita}
+          />
+        )}
+        {showLita && (
+          <LitaAssistantPanel
+            isOpen={showLita}
+            setIsOpen={setShowLita}
+            section='banks'
+            context={litaBankContext}
+          />
+        )}
       </div>
     </main>
   );
