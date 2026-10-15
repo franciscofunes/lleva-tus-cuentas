@@ -6,7 +6,6 @@ import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEy
 import CollapsibleSection from '../components/CollapsibleSection';
 import CardStatementDetails from '../components/CardStatementDetails';
 import CardStatementPdfReview from '../components/CardStatementPdfReview';
-import AppFooter from '../components/AppFooter';
 import { getCategoriesDataAction, storeDataAction } from '../actionCreators/databaseActions';
 import { getImportedStatement, saveReviewedStatement, verifyStatementDraft } from '../services/cardStatementService';
 import {
@@ -406,7 +405,6 @@ function BanksWorkspace({ user }) {
             </div>;
           })}
         </CollapsibleSection>
-        <AppFooter minimal />
       </div>
     </main>
   );
