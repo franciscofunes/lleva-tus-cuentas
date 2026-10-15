@@ -12,10 +12,10 @@ import { getImportedStatement, saveReviewedStatement, verifyStatementDraft } fro
 import {
   subscribeBanks, subscribeBankAccounts, subscribeBankCards, subscribeBankCharges,
   subscribeBankStatementLinks, subscribeImportedStatements,
-  addUserBank, saveBankAccount, saveBankCard, saveManualCardCharge,
+  addUserBank, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge,
   deleteManualCardCharge, saveStatementBankLink,
 } from '../services/bankingService';
-import { BANK_OPTIONS, bankName, sumBankBalances, statementForCard } from '../utils/bankingModel';
+import { sumBankBalances, statementForCard } from '../utils/bankingModel';
 
 const initialAccount = { bankId: '', name: 'Caja de ahorro', type: 'caja_ahorro', currency: 'ARS', balance: '0', alias: '', cbu: '' };
 const initialCard = { bankId: '', nickname: '', brand: 'Visa', lastFour: '', closingDay: '25', dueDay: '10' };
@@ -51,7 +51,9 @@ function BanksWorkspace({ user }) {
   const [pending, setPending] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [openBank, setOpenBank] = useState('santander');
+  const [openBank, setOpenBank] = useState(null);
+  const [newBankName, setNewBankName] = useState('');
+  const [renameBank, setRenameBank] = useState(null);
   const [showUnlinked, setShowUnlinked] = useState(false);
   const [visibility, setVisibility] = useState({ uid: null, visible: false });
   const showValues = visibility.uid === uid && visibility.visible;
@@ -104,7 +106,6 @@ function BanksWorkspace({ user }) {
   }, [dispatch, uid]);
 
   const totals = useMemo(() => sumBankBalances(accounts), [accounts]);
-  const missingBanks = BANK_OPTIONS.filter((candidate) => !banks.some((bank) => bank.code === candidate.id));
   const unlinked = statements.filter((statement) => !links.some((link) => link.expenseId === statement.expenseId));
   const selectedPdfCard = cards.find((card) => card.id === pdfCardId);
   const statementCategory = (Array.isArray(categories) ? categories : []).find((c) => c.isExpense && /Resumen tarjeta/.test(c.name))?.name;
@@ -201,24 +202,63 @@ function BanksWorkspace({ user }) {
             </div>
           ))}
         </div>
-        {!pending && missingBanks.length > 0 && (
+        {!pending && (
           <section className={surface}>
-            <h2 className='text-base font-bold'>Agregar mis bancos</h2>
-            <div className='mt-3 flex flex-wrap gap-2'>
-              {missingBanks.map((bank) => <button key={bank.id} type='button' disabled={busy}
-                className={buttonClass} onClick={() => run(() => addUserBank(uid, bank.id), 'Banco agregado')}>
-                <FiPlus aria-hidden='true'/> {bank.name}
-              </button>)}
-            </div>
+            <h2 className='text-base font-bold'>Agregar banco</h2>
+            <p className='mt-1 text-sm text-slate-600 dark:text-slate-300'>
+              Creá las entidades que usás. No agregamos ningún banco, cuenta ni tarjeta por defecto.
+            </p>
+            {banks.length === 0 && <p className='mt-3 text-sm'>Todavía no agregaste bancos. Empezá por escribir el nombre de uno.</p>}
+            <form className='mt-3 flex flex-col gap-2 sm:flex-row sm:items-end' onSubmit={(event) => {
+              event.preventDefault();
+              run(async () => {
+                const name = newBankName.trim();
+                if (banks.some((bank) => bank.name?.toLocaleLowerCase() === name.toLocaleLowerCase()))
+                  throw new Error('Ese banco ya está registrado.');
+                const id = await addUserBank(uid, name);
+                setNewBankName('');
+                setOpenBank(id);
+              }, 'Banco agregado');
+            }}>
+              <div className='min-w-0 flex-1'>
+                <Field title='Nombre del banco'>
+                  <input className={inputClass} required minLength={2} maxLength={70}
+                    autoComplete='off' placeholder='Ej.: Banco Galicia, Brubank, BBVA'
+                    value={newBankName} onChange={(event) => setNewBankName(event.target.value)}/>
+                </Field>
+              </div>
+              <button type='submit' className={buttonClass} disabled={busy || !newBankName.trim()}>
+                <FiPlus aria-hidden='true'/> Agregar banco
+              </button>
+            </form>
           </section>
         )}
         {banks.filter((bank) => bank.active).map((bank) => {
           const id = bank.code;
           return (
-            <CollapsibleSection key={id} id={'bank-' + id} eyebrow='Banco' title={bankName(id) || bank.name}
+            <CollapsibleSection key={id} id={'bank-' + id} eyebrow='Banco' title={bank.name}
               description={bankAccounts(id).length + ' cuentas · ' + bankCards(id).length + ' tarjetas'}
               collapsed={openBank !== id} onToggle={() => setOpenBank(openBank === id ? null : id)}>
               <div className='space-y-5'>
+                {renameBank?.id === id ? (
+                  <form className='flex flex-col gap-2 sm:flex-row sm:items-end'
+                    onSubmit={(event) => { event.preventDefault(); run(async () => {
+                      await renameUserBank(uid, id, renameBank.name);
+                      setRenameBank(null);
+                    }, 'Banco actualizado'); }}>
+                    <div className='min-w-0 flex-1'>
+                      <Field title='Editar nombre del banco'>
+                        <input className={inputClass} required minLength={2} maxLength={70}
+                          value={renameBank.name} onChange={(event) => setRenameBank({id, name:event.target.value})}/>
+                      </Field>
+                    </div>
+                    <button className={buttonClass} disabled={busy}>Guardar nombre</button>
+                    <button type='button' className={secondary} onClick={() => setRenameBank(null)}>Cancelar</button>
+                  </form>
+                ) : (
+                  <button type='button' className={secondary}
+                    onClick={() => setRenameBank({id, name:bank.name})}>Editar nombre del banco</button>
+                )}
                 <section className='space-y-3' aria-label={'Cuentas de ' + bank.name}>
                   <div className='flex flex-wrap items-center justify-between gap-2'>
                     <h3 className='text-base font-extrabold'>Cuentas bancarias</h3>
@@ -329,7 +369,7 @@ function BanksWorkspace({ user }) {
         {pdfCardId && selectedPdfCard && (
           <section className={surface + ' space-y-3'}>
             <div className='flex flex-wrap items-center justify-between gap-3'>
-              <h2 className='text-lg font-extrabold'>Importar resumen · {bankName(selectedPdfCard.bankId)} / {selectedPdfCard.nickname}</h2>
+              <h2 className='text-lg font-extrabold'>Importar resumen · {banks.find((bank) => bank.code === selectedPdfCard.bankId)?.name || 'Banco'} / {selectedPdfCard.nickname}</h2>
               <button type='button' className={secondary} onClick={()=>{setPdfCardId('');setPdfDraft(null);setPendingExpenseId(null);}}>Cerrar</button>
             </div>
             <CardStatementPdfReview categories={categories || []} onDraft={resetPDF}
