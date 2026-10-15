@@ -1,5 +1,5 @@
 import { auth, firestore } from '../shared/config/firebase/firebase.config';
-import { BANK_OPTIONS, validBankId, validateBankAccount, validateBankCard, validateBankCharge } from '../utils/bankingModel';
+import { validBankId, validateBankName, validateBankAccount, validateBankCard, validateBankCharge } from '../utils/bankingModel';
 
 const mine = (uid) => {
   if (!uid || auth.currentUser?.uid !== uid) throw new Error('Iniciá sesión para consultar tus bancos.');
@@ -14,16 +14,21 @@ const observable = (uid, name, onData, onError) =>
 export const subscribeBanks = (uid, onData, onError) => observable(uid, 'banks', onData, onError);
 export const subscribeBankAccounts = (uid, onData, onError) => observable(uid, 'bankAccounts', onData, onError);
 export const subscribeBankCards = (uid, onData, onError) => observable(uid, 'bankCards', onData, onError);
-export const subscribeBankCharges = (uid, onData, onError) => observable(uid, 'bankCharges', onData, onError);
+export const subscribeBankCharges = (uid, onData, onError) => observable(uid, 'bankCardCharges', onData, onError);
 export const subscribeBankStatementLinks = (uid, onData, onError) => observable(uid, 'bankStatementLinks', onData, onError);
 export const subscribeImportedStatements = (uid, onData, onError) => observable(uid, 'cardStatements', onData, onError);
 
-// Deterministic ids make repeated taps idempotent and avoid duplicate banks.
-export const addUserBank = (uid, bankId) => {
-  if (!validBankId(bankId)) throw new Error('Banco no admitido.');
-  return collection(uid, 'banks').doc(bankId).set({
-    name: BANK_OPTIONS.find((bank) => bank.id === bankId).name,
-    code: bankId, active: true, updatedAt: new Date(),
+// IDs are generated per owner; the user chooses the name and we never seed any institution.
+export const addUserBank = async (uid, nameInput) => {
+  const name = validateBankName(nameInput);
+  const ref = collection(uid, 'banks').doc();
+  await ref.set({ name, code: ref.id, active: true, updatedAt: new Date() });
+  return ref.id;
+};
+export const renameUserBank = (uid, bankId, nameInput) => {
+  if (!validBankId(bankId)) throw new Error('Banco inválido.');
+  return collection(uid, 'banks').doc(bankId).update({
+    name: validateBankName(nameInput), updatedAt: new Date(),
   });
 };
 export const saveBankAccount = (uid, values, id) => {

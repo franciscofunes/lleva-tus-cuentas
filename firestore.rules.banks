@@ -6,7 +6,7 @@ function ltcBankOwner(uid) {
   return request.auth != null && request.auth.uid == uid;
 }
 function ltcBankId(id) {
-  return id in ['santander', 'ciudad'];
+  return id is string && id.matches('^[A-Za-z0-9_-]{1,128}$');
 }
 function ltcValidMoney(value) {
   return value is number && value > -1000000000000 && value < 1000000000000;
@@ -25,7 +25,8 @@ match /users/{uid}/banks/{bankId} {
       && d.keys().hasAll(['code','name','active','updatedAt'])
       && d.keys().hasOnly(['code','name','active','updatedAt'])
       && d.code == bankId
-      && d.name == (bankId == 'santander' ? 'Banco Santander' : 'Banco Ciudad')
+      && d.name is string && d.name.size() >= 2 && d.name.size() <= 70
+      && d.name.matches('.*[^ ].*')
       && d.active == true
       && d.updatedAt is timestamp;
   }

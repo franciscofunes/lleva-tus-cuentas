@@ -1,12 +1,18 @@
 import {
-  BANK_OPTIONS, validBankId, validDate, validateBankAccount, validateBankCard,
+  validateBankName, validBankId, validDate, validateBankAccount, validateBankCard,
   validateBankCharge, parseAmount, isStatementCategory, sumBankBalances, statementForCard,
 } from './bankingModel';
 
-test('only supported banks can be configured, no auto seeded accounts', () => {
-  expect(BANK_OPTIONS.map(b => b.id)).toEqual(['santander','ciudad']);
-  expect(validBankId('santander')).toBe(true);
-  expect(validBankId('not-a-bank')).toBe(false);
+test('bank IDs are owner-defined, safely formatted and not from a fixed catalog', () => {
+  expect(validBankId('generated_ABC-123')).toBe(true);
+  expect(validBankId('santander')).toBe(true); // legacy documents remain valid
+  expect(validBankId('../outside')).toBe(false);
+  expect(validBankId('')).toBe(false);
+  expect(validBankId('a'.repeat(129))).toBe(false);
+  expect(validateBankName('  Banco   Galicia  ')).toBe('Banco Galicia');
+  expect(validateBankName(' Brubank ')).toBe('Brubank');
+  expect(() => validateBankName('  ')).toThrow(/2 a 70/);
+  expect(() => validateBankName('x'.repeat(71))).toThrow(/2 a 70/);
 });
 
 test('balances are independently recorded in ARS and USD with no FX inference', () => {
