@@ -32,7 +32,7 @@ export const isPublicServiceCategory = (categoryName) => {
 export const isHomeCategory = (categoryName, categories = []) => {
   const definition = getCategoryDefinition(categoryName, categories);
   if (definition?.origin === 'custom' || definition?.isCustom === true) return false;
-  return /^hogar(?:\\s|$)/.test(normalizeCategoryName(categoryName));
+  return /^hogar(?:\s|$)/.test(normalizeCategoryName(categoryName));
 };
 
 // Versioned custom-category setting: transaction date and expiration date
