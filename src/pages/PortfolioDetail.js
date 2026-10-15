@@ -5,7 +5,6 @@ import { toast } from 'react-toastify';
 import { FaCopy, FaPencilAlt, FaTrashAlt } from 'react-icons/fa';
 import { CollapsibleChevron, CollapsibleHeading } from '../components/CollapsibleHeading';
 import { deletePortfolioSnapshot, registerReconciliationTransaction, savePortfolioReconciliation, subscribePortfolioPositions, subscribePortfolioReconciliations, subscribePortfolioSnapshots, updatePortfolioSnapshot } from '../services/portfolioService';
-import AppFooter from '../components/AppFooter';
 import PortfolioHistoryModal from '../components/PortfolioHistoryModal';
 import PortfolioAccountOverview from '../components/PortfolioAccountOverview';
 import { accountMovementType, accountMovementLabel, groupAccountEarnings, sortedAccountSnapshots } from '../utils/portfolioAccountActivity';
@@ -254,6 +253,5 @@ export default function PortfolioDetail() {
 				busy={Boolean(pendingAction)}
 			/>
 		)}
-		<AppFooter />
 	</>;
 }
