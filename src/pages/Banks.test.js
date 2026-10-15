@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Banks from './Banks';
 
@@ -127,9 +127,10 @@ test('floating quick actions are shared with Portfolio: add bank and financial L
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Mis bancos' })).toBeInTheDocument());
   const open = () => fireEvent.click(screen.getByRole('button', { name: 'Abrir acciones rápidas' }));
   open();
-  fireEvent.click(screen.getByRole('button', { name: /Agregar banco/ }));
+  fireEvent.click(within(document.getElementById('ltc-floating-actions'))
+    .getByRole('button', { name: /Agregar banco/ }));
   expect(screen.getByRole('dialog', { name: 'Crear banco y completar datos' })).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Abrir acciones rápidas' })).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'Abrir acciones rápidas' })).not.toBeInTheDocument());
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
   await waitFor(() => expect(screen.getByRole('button', { name: 'Abrir acciones rápidas' })).toBeInTheDocument());
   open();
