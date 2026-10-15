@@ -1,6 +1,6 @@
 # LTC$ Banking workspace
 
-The new `/bancos` authenticated route is a manual financial registry that complements **Transacciones** (accounting movements) and **Portfolio** (investments). It never connects to Santander or Banco Ciudad's online banking and does not request banking passwords, complete credit-card numbers, or CVV.
+The new `/bancos` authenticated route is a manual financial registry that complements **Transacciones** (accounting movements) and **Portfolio** (investments). It never connects to any bank's online banking and does not request banking passwords, complete credit-card numbers, or CVV.
 
 ## Domain and Firestore structure
 
@@ -16,7 +16,7 @@ flowchart LR
   S --> I["cardStatements/id/items"]
 ```
 
-- `banks`: deterministic `santander` and `ciudad` documents, created only after the user taps **Agregar banco**, with no global bank/profile records.
+- `banks`: owner-created institutions with user-entered names and Firestore-generated IDs. No default banks are seeded, and any institution can be added manually. Existing legacy IDs such as `santander` and `ciudad` remain valid.
 - `bankAccounts`: account nickname, type, ARS or USD, manually entered current balance, optional alias and CBU/CVU. CBU is masked in the UI unless explicitly revealed.
 - `bankCards`: bank ID, nickname, brand, **last four digits only**, usual closing day and due day. Actual closing/due dates are saved **per statement**, not inferred from these days.
 - `bankCardCharges`: explicitly created manual purchases (amount, currency, merchant, date, installments) with `countedInCashFlow: false`. They are **NOT** inserted into `expenses`.
@@ -47,7 +47,7 @@ Never add all ARS and USD into one total without an explicit FX rate; do not tre
 
 The existing card-statement rules must already be deployed and allow the approved PDF analysis workflow. No new Firebase Functions and no paid Firebase features are required.
 
-Release order: publish/test the additive rules, verify CI and a real Netlify preview (beware the account build quota), then merge and confirm the production commit. Until rules are deployed, the banking page will show a Firestore permission error rather than silently omitting data.
+Release order: publish/test the revised additive rules, verify CI and a Vercel preview, then merge and confirm the production commit. Vercel does not deploy Firestore rules automatically. Until rules are deployed, the banking page will show a Firestore permission error rather than silently omitting data.
 
 ## Future enhancements
 
