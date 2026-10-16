@@ -37,12 +37,10 @@ test('the banks rule fragment has properly balanced braces and single quoted str
   let braceDepth = 0;
   let inString = false;
   let escaped = false;
-  let lineComment = false;
   let linesSeen = 0;
-  for (const character of rules) {
-    if (character === '\n') { linesSeen++; lineComment = false; continue; }
-    if (lineComment) continue;
-    if (!inString && character === '/' && false) { /* intentionally unused */ }
+  const source = rules.split('\n').filter((line) => !line.trim().startsWith('//')).join('\n');
+  for (const character of source) {
+    if (character === '\n') { linesSeen++; continue; }
     if (character === "'" && !escaped) inString = !inString;
     if (!inString) {
       if (character === '{') braceDepth++;
