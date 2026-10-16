@@ -55,7 +55,14 @@ export default function BankOnboardingForm({ onSave, onCancel, existingBanks = [
     }
     setError('');
     try { await onSave({name,accounts,cards}); }
-    catch(e){ setError(e.message||'No se pudo guardar el banco.'); }
+    catch(e){
+      const isFirestorePermissionError =
+        e?.code === 'permission-denied'
+        || /missing or insufficient permissions/i.test(String(e?.message || ''));
+      setError(isFirestorePermissionError
+        ? 'Firebase rechazó el guardado. Actualizá las reglas del módulo Bancos en Firestore Database → Rules y volvé a intentar. No se guardaron cuentas ni tarjetas porque la operación es atómica.'
+        : e?.message || 'No se pudo guardar el banco.');
+    }
   };
   return <div className='min-w-0 space-y-4 pb-3'>
     <div className='pr-10'>
