@@ -11,7 +11,7 @@ test('bank rules are a clean additive fragment without duplicate collection bloc
   });
   expect((rules.match(/function ltcBankOwner\(/g) || [])).toHaveLength(1);
   expect((rules.match(/function ltcValidCardSnapshot\(/g) || [])).toHaveLength(1);
-  expect(rules).not.toMatch(/\\n\\)\\)\\)\\)/);
+  expect(rules).not.toContain('\n))))');
 });
 
 test('every bank collection is scoped to Firebase Auth owner, with no broad wildcard access', () => {
