@@ -1,28 +1,47 @@
-// LTC$ Banks (additive fragment). Insert INSIDE:
-// service cloud.firestore { match /databases/{database}/documents { ... } }
-// Do not replace existing expenses/cardStatements/portfolio/category rules.
-// No paid Firebase features, no banking API credentials, no card PAN/CVV.
+// LTC$ — Rules for bank onboarding, accounts, cards, manual charges and statement links.
+// ADDITIVE FRAGMENT ONLY. Paste inside:
+// service cloud.firestore { match /databases/{database}/documents { ... HERE ... } }
+// Replace existing functions ltcBank* / ltcValid* and all FIVE bank match blocks,
+// but KEEP existing customCategories, expenses, portfolio, notifications and PDF rules.
+// Firebase rules v2. Firestore batch creation requires existsAfter().
+// Do not relax owner checks or allow write on wildcard user paths.
+
 function ltcBankOwner(uid) {
   return request.auth != null && request.auth.uid == uid;
 }
+
 function ltcBankId(id) {
   return id is string && id.matches('^[A-Za-z0-9_-]{1,128}$');
 }
+
 function ltcValidMoney(value) {
   return value is number && value > -1000000000000 && value < 1000000000000;
 }
+
 function ltcValidMoneyOut(value) {
   return value is number && value >= 0 && value < 1000000000000;
 }
+
 function ltcIsoDate(value) {
   return value is string && value.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$');
 }
 
-// Optional reference to values manually copied from a bank app, not transactions.
+// A bank created in the SAME atomic batch is visible via existsAfter().
+// This also returns true for an existing bank that remains after the write.
+function ltcBankExistsAfter(uid, bankId) {
+  return ltcBankId(bankId)
+    && existsAfter(/databases/$(database)/documents/users/$(uid)/banks/$(bankId));
+}
+
+// Read-only reference to a home-banking statement snapshot.
+// Never creates bank movements, investment profits, or card charges.
 function ltcValidCardSnapshot(snapshot) {
   return snapshot is map
-    && snapshot.keys().hasOnly(['closingDate','dueDate','asOf','lastStatementARS','lastStatementUSD',
-      'minimumPaymentARS','currentConsumptionARS','currentConsumptionUSD','availableLimitARS'])
+    && snapshot.keys().hasOnly([
+      'closingDate', 'dueDate', 'asOf',
+      'lastStatementARS', 'lastStatementUSD', 'minimumPaymentARS',
+      'currentConsumptionARS', 'currentConsumptionUSD', 'availableLimitARS'
+    ])
     && (!('closingDate' in snapshot) || ltcIsoDate(snapshot.closingDate))
     && (!('dueDate' in snapshot) || ltcIsoDate(snapshot.dueDate))
     && (!('asOf' in snapshot) || ltcIsoDate(snapshot.asOf))
@@ -34,18 +53,20 @@ function ltcValidCardSnapshot(snapshot) {
     && (!('availableLimitARS' in snapshot) || ltcValidMoneyOut(snapshot.availableLimitARS));
 }
 
+// 1. User-owned bank names: no default Santander, Ciudad or other seed.
 match /users/{uid}/banks/{bankId} {
   function validBank() {
     let d = request.resource.data;
     return ltcBankId(bankId)
-      && d.keys().hasAll(['code','name','active','updatedAt'])
-      && d.keys().hasOnly(['code','name','active','updatedAt'])
+      && d.keys().hasAll(['code', 'name', 'active', 'updatedAt'])
+      && d.keys().hasOnly(['code', 'name', 'active', 'updatedAt'])
       && d.code == bankId
       && d.name is string && d.name.size() >= 2 && d.name.size() <= 70
       && d.name.matches('.*[^ ].*')
       && d.active == true
       && d.updatedAt is timestamp;
   }
+
   allow get, list: if ltcBankOwner(uid);
   allow create: if ltcBankOwner(uid) && validBank();
   allow update: if ltcBankOwner(uid) && validBank()
@@ -53,25 +74,35 @@ match /users/{uid}/banks/{bankId} {
   allow delete: if false;
 }
 
+// 2. User-owned bank accounts. Account number, holder and tax ID are OPTIONAL.
 match /users/{uid}/bankAccounts/{accountId} {
   function validAccount() {
     let d = request.resource.data;
-    return d.keys().hasAll(['bankId','name','type','currency','balance','alias','cbu',
-                             'createdAt','updatedAt','balanceUpdatedAt'])
-      && d.keys().hasOnly(['bankId','name','type','currency','balance','alias','cbu',
-                             'accountNumber','holder','holderTaxId','branch',
-                             'createdAt','updatedAt','balanceUpdatedAt'])
-      && ltcBankId(d.bankId)
-      && (exists(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId))
-        || existsAfter(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId)))
+    return d.keys().hasAll([
+        'bankId', 'name', 'type', 'currency', 'balance', 'alias', 'cbu',
+        'createdAt', 'updatedAt', 'balanceUpdatedAt'
+      ])
+      && d.keys().hasOnly([
+        'bankId', 'name', 'type', 'currency', 'balance', 'alias', 'cbu',
+        'accountNumber', 'holder', 'holderTaxId', 'branch',
+        'createdAt', 'updatedAt', 'balanceUpdatedAt'
+      ])
+      && ltcBankExistsAfter(uid, d.bankId)
       && d.name is string && d.name.size() >= 2 && d.name.size() <= 70
-      && d.type in ['caja_ahorro','cuenta_corriente','otra']
-      && d.currency in ['ARS','USD']
+      && d.type in ['caja_ahorro', 'cuenta_corriente', 'otra']
+      && d.currency in ['ARS', 'USD']
       && ltcValidMoney(d.balance)
       && d.alias is string && d.alias.size() <= 80
-      && d.cbu is string && (d.cbu == '' || d.cbu.matches('^[0-9]{22} && d.updatedAt is timestamp
+      && d.cbu is string && (d.cbu == '' || d.cbu.matches('^[0-9]{22}$'))
+      && (!('accountNumber' in d) || (d.accountNumber is string && d.accountNumber.size() <= 60))
+      && (!('holder' in d) || (d.holder is string && d.holder.size() <= 100))
+      && (!('holderTaxId' in d) || (d.holderTaxId is string && d.holderTaxId.matches('^[0-9-]{8,24}$')))
+      && (!('branch' in d) || (d.branch is string && d.branch.size() <= 70))
+      && d.createdAt is timestamp
+      && d.updatedAt is timestamp
       && d.balanceUpdatedAt is timestamp;
   }
+
   allow get, list: if ltcBankOwner(uid);
   allow create: if ltcBankOwner(uid) && validAccount();
   allow update: if ltcBankOwner(uid) && validAccount()
@@ -80,25 +111,28 @@ match /users/{uid}/bankAccounts/{accountId} {
   allow delete: if false;
 }
 
+// 3. Cards: lastFour ONLY. Optional snapshot is manually entered reference data.
 match /users/{uid}/bankCards/{cardId} {
   function validCard() {
     let d = request.resource.data;
-    return d.keys().hasAll(['bankId','nickname','brand','lastFour','closingDay','dueDay',
-                             'createdAt','updatedAt'])
-      && d.keys().hasOnly(['bankId','nickname','brand','lastFour','closingDay','dueDay',
-                            'statementSnapshot','createdAt','updatedAt'])
-      && ltcBankId(d.bankId)
-      && (exists(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId))
-        || existsAfter(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId)))
+    return d.keys().hasAll([
+        'bankId', 'nickname', 'brand', 'lastFour', 'closingDay', 'dueDay',
+        'createdAt', 'updatedAt'
+      ])
+      && d.keys().hasOnly([
+        'bankId', 'nickname', 'brand', 'lastFour', 'closingDay', 'dueDay',
+        'statementSnapshot', 'createdAt', 'updatedAt'
+      ])
+      && ltcBankExistsAfter(uid, d.bankId)
       && d.nickname is string && d.nickname.size() >= 2 && d.nickname.size() <= 70
-      && d.brand in ['Visa','Mastercard','Amex','Otra']
-      && d.lastFour is string
-      && (d.lastFour == '' || d.lastFour.matches('^[0-9]{4}$'))
+      && d.brand in ['Visa', 'Mastercard', 'Amex', 'Otra']
+      && d.lastFour is string && (d.lastFour == '' || d.lastFour.matches('^[0-9]{4}$'))
       && d.closingDay is int && d.closingDay >= 1 && d.closingDay <= 31
       && d.dueDay is int && d.dueDay >= 1 && d.dueDay <= 31
       && (!('statementSnapshot' in d) || ltcValidCardSnapshot(d.statementSnapshot))
       && d.createdAt is timestamp && d.updatedAt is timestamp;
   }
+
   allow get, list: if ltcBankOwner(uid);
   allow create: if ltcBankOwner(uid) && validCard();
   allow update: if ltcBankOwner(uid) && validCard()
@@ -107,228 +141,56 @@ match /users/{uid}/bankCards/{cardId} {
   allow delete: if false;
 }
 
+// 4. Manual card charges (not expenses). No automatic edits to cash flow.
 match /users/{uid}/bankCardCharges/{chargeId} {
   function validCharge() {
     let d = request.resource.data;
-    return d.keys().hasAll(['bankId','cardId','merchant','purchaseDate','currency','amount',
-                            'installments','note','source','countedInCashFlow',
-                            'createdAt','updatedAt'])
-      && d.keys().hasOnly(['bankId','cardId','merchant','purchaseDate','currency','amount',
-                           'installments','note','source','countedInCashFlow',
-                           'createdAt','updatedAt'])
+    return d.keys().hasAll([
+        'bankId', 'cardId', 'merchant', 'purchaseDate', 'currency', 'amount',
+        'installments', 'note', 'source', 'countedInCashFlow', 'createdAt', 'updatedAt'
+      ])
+      && d.keys().hasOnly([
+        'bankId', 'cardId', 'merchant', 'purchaseDate', 'currency', 'amount',
+        'installments', 'note', 'source', 'countedInCashFlow', 'createdAt', 'updatedAt'
+      ])
       && ltcBankId(d.bankId)
       && d.cardId is string && d.cardId.size() >= 1 && d.cardId.size() <= 128
       && exists(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId))
       && get(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId)).data.bankId == d.bankId
       && d.merchant is string && d.merchant.size() >= 2 && d.merchant.size() <= 100
       && ltcIsoDate(d.purchaseDate)
-      && d.currency in ['ARS','USD']
+      && d.currency in ['ARS', 'USD']
       && ltcValidMoneyOut(d.amount)
       && d.installments is int && d.installments >= 1 && d.installments <= 60
       && d.note is string && d.note.size() <= 300
       && d.source == 'manual' && d.countedInCashFlow == false
       && d.createdAt is timestamp && d.updatedAt is timestamp;
   }
+
   allow get, list: if ltcBankOwner(uid);
   allow create: if ltcBankOwner(uid) && validCharge();
   allow update: if false;
   allow delete: if ltcBankOwner(uid) && resource.data.source == 'manual';
 }
 
+// 5. Separate links to an already existing 'Resumen tarjeta' expense.
 match /users/{uid}/bankStatementLinks/{expenseId} {
   function validLink() {
     let d = request.resource.data;
-    return d.keys().hasAll(['expenseId','bankId','cardId','updatedAt'])
-      && d.keys().hasOnly(['expenseId','bankId','cardId','updatedAt'])
+    return d.keys().hasAll(['expenseId', 'bankId', 'cardId', 'updatedAt'])
+      && d.keys().hasOnly(['expenseId', 'bankId', 'cardId', 'updatedAt'])
       && d.expenseId == expenseId
       && expenseId.size() >= 1 && expenseId.size() <= 128
-      && ltcBankId(d.bankId)
+      && ltcBankExistsAfter(uid, d.bankId)
       && d.cardId is string && d.cardId.size() >= 1 && d.cardId.size() <= 128
       && d.updatedAt is timestamp
-      && (exists(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId))
-        || existsAfter(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId)))
       && exists(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId))
       && get(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId)).data.bankId == d.bankId
       && exists(/databases/$(database)/documents/users/$(uid)/expenses/$(expenseId))
+      && get(/databases/$(database)/documents/users/$(uid)/expenses/$(expenseId)).data.category is string
       && get(/databases/$(database)/documents/users/$(uid)/expenses/$(expenseId)).data.category.matches('.*Resumen tarjeta.*');
   }
-  allow get, list: if ltcBankOwner(uid);
-  allow create, update: if ltcBankOwner(uid) && validLink();
-  allow delete: if ltcBankOwner(uid);
-}
-))
-      && (!('accountNumber' in d) || (d.accountNumber is string && d.accountNumber.size() <= 60))
-      && (!('holder' in d) || (d.holder is string && d.holder.size() <= 100))
-      && (!('holderTaxId' in d) || (d.holderTaxId is string && d.holderTaxId.matches('^[0-9-]{8,24} && d.updatedAt is timestamp
-      && d.balanceUpdatedAt is timestamp;
-  }
-  allow get, list: if ltcBankOwner(uid);
-  allow create: if ltcBankOwner(uid) && validAccount();
-  allow update: if ltcBankOwner(uid) && validAccount()
-    && request.resource.data.createdAt == resource.data.createdAt
-    && request.resource.data.bankId == resource.data.bankId;
-  allow delete: if false;
-}
 
-match /users/{uid}/bankCards/{cardId} {
-  function validCard() {
-    let d = request.resource.data;
-    return d.keys().hasAll(['bankId','nickname','brand','lastFour','closingDay','dueDay',
-                             'createdAt','updatedAt'])
-      && d.keys().hasOnly(['bankId','nickname','brand','lastFour','closingDay','dueDay',
-                            'createdAt','updatedAt'])
-      && ltcBankId(d.bankId)
-      && (exists(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId))
-        || existsAfter(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId)))
-      && d.nickname is string && d.nickname.size() >= 2 && d.nickname.size() <= 70
-      && d.brand in ['Visa','Mastercard','Amex','Otra']
-      && d.lastFour is string
-      && (d.lastFour == '' || d.lastFour.matches('^[0-9]{4}$'))
-      && d.closingDay is int && d.closingDay >= 1 && d.closingDay <= 31
-      && d.dueDay is int && d.dueDay >= 1 && d.dueDay <= 31
-      && d.createdAt is timestamp && d.updatedAt is timestamp;
-  }
-  allow get, list: if ltcBankOwner(uid);
-  allow create: if ltcBankOwner(uid) && validCard();
-  allow update: if ltcBankOwner(uid) && validCard()
-    && request.resource.data.createdAt == resource.data.createdAt
-    && request.resource.data.bankId == resource.data.bankId;
-  allow delete: if false;
-}
-
-match /users/{uid}/bankCardCharges/{chargeId} {
-  function validCharge() {
-    let d = request.resource.data;
-    return d.keys().hasAll(['bankId','cardId','merchant','purchaseDate','currency','amount',
-                            'installments','note','source','countedInCashFlow',
-                            'createdAt','updatedAt'])
-      && d.keys().hasOnly(['bankId','cardId','merchant','purchaseDate','currency','amount',
-                           'installments','note','source','countedInCashFlow',
-                           'createdAt','updatedAt'])
-      && ltcBankId(d.bankId)
-      && d.cardId is string && d.cardId.size() >= 1 && d.cardId.size() <= 128
-      && exists(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId))
-      && get(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId)).data.bankId == d.bankId
-      && d.merchant is string && d.merchant.size() >= 2 && d.merchant.size() <= 100
-      && ltcIsoDate(d.purchaseDate)
-      && d.currency in ['ARS','USD']
-      && ltcValidMoneyOut(d.amount)
-      && d.installments is int && d.installments >= 1 && d.installments <= 60
-      && d.note is string && d.note.size() <= 300
-      && d.source == 'manual' && d.countedInCashFlow == false
-      && d.createdAt is timestamp && d.updatedAt is timestamp;
-  }
-  allow get, list: if ltcBankOwner(uid);
-  allow create: if ltcBankOwner(uid) && validCharge();
-  allow update: if false;
-  allow delete: if ltcBankOwner(uid) && resource.data.source == 'manual';
-}
-
-match /users/{uid}/bankStatementLinks/{expenseId} {
-  function validLink() {
-    let d = request.resource.data;
-    return d.keys().hasAll(['expenseId','bankId','cardId','updatedAt'])
-      && d.keys().hasOnly(['expenseId','bankId','cardId','updatedAt'])
-      && d.expenseId == expenseId
-      && expenseId.size() >= 1 && expenseId.size() <= 128
-      && ltcBankId(d.bankId)
-      && d.cardId is string && d.cardId.size() >= 1 && d.cardId.size() <= 128
-      && d.updatedAt is timestamp
-      && (exists(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId))
-        || existsAfter(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId)))
-      && exists(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId))
-      && get(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId)).data.bankId == d.bankId
-      && exists(/databases/$(database)/documents/users/$(uid)/expenses/$(expenseId))
-      && get(/databases/$(database)/documents/users/$(uid)/expenses/$(expenseId)).data.category.matches('.*Resumen tarjeta.*');
-  }
-  allow get, list: if ltcBankOwner(uid);
-  allow create, update: if ltcBankOwner(uid) && validLink();
-  allow delete: if ltcBankOwner(uid);
-}
-)))
-      && (!('branch' in d) || (d.branch is string && d.branch.size() <= 70))
-      && d.createdAt is timestamp && d.updatedAt is timestamp
-      && d.balanceUpdatedAt is timestamp;
-  }
-  allow get, list: if ltcBankOwner(uid);
-  allow create: if ltcBankOwner(uid) && validAccount();
-  allow update: if ltcBankOwner(uid) && validAccount()
-    && request.resource.data.createdAt == resource.data.createdAt
-    && request.resource.data.bankId == resource.data.bankId;
-  allow delete: if false;
-}
-
-match /users/{uid}/bankCards/{cardId} {
-  function validCard() {
-    let d = request.resource.data;
-    return d.keys().hasAll(['bankId','nickname','brand','lastFour','closingDay','dueDay',
-                             'createdAt','updatedAt'])
-      && d.keys().hasOnly(['bankId','nickname','brand','lastFour','closingDay','dueDay',
-                            'createdAt','updatedAt'])
-      && ltcBankId(d.bankId)
-      && (exists(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId))
-        || existsAfter(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId)))
-      && d.nickname is string && d.nickname.size() >= 2 && d.nickname.size() <= 70
-      && d.brand in ['Visa','Mastercard','Amex','Otra']
-      && d.lastFour is string
-      && (d.lastFour == '' || d.lastFour.matches('^[0-9]{4}$'))
-      && d.closingDay is int && d.closingDay >= 1 && d.closingDay <= 31
-      && d.dueDay is int && d.dueDay >= 1 && d.dueDay <= 31
-      && d.createdAt is timestamp && d.updatedAt is timestamp;
-  }
-  allow get, list: if ltcBankOwner(uid);
-  allow create: if ltcBankOwner(uid) && validCard();
-  allow update: if ltcBankOwner(uid) && validCard()
-    && request.resource.data.createdAt == resource.data.createdAt
-    && request.resource.data.bankId == resource.data.bankId;
-  allow delete: if false;
-}
-
-match /users/{uid}/bankCardCharges/{chargeId} {
-  function validCharge() {
-    let d = request.resource.data;
-    return d.keys().hasAll(['bankId','cardId','merchant','purchaseDate','currency','amount',
-                            'installments','note','source','countedInCashFlow',
-                            'createdAt','updatedAt'])
-      && d.keys().hasOnly(['bankId','cardId','merchant','purchaseDate','currency','amount',
-                           'installments','note','source','countedInCashFlow',
-                           'createdAt','updatedAt'])
-      && ltcBankId(d.bankId)
-      && d.cardId is string && d.cardId.size() >= 1 && d.cardId.size() <= 128
-      && exists(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId))
-      && get(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId)).data.bankId == d.bankId
-      && d.merchant is string && d.merchant.size() >= 2 && d.merchant.size() <= 100
-      && ltcIsoDate(d.purchaseDate)
-      && d.currency in ['ARS','USD']
-      && ltcValidMoneyOut(d.amount)
-      && d.installments is int && d.installments >= 1 && d.installments <= 60
-      && d.note is string && d.note.size() <= 300
-      && d.source == 'manual' && d.countedInCashFlow == false
-      && d.createdAt is timestamp && d.updatedAt is timestamp;
-  }
-  allow get, list: if ltcBankOwner(uid);
-  allow create: if ltcBankOwner(uid) && validCharge();
-  allow update: if false;
-  allow delete: if ltcBankOwner(uid) && resource.data.source == 'manual';
-}
-
-match /users/{uid}/bankStatementLinks/{expenseId} {
-  function validLink() {
-    let d = request.resource.data;
-    return d.keys().hasAll(['expenseId','bankId','cardId','updatedAt'])
-      && d.keys().hasOnly(['expenseId','bankId','cardId','updatedAt'])
-      && d.expenseId == expenseId
-      && expenseId.size() >= 1 && expenseId.size() <= 128
-      && ltcBankId(d.bankId)
-      && d.cardId is string && d.cardId.size() >= 1 && d.cardId.size() <= 128
-      && d.updatedAt is timestamp
-      && (exists(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId))
-        || existsAfter(/databases/$(database)/documents/users/$(uid)/banks/$(d.bankId)))
-      && exists(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId))
-      && get(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId)).data.bankId == d.bankId
-      && exists(/databases/$(database)/documents/users/$(uid)/expenses/$(expenseId))
-      && get(/databases/$(database)/documents/users/$(uid)/expenses/$(expenseId)).data.category.matches('.*Resumen tarjeta.*');
-  }
   allow get, list: if ltcBankOwner(uid);
   allow create, update: if ltcBankOwner(uid) && validLink();
   allow delete: if ltcBankOwner(uid);
