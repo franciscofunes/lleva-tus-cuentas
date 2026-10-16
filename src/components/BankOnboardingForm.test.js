@@ -50,3 +50,16 @@ test('invalid imported Markdown does not offer Apply and bank name duplicates ar
   expect(screen.getByRole('alert')).toHaveTextContent(/Ya agregaste un banco/);
   expect(save).not.toHaveBeenCalled();
 });
+
+test('Firebase permission denials show actionable guidance and preserve entered bank values', async () => {
+  const save = jest.fn().mockRejectedValue({
+    code: 'permission-denied', message: 'Missing or insufficient permissions.',
+  });
+  render(<BankOnboardingForm onSave={save} onCancel={jest.fn()} existingBanks={[]} />);
+  fireEvent.change(screen.getByLabelText('Nombre del banco'), { target: { value: 'Banco Ejemplo' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar banco' }));
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/Firebase rechazó el guardado/));
+  expect(screen.getByRole('alert')).toHaveTextContent(/Firestore Database/);
+  expect(screen.getByLabelText('Nombre del banco')).toHaveValue('Banco Ejemplo');
+  expect(save).toHaveBeenCalledTimes(1);
+});
