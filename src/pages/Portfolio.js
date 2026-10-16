@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { Reorder } from 'framer-motion';
 import PageDataSkeleton from '../components/PageDataSkeleton';
 import FinancialOverviewPanel from '../components/FinancialOverviewPanel';
-import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt } from 'react-icons/fa';
+import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt, FaUniversity } from 'react-icons/fa';
 import QuickAccessCard from '../components/QuickAccessCard';
 import CollapsibleSection from '../components/CollapsibleSection';
 import InfoTooltip from '../components/InfoTooltip';
@@ -691,7 +691,7 @@ function Portfolio() {
 				>
 					<button type='button' onClick={() => setShowForm(true)} className='inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 text-sm font-bold'><FaPlus /> <span className='hidden sm:inline'>Posición</span></button>
 					<Link to='/transacciones' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaExchangeAlt /> <span className='hidden sm:inline'>Movimientos</span></Link>
-					<Link to='/bancos' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'>🏦 <span className='hidden sm:inline'>Bancos</span></Link>
+					<Link to='/bancos' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaUniversity aria-hidden='true' /> <span className='hidden sm:inline'>Bancos</span></Link>
 					<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}><img className='h-5 w-5' src={hideValues ? closeEye : eyeHide} alt='' /> <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
 				</QuickAccessCard>
 				<FinancialOverviewPanel

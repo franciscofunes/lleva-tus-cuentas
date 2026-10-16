@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<title>LTC$ — Lleva Tus Cuentas</title>
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0%" stop-color="#121d32"/><stop offset="100%" stop-color="#0b1020"/>
+ </linearGradient>
+ <linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#6d28d9"/>
+ </linearGradient>
+</defs>
+<rect width="512" height="512" fill="#0b1020"/>
+<rect x="18" y="18" width="476" height="476" rx="106" fill="url(#bg)" stroke="url(#frame)" stroke-width="8"/>
+<path fill="#f8fafc" d="M188 1493H573V291H1249V0H188Z" transform="translate(91.54186 379.00000) scale(0.151373 -0.151373)" />
+<path fill="#22c55e" d="M795 -301H633L632 0Q507 5 390.0 28.0Q273 51 162 92V354Q277 295 394.5 263.5Q512 232 633 228V539L600 545Q361 587 260.5 677.0Q160 767 160 936Q160 1115 282.5 1215.5Q405 1316 632 1325L633 1556H795V1329Q895 1321 995.0 1304.0Q1095 1287 1196 1260V1006Q1096 1048 996.0 1071.5Q896 1095 795 1100V813L827 807Q1081 767 1183.5 673.5Q1286 580 1286 397Q1286 213 1164.0 114.5Q1042 16 795 2ZM633 836V1097Q562 1093 519.5 1058.5Q477 1024 477 971Q477 912 516.0 878.5Q555 845 633 836ZM795 510V232Q882 233 925.5 266.0Q969 299 969 365Q969 433 929.0 466.5Q889 500 795 510Z" transform="translate(234.80452 342.12601) scale(0.132472 -0.132472)" />
+</svg>
