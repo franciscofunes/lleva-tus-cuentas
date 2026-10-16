@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { IoMdClose } from 'react-icons/io';
-import { openaiQuery } from '../shared/config/openAI/openAi.config';
+import { requestLitaFinancialAdvice } from '../services/litaAdviceService';
 import { WELCOME_MESSAGE_TEXT } from '../shared/constants/listaAssitant.const';
 
 const TypewriterText = ({ text }) => {
@@ -25,26 +25,8 @@ const TypewriterText = ({ text }) => {
 	return <div>{currentText}</div>;
 };
 
-const ErrorModal = ({ onClose }) => {
-	return (
-		<div className='fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75'>
-			<div className='bg-white p-6 rounded-lg shadow-lg'>
-				<div className='flex items-center justify-between mb-4'>
-					<h2 className='text-xl font-bold'>Error: API Key inválida</h2>
-					<button onClick={onClose}>
-						<IoMdClose className='h-6 w-6 text-gray-600 hover:text-gray-800 transition duration-150 ease-in-out cursor-pointer' />
-					</button>
-				</div>
-				<p className='text-gray-700'>
-					No estas suscripto a nuestro servicio premium
-				</p>
-			</div>
-		</div>
-	);
-};
-
 const LitaAssistant = ({ isOpen, setIsOpen }) => {
-	const [showModal, setShowModal] = useState(false);
+	const [errorMessage, setErrorMessage] = useState('');
 	const [messages, setMessages] = useState([
 		{
 			id: Date.now(),
@@ -63,97 +45,32 @@ const LitaAssistant = ({ isOpen, setIsOpen }) => {
 		setMessages((prevMessages) => [...prevMessages, message]);
 	};
 
-	const handleFormSubmit = async (e) => {
-		e.preventDefault();
-
-		if (inputValue.trim() === '') {
-			return;
-		}
-
+	const askAdvice = async (input) => {
+		const message = String(input || '').trim();
+		if (!message || loading) return;
 		setLoading(true);
-
+		setErrorMessage('');
+		addMessage({ id: Date.now(), text: message, isAssistant: false });
 		try {
-			const userMessage = {
-				id: Date.now(),
-				text: inputValue || '',
-				isAssistant: false,
-			};
-
-			addMessage(userMessage);
-
-			const result = await openaiQuery({
-				prompt: inputValue || '',
-				model: 'text-davinci-003',
-				temperature: 0.8,
-				max_tokens: 50,
-			});
-
-			const assistantMessage = {
-				id: Date.now() + 1,
-				text: result ?? '',
-				isAssistant: true,
-			};
-
-			addMessage(assistantMessage);
+			const reply = await requestLitaFinancialAdvice(message);
+			addMessage({ id: Date.now() + 1, text: reply, isAssistant: true });
+			setInputValue('');
 		} catch (error) {
-			if (
-				error.response &&
-				error.response.data &&
-				error.response.data.error &&
-				error.response.data.error.message
-			) {
-				setShowModal(true);
-			} else {
-				console.log(error);
-			}
+			setErrorMessage(error?.message || 'No pudimos consultar a Lita. Intentá nuevamente.');
+		} finally {
+			setLoading(false);
 		}
-
-		setLoading(false);
-		setInputValue('');
 	};
 
-	const handleOptionClick = async (option) => {
-		const newMessage = {
-			id: Date.now(),
-			text: option || '',
-			isAssistant: false,
-		};
-
-		addMessage(newMessage);
-
-		setLoading(true);
-		try {
-			const result = await openaiQuery({
-				prompt: option,
-				model: 'text-davinci-003',
-				temperature: 0.8,
-				max_tokens: 50,
-			});
-
-			const assistantMessage = {
-				id: Date.now() + 1,
-				text: result || '',
-				isAssistant: true,
-			};
-
-			addMessage(assistantMessage);
-		} catch (error) {
-			if (error.message === '401') {
-				setShowModal(true);
-			} else {
-				console.log(error);
-			}
-		}
-
-		setLoading(false);
+	const handleFormSubmit = async (event) => {
+		event.preventDefault();
+		await askAdvice(inputValue);
 	};
 
-	const handleCloseModal = () => {
-		setShowModal(false);
-	};
+	const handleOptionClick = async (option) => askAdvice(option);
 
 	const predefinedOptions = [
-		'Consejos Economía doméstica',
+		'Consejos de finanzas domésticas',
 		'Consejos Ahorro',
 		'Consejos Presupuestos',
 	];
@@ -225,7 +142,7 @@ const LitaAssistant = ({ isOpen, setIsOpen }) => {
 					</button>
 				))}
 			</div>
-			{showModal && <ErrorModal onClose={handleCloseModal} />}
+			{errorMessage && <p role='alert' className='mt-3 rounded-lg bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-300'>{errorMessage}</p>}
 		</div>
 	);
 };

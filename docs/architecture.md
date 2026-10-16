@@ -157,3 +157,7 @@ The assistant does not have general internet browsing or automatic authority to 
 - `src/services/notificationService.js`: notification lifecycle.
 
 Continue with [local development and release](development.md) or the [Lita internals](https://github.com/franciscofunes/lita-assitant/blob/main/docs/architecture.md).
+
+## Legacy standalone Lita widget: signed proxy
+
+The optional older `LitaAssistant.js` now authenticates to the server-side Lita advice route rather than calling OpenAI from the browser. It obtains the current Firebase ID token and POSTs a bounded financial question to `/api/ltc/advice`; Lita verifies the token, checks the LTC Origin, and delegates to the existing financial chat provider pipeline. The regular embedded Lita iframe and signed statement PDF endpoint are not changed. No provider credentials or ChatGPT secrets belong in `REACT_APP_*` variables.
