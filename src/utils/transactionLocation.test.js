@@ -11,3 +11,10 @@ test('invalid geographic data fails closed',()=>{
  expect(()=>normalizeTransactionLocation({latitude:0,source:'device'})).toThrow();
  expect(()=>normalizeTransactionLocation({label:'<script>',source:'manual'})).toThrow();
 });
+
+test('selected autocomplete place contributes approximate coordinates to the spending map', () => {
+  const picked=normalizeTransactionLocation({label:'Café San Martín',source:'search',latitude:-34.60375,longitude:-58.38162});
+  expect(picked).toEqual({label:'Café San Martín',source:'search',latitude:-34.604,longitude:-58.382});
+  expect(hasTransactionCoordinates(picked)).toBe(true);
+  expect(()=>normalizeTransactionLocation({label:'Unsafe',source:'search',latitude:200,longitude:0})).toThrow();
+});
