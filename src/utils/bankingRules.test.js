@@ -53,3 +53,12 @@ test('the banks rule fragment has properly balanced braces and single quoted str
   expect(braceDepth).toBe(0);
   expect(linesSeen).toBeGreaterThan(100);
 });
+
+test('linked-statement correction requires validated owner-only update and owner-only deletion', () => {
+  const block = rules.slice(rules.indexOf('match /users/{uid}/bankStatementLinks/{expenseId} {'));
+  expect(block).toContain('allow create, update: if ltcBankOwner(uid) && validLink();');
+  expect(block).toContain('allow delete: if ltcBankOwner(uid);');
+  expect(block).toContain('d.expenseId == expenseId');
+  expect(block).toContain('get(/databases/$(database)/documents/users/$(uid)/bankCards/$(d.cardId)).data.bankId == d.bankId');
+  expect(block).toContain('get(/databases/$(database)/documents/users/$(uid)/expenses/$(expenseId)).data.category.matches');
+});
