@@ -39,6 +39,8 @@ jest.mock('../services/bankingService', () => ({
   saveManualCardCharge: jest.fn(),
   deleteManualCardCharge: jest.fn(),
   saveStatementBankLink: jest.fn(),
+  reassignStatementBankLink: jest.fn(),
+  unlinkStatementBank: jest.fn(),
 }));
 const banking = require('../services/bankingService');
 
@@ -141,4 +143,61 @@ test('floating LITA action sends an owner-scoped banking context', async () => {
   expect(screen.getByTestId('lita-panel')).toHaveTextContent('banks');
   expect(screen.getByTestId('lita-panel')).toHaveAttribute('data-scope', 'banks-current-state');
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Abrir acciones rápidas' })).not.toBeInTheDocument());
+});
+
+const linkedStatementData = {
+  subscribeBanks: [
+    {id:'ciudad',code:'ciudad',name:'Banco Ciudad',active:true},
+    {id:'santander',code:'santander',name:'Banco Santander',active:true},
+  ],
+  subscribeBankCards: [
+    {id:'city-visa',bankId:'ciudad',nickname:'Visa Ciudad',brand:'Visa',lastFour:'4555',closingDay:29,dueDay:13},
+    {id:'santander-visa',bankId:'santander',nickname:'Visa Santander',brand:'Visa',lastFour:'4210',closingDay:25,dueDay:10},
+  ],
+  subscribeImportedStatements: [{
+    id:'sha256-statement',expenseId:'expense-statement-1',period:'2026-10',
+    institution:'Banco Ciudad',cardBrand:'Visa',closingDate:'2026-10-01',dueDate:'2026-10-13',
+    itemCount:5,totals:{ARS:220356.4,USD:0},
+  }],
+  subscribeBankStatementLinks: [{
+    id:'expense-statement-1',expenseId:'expense-statement-1',bankId:'ciudad',cardId:'city-visa',
+  }],
+};
+
+const openCityStatement = async () => {
+  await waitFor(()=>expect(screen.getByRole('heading',{name:'Mis bancos'})).toBeInTheDocument());
+  fireEvent.click(screen.getByRole('button',{name:/Banco Ciudad/}));
+  fireEvent.click(screen.getByRole('button',{name:/Visa Ciudad/}));
+  expect(screen.getByText('Resumen 2026-10 · Visa')).toBeInTheDocument();
+};
+
+test('a linked statement exposes correction and updates only its link to a different bank', async () => {
+  arrange(linkedStatementData);
+  banking.reassignStatementBankLink.mockResolvedValue(undefined);
+  mount();
+  await openCityStatement();
+  fireEvent.click(screen.getByRole('button',{name:'Corregir vínculo del resumen 2026-10'}));
+  expect(screen.getByRole('dialog',{name:'Corregir vínculo del resumen 2026-10'})).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Nuevo banco del resumen'),{target:{value:'santander'}});
+  fireEvent.change(screen.getByLabelText('Nueva tarjeta del resumen'),{target:{value:'santander-visa'}});
+  fireEvent.click(screen.getByRole('button',{name:'Guardar nueva asociación'}));
+  await waitFor(()=>expect(banking.reassignStatementBankLink).toHaveBeenCalledWith(
+    'test-private-user','expense-statement-1','santander','santander-visa'));
+  expect(banking.unlinkStatementBank).not.toHaveBeenCalled();
+  expect(banking.saveStatementBankLink).not.toHaveBeenCalled();
+});
+
+test('unlinking a linked statement requires explicit confirmation and never reimports PDFs', async () => {
+  arrange(linkedStatementData);
+  banking.unlinkStatementBank.mockResolvedValue(undefined);
+  mount();
+  await openCityStatement();
+  fireEvent.click(screen.getByRole('button',{name:'Corregir vínculo del resumen 2026-10'}));
+  fireEvent.click(screen.getByRole('button',{name:'Desvincular resumen'}));
+  expect(banking.unlinkStatementBank).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'Sí, desvincular'}));
+  await waitFor(()=>expect(banking.unlinkStatementBank).toHaveBeenCalledWith(
+    'test-private-user','expense-statement-1'));
+  expect(require('../services/cardStatementService').saveReviewedStatement).not.toHaveBeenCalled();
+  expect(require('../actionCreators/databaseActions').storeDataAction).not.toHaveBeenCalled();
 });
