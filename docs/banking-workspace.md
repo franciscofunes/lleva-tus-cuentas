@@ -55,3 +55,7 @@ Release order: publish/test the revised additive rules, verify CI and a Vercel p
 - Reconciliation UI to match manual purchases against imported statement items without duplicating either.
 - More issuer and PDF format adapters.
 - Financial data export via the shared LTC$ PDF/Excel/CSV module once account and card reports are ready.
+
+## Better card and existing-PDF linking UX
+
+The **Vincular resúmenes a tarjetas** section is an action-oriented, optionally collapsible list (expanded by default), not an analytics report. A pending PDF remains an existing card-statement expense and is never reimported simply because the user links it. An exact normalized bank + unique matching card brand can propose a card, but the user must explicitly choose **Usar sugerencia** and **Confirmar asociación**. If the institution or brand is ambiguous, the user chooses manually. A bank-card details view links to the outstanding queue. The existing owner-scoped `bankStatementLinks` Firestore security and single-source-of-truth expense behavior remain unchanged.
