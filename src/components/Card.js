@@ -30,6 +30,8 @@ function Card({
 	comment,
 	category,
 	customDetails = {},
+	location = null,
+	setTransactionLocation = () => {},
 	setCustomDetails = () => {},
 	setHasSavedCustomDetails = () => {},
 	name,
@@ -79,6 +81,7 @@ function Card({
 		setComment(comment);
 		setCategory(safeCategory);
 		setCustomDetails(customDetails);
+		setTransactionLocation(location);
 		setHasSavedCustomDetails(Boolean(Object.keys(customDetails || {}).length));
 		setSelectedDate(selectedDate);
 		setSelectedCloseDate(selectedCloseDate);
