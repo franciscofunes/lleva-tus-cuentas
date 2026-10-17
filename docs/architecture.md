@@ -161,3 +161,12 @@ Continue with [local development and release](development.md) or the [Lita inter
 ## Legacy standalone Lita widget: signed proxy
 
 The optional older `LitaAssistant.js` now authenticates to the server-side Lita advice route rather than calling OpenAI from the browser. It obtains the current Firebase ID token and POSTs a bounded financial question to `/api/ltc/advice`; Lita verifies the token, checks the LTC Origin, and delegates to the existing financial chat provider pipeline. The regular embedded Lita iframe and signed statement PDF endpoint are not changed. No provider credentials or ChatGPT secrets belong in `REACT_APP_*` variables.
+
+
+## Optional transaction location and geographic insights
+
+Expenses can optionally store `location:{label,source,latitude?,longitude?}`, independent of their category. A manual label has no coordinates and cannot appear on the map; no geocoding occurs. `navigator.geolocation.getCurrentPosition()` is called **only** when a user explicitly selects «Usar ubicación actual» and after browser consent on HTTPS. Coordinates are rounded to three decimals before storing. No background tracking, GPS accuracy/history, or automatic location migration.
+
+The transaction chart selector adds an opt-in OpenStreetMap-based map, spending by weekday and spending by merchant-name. The map requests OSM tiles only after explicit user action and displays attribution; no transaction amounts or names are sent to the map provider. Use a commercial or self-hosted tile service if OSM's public tile limits become relevant. Financial insights exclude card-statement totals, FX conversions and income to prevent double counting, and offer separate ARS/USD views.
+
+**Deployment dependency:** This repository does not publish live Firebase rules. Merge the additive `firestore.rules.transactionLocation` function into the **existing owner-scoped** Firestore expenses match, and include `location` in any allowed-fields list. Test create/update/delete and other-user rejection before merging the feature for production. Existing location-less documents remain valid.
