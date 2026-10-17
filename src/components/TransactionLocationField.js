@@ -1,9 +1,11 @@
-import React,{useState} from 'react';
+import React,{useEffect,useRef,useState} from 'react';
 import {FiMapPin,FiNavigation,FiX} from 'react-icons/fi';
 
 export default function TransactionLocationField({value,onChange}) {
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
+  const active=useRef(true);
+  useEffect(()=>()=>{active.current=false;},[]);
   const hasCoords=value?.source==='device' && Number.isFinite(value.latitude) && Number.isFinite(value.longitude);
   const capture=()=>{
     setError('');
@@ -14,12 +16,14 @@ export default function TransactionLocationField({value,onChange}) {
     setBusy(true);
     navigator.geolocation.getCurrentPosition(
       (position)=>{
+        if(!active.current)return;
         setBusy(false);
         onChange({label:value?.label||'',source:'device',
           latitude:Number(position.coords.latitude.toFixed(3)),
           longitude:Number(position.coords.longitude.toFixed(3))});
       },
       (failure)=>{
+        if(!active.current)return;
         setBusy(false);
         setError(failure?.code===1?'Permiso denegado. Podés escribir el lugar manualmente.':
           'No pudimos obtener la ubicación. Podés escribir el lugar manualmente.');
