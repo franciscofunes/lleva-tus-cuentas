@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { useReducedMotion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiPieChart } from 'react-icons/fi';
+import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiPieChart, FiEdit2 } from 'react-icons/fi';
 import GenericModal from '../components/GenericModal';
 import BankOnboardingForm from '../components/BankOnboardingForm';
+import StatementLinkEditor from '../components/StatementLinkEditor';
 import FloatingMenu from '../components/FloatingMenu';
 import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -21,7 +22,7 @@ import {
   subscribeBanks, subscribeBankAccounts, subscribeBankCards, subscribeBankCharges,
   subscribeBankStatementLinks, subscribeImportedStatements,
   createBankBundle, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge,
-  deleteManualCardCharge, saveStatementBankLink,
+  deleteManualCardCharge, saveStatementBankLink, reassignStatementBankLink, unlinkStatementBank,
 } from '../services/bankingService';
 import { sumBankBalances, statementForCard } from '../utils/bankingModel';
 import { suggestCardForImportedStatement } from '../utils/bankLinkSuggestions';
@@ -70,6 +71,7 @@ function BanksWorkspace({ user }) {
   const [showLita, setShowLita] = useState(false);
   const [renameBank, setRenameBank] = useState(null);
   const [showUnlinked, setShowUnlinked] = useState(true);
+  const [editingStatementExpenseId, setEditingStatementExpenseId] = useState(null);
   const [visibility, setVisibility] = useState({ uid: null, visible: false });
   const showValues = visibility.uid === uid && visibility.visible;
   const displayMoney = (amount, currency) => showValues ? money(amount, currency) : '••••';
@@ -125,6 +127,8 @@ function BanksWorkspace({ user }) {
     banks, accounts, cards, charges, statements, links,
   }), [banks, accounts, cards, charges, statements, links]);
   const unlinked = statements.filter((statement) => !links.some((link) => link.expenseId === statement.expenseId));
+  const editingStatement = statements.find((statement) => statement.expenseId === editingStatementExpenseId);
+  const editingStatementLink = links.find((link) => link.expenseId === editingStatementExpenseId);
   const openLinking = () => {
     setShowUnlinked(true);
     requestAnimationFrame(() => document.getElementById('bank-imported-statements')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -451,6 +455,13 @@ function BanksWorkspace({ user }) {
                           <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>Cierre {statement.closingDate} · Vencimiento {statement.dueDate} · {statement.itemCount} consumos</p>
                           <p className='mt-1 text-sm font-bold'>{displayMoney(statement.totals?.ARS,'ARS')} · {displayMoney(statement.totals?.USD,'USD')}</p>
                           {showValues ? <CardStatementDetails expenseId={statement.expenseId}/> : <p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>Mostrá los importes para consultar el desglose.</p>}
+                          <div className='mt-3 border-t border-slate-200 pt-3 dark:border-slate-700'>
+                            <button type='button' className={secondary} disabled={busy}
+                              aria-label={'Corregir vínculo del resumen ' + statement.period}
+                              onClick={() => setEditingStatementExpenseId(statement.expenseId)}>
+                              <FiEdit2 aria-hidden='true' /> Corregir vínculo
+                            </button>
+                          </div>
                         </article>)}
                         <button type='button' className={secondary} onClick={()=>{setPdfCardId(card.id);setPdfDraft(null);setPendingExpenseId(null);}}>
                           <FiUploadCloud/> Importar resumen PDF de esta tarjeta
@@ -528,6 +539,27 @@ function BanksWorkspace({ user }) {
           })}
         </CollapsibleSection>
           </>
+        )}
+        {editingStatement && editingStatementLink && (
+          <GenericModal
+            show={Boolean(editingStatement && editingStatementLink)}
+            dialogLabel={'Corregir vínculo del resumen ' + editingStatement.period}
+            component={StatementLinkEditor}
+            statement={editingStatement}
+            link={editingStatementLink}
+            banks={banks}
+            cards={cards}
+            onSave={(expenseId, bankId, cardId) => reassignStatementBankLink(uid, expenseId, bankId, cardId)}
+            onUnlink={async (expenseId) => {
+              await unlinkStatementBank(uid, expenseId);
+              setShowUnlinked(true);
+            }}
+            onClose={(success) => {
+              setEditingStatementExpenseId(null);
+              if (success) toast.success(success);
+            }}
+            closeModal={() => setEditingStatementExpenseId(null)}
+          />
         )}
         <GenericModal
           show={showBankForm}
