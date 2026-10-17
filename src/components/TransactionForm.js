@@ -13,6 +13,7 @@ import {
   updateDataAction,
 } from "../actionCreators/databaseActions";
 import InfoTooltip from "../components/InfoTooltip";
+import TransactionLocationField from "./TransactionLocationField";
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from "../shared/constants/tooltip-messages.const";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
 import { categoriesForNewTransactions, categoryLabel, getCategoryCurrency, categoryDescription } from "../utils/customCategories";
@@ -63,6 +64,8 @@ const TransactionForm = ({
   setEdit,
   categories,
   onManageCategories,
+  transactionLocation = null,
+  setTransactionLocation = () => {},
   customDetails = {},
   setCustomDetails = () => {},
   hasSavedCustomDetails = false,
@@ -191,6 +194,7 @@ const TransactionForm = ({
         customDetails: safeDetails,
         clearCustomDetails: edit && hasSavedCustomDetails && !Object.keys(safeDetails).length,
         name, amount, comment, category, selectedDate,
+        location: transactionLocation,
         transactionCurrency: effectiveCurrency,
         selectedExpirationDate, selectedCloseDate,
         currencyQuantity, currencyExchangeRate, dueDate,
@@ -811,6 +815,7 @@ const TransactionForm = ({
           </div>
         )}
 
+        <TransactionLocationField value={transactionLocation} onChange={setTransactionLocation}/>
         <label
           htmlFor="comment"
           className="block text-sm font-medium text-gray-700 dark:text-white"

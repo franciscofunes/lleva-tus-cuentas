@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { firestore } from '../shared/config/firebase/firebase.config';
 import { mergeCategories } from '../utils/customCategories';
 import { sanitizeTransactionCustomDetails } from '../utils/categoryExtraFields';
+import { normalizeTransactionLocation } from '../utils/transactionLocation';
 import { getNotificationSettings, resolveTransactionDueDate } from '../utils/transactionDueDates';
 import {
 	CREATE_SUBSCRIPTION_SUCCESS_MESSAGE,
@@ -86,6 +87,7 @@ export const storeDataAction = (data) => {
 				comment: data.comment,
 				category: data.category,
 				transactionCurrency: data.transactionCurrency === 'USD' ? 'USD' : 'ARS',
+				...(normalizeTransactionLocation(data.location) ? {location:normalizeTransactionLocation(data.location)} : {}),
 				...(Object.keys(safeCustomDetails(data)).length ? { customDetails: safeCustomDetails(data) } : {}),
 				...(data?.amount !== undefined && data?.amount !== null && data?.amount !== '' && {
 					amount: data?.amount,
@@ -139,6 +141,8 @@ export const updateDataAction = (data, docId) => {
 				comment: data.comment,
 				category: data.category,
 				transactionCurrency: data.transactionCurrency === 'USD' ? 'USD' : 'ARS',
+				...(data.location === null ? {location: firebase.firestore.FieldValue.delete()}
+					: normalizeTransactionLocation(data.location) ? {location:normalizeTransactionLocation(data.location)} : {}),
 				...(Object.keys(safeCustomDetails(data)).length
 					? { customDetails: safeCustomDetails(data) }
 					: data.clearCustomDetails ? { customDetails: {} } : {}),

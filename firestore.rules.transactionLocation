@@ -1,0 +1,28 @@
+// ADDITIVE ONLY: merge into the existing owner-scoped expenses rules.
+// Never paste a second permissive expenses match or replace the live rules.
+// Put the function inside match /databases/{database}/documents.
+// Add && validTransactionLocation() to existing allow create/update for
+// /users/{uid}/expenses/{expenseId}. If keys().hasOnly(...) is used, allow 'location'.
+// Historical expenses without location remain valid.
+function validTransactionLocation() {
+  let d = request.resource.data;
+  return !('location' in d) || (
+    d.location is map
+    && d.location.keys().hasAll(['label', 'source'])
+    && d.location.keys().hasOnly(['label', 'source', 'latitude', 'longitude'])
+    && d.location.label is string
+    && d.location.label.size() <= 100
+    && d.location.label.matches('^[^\\r\\n<>]*$')
+    && (
+      (d.location.source == 'manual'
+        && !('latitude' in d.location)
+        && !('longitude' in d.location))
+      ||
+      (d.location.source == 'device'
+        && d.location.latitude is number
+        && d.location.longitude is number
+        && d.location.latitude >= -90 && d.location.latitude <= 90
+        && d.location.longitude >= -180 && d.location.longitude <= 180)
+    )
+  );
+}

@@ -45,6 +45,8 @@ import closeEye from "../imgs/closeEye.svg";
 
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
 import ChartViewer from "../components/ChartViewer";
+import SpendingMapChart from "../components/SpendingMapChart";
+import SpendingInsightsChart from "../components/SpendingInsightsChart";
 import IncomeChartWrapper from "../components/IncomeChartWrapper";
 import DivisasChartWrapper from "../components/DivisasChartWrapper";
 import IncomeExpenseLineChart from "../components/IncomeExpenseLineChart";
@@ -144,6 +146,9 @@ const TransactionsPageSkeleton = () => (
     </div>
   </main>
 );
+
+const WeekdaySpendingView = (props) => <SpendingInsightsChart {...props} kind='weekday'/>;
+const MerchantSpendingView = (props) => <SpendingInsightsChart {...props} kind='merchant'/>;
 
 function Dashboard() {
   const dispatch = useDispatch();
@@ -245,6 +250,7 @@ function Dashboard() {
   const [comment, setComment] = useState("");
   const [category, setCategory] = useState("");
   const [customDetails, setCustomDetails] = useState({});
+  const [transactionLocation, setTransactionLocation] = useState(null);
   const [hasSavedCustomDetails, setHasSavedCustomDetails] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
 
@@ -346,6 +352,9 @@ function Dashboard() {
     divisas: DivisasChartWrapper,
     incomesVsExpenses: IncomeExpenseLineChart,
     ingresoDivisas: IngresoDivisasLineChart,
+    spendingMap: SpendingMapChart,
+    weekdays: WeekdaySpendingView,
+    merchants: MerchantSpendingView,
   };
 
   useEffect(() => {
@@ -476,6 +485,7 @@ function Dashboard() {
     setComment(transaction.comment || "");
     setCategory(transaction.category || "");
     setCustomDetails(transaction.customDetails || {});
+    setTransactionLocation(transaction.location || null);
     setHasSavedCustomDetails(Boolean(Object.keys(transaction.customDetails || {}).length));
     setSelectedDate(transaction.selectedDate || "");
     setSelectedExpirationDate(transaction.selectedExpirationDate || "");
@@ -580,6 +590,7 @@ function Dashboard() {
     setComment("");
     setCategory("");
     setCustomDetails({});
+    setTransactionLocation(null);
     setHasSavedCustomDetails(false);
     setSelectedDate("");
     setSelectedExpirationDate("");
@@ -673,7 +684,7 @@ function Dashboard() {
                     selectedChart={selectedChart}
                     onSelect={handleChartToggle}
                     chartComponents={chartComponents}
-                    chartData={docs}
+                    chartData={filteredDocs}
                     categories={categories}
                     hideValues={!isDataVisible}
                   />
@@ -769,6 +780,8 @@ function Dashboard() {
                     comment={doc.comment}
                     category={doc.category}
                     customDetails={doc.customDetails || {}}
+                    location={doc.location || null}
+                    setTransactionLocation={setTransactionLocation}
                     setCustomDetails={setCustomDetails}
                     setHasSavedCustomDetails={setHasSavedCustomDetails}
                     selectedDate={doc.selectedDate}
@@ -850,6 +863,8 @@ function Dashboard() {
             category={category}
             customDetails={customDetails}
             setCustomDetails={setCustomDetails}
+            transactionLocation={transactionLocation}
+            setTransactionLocation={setTransactionLocation}
             hasSavedCustomDetails={hasSavedCustomDetails}
             selectedDate={selectedDate}
             selectedExpirationDate={selectedExpirationDate}
