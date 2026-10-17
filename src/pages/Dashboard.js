@@ -245,6 +245,7 @@ function Dashboard() {
   const [comment, setComment] = useState("");
   const [category, setCategory] = useState("");
   const [customDetails, setCustomDetails] = useState({});
+  const [transactionLocation, setTransactionLocation] = useState(null);
   const [hasSavedCustomDetails, setHasSavedCustomDetails] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
 
@@ -476,6 +477,7 @@ function Dashboard() {
     setComment(transaction.comment || "");
     setCategory(transaction.category || "");
     setCustomDetails(transaction.customDetails || {});
+    setTransactionLocation(transaction.location || null);
     setHasSavedCustomDetails(Boolean(Object.keys(transaction.customDetails || {}).length));
     setSelectedDate(transaction.selectedDate || "");
     setSelectedExpirationDate(transaction.selectedExpirationDate || "");
@@ -580,6 +582,7 @@ function Dashboard() {
     setComment("");
     setCategory("");
     setCustomDetails({});
+    setTransactionLocation(null);
     setHasSavedCustomDetails(false);
     setSelectedDate("");
     setSelectedExpirationDate("");
@@ -769,6 +772,8 @@ function Dashboard() {
                     comment={doc.comment}
                     category={doc.category}
                     customDetails={doc.customDetails || {}}
+                    location={doc.location || null}
+                    setTransactionLocation={setTransactionLocation}
                     setCustomDetails={setCustomDetails}
                     setHasSavedCustomDetails={setHasSavedCustomDetails}
                     selectedDate={doc.selectedDate}
@@ -850,6 +855,8 @@ function Dashboard() {
             category={category}
             customDetails={customDetails}
             setCustomDetails={setCustomDetails}
+            transactionLocation={transactionLocation}
+            setTransactionLocation={setTransactionLocation}
             hasSavedCustomDetails={hasSavedCustomDetails}
             selectedDate={selectedDate}
             selectedExpirationDate={selectedExpirationDate}
