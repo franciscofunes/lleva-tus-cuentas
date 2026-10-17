@@ -147,6 +147,9 @@ const TransactionsPageSkeleton = () => (
   </main>
 );
 
+const WeekdaySpendingView = (props) => <SpendingInsightsChart {...props} kind='weekday'/>;
+const MerchantSpendingView = (props) => <SpendingInsightsChart {...props} kind='merchant'/>;
+
 function Dashboard() {
   const dispatch = useDispatch();
   const location = useLocation();
@@ -350,8 +353,8 @@ function Dashboard() {
     incomesVsExpenses: IncomeExpenseLineChart,
     ingresoDivisas: IngresoDivisasLineChart,
     spendingMap: SpendingMapChart,
-    weekdays: (props) => <SpendingInsightsChart {...props} kind='weekday'/>,
-    merchants: (props) => <SpendingInsightsChart {...props} kind='merchant'/>,
+    weekdays: WeekdaySpendingView,
+    merchants: MerchantSpendingView,
   };
 
   useEffect(() => {
