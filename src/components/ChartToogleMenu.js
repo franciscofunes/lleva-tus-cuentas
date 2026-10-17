@@ -7,6 +7,9 @@ export const chartChoices = [
   { key: 'divisas', label: 'Ingresos USD' },
   { key: 'incomesVsExpenses', label: 'Comparativa ARS' },
   { key: 'ingresoDivisas', label: 'Evolución USD' },
+  { key: 'spendingMap', label: 'Mapa de consumos' },
+  { key: 'weekdays', label: 'Gastos por día' },
+  { key: 'merchants', label: 'Comercios frecuentes' },
 ];
 
 /**
