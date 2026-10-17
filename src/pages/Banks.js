@@ -24,6 +24,7 @@ import {
   deleteManualCardCharge, saveStatementBankLink,
 } from '../services/bankingService';
 import { sumBankBalances, statementForCard } from '../utils/bankingModel';
+import { suggestCardForImportedStatement } from '../utils/bankLinkSuggestions';
 import { buildBanksLitaContext } from '../utils/banksLitaContext';
 
 const initialAccount = { bankId: '', name: 'Caja de ahorro', type: 'caja_ahorro', currency: 'ARS', balance: '0', alias: '', cbu: '' };
@@ -68,7 +69,7 @@ function BanksWorkspace({ user }) {
   const [showBankForm, setShowBankForm] = useState(false);
   const [showLita, setShowLita] = useState(false);
   const [renameBank, setRenameBank] = useState(null);
-  const [showUnlinked, setShowUnlinked] = useState(false);
+  const [showUnlinked, setShowUnlinked] = useState(true);
   const [visibility, setVisibility] = useState({ uid: null, visible: false });
   const showValues = visibility.uid === uid && visibility.visible;
   const displayMoney = (amount, currency) => showValues ? money(amount, currency) : '••••';
@@ -124,6 +125,10 @@ function BanksWorkspace({ user }) {
     banks, accounts, cards, charges, statements, links,
   }), [banks, accounts, cards, charges, statements, links]);
   const unlinked = statements.filter((statement) => !links.some((link) => link.expenseId === statement.expenseId));
+  const openLinking = () => {
+    setShowUnlinked(true);
+    requestAnimationFrame(() => document.getElementById('bank-imported-statements')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
   const selectedPdfCard = cards.find((card) => card.id === pdfCardId);
   const statementCategory = (Array.isArray(categories) ? categories : []).find((c) => c.isExpense && /Resumen tarjeta/.test(c.name))?.name;
 
@@ -483,25 +488,43 @@ function BanksWorkspace({ user }) {
           </section>
         )}
 
-        <CollapsibleSection id='bank-imported-statements' eyebrow='Análisis' title='Resúmenes importados sin vincular'
-          description={unlinked.length + ' resúmenes PDF sin banco/tarjeta asignados'}
+        <CollapsibleSection id='bank-imported-statements' eyebrow='Tarjetas · paso pendiente' title='Vincular resúmenes a tarjetas'
+          description={unlinked.length ? unlinked.length + ' resumen(es) ya importado(s) esperan una tarjeta' : 'Todos los resúmenes importados están organizados'}
           collapsed={!showUnlinked} onToggle={() => setShowUnlinked((value) => !value)}>
-          <p className='mb-3 text-sm text-slate-600 dark:text-slate-300'>Estos resúmenes ya existen en Transacciones. Vincularlos no crea nuevos gastos ni vuelve a importar el PDF.</p>
-          {unlinked.length === 0 && <p className='text-sm'>No hay resúmenes pendientes de vincular.</p>}
+          <div className='mb-4 rounded-xl border border-purple-400/40 bg-purple-500/5 p-3 text-sm'>
+            <p className='font-bold'>¿Qué significa vincular un resumen?</p>
+            <p className='mt-1 text-slate-600 dark:text-slate-300'>El PDF y la transacción ya están guardados. Elegí la tarjeta a la que corresponde para verlos juntos. No se crea otro gasto, no se carga otra compra y no se modifica el importe.</p>
+            <p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>Paso 1 · Revisá el resumen → Paso 2 · Elegí banco y tarjeta → Paso 3 · Confirmá la asociación.</p>
+          </div>
+          {unlinked.length === 0 && <p role='status' className='rounded-xl border border-slate-200 p-4 text-sm dark:border-slate-700'>No tenés resúmenes pendientes de vincular.</p>}
           {unlinked.map((statement) => {
+            const suggestion = suggestCardForImportedStatement(statement, banks, cards);
             const chosen = assignments[statement.expenseId] || { bankId:'', cardId:'' };
             const candidateCards = cards.filter((card)=>card.bankId === chosen.bankId);
-            return <div key={statement.id} className='mb-3 space-y-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
-              <p className='font-extrabold'>{statement.institution} · {statement.cardBrand} · {statement.period}</p>
-              <p className='text-xs text-slate-600 dark:text-slate-300'>Cierre: {statement.closingDate} · Vencimiento: {statement.dueDate}</p>
-              <p className='text-sm font-semibold'>{displayMoney(statement.totals?.ARS,'ARS')} · {displayMoney(statement.totals?.USD,'USD')}</p>
-              {showValues ? <CardStatementDetails expenseId={statement.expenseId}/> : <p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>Mostrá los importes para consultar el desglose.</p>}
-              <div className='grid gap-3 sm:grid-cols-2'>
-                <Field title='Banco'><select className={inputClass} value={chosen.bankId} onChange={(e)=>setAssignments({...assignments,[statement.expenseId]:{bankId:e.target.value,cardId:''}})}><option value=''>Elegí banco</option>{banks.map((bank)=><option key={bank.code} value={bank.code}>{bank.name}</option>)}</select></Field>
-                <Field title='Tarjeta'><select className={inputClass} value={chosen.cardId} disabled={!chosen.bankId} onChange={(e)=>setAssignments({...assignments,[statement.expenseId]:{...chosen,cardId:e.target.value}})}><option value=''>Elegí tarjeta</option>{candidateCards.map((card)=><option key={card.id} value={card.id}>{card.nickname} {card.lastFour ? '•••• '+card.lastFour : ''}</option>)}</select></Field>
+            const chosenCard = candidateCards.find((card) => card.id === chosen.cardId);
+            const chosenBank = banks.find((bank) => bank.code === chosen.bankId);
+            return <article key={statement.id} className='mb-3 space-y-3 rounded-xl border border-slate-300 bg-slate-50/60 p-3 dark:border-slate-700 dark:bg-slate-900/40 sm:p-4'>
+              <div className='flex flex-wrap items-start justify-between gap-2'>
+                <div className='min-w-0'>
+                  <p className='text-xs font-extrabold uppercase tracking-wide text-purple-700 dark:text-purple-300'>Resumen pendiente de asociar</p>
+                  <h3 className='mt-1 text-base font-extrabold'>{statement.institution} · {statement.cardBrand}</h3>
+                  <p className='text-sm text-slate-600 dark:text-slate-300'>Período {statement.period} · Cierre {statement.closingDate} · Vence {statement.dueDate}</p>
+                </div>
+                <span className='rounded-full border border-amber-400/60 px-2 py-1 text-xs font-bold text-amber-700 dark:text-amber-300'>Sin tarjeta</span>
               </div>
-              <button type='button' className={buttonClass} disabled={busy || !chosen.cardId} onClick={()=>run(()=>saveStatementBankLink(uid,statement.expenseId,chosen.bankId,chosen.cardId),'Resumen vinculado')}>Vincular resumen existente</button>
-            </div>;
+              <p className='text-sm font-semibold tabular-nums'>{displayMoney(statement.totals?.ARS,'ARS')} · {displayMoney(statement.totals?.USD,'USD')}</p>
+              {showValues && <CardStatementDetails expenseId={statement.expenseId}/>}
+              {suggestion && <div className='flex flex-wrap items-center gap-2 rounded-lg border border-purple-300/70 p-3 text-sm dark:border-purple-600/60'>
+                <p className='min-w-0 flex-1'>Coincidencia probable: <strong>{banks.find((b)=>b.code===suggestion.bankId)?.name} · {cards.find((c)=>c.id===suggestion.cardId)?.nickname}</strong></p>
+                <button type='button' className={secondary} disabled={busy} onClick={()=>setAssignments((prev)=>({...prev,[statement.expenseId]:suggestion}))}>Usar sugerencia</button>
+              </div>}
+              <div className='grid gap-3 sm:grid-cols-2'>
+                <Field title='1. Banco del resumen'><select aria-label={'Banco para ' + statement.period} className={inputClass} value={chosen.bankId} onChange={(e)=>setAssignments((prev)=>({...prev,[statement.expenseId]:{bankId:e.target.value,cardId:''}}))}><option value=''>Elegí banco</option>{banks.map((bank)=><option key={bank.code} value={bank.code}>{bank.name}</option>)}</select></Field>
+                <Field title='2. Tarjeta a la que pertenece'><select aria-label={'Tarjeta para ' + statement.period} className={inputClass} value={chosen.cardId} disabled={!chosen.bankId} onChange={(e)=>setAssignments((prev)=>({...prev,[statement.expenseId]:{...chosen,cardId:e.target.value}}))}><option value=''>Elegí tarjeta</option>{candidateCards.map((card)=><option key={card.id} value={card.id}>{card.nickname} {card.lastFour ? '•••• '+card.lastFour : ''}</option>)}</select></Field>
+              </div>
+              {chosenCard && <p className='text-xs text-slate-600 dark:text-slate-300'>Se asociará con <strong>{chosenBank?.name} · {chosenCard.nickname}</strong>. La operación se puede consultar desde esa tarjeta.</p>}
+              <button type='button' className={buttonClass} disabled={busy || !chosen.cardId} onClick={()=>run(()=>saveStatementBankLink(uid,statement.expenseId,chosen.bankId,chosen.cardId),'Resumen asociado correctamente · sin crear gastos')}>3. Confirmar asociación</button>
+            </article>;
           })}
         </CollapsibleSection>
           </>
