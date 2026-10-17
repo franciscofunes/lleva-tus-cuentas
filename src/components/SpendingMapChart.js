@@ -5,7 +5,7 @@ import {geoInsight} from '../utils/spendingInsights';
 // Tile requests happen only after user explicitly opens the map.
 const TILE=256;
 const project=(latitude,longitude,zoom)=>{
-  const world=TILE*2**zoom, sine=Math.sin(latitude*Math.PI/180);
+  const world=TILE*2**zoom, sine=Math.sin(Math.max(-85.0511,Math.min(85.0511,latitude))*Math.PI/180);
   return {x:(longitude+180)/360*world,
     y:(0.5-Math.log((1+sine)/(1-sine))/(4*Math.PI))*world};
 };
