@@ -1,6 +1,6 @@
 import {
   createBankBundle, addUserBank, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge, saveStatementBankLink,
-  getStatementLink, subscribeBankStatementLinks,
+  getStatementLink, subscribeBankStatementLinks, reassignStatementBankLink, unlinkStatementBank,
 } from './bankingService';
 import { auth, firestore } from '../shared/config/firebase/firebase.config';
 
@@ -20,7 +20,8 @@ beforeEach(() => {
     update: jest.fn().mockResolvedValue(undefined), get: jest.fn(async () => mockBank) };
   const cardRef = { get: jest.fn(async () => mockCard), update: jest.fn().mockResolvedValue(undefined) };
   const expenseRef = { get: jest.fn(async () => mockExpense) };
-  mockLink = { get: jest.fn(async () => ({ exists:false })), set: jest.fn().mockResolvedValue(undefined) };
+  mockLink = { get: jest.fn(async () => ({ exists:false })), set: jest.fn().mockResolvedValue(undefined),
+    update: jest.fn().mockResolvedValue(undefined), delete: jest.fn().mockResolvedValue(undefined) };
   mockAccount = { add: jest.fn(async () => ({ id:'account1' })), doc: jest.fn(() => ({id:'account1'})) };
   mockCharge = { add: jest.fn(async () => ({ id:'charge1' })) };
   firestore.batch.mockReturnValue({ set: jest.fn(), commit: jest.fn().mockResolvedValue(undefined) });
@@ -116,4 +117,51 @@ test('bundle rejects invalid data before any Firestore commit',async()=>{
    brand:'Visa',lastFour:'4111111111111111',closingDay:29,dueDay:12}]})).rejects.toThrow(/4 dígitos/);
  expect(firestore.batch).not.toHaveBeenCalled();
  await expect(createBankBundle('bob',{name:'Banco'})).rejects.toThrow(/Iniciá sesión/);
+});
+
+test('reassign moves only the existing owner-owned statement link to a different bank/card', async () => {
+  mockLink.get.mockResolvedValue({ exists:true, data:()=>({bankId:'santander',cardId:'card1'}) });
+  mockCard = { exists:true, data:()=>({bankId:'ciudad'}) };
+  await reassignStatementBankLink('alice','expense1','ciudad','card2');
+  expect(mockLink.update).toHaveBeenCalledWith({
+    bankId:'ciudad',cardId:'card2',updatedAt:expect.any(Date),
+  });
+  expect(mockLink.set).not.toHaveBeenCalled();
+  expect(mockUser.collection).not.toHaveBeenCalledWith('cardStatements');
+  expect(mockUser.collection('expenses').doc().get).toHaveBeenCalled();
+});
+
+test('reassignment fails closed on missing link, wrong card bank, or unchanged target', async () => {
+  await expect(reassignStatementBankLink('alice','expense1','santander','card1'))
+    .rejects.toThrow(/ya no está vinculado/);
+  mockLink.get.mockResolvedValue({exists:true,data:()=>({bankId:'santander',cardId:'card1'})});
+  await expect(reassignStatementBankLink('alice','expense1','santander','card1'))
+    .rejects.toThrow(/ya está vinculado/);
+  mockCard = {exists:true,data:()=>({bankId:'ciudad'})};
+  await expect(reassignStatementBankLink('alice','expense1','santander','card1'))
+    .rejects.toThrow(/no válidos/);
+  mockExpense = {exists:true,data:()=>({category:'Sueldo'})};
+  await expect(reassignStatementBankLink('alice','expense1','ciudad','card2'))
+    .rejects.toThrow(/no válidos/);
+  expect(mockLink.update).not.toHaveBeenCalled();
+});
+
+test('unlink removes only the link, preserving the imported statement and expense', async () => {
+  mockLink.get.mockResolvedValue({exists:true,data:()=>({bankId:'santander',cardId:'card1'})});
+  await unlinkStatementBank('alice','expense1');
+  expect(mockLink.delete).toHaveBeenCalledTimes(1);
+  expect(mockUser.collection).not.toHaveBeenCalledWith('cardStatements');
+  expect(mockUser.collection).not.toHaveBeenCalledWith('expenses');
+  mockLink.get.mockResolvedValue({exists:false});
+  await expect(unlinkStatementBank('alice','expense1')).rejects.toThrow(/ya no tiene/);
+  expect(mockLink.delete).toHaveBeenCalledTimes(1);
+});
+
+test('cross-user calls cannot move or unlink another user statement link', async () => {
+  await expect(reassignStatementBankLink('bob','expense1','santander','card1'))
+    .rejects.toThrow(/Iniciá sesión/);
+  await expect(unlinkStatementBank('bob','expense1')).rejects.toThrow(/Iniciá sesión/);
+  await expect(unlinkStatementBank('alice','../../unsafe')).rejects.toThrow(/Resumen inválido/);
+  expect(mockLink.update).not.toHaveBeenCalled();
+  expect(mockLink.delete).not.toHaveBeenCalled();
 });
