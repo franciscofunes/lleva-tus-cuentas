@@ -53,17 +53,17 @@ test('quick access from Portfolio mounts Transacciones immediately, even after r
       <Links />
       <AnimatedRoutes>
         <Route path='/portfolio' element={<h1>Cuentas e inversiones</h1>} />
-        <Route path='/transacciones' element={<h1>Resumen financiero</h1>} />
+        <Route path='/transacciones' element={<h1>Gastos e ingresos</h1>} />
       </AnimatedRoutes>
     </MemoryRouter>
   );
   expect(screen.getByRole('heading', { name: 'Cuentas e inversiones' })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Transacciones' }));
-  expect(screen.getByRole('heading', { name: 'Resumen financiero' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Gastos e ingresos' })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Portfolio' }));
   expect(screen.getByRole('heading', { name: 'Cuentas e inversiones' })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Transacciones' }));
-  expect(screen.getByRole('heading', { name: 'Resumen financiero' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Gastos e ingresos' })).toBeInTheDocument();
 });
 
 function BrokenTransactions() {

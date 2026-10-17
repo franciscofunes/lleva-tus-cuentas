@@ -29,6 +29,7 @@ import { TRANSACTION_PAGE_SIZE, visibleTransactionBatch } from "../utils/transac
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
+import { TRANSACTIONS_PAGE_COPY } from "../shared/constants/transactionsPageCopy";
 import FinancialOverviewPanel from "../components/FinancialOverviewPanel";
 import TransactionsExportReady from "../components/TransactionsExportReady";
 import CategoryManager from "../components/CategoryManager";
@@ -612,9 +613,9 @@ function Dashboard() {
       >
         <div className="max-w-7xl mx-auto w-full">
           <QuickAccessCard
-            eyebrow="Tu dinero, en un solo lugar"
-            title="Resumen financiero"
-            description="Movimientos, balance e inversiones con acceso rápido a lo que más usás."
+            eyebrow={TRANSACTIONS_PAGE_COPY.hero.eyebrow}
+            title={TRANSACTIONS_PAGE_COPY.hero.title}
+            description={TRANSACTIONS_PAGE_COPY.hero.description}
           >
             <button type="button" onClick={openModal} className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 text-sm font-bold"><FaPlus /> <span className="hidden sm:inline">Movimiento</span></button>
             <Link to="/portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
@@ -625,8 +626,9 @@ function Dashboard() {
               id="transactions-overview"
               collapsed={collapsedSections.overview}
               onToggle={() => toggleDashboardSection("overview")}
-              title="Movimientos de un vistazo"
-              description="Métricas y exportaciones de los movimientos de la vista actual."
+              title={TRANSACTIONS_PAGE_COPY.overview.title}
+              eyebrow={TRANSACTIONS_PAGE_COPY.overview.eyebrow}
+              description={TRANSACTIONS_PAGE_COPY.overview.description}
               privacyHidden={!isDataVisible}
               isLoading={isDataFetching || !docs || !categories}
               actions={[
@@ -634,9 +636,9 @@ function Dashboard() {
                 { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
               ]}
               metrics={[
-                { id: "count", icon: FaListAlt, label: "Movimientos", value: isDataVisible ? overview.count : "••" },
-                { id: "categories", icon: FaTags, label: "Categorías", value: isDataVisible ? overview.categoryCount : "••" },
-                { id: "due", icon: FaRegCalendarCheck, label: "Con vencimiento", value: isDataVisible ? overview.dueCount : "••" },
+                { id: "count", icon: FaListAlt, label: TRANSACTIONS_PAGE_COPY.metrics.count, value: isDataVisible ? overview.count : "••" },
+                { id: "categories", icon: FaTags, label: TRANSACTIONS_PAGE_COPY.metrics.categories, value: isDataVisible ? overview.categoryCount : "••" },
+                { id: "due", icon: FaRegCalendarCheck, label: TRANSACTIONS_PAGE_COPY.metrics.due, value: isDataVisible ? overview.dueCount : "••" },
               ]}
             />
           {isDataFetching && !docs ? (
@@ -649,9 +651,9 @@ function Dashboard() {
         >
           <CollapsibleSection
             id="transactions-summary"
-            eyebrow="Resumen"
-            title="Tu economía en ARS y USD"
-            description="Ingresos, conversiones y patrimonio, cada uno en su moneda."
+            eyebrow={TRANSACTIONS_PAGE_COPY.summary.eyebrow}
+            title={TRANSACTIONS_PAGE_COPY.summary.title}
+            description={TRANSACTIONS_PAGE_COPY.summary.description}
             collapsed={collapsedSections.summary}
             onToggle={() => toggleDashboardSection("summary")}
             className="mb-5 font-Nunito"
