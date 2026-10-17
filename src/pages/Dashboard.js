@@ -45,6 +45,8 @@ import closeEye from "../imgs/closeEye.svg";
 
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
 import ChartViewer from "../components/ChartViewer";
+import SpendingMapChart from "../components/SpendingMapChart";
+import SpendingInsightsChart from "../components/SpendingInsightsChart";
 import IncomeChartWrapper from "../components/IncomeChartWrapper";
 import DivisasChartWrapper from "../components/DivisasChartWrapper";
 import IncomeExpenseLineChart from "../components/IncomeExpenseLineChart";
@@ -347,6 +349,9 @@ function Dashboard() {
     divisas: DivisasChartWrapper,
     incomesVsExpenses: IncomeExpenseLineChart,
     ingresoDivisas: IngresoDivisasLineChart,
+    spendingMap: SpendingMapChart,
+    weekdays: (props) => <SpendingInsightsChart {...props} kind='weekday'/>,
+    merchants: (props) => <SpendingInsightsChart {...props} kind='merchant'/>,
   };
 
   useEffect(() => {
@@ -676,7 +681,7 @@ function Dashboard() {
                     selectedChart={selectedChart}
                     onSelect={handleChartToggle}
                     chartComponents={chartComponents}
-                    chartData={docs}
+                    chartData={filteredDocs}
                     categories={categories}
                     hideValues={!isDataVisible}
                   />
