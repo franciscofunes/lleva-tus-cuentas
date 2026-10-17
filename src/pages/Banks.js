@@ -125,11 +125,8 @@ function BanksWorkspace({ user }) {
     banks, accounts, cards, charges, statements, links,
   }), [banks, accounts, cards, charges, statements, links]);
   const unlinked = statements.filter((statement) => !links.some((link) => link.expenseId === statement.expenseId));
-  const openLinking = (bankId = '', cardId = '') => {
+  const openLinking = () => {
     setShowUnlinked(true);
-    if (bankId && cardId) {
-      setAssignments((previous) => ({ ...previous, ...Object.fromEntries(unlinked.map((row) => [row.expenseId, { bankId, cardId }])) }));
-    }
     requestAnimationFrame(() => document.getElementById('bank-imported-statements')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   };
   const selectedPdfCard = cards.find((card) => card.id === pdfCardId);
