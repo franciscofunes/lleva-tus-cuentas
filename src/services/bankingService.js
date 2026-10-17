@@ -87,9 +87,10 @@ export const getStatementLink = async (uid, expenseId) => {
   const doc = await collection(uid, 'bankStatementLinks').doc(expenseId).get();
   return doc.exists ? { id: doc.id, ...doc.data() } : null;
 };
-// Separate owner-owned link records leave legacy transaction schema and amounts untouched.
-export const saveStatementBankLink = async (uid, expenseId, bankId, cardId) => {
-  if (!/^[A-Za-z0-9_-]{1,128}$/.test(String(expenseId || '')) || !validBankId(bankId) || !cardId)
+// Separate owner-owned links leave previous transactions/PDF data untouched.
+// Verify all three owner-scoped documents before creating or moving a link.
+const verifiedStatementLinkTarget = async (uid, expenseId, bankId, cardId) => {
+  if (!validBankId(expenseId) || !validBankId(bankId) || !validBankId(cardId))
     throw new Error('Elegí un banco y una tarjeta válidos.');
   const user = mine(uid);
   const [bank, card, expense] = await Promise.all([
@@ -101,9 +102,29 @@ export const saveStatementBankLink = async (uid, expenseId, bankId, cardId) => {
       !expense.exists || !/Resumen tarjeta/i.test(String(expense.data().category || ''))) {
     throw new Error('Banco, tarjeta o resumen no válidos para asociar.');
   }
-  return user.collection('bankStatementLinks').doc(expenseId).set({
-    expenseId, bankId, cardId, updatedAt: new Date(),
-  });
+  return user.collection('bankStatementLinks').doc(expenseId);
 };
-export const unlinkStatementBank = async (uid, expenseId) =>
-  collection(uid, 'bankStatementLinks').doc(expenseId).delete();
+
+export const saveStatementBankLink = async (uid, expenseId, bankId, cardId) => {
+  const ref = await verifiedStatementLinkTarget(uid, expenseId, bankId, cardId);
+  return ref.set({ expenseId, bankId, cardId, updatedAt: new Date() });
+};
+
+// update() cannot silently recreate a link if it was removed in another session.
+// The target bank/card/expense are verified just like first-time association.
+export const reassignStatementBankLink = async (uid, expenseId, bankId, cardId) => {
+  const ref = await verifiedStatementLinkTarget(uid, expenseId, bankId, cardId);
+  const existing = await ref.get();
+  if (!existing.exists) throw new Error('Este resumen ya no está vinculado. Volvé a asociarlo desde los pendientes.');
+  if (existing.data().bankId === bankId && existing.data().cardId === cardId)
+    throw new Error('El resumen ya está vinculado a esa tarjeta.');
+  return ref.update({ bankId, cardId, updatedAt: new Date() });
+};
+
+export const unlinkStatementBank = async (uid, expenseId) => {
+  if (!validBankId(expenseId)) throw new Error('Resumen inválido.');
+  const ref = collection(uid, 'bankStatementLinks').doc(expenseId);
+  const existing = await ref.get();
+  if (!existing.exists) throw new Error('Este resumen ya no tiene una tarjeta asociada.');
+  return ref.delete();
+};
