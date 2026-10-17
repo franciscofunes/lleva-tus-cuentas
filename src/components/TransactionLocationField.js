@@ -5,7 +5,7 @@ export default function TransactionLocationField({value,onChange}) {
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const active=useRef(true);
-  useEffect(()=>()=>{active.current=false;},[]);
+  useEffect(()=>{active.current=true;return ()=>{active.current=false;};},[]);
   const hasCoords=value?.source==='device' && Number.isFinite(value.latitude) && Number.isFinite(value.longitude);
   const capture=()=>{
     setError('');
