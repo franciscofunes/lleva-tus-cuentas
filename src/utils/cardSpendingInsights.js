@@ -72,28 +72,69 @@ export function cardCycleDates(card,now=new Date()){
   const actualDue=validDate(snapshot.dueDate)&&snapshot.dueDate>=today?snapshot.dueDate:null;
   return {closingDate:actualClose||close,dueDate:actualDue||due,estimated:!(actualClose&&actualDue)};
 }
+// Each card can have a different closing day. Track user-entered purchases in
+// its CURRENT OPEN BILLING CYCLE, not only purchases dated in the calendar month.
+// This remains a partial register; no guess is made for unrecorded purchases.
+const scheduledPreviousClose=(card,now)=>{
+  const today=iso(now.getFullYear(),now.getMonth()+1,now.getDate());
+  const current=iso(now.getFullYear(),now.getMonth()+1,Number(card.closingDay));
+  const previous=current<today?current:
+    iso(now.getMonth()===0?now.getFullYear()-1:now.getFullYear(),
+      now.getMonth()===0?12:now.getMonth(),Number(card.closingDay));
+  return previous;
+};
 export function cardMonthManualSpending(charges=[],statements=[],links=[],cards=[],now=new Date()) {
   const month=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0')].join('-');
+  const today=iso(now.getFullYear(),now.getMonth()+1,now.getDate());
   const activeCards=new Map(cards.map(c=>[c.id,c]));
   const latestClose=new Map();
   const linksByExpense=new Map(links.map(l=>[l.expenseId,l]));
-  statements.forEach(s=>{
-    const link=linksByExpense.get(s.expenseId);
-    if(!link||!activeCards.has(link.cardId)||!validDate(s.closingDate))return;
+  statements.forEach(statement=>{
+    const link=linksByExpense.get(statement.expenseId);
+    if(!link||!activeCards.has(link.cardId)||!statement.approvedByUser||
+       !validDate(statement.closingDate)||statement.closingDate>today)return;
     const previous=latestClose.get(link.cardId);
-    if(!previous||s.closingDate>previous)latestClose.set(link.cardId,s.closingDate);
+    if(!previous||statement.closingDate>previous)latestClose.set(link.cardId,statement.closingDate);
   });
-  const summary={ARS:0,USD:0,count:0,manualOnly:true,month};
+  const summary={ARS:0,USD:0,count:0,manualOnly:true,month,scope:'open-card-cycles'};
   charges.forEach(c=>{
-    if(!activeCards.has(c.cardId)||activeCards.get(c.cardId).bankId!==c.bankId ||
-       c.source!=='manual'||!['ARS','USD'].includes(c.currency)||!validDate(c.purchaseDate) ||
-       !c.purchaseDate.startsWith(month)||c.purchaseDate<=String(latestClose.get(c.cardId)||'') )return;
+    const card=activeCards.get(c.cardId);
+    if(!card||card.bankId!==c.bankId||c.source!=='manual'||
+       !['ARS','USD'].includes(c.currency)||!validDate(c.purchaseDate)||
+       c.purchaseDate>today)return;
+    // If dates are invalid or a card isn't configured, do not invent a cycle.
+    if(!Number.isInteger(Number(card.closingDay))||card.closingDay<1||card.closingDay>31)return;
+    const priorScheduled=scheduledPreviousClose(card,now);
+    const mostRecentClose=latestClose.get(c.cardId);
+    const from=mostRecentClose&&mostRecentClose>priorScheduled?mostRecentClose:priorScheduled;
+    if(c.purchaseDate<=from)return;
     const n=finiteMoney(c.amount);
     if(n===null)return;
     summary[c.currency]=Math.round((summary[c.currency]+n)*100)/100;
     summary.count++;
   });
   return summary;
+}
+
+// Automatic reference against the highest linked, reviewed statement month.
+// This is an independent, opt-in app notification. The user-defined ceiling
+// remains the preferred early-warning target; a historical record alone is NOT
+// evidence of affordability or available credit.
+export function historicalPeakStatus(current,history=[],currency='ARS') {
+  const stats=statementMonthExtremes(history,currency);
+  const peak=stats.high;
+  if(!peak||!Number.isFinite(peak.total)||peak.total<=0)return null;
+  const spent=finiteMoney(current?.[currency])??0;
+  const ratio=spent/peak.total;
+  const level=ratio>=1?'exceeded':ratio>=0.95?'critical':ratio>=0.8?'warning':'ok';
+  return {currency,month:current?.month||'',spent,peak:peak.total,peakMonth:peak.month,
+    low:stats.low?.total??null,lowMonth:stats.low?.month||null,
+    average:stats.average,monthsAnalyzed:stats.months.length,level,ratio,
+    percentage:Math.round(ratio*100),
+    remaining:Math.round(Math.max(0,peak.total-spent)*100)/100,
+    // Missing months, missing issuers, manual charges and differing closing
+    // periods make comparisons approximate, even when sample is bigger.
+    partial:true};
 }
 export function budgetStatus(current,config,currency,month) {
   if(!config?.enabled||config.currency!==currency)return null;
