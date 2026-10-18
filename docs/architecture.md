@@ -220,3 +220,30 @@ dedicated tile hosting before high traffic. Never label these approximate
 clusters as verified barrios, municipal districts, exact home addresses or
 areas without data. Spatial counts and spending are user-sample summaries,
 not population or regional estimates.
+
+## Worldwide geospatial finances: H3 and panning
+
+- `h3-js@4.5.0` computes true indexed H3 hexagonal zones in browser RAM, with
+  zoom 0 through 17 mapped to H3 resolutions 0 through 12. This replaces
+  screen-dependent square buckets; polygon boundaries are real H3 cells.
+- Map has **Mundo** (zoom 0), **Todas** (fit every located movement), mouse/touch
+  pointer-drag, mouse-wheel zoom, four directional controls and zoom +/−.
+  Longitude wraps continuously around the anti-meridian, the OSM raster
+  tile X coordinate is modulo 2^zoom, and latitude is clamped to Mercator.
+  Zoom fitting and centering account for points around longitude ±180°.
+  The map works worldwide: Argentine, US and any other located movement.
+- Filter by **Gastos / Ingresos / Ambos** and **ARS / USD** independently.
+  "Ambos" supports counts only; it cannot sum income and expense amounts.
+  Incoming funds from US clients, Remote or any other provider appear at a
+  specific map position **only if a corresponding income transaction has an
+  explicitly selected location with coordinates**. A USD salary, bank or
+  payer nationality alone never establishes a location.
+- Whole card statement imports and FX exchange transactions are excluded
+  to prevent duplicate location attribution. Explicitly selected place
+  coordinates can come from Geoapify search or opt-in device positioning.
+  All H3 calculations happen client-side; no name, amount or uid goes to OSM.
+  Browser requests tiles only when the user explicitly opens the map.
+- Counts of located vs eligible transactions are reported honestly, and the
+  map is independent of the user's device location and any country restriction.
+- Privacy mode of `ChartViewer` hides the map completely when balances are
+  hidden; there is no new persistence or Firestore schema migration here.
