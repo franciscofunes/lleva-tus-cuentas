@@ -6,14 +6,14 @@ export function normalizeTransactionLocation(value) {
   if(label.length>100 || /[<>\r\n\x00-\x1f]/.test(label)) throw new Error('Nombre de lugar inválido');
   const lat=value.latitude, lng=value.longitude;
   if(lat === undefined && lng === undefined) return label ? {label,source:'manual'} : null;
-  if(lat === undefined || lng === undefined || value.source !== 'device' ||
+  if(lat === undefined || lng === undefined || !['device','search'].includes(value.source) ||
     typeof lat !== 'number' || typeof lng !== 'number' ||
     !Number.isFinite(lat)||!Number.isFinite(lng) ||
     Math.abs(lat)>90||Math.abs(lng)>180) throw new Error('Coordenadas inválidas');
-  return {label,source:'device',latitude:Number(lat.toFixed(3)),longitude:Number(lng.toFixed(3))};
+  return {label,source:value.source,latitude:Number(lat.toFixed(3)),longitude:Number(lng.toFixed(3))};
 }
 export function hasTransactionCoordinates(loc) {
-  return !!loc && loc.source === 'device' && typeof loc.latitude === 'number' &&
+  return !!loc && ['device','search'].includes(loc.source) && typeof loc.latitude === 'number' &&
     typeof loc.longitude === 'number' && Number.isFinite(loc.latitude) &&
     Number.isFinite(loc.longitude) && Math.abs(loc.latitude)<=90 && Math.abs(loc.longitude)<=180;
 }

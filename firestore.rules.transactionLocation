@@ -18,7 +18,7 @@ function validTransactionLocation() {
         && !('latitude' in d.location)
         && !('longitude' in d.location))
       ||
-      (d.location.source == 'device'
+      (d.location.source in ['device', 'search']
         && d.location.latitude is number
         && d.location.longitude is number
         && d.location.latitude >= -90 && d.location.latitude <= 90

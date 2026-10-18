@@ -16,3 +16,11 @@ test('insights exclude card summaries, FX and income while separating currencies
 test('map includes only located individual expenses',()=>{
  expect(geoInsight(records,categories,'ARS').map(row=>row.id)).toEqual(['a']);
 });
+
+test('geo spending includes only explicitly selected searched places and confirmed GPS pins', () => {
+  const rows=[
+    {id:'searched',category:'Alimentos',expenseName:'Café',amount:100,selectedDate:'2026-10-16',location:{source:'search',latitude:-34.6,longitude:-58.4}},
+    {id:'manual',category:'Alimentos',expenseName:'Café',amount:200,selectedDate:'2026-10-16',location:{source:'manual',label:'Café'}},
+  ];
+  expect(geoInsight(rows,categories,'ARS').map(r=>r.id)).toEqual(['searched']);
+});
