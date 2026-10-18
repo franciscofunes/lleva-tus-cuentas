@@ -37,7 +37,7 @@ test('changes between zoom-based zones, density layer and individual spending pi
  const pins=screen.getAllByRole('button',{name:/Ver \d+ movimiento/});
  expect(pins.length).toBe(2);
  fireEvent.click(pins[0]);
- expect(screen.getByText(/movimiento\(s\) en una ubicación aproximada/)).toBeInTheDocument();
+ expect(screen.getByText(/movimiento\(s\) en ubicación aproximada/)).toBeInTheDocument();
  fireEvent.click(screen.getByRole('button',{name:'Cerrar detalle del mapa'}));
  expect(screen.queryByRole('button',{name:'Cerrar detalle del mapa'})).not.toBeInTheDocument();
 });
