@@ -8,6 +8,7 @@ import GenericModal from '../components/GenericModal';
 import BankOnboardingForm from '../components/BankOnboardingForm';
 import StatementLinkEditor from '../components/StatementLinkEditor';
 import CardSpendingControls from '../components/CardSpendingControls';
+import CardConsumptionMarkdownImporter from '../components/CardConsumptionMarkdownImporter';
 import FloatingMenu from '../components/FloatingMenu';
 import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -23,7 +24,7 @@ import {
   subscribeBanks, subscribeBankAccounts, subscribeBankCards, subscribeBankCharges,
   subscribeBankStatementLinks, subscribeImportedStatements,
   createBankBundle, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge,
-  deleteManualCardCharge, saveStatementBankLink, reassignStatementBankLink, unlinkStatementBank,
+  deleteManualCardCharge, importReviewedCardConsumptionMarkdown, saveStatementBankLink, reassignStatementBankLink, unlinkStatementBank,
 } from '../services/bankingService';
 import { sumBankBalances, statementForCard } from '../utils/bankingModel';
 import { suggestCardForImportedStatement } from '../utils/bankLinkSuggestions';
@@ -66,6 +67,7 @@ function BanksWorkspace({ user }) {
   const [budgets, setBudgets] = useState([]);
   const [budgetError, setBudgetError] = useState(false);
   const [budgetCollapsed,setBudgetCollapsed] = useState(false);
+  const [showConsumptionImporter,setShowConsumptionImporter] = useState(false);
   const [pending, setPending] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -303,7 +305,8 @@ function BanksWorkspace({ user }) {
               <CardSpendingControls budgets={budgets} statuses={budgetStatuses} history={history}
                 spent={manualSpend} canShowValues={showValues}
                 onSave={(currency,values)=>saveBankBudget(uid,currency,values)}
-                onAskLita={()=>setShowLita(true)}/>
+                onAskLita={()=>setShowLita(true)}
+                onImportMarkdown={()=>setShowConsumptionImporter(true)}/>
             </CollapsibleSection>
 
             <CollapsibleSection
@@ -457,6 +460,7 @@ function BanksWorkspace({ user }) {
                         <div className='flex flex-wrap items-center justify-between gap-2'>
                           <h4 className='font-bold'>Consumos registrados</h4>
                           <button type='button' className={secondary} onClick={() => startCharge(card)}><FiPlus/> Agregar consumo manual</button>
+                          <button type='button' className={secondary} onClick={()=>setShowConsumptionImporter(true)}><FiUploadCloud/> Importar Markdown de consumos</button>
                         </div>
                         <p className='text-xs text-slate-600 dark:text-slate-300'>Estos consumos no crean gastos de Transacciones. Los resúmenes analizados se presentan aparte.</p>
                         {chargesForCard(card.id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>No hay consumos manuales.</p>}
@@ -588,6 +592,22 @@ function BanksWorkspace({ user }) {
               if (success) toast.success(success);
             }}
             closeModal={() => setEditingStatementExpenseId(null)}
+          />
+        )}
+        {showConsumptionImporter && (
+          <GenericModal
+            show={showConsumptionImporter}
+            dialogLabel='Importar consumos desde capturas mediante Markdown'
+            component={CardConsumptionMarkdownImporter}
+            banks={banks}
+            cards={cards}
+            charges={charges}
+            onSave={(reviewed)=>importReviewedCardConsumptionMarkdown(uid,reviewed)}
+            onClose={(success)=>{
+              setShowConsumptionImporter(false);
+              if(success)toast.success(success);
+            }}
+            closeModal={()=>setShowConsumptionImporter(false)}
           />
         )}
         <GenericModal
