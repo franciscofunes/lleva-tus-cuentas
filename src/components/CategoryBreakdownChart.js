@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import TransactionChartSurface, { TransactionChartEmpty } from './TransactionChartSurface';
 import { FiChevronDown } from 'react-icons/fi';
 
 const toneStyles = {
@@ -25,15 +26,9 @@ export default function CategoryBreakdownChart({ data = [], title, currency = 'A
   const rows = expanded ? data : data.slice(0, 5);
   const maxValue = Math.max(0, ...data.map((row) => Number(row.value) || 0));
   return (
-    <div className='ltc-chart-surface w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-100 sm:p-5'>
-      <h3 className='text-base font-extrabold sm:text-lg'>{title}</h3>
-      <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>
-        Distribución por categoría · {currency} · Período seleccionado
-      </p>
+    <TransactionChartSurface title={title} description={'Distribución por categoría · '+currency+' · Período seleccionado'}>
       {data.length === 0 ? (
-        <div role='status' className='mt-4 rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300'>
-          No hay movimientos registrados para este gráfico en el período.
-        </div>
+        <TransactionChartEmpty>No hay movimientos registrados para este gráfico en el período.</TransactionChartEmpty>
       ) : (
         <>
           <ol className='mt-5 min-w-0 space-y-4'>
@@ -63,6 +58,6 @@ export default function CategoryBreakdownChart({ data = [], title, currency = 'A
           )}
         </>
       )}
-    </div>
+    </TransactionChartSurface>
   );
 }

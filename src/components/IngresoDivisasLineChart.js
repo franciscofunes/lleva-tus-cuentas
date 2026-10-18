@@ -1,4 +1,5 @@
 import React from 'react';
+import TransactionChartSurface, { TransactionChartEmpty } from './TransactionChartSurface';
 import { AreaChart } from '@tremor/react';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 
@@ -84,20 +85,20 @@ const IngresoDivisasLineChart = ({ chartData }) => {
 		`US$ ${new Intl.NumberFormat('us').format(number).toString()}`;
 
 	return (
-		<div className='ltc-chart-surface min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-100 sm:p-5'>
-			<h3 className='text-base font-extrabold sm:text-lg'>Ingreso divisas</h3>
-			<p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>Evolución por mes · USD · Período seleccionado</p>
-			<AreaChart
-				className='mt-5 h-56 sm:h-72'
-				data={chartDataOutcome}
-				index='monthLabel'
-				categories={[INGRESO_DIVISAS_CATEGORY]}
-				colors={['purple']}
-				valueFormatter={valueFormatter}
-				yAxisWidth={30}
-				showYAxis={false}
-			/>
-		</div>
+    <TransactionChartSurface title='Ingreso de divisas' description='Evolución por mes · USD · Período seleccionado'>
+      {chartDataOutcome.length===0
+        ? <TransactionChartEmpty>No hay movimientos registrados para este gráfico en el período.</TransactionChartEmpty>
+        : (<AreaChart
+          	className='mt-5 h-56 sm:h-72'
+          	data={chartDataOutcome}
+          	index='monthLabel'
+          	categories={[INGRESO_DIVISAS_CATEGORY]}
+          	colors={['purple']}
+          	valueFormatter={valueFormatter}
+          	yAxisWidth={30}
+          	showYAxis={false}
+          />)}
+    </TransactionChartSurface>
 	);
 };
 
