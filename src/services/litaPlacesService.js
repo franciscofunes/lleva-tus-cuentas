@@ -1,4 +1,3 @@
-import { auth } from '../shared/config/firebase/firebase.config';
 import { LITA_CHAT_LOCALHOST, LITA_CHAT_VERCEL_URL } from '../shared/constants/urls.const';
 
 const lita = process.env.NODE_ENV === 'development' ? LITA_CHAT_LOCALHOST : LITA_CHAT_VERCEL_URL;
@@ -7,6 +6,9 @@ const lita = process.env.NODE_ENV === 'development' ? LITA_CHAT_LOCALHOST : LITA
 export async function searchLitaPlaces(value, { signal } = {}) {
   const query = typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
   if (query.length < 3 || query.length > 80) return [];
+  // Load Firebase only on an actual search to keep the transaction form
+  // render/test path free from auth initialization side effects.
+  const { auth } = await import('../shared/config/firebase/firebase.config');
   const user = auth.currentUser;
   if (!user) throw new Error('Iniciá sesión para buscar lugares.');
   const token = await user.getIdToken();
