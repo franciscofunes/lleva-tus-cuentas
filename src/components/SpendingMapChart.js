@@ -159,7 +159,7 @@ export default function SpendingMapChart({ chartData, categories }) {
           {mode==='density'&&overlay.groups.map(group=>{
             const strength=calculateSpendingMetric(group,metric)/maxValue;
             const diameter=cap(90+Math.sqrt(strength)*110,90,200);
-            return <div key={group.id} aria-hidden='true' style={{
+            return <div key={group.id} data-testid='map-density-cell' aria-hidden='true' style={{
               position:'absolute',pointerEvents:'none',left:group.left,top:group.top,
               width:diameter,height:diameter,transform:'translate(-50%,-50%)',
               background:'radial-gradient(circle,rgba(190,24,93,'+(0.25+0.5*strength)+') 0%,rgba(234,88,12,'+(0.1+0.25*strength)+') 35%,rgba(234,88,12,0) 75%)'

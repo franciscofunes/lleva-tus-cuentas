@@ -29,7 +29,7 @@ test('changes between zoom-based zones, density layer and individual spending pi
  fireEvent.click(screen.getByRole('button',{name:'Mostrar mapa'}));
  fireEvent.click(screen.getByRole('button',{name:'Concentración'}));
  expect(screen.getByRole('button',{name:'Concentración'})).toHaveAttribute('aria-pressed','true');
- expect(container.querySelector('div[style*="radial-gradient"]')).toBeInTheDocument();
+ expect(container.querySelectorAll('[data-testid="map-density-cell"]').length).toBeGreaterThan(0);
  fireEvent.click(screen.getByRole('button',{name:'Importe'}));
  expect(screen.getByRole('button',{name:'Importe'})).toHaveAttribute('aria-pressed','true');
  fireEvent.click(screen.getByRole('button',{name:'Movimientos'}));
