@@ -264,6 +264,7 @@ const NotificationDropdown = () => {
 	const [subscriptionNoticeRead, setSubscriptionNoticeRead] = useState(false);
 	const [notifications, setNotifications] = useState([]);
 	const [cardBudgets,setCardBudgets] = useState([]);
+	const [cardBudgetOwner,setCardBudgetOwner]=useState(null);
 	const [cardCharges,setCardCharges] = useState([]);
 	const [cardCards,setCardCards] = useState([]);
 	const [cardStatements,setCardStatements] = useState([]);
@@ -303,11 +304,24 @@ const NotificationDropdown = () => {
 
 
 	useEffect(()=>{
-		if(!user?.uid)return undefined;
-		return subscribeBankBudgets(user.uid,setCardBudgets,()=>setCardBudgets([]));
+		if(!user?.uid){setCardBudgetOwner(null);setCardBudgets([]);return undefined;}
+		let active=true;
+		setCardBudgetOwner(null);
+		setCardBudgets([]);
+		try {
+			const unsubscribe=subscribeBankBudgets(user.uid,(items)=>{
+				if(!active)return;
+				setCardBudgetOwner(user.uid);setCardBudgets(items);
+			},()=>{if(active){setCardBudgetOwner(null);setCardBudgets([]);}});
+			return ()=>{active=false;unsubscribe?.();};
+		}catch {
+			setCardBudgetOwner(null);
+			setCardBudgets([]);
+			return ()=>{active=false;};
+		}
 	},[user?.uid]);
 	useEffect(()=>{
-		if(!user?.uid||!cardBudgets.some(b=>b.enabled))return undefined;
+		if(!user?.uid||cardBudgetOwner!==user.uid||!cardBudgets.some(b=>b.enabled))return undefined;
 		let active=true;
 		let stops=[];
 		// Bank service imports Firebase. Load it only after a user has explicitly
@@ -324,10 +338,10 @@ const NotificationDropdown = () => {
 			];
 		}).catch(()=>{if(active){setCardCards([]);setCardCharges([]);setCardStatements([]);setCardLinks([]);}});
 		return ()=>{active=false;stops.forEach(stop=>stop?.());};
-	},[user?.uid,cardBudgets]);
+	},[user?.uid,cardBudgets,cardBudgetOwner]);
 	const cardSpend=useMemo(()=>cardMonthManualSpending(cardCharges,cardStatements,cardLinks,cardCards),
 		[cardCharges,cardStatements,cardLinks,cardCards]);
-	const budgetNotices=useMemo(()=>cardBudgets.map(b=>budgetStatus(cardSpend,b,b.currency,cardSpend.month))
+	const budgetNotices=useMemo(()=>(cardBudgetOwner===user?.uid?cardBudgets:[]).map(b=>budgetStatus(cardSpend,b,b.currency,cardSpend.month))
 		.filter(s=>s&&(s.level==='warning'||s.level==='exceeded'))
 		.map(s=>({...s,noticeId:['ltc-card-spending',user?.uid,s.month,s.currency,s.level].join(':')})),[cardBudgets,cardSpend,user?.uid]);
 	const unreadBudgetNotices=useMemo(()=>budgetNotices.filter(s=>{
