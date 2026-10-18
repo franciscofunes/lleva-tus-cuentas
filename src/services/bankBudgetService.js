@@ -1,7 +1,9 @@
-import { auth, firestore } from '../shared/config/firebase/firebase.config';
 import { parseAmount } from '../utils/bankingModel';
 
 const mine=(uid)=>{
+  // Lazy Firebase import avoids initializing the SDK while rendering/tests
+  // that only need validation or configuration display.
+  const { auth, firestore }=require('../shared/config/firebase/firebase.config');
   if(!uid||auth.currentUser?.uid!==uid)throw new Error('Sesión inválida para configurar alertas.');
   return firestore.collection('users').doc(uid).collection('bankSpendingBudgets');
 };

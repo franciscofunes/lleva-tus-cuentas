@@ -16,7 +16,6 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { getPaymentDataAction } from '../actionCreators/databaseActions';
 import { subscribeBankBudgets } from '../services/bankBudgetService';
-import { subscribeBankCards, subscribeBankCharges, subscribeBankStatementLinks, subscribeImportedStatements } from '../services/bankingService';
 import { cardMonthManualSpending, budgetStatus } from '../utils/cardSpendingInsights';
 import {
 	backfillExpenseNotifications,
@@ -309,16 +308,22 @@ const NotificationDropdown = () => {
 	},[user?.uid]);
 	useEffect(()=>{
 		if(!user?.uid||!cardBudgets.some(b=>b.enabled))return undefined;
-		const fail=()=>{};
-		return (()=> {
-			const stops=[
-				subscribeBankCards(user.uid,setCardCards,fail),
-				subscribeBankCharges(user.uid,setCardCharges,fail),
-				subscribeImportedStatements(user.uid,setCardStatements,fail),
-				subscribeBankStatementLinks(user.uid,setCardLinks,fail),
+		let active=true;
+		let stops=[];
+		// Bank service imports Firebase. Load it only after a user has explicitly
+		// configured budgets so the navbar doesn't initialize bank auth eagerly.
+		import('../services/bankingService').then(service=>{
+			if(!active)return;
+			const guarded=setter=>items=>{if(active)setter(items);};
+			const fail=()=>{};
+			stops=[
+				service.subscribeBankCards(user.uid,guarded(setCardCards),fail),
+				service.subscribeBankCharges(user.uid,guarded(setCardCharges),fail),
+				service.subscribeImportedStatements(user.uid,guarded(setCardStatements),fail),
+				service.subscribeBankStatementLinks(user.uid,guarded(setCardLinks),fail),
 			];
-			return ()=>stops.forEach(stop=>stop?.());
-		})();
+		}).catch(()=>{if(active){setCardCards([]);setCardCharges([]);setCardStatements([]);setCardLinks([]);}});
+		return ()=>{active=false;stops.forEach(stop=>stop?.());};
 	},[user?.uid,cardBudgets]);
 	const cardSpend=useMemo(()=>cardMonthManualSpending(cardCharges,cardStatements,cardLinks,cardCards),
 		[cardCharges,cardStatements,cardLinks,cardCards]);

@@ -102,7 +102,7 @@ export function budgetStatus(current,config,currency,month) {
   const spent=Number(current?.[currency]||0);
   const ratio=spent/limit,percentage=Math.round(ratio*100);
   const warnPercent=Number(config.warnPercent)||80;
-  const level=ratio>=1?'exceeded':percentage>=warnPercent?'warning':'ok';
+  const level=ratio>=1?'exceeded':ratio >= warnPercent/100?'warning':'ok';
   return {month,currency,spent,limit,ratio,percentage,warnPercent,level,
     remaining:Math.round(Math.max(0,limit-spent)*100)/100};
 }
