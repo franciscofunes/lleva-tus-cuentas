@@ -1,5 +1,7 @@
 import React from 'react';
-import { chartMoney } from './CategoryBreakdownChart';
+const chartMoney = (number, currency) => Number.isFinite(number)
+  ? new Intl.NumberFormat('es-AR',{style:'currency',currency,minimumFractionDigits:2,maximumFractionDigits:2}).format(number)
+  : 'N/D';
 
 /** Consistent visual shell for historical, newer and geographic charts. */
 export default function TransactionChartSurface({ title, description, actions, footer, children, className = '' }) {
