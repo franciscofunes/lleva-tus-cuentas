@@ -25,6 +25,11 @@ jest.mock('../components/LitaAssitantPanel', () => ({
 jest.mock('../services/cardStatementService', () => ({
   getImportedStatement: jest.fn(), saveReviewedStatement: jest.fn(), verifyStatementDraft: jest.fn(),
 }));
+// Owner-specific budgets use Firestore; keep this UI test isolated from SDK initialization.
+jest.mock('../services/bankBudgetService',()=>({
+  subscribeBankBudgets:jest.fn((uid,onData)=>{onData([]);return jest.fn();}),
+  saveBankBudget:jest.fn().mockResolvedValue(undefined),
+}));
 jest.mock('../services/bankingService', () => ({
   subscribeBanks: jest.fn(),
   subscribeBankAccounts: jest.fn(),
