@@ -4,8 +4,10 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom';
 import Banks from './Banks';
 
+// Stable reference prevents repeated banking snapshot subscriptions in React.
+const mockBankDispatch = (action) => typeof action === 'function' ? action : undefined;
 jest.mock('react-redux', () => ({
-  useDispatch: () => (action) => typeof action === 'function' ? action : undefined,
+  useDispatch: () => mockBankDispatch,
   useSelector: (selector) => selector({
     auth: { user: { uid: 'test-private-user' } },
     database: { categories: [] },
