@@ -17,19 +17,19 @@ test('shows private map loading action and honest mapped coverage for individual
  const {container}=render(<SpendingMapChart chartData={located} categories={categories}/>);
  expect(screen.getByText(/2 de 3/)).toBeInTheDocument();
  expect(container.querySelectorAll('img[src*="tile.openstreetmap.org"]')).toHaveLength(0);
- expect(screen.getByRole('button',{name:'Zonas'})).toHaveAttribute('aria-pressed','true');
+ expect(screen.getByRole('button',{name:'Zonas H3'})).toHaveAttribute('aria-pressed','true');
  expect(screen.getByRole('button',{name:'Movimientos'})).toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:'Mostrar mapa'}));
+ fireEvent.click(screen.getByRole('button',{name:'Mostrar mapa mundial'}));
  expect(container.querySelectorAll('img[src*="tile.openstreetmap.org"]').length).toBeGreaterThan(0);
  expect(screen.getAllByRole('button',{name:/Acercar zona/}).length).toBeGreaterThan(0);
 });
 
 test('changes between zoom-based zones, density layer and individual spending pins',()=>{
  const {container}=render(<SpendingMapChart chartData={located} categories={categories}/>);
- fireEvent.click(screen.getByRole('button',{name:'Mostrar mapa'}));
+ fireEvent.click(screen.getByRole('button',{name:'Mostrar mapa mundial'}));
  fireEvent.click(screen.getByRole('button',{name:'Concentración'}));
  expect(screen.getByRole('button',{name:'Concentración'})).toHaveAttribute('aria-pressed','true');
- expect(container.querySelectorAll('[data-testid="map-density-cell"]').length).toBeGreaterThan(0);
+ expect(container.querySelectorAll('polygon[points]').length).toBeGreaterThan(0);
  fireEvent.click(screen.getByRole('button',{name:'Importe'}));
  expect(screen.getByRole('button',{name:'Importe'})).toHaveAttribute('aria-pressed','true');
  fireEvent.click(screen.getByRole('button',{name:'Movimientos'}));
@@ -37,9 +37,9 @@ test('changes between zoom-based zones, density layer and individual spending pi
  const pins=screen.getAllByRole('button',{name:/Ver \d+ movimiento/});
  expect(pins.length).toBe(2);
  fireEvent.click(pins[0]);
- expect(screen.getByText(/movimiento\(s\) en una ubicación aproximada/)).toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:'Cerrar detalle del gasto'}));
- expect(screen.queryByRole('button',{name:'Cerrar detalle del gasto'})).not.toBeInTheDocument();
+ expect(screen.getByText(/movimiento\(s\) en ubicación aproximada/)).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Cerrar detalle del mapa'}));
+ expect(screen.queryByRole('button',{name:'Cerrar detalle del mapa'})).not.toBeInTheDocument();
 });
 
 test('currency is a dedicated switch, never aggregates ARS and USD in one map',()=>{
@@ -53,7 +53,39 @@ test('currency is a dedicated switch, never aggregates ARS and USD in one map',(
 
 test('renders consistent empty state and does not fetch tiles when no location exists',()=>{
  const {container}=render(<SpendingMapChart chartData={located.filter(row=>row.id==='d')} categories={categories}/>);
- expect(screen.getByRole('status')).toHaveTextContent(/No hay consumos ubicados/);
- expect(screen.queryByRole('button',{name:'Mostrar mapa'})).not.toBeInTheDocument();
+ expect(screen.getByRole('status')).toHaveTextContent(/No hay gastos con coordenadas/);
+ expect(screen.queryByRole('button',{name:'Mostrar mapa mundial'})).not.toBeInTheDocument();
  expect(container.querySelectorAll('img')).toHaveLength(0);
+});
+
+test('global map supports US income, world zoom, west/east movement and separate financial flows',()=>{
+ const income={id:'us-income',category:'Salario',transactionCurrency:'USD',amount:2500,
+  expenseName:'Cliente USA',selectedDate:'2026-10-18',
+  location:{source:'search',label:'New York',latitude:40.712,longitude:-74.006}};
+ const {container}=render(<SpendingMapChart chartData={[...located,income]} categories={categories}/>);
+ fireEvent.click(screen.getByRole('button',{name:'Ingresos'}));
+ const usd=screen.getByRole('group',{name:'Moneda del mapa'});
+ fireEvent.click(within(usd).getByRole('button',{name:'USD'}));
+ expect(screen.getByText(/1 de 1/)).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Mostrar mapa mundial'}));
+ fireEvent.click(screen.getByRole('button',{name:'Ver mundo completo'}));
+ expect(screen.getByText(/Zoom 0/)).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Mover mapa al oeste'}));
+ fireEvent.click(screen.getByRole('button',{name:'Mover mapa al este'}));
+ fireEvent.click(screen.getByRole('button',{name:'Acercar mapa'}));
+ expect(screen.getByText(/Zoom 1/)).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Ajustar todas las ubicaciones'}));
+ fireEvent.click(screen.getByRole('button',{name:'Ambos'}));
+ expect(screen.getByRole('button',{name:'Importe'})).toBeDisabled();
+ expect(container.querySelectorAll('img[src*="tile.openstreetmap.org"]').length).toBeGreaterThan(0);
+});
+test('global map supports pointer navigation without requiring geolocation permission',()=>{
+ const {container}=render(<SpendingMapChart chartData={located} categories={categories}/>);
+ fireEvent.click(screen.getByRole('button',{name:'Mostrar mapa mundial'}));
+ const map=container.querySelector('[aria-label^="Mapa mundial interactivo"]');
+ expect(map).toBeInTheDocument();
+ fireEvent.pointerDown(map,{pointerId:1,clientX:100,clientY:120,button:0});
+ fireEvent.pointerMove(map,{pointerId:1,clientX:160,clientY:120});
+ fireEvent.pointerUp(map,{pointerId:1,clientX:160,clientY:120});
+ expect(screen.getByRole('button',{name:'Ver mundo completo'})).toBeInTheDocument();
 });

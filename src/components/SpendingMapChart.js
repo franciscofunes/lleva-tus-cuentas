@@ -1,202 +1,258 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { expensesForInsight, geoInsight } from '../utils/spendingInsights';
-import { ChartCurrencySwitch, ChartMoney, TransactionChartEmpty } from './TransactionChartSurface';
-import TransactionChartSurface from './TransactionChartSurface';
-import {
-  bucketSpendingByZoom, calculateSpendingMetric, fitSpendingMapZoom,
-  locatedSpendingCoverage, projectSpendingPoint, GEO_TILE_SIZE,
-} from '../utils/geoSpendingMap';
+import TransactionChartSurface, {ChartCurrencySwitch, ChartMoney, TransactionChartEmpty} from './TransactionChartSurface';
+import {geoEligibleRecords,geoLocatedRecords} from '../utils/geoTransactionInsights';
+import {bucketSpendingByZoom,geographicCenter,fitSpendingMapZoom,projectSpendingPoint,
+  unprojectSpendingPoint,wrappedWorldDeltaX,movedMapCenter,GEO_TILE_SIZE,clamp,h3ResolutionForZoom} from '../utils/geoSpendingMap';
 
-// Approximate zone clusters are based on screen-space grids. Not official
-// neighborhoods or precise address boundaries. Device/search pins are rounded.
-const HEIGHT = 352;
-const modeOptions = [
-  { key:'zones', label:'Zonas', description:'Agrupación aproximada por escala del mapa' },
-  { key:'density', label:'Concentración', description:'Intensidad relativa de gastos por zona' },
-  { key:'points', label:'Movimientos', description:'Detalle por posición aproximada guardada' },
+const HEIGHT=352;
+const MODES=[
+ {key:'zones',label:'Zonas H3',description:'Hexágonos H3: de regiones a zonas más pequeñas al acercarte'},
+ {key:'density',label:'Concentración',description:'Intensidad relativa en hexágonos H3, no barrios oficiales'},
+ {key:'points',label:'Movimientos',description:'Transacciones con posiciones aproximadas guardadas'},
 ];
-const safeMax = (numbers) => Math.max(1,...numbers);
-const cap = (x,min,max) => Math.max(min,Math.min(max,x));
-const normalize = (location) => location.source === 'search' ? 'Lugar buscado' : 'Ubicación del dispositivo';
+const FLOWS=[{key:'expense',label:'Gastos'},{key:'income',label:'Ingresos'},{key:'all',label:'Ambos'}];
+const formatShort=(value)=>new Intl.NumberFormat('es-AR',{notation:'compact',maximumFractionDigits:1}).format(value);
+const markerColor=(kind)=>kind==='income'?'bg-emerald-600':kind==='expense'?'bg-rose-600':'bg-purple-700';
 
-export default function SpendingMapChart({ chartData, categories }) {
-  const [currency,setCurrency] = useState('ARS');
-  const [mode,setMode] = useState('zones');
-  const [metric,setMetric] = useState('count');
-  const [opened,setOpened] = useState(false);
-  const [width,setWidth] = useState(350);
-  const [delta,setDelta] = useState(0);
-  const [focus,setFocus] = useState(null);
-  const [selection,setSelection] = useState(null);
-  const mapRef = useRef(null);
+export default function SpendingMapChart({chartData,categories}) {
+  const [currency,setCurrency]=useState('ARS');
+  const [flow,setFlow]=useState('expense');
+  const [mode,setMode]=useState('zones');
+  const [metric,setMetric]=useState('count');
+  const [opened,setOpened]=useState(false);
+  const [width,setWidth]=useState(350);
+  const [delta,setDelta]=useState(0);
+  const [focus,setFocus]=useState(null);
+  const [selection,setSelection]=useState(null);
+  const mapRef=useRef(null);
+  const dragRef=useRef(null);
+  const lastMoved=useRef(false);
 
-  const all = useMemo(()=>expensesForInsight(chartData,categories,currency),[chartData,categories,currency]);
-  const located = useMemo(()=>geoInsight(chartData,categories,currency),[chartData,categories,currency]);
-  const coverage = useMemo(()=>locatedSpendingCoverage(all,located),[all,located]);
-  const reset = () => { setDelta(0);setFocus(null);setSelection(null); };
-  const onCurrency = (next) => {setCurrency(next);reset();};
-  const onMode = (next) => {setMode(next);setSelection(null);};
+  const eligible=useMemo(()=>geoEligibleRecords(chartData,categories,currency,flow),[chartData,categories,currency,flow]);
+  const located=useMemo(()=>geoLocatedRecords(chartData,categories,currency,flow),[chartData,categories,currency,flow]);
+  const coverage=useMemo(()=>({
+    total:eligible.length,located:located.length,percentage:eligible.length?Math.round(located.length/eligible.length*100):0
+  }),[eligible,located]);
+  const fitted=useMemo(()=>fitSpendingMapZoom(located,width,HEIGHT),[located,width]);
+  const zoom=clamp(fitted+delta,0,17);
+  const center=useMemo(()=>focus||geographicCenter(located),[focus,located]);
+
+  const clearView=()=>{setFocus(null);setDelta(0);setSelection(null);};
+  const updateCurrency=value=>{setCurrency(value);clearView();};
+  const updateFlow=value=>{setFlow(value);setMetric('count');clearView();};
+  const updateMode=value=>{setMode(value);setSelection(null);};
+  const worldView=()=>{setFocus({latitude:0,longitude:0});setDelta(-fitted);setSelection(null);};
+  const shiftBy=(dx,dy)=>{setFocus(movedMapCenter(center,zoom,dx,dy));setSelection(null);};
+  const changeZoom=(amount)=>{setDelta(value=>clamp(value+amount,-fitted,17-fitted));setSelection(null);};
 
   useEffect(()=>{
-    if(!opened || !mapRef.current || typeof ResizeObserver === 'undefined')return undefined;
+    if(!opened||!mapRef.current||typeof ResizeObserver==='undefined')return undefined;
     const observer=new ResizeObserver(([entry])=>{
       const next=entry?.contentRect?.width;
-      if(Number.isFinite(next) && next>0)setWidth(next);
+      if(Number.isFinite(next)&&next>0)setWidth(next);
     });
     observer.observe(mapRef.current);
     return ()=>observer.disconnect();
   },[opened]);
 
-  // Date/filter changes keep the modal and chosen layer but reset prior
-  // geographical focus, avoiding a stale map center for another period.
-  useEffect(()=>{setFocus(null);setDelta(0);setSelection(null);},[chartData,currency]);
+  useEffect(()=>{setFocus(null);setDelta(0);setSelection(null);},[chartData,flow,currency]);
 
-  const fitted=useMemo(()=>fitSpendingMapZoom(located,width,HEIGHT),[located,width]);
-  const zoom=cap(fitted+delta,2,16);
-  const center=useMemo(()=>focus || (located.length?{
-    latitude:located.reduce((n,row)=>n+row.location.latitude,0)/located.length,
-    longitude:located.reduce((n,row)=>n+row.location.longitude,0)/located.length
-  }:{latitude:0,longitude:0}),[focus,located]);
+  useEffect(()=>{
+    const node=mapRef.current;
+    if(!opened||!node)return undefined;
+    const onWheel=event=>{
+      event.preventDefault();
+      if(Math.abs(event.deltaY)<1)return;
+      changeZoom(event.deltaY>0?-1:1);
+    };
+    node.addEventListener('wheel',onWheel,{passive:false});
+    return ()=>node.removeEventListener('wheel',onWheel);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[opened,fitted]);
 
-  const groups=useMemo(()=>bucketSpendingByZoom(located,zoom,110),[located,zoom]);
-  // In detail mode, overlapping records from the same rounded coordinate share
-  // a pin with a list, so repeated visits are still individually discoverable.
-  const pins=useMemo(()=>{
-    const grouped=new Map();
+  const grouped=useMemo(()=>bucketSpendingByZoom(located,zoom),[located,zoom]);
+  const points=useMemo(()=>{
+    const groupedPoints=new Map();
     located.forEach((row,index)=>{
-      const location=row.location;
-      const key=location.latitude+':'+location.longitude;
-      const item=grouped.get(key)||{id:key,latitude:location.latitude,longitude:location.longitude,records:[],count:0,total:0};
+      const key=row.location.latitude+':'+row.location.longitude;
+      const item=groupedPoints.get(key)||{id:key,latitude:row.location.latitude,
+        longitude:row.location.longitude,records:[],count:0,kind:row._geoKind};
+      item.count++;
+      if(item.kind!==row._geoKind)item.kind='all';
       item.records.push({...row,_mapKey:row.id||row.expenseId||index});
-      item.count++;item.total+=Number(row.amount)||0;
-      grouped.set(key,item);
+      groupedPoints.set(key,item);
     });
-    return [...grouped.values()];
+    return [...groupedPoints.values()];
   },[located]);
 
   const overlay=useMemo(()=>{
     if(!opened||!located.length)return {tiles:[],groups:[],pins:[]};
-    const c=projectSpendingPoint(center.latitude,center.longitude,zoom);
-    const x0=c.x-width/2, y0=c.y-HEIGHT/2;
-    const count=2**zoom,tiles=[];
+    const cp=projectSpendingPoint(center.latitude,center.longitude,zoom);
+    const size=GEO_TILE_SIZE*2**zoom, x0=cp.x-width/2, y0=cp.y-HEIGHT/2;
+    const n=2**zoom, tiles=[];
+    // Draw only visible tiles. Wrap longitude infinitely; cap latitude at
+    // Mercator bounds. Standard browser caching obeys the OSM tile policy.
     for(let x=Math.floor(x0/GEO_TILE_SIZE);x<=Math.floor((x0+width)/GEO_TILE_SIZE);x++){
       for(let y=Math.floor(y0/GEO_TILE_SIZE);y<=Math.floor((y0+HEIGHT)/GEO_TILE_SIZE);y++){
-        if(y<0||y>=count)continue;
-        tiles.push({id:x+':'+y, url:'https://tile.openstreetmap.org/'+zoom+'/'+((x%count+count)%count)+'/'+y+'.png',
+        if(y<0||y>=n)continue;
+        tiles.push({id:x+':'+y,url:'https://tile.openstreetmap.org/'+zoom+'/'+((x%n+n)%n)+'/'+y+'.png',
           left:x*GEO_TILE_SIZE-x0,top:y*GEO_TILE_SIZE-y0});
       }
     }
-    const where=location=>{
-      const p=projectSpendingPoint(location.latitude,location.longitude,zoom);
-      return {left:p.x-x0,top:p.y-y0};
+    const position=({latitude,longitude})=>{
+      const p=projectSpendingPoint(latitude,longitude,zoom);
+      return {left:width/2+wrappedWorldDeltaX(p.x,cp.x,zoom),top:HEIGHT/2+p.y-cp.y};
     };
-    return {tiles,groups:groups.map(group=>({...group,...where(group)})),
-      pins:pins.map(pin=>({...pin,...where(pin)}))};
-  },[opened,located,center,zoom,width,groups,pins]);
+    const groups=grouped.map(group=>{
+      const at=position(group);
+      const polygon=group.boundary.map(point=>{
+        const p=projectSpendingPoint(point.latitude,point.longitude,zoom);
+        const anchor=projectSpendingPoint(group.latitude,group.longitude,zoom);
+        return {x:at.left+wrappedWorldDeltaX(p.x,anchor.x,zoom),
+          y:at.top+p.y-anchor.y};
+      });
+      return {...group,...at,polygon};
+    });
+    const pins=points.map(point=>({...point,...position(point)}));
+    return {tiles,groups,pins};
+  },[opened,located,center,zoom,width,grouped,points]);
 
-  const maxValue=safeMax(groups.map(item=>calculateSpendingMetric(item,metric)));
-  const description=modeOptions.find(item=>item.key===mode)?.description;
-  const drill = (group) => {
+  const max=Math.max(1,...grouped.map(group=>metric==='amount'?group.total:group.count));
+  const panStart=event=>{
+    if(event.button!==undefined && event.button!==0)return;
+    if(event.target.closest('button, a'))return;
+    dragRef.current={pointer:event.pointerId,x:event.clientX,y:event.clientY,moved:false};
+    lastMoved.current=false;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const panMove=event=>{
+    const prev=dragRef.current;
+    if(!prev||prev.pointer!==event.pointerId)return;
+    const dx=event.clientX-prev.x,dy=event.clientY-prev.y;
+    if(!dx&&!dy)return;
+    if(Math.abs(dx)+Math.abs(dy)>2)prev.moved=true;
+    lastMoved.current=prev.moved;
+    dragRef.current={...prev,x:event.clientX,y:event.clientY};
+    shiftBy(dx,dy);
+  };
+  const panEnd=event=>{
+    if(dragRef.current?.pointer===event.pointerId)dragRef.current=null;
+    if(event.currentTarget.hasPointerCapture?.(event.pointerId))
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+  };
+  const drill=group=>{
+    if(lastMoved.current){lastMoved.current=false;return;}
     setFocus({latitude:group.latitude,longitude:group.longitude});
     setSelection(null);
-    if(group.count===1 || zoom>=14) {
-      setMode('points');
-      if(zoom<14)setDelta(v=>cap(v+2,2-fitted,16-fitted));
-    } else {
-      setDelta(v=>cap(v+2,2-fitted,16-fitted));
-    }
+    if(group.count===1||zoom>=14)setMode('points');
+    changeZoom(group.count===1?3:2);
   };
+  const showAmounts=metric==='amount'&&flow!=='all';
+  const chartSubtitle='Datos con ubicación explícita · '+currency+' · Período seleccionado';
+  const hasData=located.length>0;
 
-  return <TransactionChartSurface title='Mapa de consumos'
-    description='Gastos con ubicación del período seleccionado · ARS y USD por separado'
-    actions={<ChartCurrencySwitch currency={currency} onChange={onCurrency} label='Moneda del mapa'/>}
-    footer='Zonas y concentración usan cuadrículas aproximadas, no límites de barrios. Las ubicaciones se guardan redondeadas; los gastos sin coordenadas no aparecen en el mapa.'>
-    <div className='grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800/70' role='group' aria-label='Capa del mapa'>
-      {modeOptions.map(item=><button type='button' key={item.key} aria-pressed={mode===item.key}
-        onClick={()=>onMode(item.key)} className={'min-h-[42px] rounded-lg px-1 text-xs font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 sm:px-3 '+
-          (mode===item.key?'bg-white text-purple-700 shadow-sm dark:bg-slate-700 dark:text-purple-200':'text-slate-700 dark:text-slate-300')}>
-        {item.label}</button>)}
+  return <TransactionChartSurface title='Mapa de transacciones · Mundial' description={chartSubtitle}
+    actions={<ChartCurrencySwitch currency={currency} onChange={updateCurrency} label='Moneda del mapa'/>}
+    footer='Los hexágonos H3 agrupan coordenadas aproximadas, no provincias o países oficiales. La moneda o el país del pagador no determinan el lugar de una operación. Los movimientos sin ubicación no se dibujan.'>
+    <div role='group' aria-label='Tipo de movimientos del mapa' className='grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800'>
+      {FLOWS.map(item=><button key={item.key} type='button' aria-pressed={flow===item.key}
+        onClick={()=>updateFlow(item.key)} className={'min-h-[42px] rounded-lg px-2 text-xs font-bold focus-visible:ring-2 focus-visible:ring-purple-500 '+
+          (flow===item.key?'bg-purple-600 text-white':'text-slate-700 dark:text-slate-200')}>{item.label}</button>)}
     </div>
-    <p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>{description}</p>
-
-    <div className='mt-4 flex flex-wrap items-center justify-between gap-3'>
-      <div>
-        <span className='text-sm font-extrabold tabular-nums'>{coverage.located} de {coverage.total}</span>
-        <span className='ml-1 text-xs text-slate-600 dark:text-slate-300'>gastos ubicados ({coverage.percentage}%)</span>
-      </div>
+    <div role='group' aria-label='Capa del mapa' className='mt-3 grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800'>
+      {MODES.map(item=><button key={item.key} type='button' aria-pressed={mode===item.key}
+        onClick={()=>updateMode(item.key)} className={'min-h-[42px] rounded-lg px-1 text-xs font-bold focus-visible:ring-2 focus-visible:ring-purple-500 '+
+          (mode===item.key?'bg-white text-purple-700 shadow-sm dark:bg-slate-700 dark:text-purple-200':'text-slate-700 dark:text-slate-200')}>{item.label}</button>)}
+    </div>
+    <p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>{MODES.find(item=>item.key===mode).description}</p>
+    <div className='mt-4 flex flex-wrap items-center justify-between gap-2'>
+      <p className='text-sm font-bold tabular-nums'>{coverage.located} de {coverage.total}
+        <span className='ml-1 text-xs font-normal text-slate-600 dark:text-slate-300'>movimientos ubicados ({coverage.percentage}%)</span>
+      </p>
       <div role='group' aria-label='Métrica geográfica' className='inline-flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800'>
-        {[{key:'count',label:'Cantidad'},{key:'amount',label:'Importe'}].map(item=>
-          <button type='button' key={item.key} aria-pressed={metric===item.key} onClick={()=>setMetric(item.key)}
-            className={'min-h-[36px] rounded-lg px-3 text-xs font-bold focus-visible:ring-2 focus-visible:ring-purple-500 '+
-              (metric===item.key?'bg-purple-600 text-white':'text-slate-700 dark:text-slate-200')}>{item.label}</button>)}
+        {['count','amount'].map(kind=><button key={kind} type='button'
+          disabled={kind==='amount'&&flow==='all'} aria-pressed={metric===kind}
+          onClick={()=>setMetric(kind)}
+          className={'min-h-[36px] rounded-lg px-3 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40 '+
+            (metric===kind?'bg-purple-600 text-white':'text-slate-700 dark:text-slate-200')}>
+          {kind==='count'?'Cantidad':'Importe'}</button>)}
       </div>
     </div>
-
-    {!located.length?<div className='mt-4'><TransactionChartEmpty>
-      No hay consumos ubicados en {currency} para este período. Editá una transacción y elegí un lugar del buscador o usá tu ubicación actual.
+    {flow==='all'&&<p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>En «Ambos» se muestra cantidad. Los importes de ingresos y gastos se analizan por separado, nunca se suman.</p>}
+    {!hasData?<div className='mt-4'><TransactionChartEmpty>
+      No hay {flow==='income'?'ingresos':flow==='expense'?'gastos':'movimientos'} con coordenadas en {currency} durante este período. Para ubicar operaciones internacionales, elegí el lugar real al registrar o editar una transacción; no se infiere por la divisa.
     </TransactionChartEmpty></div>:
-      !opened?<div className='mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50'>
-        <p className='text-sm leading-relaxed'>Para ver las zonas del mapa, se cargarán mosaicos de OpenStreetMap. El proveedor verá la zona cartográfica solicitada, no los nombres ni los importes de tus transacciones.</p>
-        <button type='button' onClick={()=>setOpened(true)} className='mt-3 min-h-[44px] rounded-xl bg-purple-600 px-4 text-sm font-bold text-white'>Mostrar mapa</button>
-      </div>:
-      <div className='mt-4'>
-        <div ref={mapRef} className='relative h-[352px] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-200 dark:border-slate-700 dark:bg-slate-800'
-          aria-label='Mapa interactivo de gastos por ubicación aproximada'>
-          {overlay.tiles.map(tile=><img key={tile.id} alt='' draggable={false} loading='lazy' src={tile.url}
-            height='256' width='256' style={{position:'absolute',left:tile.left,top:tile.top,width:256,height:256,maxWidth:'none'}} />)}
-          {(mode==='zones')&&overlay.groups.map(group=>{
-            const weight=calculateSpendingMetric(group,metric)/maxValue;
-            const size=cap(38+weight*29,38,67);
-            return <button key={group.id} type='button'
-              aria-label={'Acercar zona: '+group.count+' consumos en '+currency}
-              onClick={()=>drill(group)}
-              title={group.count+' consumos; acercar para ver detalle'}
-              style={{position:'absolute',left:group.left,top:group.top,width:size,height:size,transform:'translate(-50%,-50%)'}}
-              className='flex items-center justify-center rounded-full border-[3px] border-white bg-purple-700/90 text-xs font-extrabold text-white shadow-lg focus:outline-none focus-visible:ring-4 focus-visible:ring-purple-400'>
-              {metric==='count'?group.count:(group.total>=1000?Math.round(group.total/1000)+'k':Math.round(group.total))}
-            </button>;
-          })}
-          {mode==='density'&&overlay.groups.map(group=>{
-            const strength=calculateSpendingMetric(group,metric)/maxValue;
-            const diameter=cap(90+Math.sqrt(strength)*110,90,200);
-            return <div key={group.id} data-testid='map-density-cell' aria-hidden='true' style={{
-              position:'absolute',pointerEvents:'none',left:group.left,top:group.top,
-              width:diameter,height:diameter,transform:'translate(-50%,-50%)',
-              background:'radial-gradient(circle,rgba(190,24,93,'+(0.25+0.5*strength)+') 0%,rgba(234,88,12,'+(0.1+0.25*strength)+') 35%,rgba(234,88,12,0) 75%)'
-            }}/>;
-          })}
-          {mode==='points'&&overlay.pins.map(pin=>
-            <button key={pin.id} type='button' aria-label={'Ver '+pin.count+' movimiento(s) en esta ubicación'}
-              onClick={()=>setSelection(pin)}
-              style={{position:'absolute',left:pin.left,top:pin.top,transform:'translate(-50%,-100%)'}}
-              className='flex h-9 min-w-9 items-center justify-center rounded-full border-[3px] border-white bg-purple-700 px-1 text-xs font-extrabold text-white shadow-lg focus:outline-none focus-visible:ring-4 focus-visible:ring-purple-400'>
-              {pin.count>1?pin.count:'●'}
-            </button>)}
-
-          <div className='absolute right-2 top-2 flex flex-col gap-1'>
-            <button type='button' aria-label='Acercar mapa' onClick={()=>setDelta(v=>cap(v+1,2-fitted,16-fitted))}
-              className='h-10 w-10 rounded-xl border border-slate-200 bg-white text-lg font-bold text-slate-900 shadow'>+</button>
-            <button type='button' aria-label='Alejar mapa' onClick={()=>setDelta(v=>cap(v-1,2-fitted,16-fitted))}
-              className='h-10 w-10 rounded-xl border border-slate-200 bg-white text-lg font-bold text-slate-900 shadow'>−</button>
-            <button type='button' aria-label='Mostrar todas las ubicaciones' onClick={reset}
-              className='min-h-[36px] rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-900 shadow'>Todo</button>
-          </div>
-          {selection&&mode==='points'&&<div className='absolute bottom-9 left-2 right-2 z-10 max-h-40 overflow-y-auto rounded-xl border border-purple-300 bg-white/95 p-3 text-slate-900 shadow-lg dark:bg-slate-900/95 dark:text-white'>
-            <button type='button' aria-label='Cerrar detalle del gasto' className='float-right text-sm font-bold' onClick={()=>setSelection(null)}>✕</button>
-            <p className='text-xs font-bold'>{selection.count} movimiento(s) en una ubicación aproximada</p>
-            {selection.records.map(row=><div key={row._mapKey} className='mt-2 border-t border-slate-200 pt-2 text-xs dark:border-slate-700'>
-              <p className='font-bold'>{row.expenseName||'Gasto'} · <ChartMoney value={row.amount} currency={currency}/></p>
-              <p className='text-slate-600 dark:text-slate-300'>{row.location?.label||normalize(row.location)} · {row.selectedDate||'Sin fecha'}</p>
-            </div>)}
-          </div>}
-          <a href='https://www.openstreetmap.org/copyright' target='_blank' rel='noreferrer'
-            className='absolute bottom-0 right-0 z-10 rounded-tl-md bg-white/90 px-2 py-1 text-[10px] text-slate-900'>© OpenStreetMap contributors</a>
+    !opened?<div className='mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50'>
+      <p className='text-sm'>El mapa mundial carga mosaicos de OpenStreetMap solo al abrirlo. El proveedor recibe solicitudes de las zonas visibles, nunca tus importes ni los detalles de tus operaciones.</p>
+      <button type='button' onClick={()=>setOpened(true)} className='mt-3 min-h-[44px] rounded-xl bg-purple-600 px-4 text-sm font-bold text-white'>Mostrar mapa mundial</button>
+    </div>:
+    <div className='mt-4'>
+      <div ref={mapRef} onPointerDown={panStart} onPointerMove={panMove} onPointerUp={panEnd}
+        onPointerCancel={panEnd} className='relative h-[352px] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-200 dark:border-slate-700 dark:bg-slate-800'
+        style={{touchAction:'none',cursor:dragRef.current?'grabbing':'grab'}}
+        aria-label='Mapa mundial interactivo de transacciones, arrastrable con mouse o dedo'>
+        {overlay.tiles.map(tile=><img key={tile.id} alt='' draggable={false} loading='lazy' src={tile.url}
+          width={256} height={256} style={{position:'absolute',left:tile.left,top:tile.top,width:256,height:256,maxWidth:'none',pointerEvents:'none'}}/>)}
+        {(mode==='zones'||mode==='density')&&
+          <svg aria-hidden='true' className='pointer-events-none absolute inset-0' width='100%' height='100%' viewBox={'0 0 '+width+' '+HEIGHT}>
+            {overlay.groups.map(group=>{
+              const strength=(showAmounts?group.total:group.count)/max;
+              const polygon=group.polygon.map(p=>p.x+','+p.y).join(' ');
+              return <polygon key={group.id} points={polygon} stroke='#7c3aed' strokeWidth='1.5'
+                fill={mode==='density'?'#be185d':'#8b5cf6'}
+                fillOpacity={mode==='density'?0.14+0.66*strength:0.08+0.18*strength}/>;
+            })}
+          </svg>}
+        {mode==='zones'&&overlay.groups.map(group=><button key={group.id} type='button'
+          aria-label={'Acercar zona H3: '+group.count+' movimiento(s)'} onClick={()=>drill(group)}
+          title={group.count+' movimientos · Res. H3 '+group.resolution}
+          style={{position:'absolute',left:group.left,top:group.top,transform:'translate(-50%,-50%)'}}
+          className='flex h-10 min-w-10 items-center justify-center rounded-full border-2 border-white bg-purple-700 px-1 text-xs font-extrabold text-white shadow-lg focus-visible:ring-4 focus-visible:ring-purple-400'>
+          {showAmounts?formatShort(group.total):group.count}
+        </button>)}
+        {mode==='points'&&overlay.pins.map(pin=><button type='button' key={pin.id}
+          aria-label={'Ver '+pin.count+' movimiento(s) de este lugar'}
+          onClick={()=>{if(!lastMoved.current)setSelection(pin);lastMoved.current=false;}}
+          style={{position:'absolute',left:pin.left,top:pin.top,transform:'translate(-50%,-100%)'}}
+          className={'flex h-9 min-w-9 items-center justify-center rounded-full border-2 border-white px-1 text-xs font-extrabold text-white shadow-lg focus-visible:ring-4 focus-visible:ring-purple-400 '+markerColor(pin.kind)}>
+          {pin.count>1?pin.count:'●'}
+        </button>)}
+        {mode==='points'&&selection&&<div className='absolute bottom-9 left-2 right-2 z-10 max-h-40 overflow-y-auto rounded-xl border border-purple-200 bg-white/95 p-3 text-slate-900 shadow-lg dark:border-slate-700 dark:bg-slate-900/95 dark:text-white'>
+          <button type='button' aria-label='Cerrar detalle del mapa' className='float-right font-bold' onClick={()=>setSelection(null)}>✕</button>
+          <p className='text-xs font-bold'>{selection.count} movimiento(s) en ubicación aproximada</p>
+          {selection.records.map(row=><div key={row._mapKey} className='mt-2 border-t border-slate-200 pt-2 text-xs dark:border-slate-700'>
+            <p className='font-bold'>{row._geoKind==='income'?'Ingreso':'Gasto'} · {row.expenseName||row.category} · <ChartMoney value={row.amount} currency={currency}/></p>
+            <p>{row.location?.label||'Lugar sin nombre'} · {row.selectedDate||'Sin fecha'}</p>
+          </div>)}
+        </div>}
+        <div className='absolute right-2 top-2 z-10 flex flex-col gap-1'>
+          <button type='button' aria-label='Acercar mapa' onClick={()=>changeZoom(1)}
+            className='h-10 w-10 rounded-lg bg-white text-lg font-bold text-slate-900 shadow'>+</button>
+          <button type='button' aria-label='Alejar mapa' onClick={()=>changeZoom(-1)}
+            className='h-10 w-10 rounded-lg bg-white text-lg font-bold text-slate-900 shadow'>−</button>
+          <button type='button' aria-label='Ver mundo completo' onClick={worldView}
+            className='min-h-[36px] rounded-lg bg-white px-2 text-xs font-bold text-slate-900 shadow'>Mundo</button>
+          <button type='button' aria-label='Ajustar todas las ubicaciones' onClick={clearView}
+            className='min-h-[36px] rounded-lg bg-white px-2 text-xs font-bold text-slate-900 shadow'>Todas</button>
         </div>
-        <div className='mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-300'>
-          <span>{mode==='density'?'Mayor intensidad = más '+(metric==='count'?'operaciones':'importe') :
-            mode==='zones'?'Tocá una zona para acercarte':'Tocá un punto para ver sus movimientos'}</span>
-          <span>Zoom {zoom} · {metric==='count'?'Cantidad':'Importe '+currency}</span>
+        <div className='absolute bottom-8 left-2 z-10 grid grid-cols-3 gap-1 rounded-xl bg-white/95 p-1 text-slate-900 shadow'>
+          <span/>
+          <button type='button' aria-label='Mover mapa al norte' onClick={()=>shiftBy(0,90)} className='h-8 w-8 rounded hover:bg-slate-200'>↑</button>
+          <span/>
+          <button type='button' aria-label='Mover mapa al oeste' onClick={()=>shiftBy(90,0)} className='h-8 w-8 rounded hover:bg-slate-200'>←</button>
+          <span className='self-center text-center text-xs'>✥</span>
+          <button type='button' aria-label='Mover mapa al este' onClick={()=>shiftBy(-90,0)} className='h-8 w-8 rounded hover:bg-slate-200'>→</button>
+          <span/>
+          <button type='button' aria-label='Mover mapa al sur' onClick={()=>shiftBy(0,-90)} className='h-8 w-8 rounded hover:bg-slate-200'>↓</button>
+          <span/>
         </div>
-      </div>}
+        <a href='https://www.openstreetmap.org/copyright' rel='noreferrer' target='_blank'
+          className='absolute bottom-0 right-0 z-10 rounded-tl-md bg-white/90 px-2 py-1 text-[10px] text-slate-900'>© OpenStreetMap contributors</a>
+      </div>
+      <div className='mt-3 flex flex-wrap justify-between gap-2 text-xs text-slate-600 dark:text-slate-300'>
+        <span>Arrastrá para recorrer el mundo · rueda para zoom · botones táctiles</span>
+        <span>Zoom {zoom} · H3 res. {h3ResolutionForZoom(zoom)} · {currency}</span>
+      </div>
+    </div>}
   </TransactionChartSurface>;
 }
