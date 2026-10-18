@@ -1,5 +1,5 @@
 import { sumBankBalances } from './bankingModel';
-import { statementMonthExtremes, budgetStatus } from './cardSpendingInsights';
+import { statementMonthExtremes, budgetStatus, historicalPeakStatus } from './cardSpendingInsights';
 
 // The assistant receives financial aggregates, never bank account credentials,
 // aliases, CBU/CVU, tax IDs, full card numbers, or stored Firestore document IDs.
@@ -86,13 +86,17 @@ export function buildBanksLitaContext({ banks = [], accounts = [], cards = [],
           average:e.average,
           suggestedLimit:e.suggestedLimit,
           currentManualMonth:manualSpend.month||null,
-          currentManualAmount:finiteAmount(manualSpend[currency]),
+          currentCycleRegisteredAmount:finiteAmount(manualSpend[currency]),
+          currentCycleSource:manualSpend.manualOnly?'manual-card-purchases':'bank-consumption-snapshots-plus-later-manual-purchases',
+          snapshotCurrencyCounts:manualSpend.snapshotCardCount||0,
+          historicalPeakComparison:(()=>{const peak=historicalPeakStatus(manualSpend,history,currency);
+            return peak?{level:peak.level,peakMonth:peak.peakMonth,peak:peak.peak,percentage:peak.percentage,partial:true}:null;})(),
           userBudget:config?.enabled?{
             limit:config.limit,warnPercent:config.warnPercent,status:status?.level,
           }:null,
         };
       }),
-      llmGuidance: 'Explain maximum and minimum historical statement spending across all linked banks by month, discuss incomplete months, and suggest a realistic user-confirmed monthly budget. Never write budget values automatically or claim any expense was audited.',
+      llmGuidance: 'Historical months aggregate reviewed PDFs from all linked banks, separated by currency. The current cycle combines bank screenshot consumption totals and manual purchases dated strictly after each snapshot: do not add those purchases twice. Explain maximum and minimum, distance from historical peak, incomplete cycles and missing PDF months. Suggest a user-confirmed ceiling below a personally unsafe peak, never auto-write Firestore. Interpret totals as partial, not verified bank debt or capacity to pay.',
     },
     unlinkedStatementCount: statements.filter((statement) =>
       !links.some((link) => link.expenseId === statement.expenseId)).length,
