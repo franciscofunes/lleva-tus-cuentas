@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { getPaymentDataAction } from '../actionCreators/databaseActions';
 import { subscribeBankBudgets } from '../services/bankBudgetService';
-import { cardMonthManualSpending, budgetStatus } from '../utils/cardSpendingInsights';
+import { cardMonthManualSpending, budgetStatus, statementMonthlyHistory, historicalPeakStatus } from '../utils/cardSpendingInsights';
 import {
 	backfillExpenseNotifications,
 	markNotificationRead,
@@ -341,9 +341,21 @@ const NotificationDropdown = () => {
 	},[user?.uid,cardBudgets,cardBudgetOwner]);
 	const cardSpend=useMemo(()=>cardMonthManualSpending(cardCharges,cardStatements,cardLinks,cardCards),
 		[cardCharges,cardStatements,cardLinks,cardCards]);
-	const budgetNotices=useMemo(()=>(cardBudgetOwner===user?.uid?cardBudgets:[]).map(b=>budgetStatus(cardSpend,b,b.currency,cardSpend.month))
-		.filter(s=>s&&(s.level==='warning'||s.level==='exceeded'))
-		.map(s=>({...s,noticeId:['ltc-card-spending',user?.uid,s.month,s.currency,s.level].join(':')})),[cardBudgets,cardSpend,user?.uid]);
+	const cardHistory=useMemo(()=>statementMonthlyHistory(cardStatements,cardLinks,cardCards),
+		[cardStatements,cardLinks,cardCards]);
+	const budgetNotices=useMemo(()=>{
+		const configs=cardBudgetOwner===user?.uid?cardBudgets.filter(b=>b.enabled):[];
+		return configs.flatMap(config=>{
+			const custom=budgetStatus(cardSpend,config,config.currency,cardSpend.month);
+			const historical=historicalPeakStatus(cardSpend,cardHistory,config.currency);
+			const events=[];
+			if(custom&&['warning','exceeded'].includes(custom.level))
+				events.push({...custom,type:'budget',noticeId:['ltc-card-budget',user.uid,custom.month,config.currency,custom.level].join(':')});
+			if(historical&&['warning','critical','exceeded'].includes(historical.level))
+				events.push({...historical,type:'historical',noticeId:['ltc-card-record',user.uid,historical.month,config.currency,historical.level].join(':')});
+			return events;
+		});
+	},[cardBudgetOwner,cardBudgets,user?.uid,cardSpend,cardHistory]);
 	const unreadBudgetNotices=useMemo(()=>budgetNotices.filter(s=>{
 		try{return window.localStorage.getItem('ltc-budget-seen:'+s.noticeId)!=='1';}
 		catch{return true;}
@@ -354,7 +366,9 @@ const NotificationDropdown = () => {
 			const key=notice.noticeId;
 			try{if(window.localStorage.getItem(key))return;window.localStorage.setItem(key,'1');}
 			catch{ /* Nonpersistent toast remains available. */ }
-			const title=notice.level==='exceeded'?'Llegaste al tope mensual de tarjetas':'Te acercás al tope mensual de tarjetas';
+			const title=notice.type==='historical'
+				?(notice.level==='exceeded'?'Igualaste o superaste tu máximo histórico de tarjetas':notice.level==='critical'?'Ojo: estás muy cerca del máximo histórico':'Te acercás al máximo histórico de tarjetas')
+				:(notice.level==='exceeded'?'Llegaste al tope mensual de tarjetas':'Te acercás al tope mensual de tarjetas');
 			toast.warn(title+' · '+notice.currency+'. Revisá Bancos.');
 			if(typeof window!=='undefined' && 'Notification' in window && window.Notification.permission==='granted'){
 				try{new window.Notification(title,{body:'Revisá los gastos de tarjetas en LTC$.',tag:key});}
@@ -613,8 +627,10 @@ const NotificationDropdown = () => {
 									  {budgetNotices.map(notice=><button key={notice.noticeId} type='button' role='menuitem'
 									    onClick={()=>openBudgetNotice(notice)}
 									    className='w-full rounded-xl border border-amber-400/40 bg-amber-50 px-3 py-3 text-left text-xs text-amber-900 dark:bg-amber-900/20 dark:text-amber-200'>
-									    <strong>{notice.level==='exceeded'?'Tope alcanzado':'Aviso previo'} · {notice.currency}</strong>
-									    <span className='mt-1 block'>Consumos manuales: {notice.percentage}% del límite mensual. Ver Bancos →</span>
+									    <strong>{notice.type==='historical'?
+									      (notice.level==='exceeded'?'Récord de consumo alcanzado':notice.level==='critical'?'Muy cerca del récord':'Acercándote al récord'):
+									      (notice.level==='exceeded'?'Tope elegido alcanzado':'Aviso del tope elegido')} · {notice.currency}</strong>
+									    <span className='mt-1 block'>{notice.percentage}% {notice.type==='historical'?'del máximo histórico registrado':'de tu límite elegido'} · consumos del ciclo actual (parciales). Ver Bancos →</span>
 									  </button>)}
 									</div>}
 									{renderReminderGroup('Vencidos', overdue)}
