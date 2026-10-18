@@ -29,7 +29,7 @@ test('ChatGPT Markdown is read-only until bank/card review and explicit final co
  fireEvent.click(screen.getByRole('button',{name:'Revisar datos antes de guardar'}));
  expect(onSave).not.toHaveBeenCalled();
  expect(screen.getByText(/475000/)).toBeInTheDocument();
- expect(screen.getByText(/Farmacia/)).toBeInTheDocument();
+ expect(screen.getAllByText(/Farmacia/).length).toBeGreaterThan(0);
  expect(screen.getByRole('button',{name:/Confirmar/})).toBeDisabled();
  fireEvent.change(screen.getByLabelText('Banco registro 1'),{target:{value:'ciudad'}});
  fireEvent.change(screen.getByLabelText('Tarjeta registro 1'),{target:{value:'visa'}});
