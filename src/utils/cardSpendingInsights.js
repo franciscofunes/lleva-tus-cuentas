@@ -26,7 +26,7 @@ export function statementMonthlyHistory(statements=[],links=[],cards=[]) {
       const purchase=finiteMoney(s.purchases?.[currency]);
       const total=finiteMoney(s.totals?.[currency]);
       const amount=purchase===null?total:purchase;
-      if(amount===null)return;
+      if(amount===null)continue;
       const key=s.month+'-'+currency;
       const group=groups.get(key)||{month:s.month,currency,total:0,statementCount:0,estimatedFromTotal:false};
       group.total=Math.round((group.total+amount)*100)/100;
@@ -38,7 +38,7 @@ export function statementMonthlyHistory(statements=[],links=[],cards=[]) {
   return [...groups.values()].sort((a,b)=>a.month.localeCompare(b.month)||a.currency.localeCompare(b.currency));
 }
 export function statementMonthExtremes(history=[],currency='ARS'){
-  const months=history.filter(row=>row.currency===currency&&row.statementCount>0&&row.total>0)
+  const months=history.filter(row=>row.currency===currency&&row.statementCount>0&&row.total>=0)
     .sort((a,b)=>a.month.localeCompare(b.month));
   if(!months.length)return {months:[],high:null,low:null,average:null,suggestedLimit:null};
   const high=months.reduce((a,b)=>b.total>a.total?b:a);

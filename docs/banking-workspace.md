@@ -86,3 +86,43 @@ until both a valid new bank/card are selected and the destination differs.
 - QA: move a PDF to a different bank/card; move within one bank; verify
   both old/new card lists; unlink and find it in the pending queue; attempt
   cross-user writes, invalid card/bank pairs, missing links, and error handling.
+
+## Spending guardrail notifications and private Lita context
+
+The user can configure an owner-scoped limit for **ARS** and **USD** and a
+warning threshold (50-95%, default 80%) via the **Alertas de gastos de tarjetas**
+card in Bancos. Real-time subscriptions power a dedicated bank-alert section
+inside the global notifications bell. Warnings and maximum breaches have
+separate identifiers per month and currency, acknowledged in browser
+localStorage; no amounts or financial names are cached there.
+
+The alert evaluates *manual purchases entered during the current calendar
+month*, minus purchases already covered by a linked imported PDF closure for
+that specific card. All banks are included, but ARS/USD remain separate.
+It does not add home-banking snapshots or already-paid statement expenses.
+This is only a partial register, not a bank-authoritative total. In-browser
+toast and optional native browser notification (with user-granted permission)
+work while LTC is open. Background push notifications with app closed require
+a separate push service and are not claimed here.
+
+The history graph/high-low panel uses imported, approved and **linked** PDF
+summaries. Deduplicate by expenseId; use `purchases` per native currency,
+falling back to `totals` only with an explicit "estimated" flag. A month
+without a valid PDF is *missing*, never a zero-spending month. A numerical
+reference of 90% of average of up to six statement months is only an initial
+suggestion, never an automatically applied or guaranteed maximum.
+
+Press **Consultar a Lita sobre mis topes** to open the existing
+`section=banks` assistant. The client passes a sanitized `monthlyCardSpending`
+context containing up to 18 periods per currency, highs/lows, averages and
+budget status. Lita cannot update Firestore or see sensitive banking IDs,
+account numbers, CBU/CVU, CVV or full card numbers.
+
+Date estimates shown for each card use the registered typical closing and
+due days with end-of-month clamping; authoritative future bank-provided
+snapshot dates take priority. A projected date is marked estimated.
+
+Before merging: add only `firestore.rules.bankSpendingBudgets` into the
+existing Firestore owner rules. Do not replace unrelated matches. Verify
+create/read/update for the owner and deny cross-user/invalid writes. A rules
+deployment is not available through GitHub or Vercel in this repository.

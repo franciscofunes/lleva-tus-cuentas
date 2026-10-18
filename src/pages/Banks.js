@@ -137,23 +137,6 @@ function BanksWorkspace({ user }) {
   const litaBankContext = useMemo(() => buildBanksLitaContext({
     banks, accounts, cards, charges, statements, links, history, budgets, manualSpend,
   }), [banks, accounts, cards, charges, statements, links, history, budgets, manualSpend]);
-  // A one-shot alert per month, currency and warning level (no financial
-  // values in browser notifications or persistent local storage).
-  useEffect(()=>{
-    if(!uid||pending)return;
-    budgetStatuses.filter(item=>item.level==='warning'||item.level==='exceeded').forEach(item=>{
-      const key=['ltc-card-spending',uid,item.month,item.currency,item.level].join(':');
-      try{if(window.localStorage.getItem(key))return;window.localStorage.setItem(key,'1');}
-      catch{ /* Private browsing: no persistent deduplication. */ }
-      const title=item.level==='exceeded'?'Llegaste al tope mensual de tarjetas':'Te acercás al tope mensual de tarjetas';
-      toast.warn(title+' · '+item.currency+'. Revisá Bancos.');
-      if(typeof window!=='undefined' && 'Notification' in window && window.Notification.permission==='granted') {
-        try{new window.Notification(title,{body:'Consultá el control mensual de '+item.currency+' en LTC$.',tag:key});}
-        catch{ /* Optional browser notification. */ }
-      }
-    });
-  },[uid,pending,budgetStatuses]);
-
   const unlinked = statements.filter((statement) => !links.some((link) => link.expenseId === statement.expenseId));
   const editingStatement = statements.find((statement) => statement.expenseId === editingStatementExpenseId);
   const editingStatementLink = links.find((link) => link.expenseId === editingStatementExpenseId);
