@@ -179,3 +179,44 @@ The optional transaction location form calls `src/services/litaPlacesService.js`
 An explicitly selected suggestion saves `location: { label, source: 'search', latitude, longitude }`, rounded to 3 decimals; typed but unselected text remains `source: 'manual'` with **no coordinates**. Editing a previously selected label clears stale coordinates. This also updates `hasTransactionCoordinates` so both `search` and `device` are included in the map, but never a plain manual entry. UI shows Geoapify and © OpenStreetMap attribution.
 
 **Manual release gate:** before enabling writes for `source: 'search'`, integrate the additive `firestore.rules.transactionLocation` changes in the live Firestore owner-scoped expenses match, preserving all other rules. Existing default source manual/device must continue to work; no new collection or data migration required. Provision encrypted `GEOAPIFY_API_KEY` in the Lita Vercel project for production, preview and development as appropriate. Without a key, suggestions gracefully fail and manual/GPS entries remain available. Free-tier calls and bandwidth must be monitored.
+
+## Chart visual consistency and geographic drill-down (October 2026)
+
+All eight Transacciones charts share `TransactionChartSurface`, matching
+legacy breakdown cards in typography, spacing, border, light/dark theme, empty
+state and currency formatting. ARS and USD are never added together. Existing
+legacy chart financial formulas remain untouched in this presentation PR.
+
+### Map analytics
+The map retains a **manual opt-in** before requesting OSM raster tiles and
+renders 3 deliberately different views, with a metric switch for **Cantidad**
+versus **Importe**:
+- **Zonas**: zoom-dependent square grid aggregations. Circle size reflects
+  count or spend. Tapping a cluster drills down by two zoom levels; single
+  items open the `Movimientos` detail view.
+- **Concentración**: visual radial intensity proportional to the selected
+  metric, calculated over the same cells in browser memory; **relative** to
+  the maximum bucket in the loaded period, not a geographic prediction or an
+  official administrative neighborhood boundary.
+- **Movimientos**: individual rounded coordinate pins. Multiple transactions
+  at the exact same rounded point are combined into an accessible list, never
+  silently hidden by overlapping pins.
+
+All modes use only owner-loaded individual expense records with a permitted
+`source: search | device`, subject to the existing selected dashboard period
+and filters, and excluding entire credit card statements and FX conversions.
+Manual text-only places do not appear as exact pins. The chart displays the
+number of eligible expenses that have map coordinates and counts missing
+locations honestly. Source data is not modified and no additional Firestore
+collections, rules, or paid map API keys are required. Map tile requests reveal
+only visible map bounds/tiles to OSM; no amounts, names or user IDs are sent.
+Credit remains visible on the map.
+
+### Future scaling
+This grid aggregation is intentionally an MVP for small user portfolios.
+If transaction volume expands materially, evaluate hierarchical H3 grouping
+and MapLibre GeoJSON layers / heatmaps; require licensed vector maps or
+dedicated tile hosting before high traffic. Never label these approximate
+clusters as verified barrios, municipal districts, exact home addresses or
+areas without data. Spatial counts and spending are user-sample summaries,
+not population or regional estimates.
