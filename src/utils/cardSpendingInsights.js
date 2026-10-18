@@ -96,7 +96,24 @@ export function cardMonthManualSpending(charges=[],statements=[],links=[],cards=
     const previous=latestClose.get(link.cardId);
     if(!previous||statement.closingDate>previous)latestClose.set(link.cardId,statement.closingDate);
   });
-  const summary={ARS:0,USD:0,count:0,manualOnly:true,month,scope:'open-card-cycles'};
+  const summary={ARS:0,USD:0,count:0,snapshotCardCount:0,
+    manualOnly:true,month,scope:'open-card-cycles',approximate:true};
+  const baselines=new Map();
+  activeCards.forEach((card,cardId)=>{
+    if(!Number.isInteger(Number(card.closingDay))||Number(card.closingDay)<1||Number(card.closingDay)>31)return;
+    const prior=scheduledPreviousClose(card,now),latest=latestClose.get(cardId);
+    const from=latest&&latest>prior?latest:prior;
+    const snapshot=card.statementSnapshot;
+    if(!snapshot||!validDate(snapshot.asOf)||snapshot.asOf<=from||snapshot.asOf>today)return;
+    for(const currency of ['ARS','USD']){
+      const amount=finiteMoney(snapshot['currentConsumption'+currency]);
+      if(amount===null)continue;
+      baselines.set(cardId+':'+currency,snapshot.asOf);
+      summary[currency]=Math.round((summary[currency]+amount)*100)/100;
+      summary.snapshotCardCount++;
+      summary.manualOnly=false;
+    }
+  });
   charges.forEach(c=>{
     const card=activeCards.get(c.cardId);
     if(!card||card.bankId!==c.bankId||c.source!=='manual'||
@@ -108,6 +125,10 @@ export function cardMonthManualSpending(charges=[],statements=[],links=[],cards=
     const mostRecentClose=latestClose.get(c.cardId);
     const from=mostRecentClose&&mostRecentClose>priorScheduled?mostRecentClose:priorScheduled;
     if(c.purchaseDate<=from)return;
+    // A full bank screenshot is a replacement baseline, not an extra charge.
+    // Never add purchases dated on/before its asOf date twice.
+    const baselineDate=baselines.get(c.cardId+':'+c.currency);
+    if(baselineDate&&c.purchaseDate<=baselineDate)return;
     const n=finiteMoney(c.amount);
     if(n===null)return;
     summary[c.currency]=Math.round((summary[c.currency]+n)*100)/100;
