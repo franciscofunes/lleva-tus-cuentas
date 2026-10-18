@@ -42,7 +42,7 @@ test('ChatGPT Markdown is read-only until bank/card review and explicit final co
  expect(saved[0].snapshot.currentConsumptionARS).toBe(475000);
  expect(saved[0]).toMatchObject({bankId:'ciudad',cardId:'visa'});
  expect(saved[1]).toMatchObject({bankId:'galicia',cardId:'master'});
- expect(onClose).toHaveBeenCalledWith(expect.stringMatching(/Importación confirmada/));
+ await waitFor(()=>expect(onClose).toHaveBeenCalledWith(expect.stringMatching(/Importación confirmada/)));
 });
 
 test('blocks purchases that match an already registered bank/card/date/amount/merchant',()=>{
