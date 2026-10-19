@@ -36,7 +36,7 @@ The targeted GitHub workflow is `.github/workflows/card-statements.yml`, which r
 | Credit-card PDF review | `cardStatementService.js`, `CardStatementPdfReview.js`, Lita API contract, Firestore statements rules and idempotent retry |
 | Portfolio math | `portfolioService.js`, `portfolioEarningsAudit.js`, snapshots, reconciliation transaction tests and ARS/USD separation |
 | Lita chat | `LitaAssitantPanel.js`, `litaChatService.js`, parent and iframe origin checks, Lita `/api/chat` compatibility |
-| Routing/mobile navigation | `src/index.js`, `AnimatedRoutes`, `Navbar`, deep-link Netlify redirect and Android viewport behavior |
+| Routing/mobile navigation | `src/index.js`, `AnimatedRoutes`, `Navbar`, deep-link Vercel rewrite and Android viewport behavior |
 | Exports | `transactionsExport.js` / `portfolioExport.js`, amount formatting, selected filters, downloaded file contents |
 
 ## Firestore rules are a separate deployment
@@ -50,9 +50,9 @@ flowchart TD
     Test -- "No" --> Fix["Fix rule or client data shape"]
     Fix --> Test
     Test -- "Yes" --> Publish["Publish rules via Firebase Console / CLI"]
-    Publish --> Preview["Check Netlify preview with authenticated test users"]
+    Publish --> Preview["Check Vercel Preview with authenticated test users"]
     Preview --> Main["Merge PR after CI and smoke checks"]
-    Main --> Prod["Verify new main commit in Netlify production"]
+    Main --> Prod["Verify new main commit in Vercel Production"]
 ~~~
 
 The repository contains `firestore.rules.portfolio`, `firestore.rules.cardStatements`, `firestore.rules.customCategories` and `firestore.rules.customTransactionDetails` as **reference fragments**. They must **not** be pasted over the full live ruleset. Before UI release, confirm the actual Firestore project, path, allowed fields, ownership, create/update/delete paths, and optional legacy fields. Retest cross-user access, duplicate imports, and updates to existing transactions. The codebase does not automatically publish these rules.
@@ -61,10 +61,10 @@ The repository contains `firestore.rules.portfolio`, `firestore.rules.cardStatem
 
 1. Branch from current `main`; keep the change focused and update the relevant docs.
 2. Write tests for both ordinary and financial edge cases (month boundaries, currency, zero/empty values, duplicate requests, existing records).
-3. Run relevant tests and `npm run build`; require GitHub checks and the **Netlify deploy preview** to finish successfully.
+3. Run relevant tests and `npm run build`; require GitHub checks and the **Vercel Preview** to finish successfully.
 4. Review browser/network behavior using a test user; check light/dark themes, mobile form controls and keyboard overlays where relevant.
 5. For schema changes, **publish verified Firestore rules before merging the UI**, or leave the PR in draft. Use synthetic data, never real statements. For category descriptions, verify that owners may create/edit/clear up to 500 characters, non-owners cannot write, and no arbitrary keys are permitted. Older documents without `description` remain valid.
-6. Merge into `main`; verify the **actual Netlify production deployment commit**, not only a ready branch preview.
+6. Merge into `main`; verify the **actual Vercel Production deployment commit**, not only a ready branch preview.
 7. Smoke-test login, transaction create/edit, portfolio read, Lita iframe and authenticated PDF analysis (if changed).
 
 ## Troubleshooting
@@ -81,3 +81,12 @@ The repository contains `firestore.rules.portfolio`, `firestore.rules.cardStatem
 **Privacy:** never paste ID tokens, whole transaction records, personal bank PDFs or environment secrets into issues, logs or test fixtures. Prefer synthetic fixtures and redacted reproduction steps.
 
 Further reading: [Lita operations](https://github.com/franciscofunes/lita-assitant/blob/main/docs/development.md) and [this repository's architecture](architecture.md).
+
+## Card-spending guardrail UI release checklist
+
+- Verify `src/utils/cardBudgetProgress.test.js` including 70/90/100% visual boundaries, cent accuracy, missing ceiling and overage. This is *presentation* logic; the persisted configurable `warnPercent` remains authoritative for browser/bell alerts.
+- Test `CardSpendingControls` in narrow (360px) and wide viewports, light and dark, ARS and USD, hidden values, unsaved threshold previews, saved alert states, exactly equal limit, and a limit exceeded.
+- Confirm historical comparison is **cyan** even when numerically near a record, and is clearly labeled as a reference, not a safe spending allowance.
+- Update the public landing and authenticated banking module copy in tandem; avoid marketing features not implemented.
+- Any *new external notification transport* must have verified production credentials stored server-side, owner-scoped device subscription rules, explicit opt-in, rate limits, quiet hours, idempotency keys, error/retry handling and secure unsubscription. Do not add `REACT_APP_*` secrets.
+- Verify branch preview & deployed production separately. The PWA manifest existing in `public/manifest.json` **alone** does not enable background push notifications.

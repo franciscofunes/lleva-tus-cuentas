@@ -49,3 +49,20 @@ For financial amounts, keep a visible +/− sign and currency, using rose/red fo
 - On 360–390px mobile, action labels **wrap** instead of clipping (e.g. "Exportar archivos"); the nested chart selector and rows must not cause horizontal overflow.
 - Chart axis labels may be abbreviated for space, but position balances, gain/loss values and transaction data must remain unchanged and exact; axis shortening is display-only.
 - Test Portfolio and Transacciones in both modes after changing any shared widget component. Avoid CSS selectors targeting just one page to paper over common layout issues.
+
+## Credit-card spending visual language
+
+Unlike transaction in/out colors, the user-defined **card ceiling** uses a 4-level *progress risk* palette with semantic labels, explicit remaining/overage in exact cents and accessible progressbar semantics. Never infer real bank credit from the remaining personal budget.
+
+| % used | Visual | Meaning / microcopy |
+| --- | --- | --- |
+| <70% | Emerald (`border-emerald-500/40`, `bg-emerald-50`, `dark:bg-emerald-950/25`) | “Vas bien con tu tope” |
+| 70–<90% | Amber (`border-amber-500/50`, `bg-amber-50`) | “Cuidá tu margen disponible” |
+| 90–<100% | Orange (`border-orange-500/60`, `bg-orange-50`) | “Te queda poco margen” |
+| >=100% | Rose (`border-rose-600/60`, `bg-rose-50`) | “Te pasaste del tope por ...” |
+
+**Historical records** deliberately use cyan (`border-cyan-500/35`, `bg-cyan-50`, `dark:bg-cyan-950/20`) regardless of the personal warning state; the reference is factual, not a personalized recommendation. Keep Lita's budget advice and 90%-of-average suggestion subordinate to actual user-set ceiling.
+
+Mobile contract: use breakable amounts and tabular digits; ARS and USD separate; badge “Vista previa · sin guardar” for edits; clear inline labels beyond hue for color-blind users; progressbar exposes a numerical value. Values must be hidden when privacy mode is on. A missing/invalid limit must never display a fabricated “remaining” amount.
+
+All future push/email/SMS copy must avoid disclosing exact amounts on shared device lock screens by default.
