@@ -392,15 +392,15 @@ function Dashboard() {
         ?.filter((category) => category.isExpense)
         ?.map((category) => category.name);
 
-      const expenses = docs
+      const expenses = filteredDocs
         .filter((doc) => expensesCategories?.includes(doc?.category) && getTransactionCurrency(doc) === 'ARS')
         .map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
 
-      const incomes = docs
+      const incomes = filteredDocs
         .filter((doc) => !expensesCategories?.includes(doc?.category) && getTransactionCurrency(doc) === 'ARS')
         .map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
 
-      const currencyIncome = docs
+      const currencyIncome = filteredDocs
         .filter(
           (doc) =>
             categoryContains(doc, "Compra divisas") ||
@@ -411,7 +411,7 @@ function Dashboard() {
           return isNaN(currencyQuantity) ? 0 : currencyQuantity;
         });
 
-      const currencySale = docs
+      const currencySale = filteredDocs
         .filter((doc) => categoryContains(doc, "Venta divisas"))
         .map((doc) => {
           const currencyQuantity = parseFloat(doc?.currencyQuantity);
@@ -440,7 +440,7 @@ function Dashboard() {
           expenses?.reduce((acc, item) => acc + item, 0).toFixed(2)
       );
     }
-  }, [docs, categories]);
+  }, [filteredDocs, categories]);
 
   const overview = useMemo(
     () => buildTransactionOverview(filteredDocs, categories || []),
@@ -450,7 +450,7 @@ function Dashboard() {
   const litaTransactionContext = useMemo(
     () => ({
       scope: "current-view",
-      spendingByCategory: summarizeSpendingByCategory(docs || [], categories || []),
+      spendingByCategory: summarizeSpendingByCategory(filteredDocs, categories || []),
       categories: (categories || []).filter((entry) => entry.active !== false)
         .map(({ name, isExpense, currency }) => ({ name, isExpense: Boolean(isExpense), currency: currency === 'USD' ? 'USD' : 'ARS' })),
       summary: {
@@ -459,7 +459,7 @@ function Dashboard() {
         balanceArs: Number(total || 0),
         investmentUsd: Number(currencyIncome || 0),
       },
-      transactions: (docs || []).slice(0, 50).map((doc) => ({
+      transactions: filteredDocs.slice(0, 50).map((doc) => ({
         name: doc.expenseName || "",
         category: doc.category || "",
         amount: Number(doc.amount || 0),
@@ -470,7 +470,7 @@ function Dashboard() {
         currencyExchangeRate: Number(doc.currencyExchangeRate || 0),
       })),
     }),
-    [categories, currencyIncome, docs, expense, income, total]
+    [categories, currencyIncome, filteredDocs, expense, income, total]
   );
 
   useEffect(() => {
@@ -660,7 +660,7 @@ function Dashboard() {
           >
             <ExpenseFilter onPeriodChange={setSelectedPeriodInfo} />
             <BimonetarySummary
-              docs={docs}
+              docs={filteredDocs}
               categories={categories}
               userId={user?.uid}
               isLoading={isDataFetching}
@@ -758,7 +758,7 @@ function Dashboard() {
               <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center dark:border-slate-600 dark:bg-slate-900/50" role="status">
                 <p className="font-bold text-slate-900 dark:text-slate-100">No encontramos movimientos</p>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                  Probá con menos palabras, otra categoría o buscá en todo el historial.
+                  Los resúmenes, gráficos y Lita también usan los filtros activos. Probá otra categoría o consultá todo el historial.
                 </p>
                 {hasActiveSearch && (
                   <button type="button" onClick={clearTransactionFilters}
@@ -774,6 +774,7 @@ function Dashboard() {
                 <div key={doc.id}>
                   <Card
                     id={doc.id}
+                    hideValues={!isDataVisible}
                     name={doc.expenseName}
                     amount={doc.amount}
                     transactionCurrency={doc.transactionCurrency}

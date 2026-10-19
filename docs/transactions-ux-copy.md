@@ -30,3 +30,11 @@ Explain the current user's **recorded transactions** with a clear distinction fr
 | Missing PDF months | Todavía no hay resúmenes para comparar meses | Un período sin PDF no equivale a cero |
 
 Never conflate visual 70/90/100% thresholds with the separately configurable notification threshold. Mark outside-site email/SMS/closed-app push as **not yet available**. Use Argentine Spanish throughout the consumer UI.
+
+## Fase 1: alcance, privacidad y eliminaciones (2026-10)
+
+- La consulta del período trae `docs`; búsqueda/categoría/tipo producen `filteredDocs`. KPIs, resumen por moneda, gráficos, lista, exportaciones y contexto de Lita utilizan **el mismo conjunto filtrado**. El portfolio continúa siendo una posición actual independiente y no se filtra por movimientos.
+- `Comparativa ARS` ignora registros cuyo `transactionCurrency` es USD y fechas inválidas. Jamás sumar USD a ARS sin cotización explícita.
+- Ocultar importes también oculta los valores en cada Card, cantidades/cotizaciones de divisas, metadatos adicionales y el acceso al detalle PDF. El contenido de la transacción y su descripción pueden seguir visibles; la exportación y los datos consultados explícitamente a Lita contienen valores reales (la advertencia existente debe mantenerse).
+- Eliminar un movimiento es irreversible en el flujo actual: confirmar antes de ejecutar la acción en Firestore. Cancelar no despacha ninguna mutación. Un futuro deshacer requiere soft-delete y restauración segura de notificaciones/links.
+- Estos cambios no reescriben historiales, no alteran reglas de Firestore ni duplican consumos en el presupuesto.

@@ -9,9 +9,15 @@ jest.mock('../shared/config/firebase/firebase.config', () => ({
   firestore: { collection: jest.fn() },
 }));
 
+const mockDispatch = jest.fn();
 jest.mock('react-redux', () => ({
-  useDispatch: () => jest.fn(),
+  useDispatch: () => mockDispatch,
 }));
+jest.mock('../actionCreators/databaseActions', () => ({
+  deleteCardAction: jest.fn(id => ({ type: 'DELETE_REQUEST', id })),
+}));
+const { deleteCardAction } = require('../actionCreators/databaseActions');
+
 jest.mock('./CardStatementDetails', () => () => null);
 jest.mock('./InfoTooltip', () => ({ content }) => <span data-testid='category-tooltip'>{content}</span>);
 
@@ -200,4 +206,52 @@ test('legacy category without a description never creates an empty tooltip', () 
   render(<Card {...basicProps} category='Antigua'
     categories={[{ name: 'Antigua', isExpense: true }]} />);
   expect(screen.queryByTestId('category-tooltip')).not.toBeInTheDocument();
+});
+
+describe('transaction safety after audit', () => {
+  beforeEach(() => { mockDispatch.mockClear(); deleteCardAction.mockClear(); });
+
+  test('privacy hides amount and FX fields, keeps edit action available', () => {
+    render(<Card {...basicProps} hideValues category='Compra divisas' currencyQuantity='100'
+      currencyExchangeRate='1580.64' categories={[{ name: 'Compra divisas', isExpense: true }]} />);
+    expect(screen.getAllByText('••••••').length).toBeGreaterThanOrEqual(3);
+    expect(screen.queryByText(/1,?250/)).not.toBeInTheDocument();
+    expect(screen.queryByText('$USD 100')).not.toBeInTheDocument();
+    expect(screen.queryByText('$AR 1580.64')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar Movimiento importado' })).toBeInTheDocument();
+  });
+
+  test('privacy also masks USD income and hides custom details and PDF drilldown', () => {
+    const { rerender } = render(<Card {...basicProps} hideValues category='Ingreso divisas'
+      currencyQuantity='9753.22' customDetails={{ reference:'EXTRAS-IMPORTANTES' }}
+      categories={[{name:'Ingreso divisas',isExpense:false}]} />);
+    expect(screen.getByText('••••••')).toBeInTheDocument();
+    expect(screen.queryByText('$USD 9753.22')).not.toBeInTheDocument();
+    expect(screen.queryByText('EXTRAS-IMPORTANTES')).not.toBeInTheDocument();
+    rerender(<Card {...basicProps} hideValues category='Resumen tarjeta 💳'
+      categories={[{name:'Resumen tarjeta 💳',isExpense:true}]} />);
+    expect(screen.queryByText('Ver consumos del resumen')).not.toBeInTheDocument();
+  });
+
+  test('cancel delete keeps Firestore untouched', () => {
+    const ask = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    try {
+      render(<Card {...basicProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Eliminar Movimiento importado' }));
+      expect(ask).toHaveBeenCalledWith(expect.stringContaining('no se puede deshacer'));
+      expect(deleteCardAction).not.toHaveBeenCalled();
+      expect(mockDispatch).not.toHaveBeenCalled();
+    } finally { ask.mockRestore(); }
+  });
+
+  test('approved delete dispatches exactly once for the selected transaction', () => {
+    const ask = jest.spyOn(window, 'confirm').mockReturnValue(true);
+    try {
+      render(<Card {...basicProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Eliminar Movimiento importado' }));
+      expect(deleteCardAction).toHaveBeenCalledWith('test-movement');
+      expect(mockDispatch).toHaveBeenCalledWith({ type:'DELETE_REQUEST',id:'test-movement' });
+      expect(mockDispatch).toHaveBeenCalledTimes(1);
+    } finally { ask.mockRestore(); }
+  });
 });

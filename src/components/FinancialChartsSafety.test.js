@@ -8,7 +8,7 @@ import IncomeExpenseLineChart from './IncomeExpenseLineChart';
 import IngresoDivisasLineChart from './IngresoDivisasLineChart';
 
 jest.mock('@tremor/react', () => ({
-  AreaChart: ({ data }) => <div data-testid='line-chart'>Puntos: {data.length}</div>,
+  AreaChart: ({ data }) => <div data-testid='line-chart'>Puntos: {data.length} {JSON.stringify(data)}</div>,
 }));
 
 const movements = [
@@ -47,4 +47,23 @@ test('income chart preserves classification of valid categories', () => {
 test('no categories or movements never crash a chart', () => {
   expect(() => render(<BarChartWrapper chartData={null} categories={null} />)).not.toThrow();
   expect(screen.getByText(/No hay movimientos registrados/)).toBeInTheDocument();
+});
+
+test('ARS comparison excludes USD transactions, even in same category and month', () => {
+  const records = [
+    { category:'Comida',amount:1000,transactionCurrency:'ARS',selectedDate:'2026-10-09' },
+    { category:'Comida',amount:500,transactionCurrency:'USD',selectedDate:'2026-10-09' },
+    { category:'Trabajo',amount:2500,transactionCurrency:'ARS',selectedDate:'2026-10-10' },
+    { category:'Trabajo',amount:900,transactionCurrency:'USD',selectedDate:'2026-10-10' },
+    { category:'Comida',amount:700,transactionCurrency:'ARS',selectedDate:'bad-date' },
+  ];
+  render(<IncomeExpenseLineChart chartData={records} categories={[
+    {name:'Comida',isExpense:true},{name:'Trabajo',isExpense:false}
+  ]} />);
+  const chart=screen.getByTestId('line-chart');
+  expect(chart).toHaveTextContent('"Gastos":1000');
+  expect(chart).toHaveTextContent('"Ingresos":2500');
+  expect(chart).not.toHaveTextContent('"Gastos":1500');
+  expect(chart).not.toHaveTextContent('"Ingresos":3400');
+  expect(chart).toHaveTextContent('Puntos: 1');
 });
