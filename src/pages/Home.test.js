@@ -52,7 +52,19 @@ describe('LTC landing', () => {
     expect(screen.getByRole('contentinfo')).toHaveClass('dark:bg-gray-900');
   });
 
-  it('does not present decorative sample charts as real account balances', () => {
+  it('shows banking, card budgets, imports, worldwide maps, dates and honest notification limits', () => {
+    renderHome();
+    expect(screen.getByRole('heading', { name: 'Todas tus tarjetas. Un presupuesto que entendés.' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Alertas de gastos de tarjetas' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Mapa mundial de movimientos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Resúmenes y capturas' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Vencimientos y recordatorios' })).toBeInTheDocument();
+    expect(screen.getByText(/Las notificaciones push con la aplicación cerrada todavía no están disponibles/)).toBeInTheDocument();
+    expect(screen.getByText(/Valores ilustrativos, no datos de una cuenta real/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Empezar a controlar mis tarjetas/ })).toHaveAttribute('href','/registrarse');
+  });
+
+    it('does not present decorative sample charts as real account balances', () => {
     renderHome();
     expect(screen.getByText('Vista ilustrativa')).toBeInTheDocument();
     expect(screen.queryByText(/ganancias garantizadas/i)).not.toBeInTheDocument();
