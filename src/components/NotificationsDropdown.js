@@ -15,6 +15,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { getPaymentDataAction } from '../actionCreators/databaseActions';
+import { subscribeBankBudgets } from '../services/bankBudgetService';
+import { cardMonthManualSpending, budgetStatus, statementMonthlyHistory, historicalPeakStatus } from '../utils/cardSpendingInsights';
 import {
 	backfillExpenseNotifications,
 	markNotificationRead,
@@ -261,6 +263,13 @@ const NotificationDropdown = () => {
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [subscriptionNoticeRead, setSubscriptionNoticeRead] = useState(false);
 	const [notifications, setNotifications] = useState([]);
+	const [cardBudgets,setCardBudgets] = useState([]);
+	const [cardBudgetOwner,setCardBudgetOwner]=useState(null);
+	const [cardCharges,setCardCharges] = useState([]);
+	const [cardCards,setCardCards] = useState([]);
+	const [cardStatements,setCardStatements] = useState([]);
+	const [cardLinks,setCardLinks] = useState([]);
+	const [budgetReadTick,setBudgetReadTick] = useState(0);
 	const [notificationsLoading, setNotificationsLoading] = useState(true);
 	const [notificationsError, setNotificationsError] = useState(false);
 	const [selectedNotification, setSelectedNotification] = useState(null);
@@ -293,6 +302,87 @@ const NotificationDropdown = () => {
 		[notifications]
 	);
 
+
+	useEffect(()=>{
+		if(!user?.uid){setCardBudgetOwner(null);setCardBudgets([]);return undefined;}
+		let active=true;
+		setCardBudgetOwner(null);
+		setCardBudgets([]);
+		try {
+			const unsubscribe=subscribeBankBudgets(user.uid,(items)=>{
+				if(!active)return;
+				setCardBudgetOwner(user.uid);setCardBudgets(items);
+			},()=>{if(active){setCardBudgetOwner(null);setCardBudgets([]);}});
+			return ()=>{active=false;unsubscribe?.();};
+		}catch {
+			setCardBudgetOwner(null);
+			setCardBudgets([]);
+			return ()=>{active=false;};
+		}
+	},[user?.uid]);
+	useEffect(()=>{
+		if(!user?.uid||cardBudgetOwner!==user.uid||!cardBudgets.some(b=>b.enabled))return undefined;
+		let active=true;
+		let stops=[];
+		// Bank service imports Firebase. Load it only after a user has explicitly
+		// configured budgets so the navbar doesn't initialize bank auth eagerly.
+		import('../services/bankingService').then(service=>{
+			if(!active)return;
+			const guarded=setter=>items=>{if(active)setter(items);};
+			const fail=()=>{};
+			stops=[
+				service.subscribeBankCards(user.uid,guarded(setCardCards),fail),
+				service.subscribeBankCharges(user.uid,guarded(setCardCharges),fail),
+				service.subscribeImportedStatements(user.uid,guarded(setCardStatements),fail),
+				service.subscribeBankStatementLinks(user.uid,guarded(setCardLinks),fail),
+			];
+		}).catch(()=>{if(active){setCardCards([]);setCardCharges([]);setCardStatements([]);setCardLinks([]);}});
+		return ()=>{active=false;stops.forEach(stop=>stop?.());};
+	},[user?.uid,cardBudgets,cardBudgetOwner]);
+	const cardSpend=useMemo(()=>cardMonthManualSpending(cardCharges,cardStatements,cardLinks,cardCards),
+		[cardCharges,cardStatements,cardLinks,cardCards]);
+	const cardHistory=useMemo(()=>statementMonthlyHistory(cardStatements,cardLinks,cardCards),
+		[cardStatements,cardLinks,cardCards]);
+	const budgetNotices=useMemo(()=>{
+		const configs=cardBudgetOwner===user?.uid?cardBudgets.filter(b=>b.enabled):[];
+		return configs.flatMap(config=>{
+			const custom=budgetStatus(cardSpend,config,config.currency,cardSpend.month);
+			const historical=historicalPeakStatus(cardSpend,cardHistory,config.currency);
+			const events=[];
+			if(custom&&['warning','exceeded'].includes(custom.level))
+				events.push({...custom,type:'budget',noticeId:['ltc-card-budget',user.uid,custom.month,config.currency,custom.level].join(':')});
+			if(historical&&['warning','critical','exceeded'].includes(historical.level))
+				events.push({...historical,type:'historical',noticeId:['ltc-card-record',user.uid,historical.month,config.currency,historical.level].join(':')});
+			return events;
+		});
+	},[cardBudgetOwner,cardBudgets,user?.uid,cardSpend,cardHistory]);
+	const unreadBudgetNotices=useMemo(()=>budgetNotices.filter(s=>{
+		try{return window.localStorage.getItem('ltc-budget-seen:'+s.noticeId)!=='1';}
+		catch{return true;}
+	}),[budgetNotices,budgetReadTick]);
+	useEffect(()=>{
+		if(!user?.uid)return;
+		budgetNotices.forEach(notice=>{
+			const key=notice.noticeId;
+			try{if(window.localStorage.getItem(key))return;window.localStorage.setItem(key,'1');}
+			catch{ /* Nonpersistent toast remains available. */ }
+			const title=notice.type==='historical'
+				?(notice.level==='exceeded'?'Igualaste o superaste tu máximo histórico de tarjetas':notice.level==='critical'?'Ojo: estás muy cerca del máximo histórico':'Te acercás al máximo histórico de tarjetas')
+				:(notice.level==='exceeded'?'Llegaste al tope mensual de tarjetas':'Te acercás al tope mensual de tarjetas');
+			toast.warn(title+' · '+notice.currency+'. Revisá Bancos.');
+			if(typeof window!=='undefined' && 'Notification' in window && window.Notification.permission==='granted'){
+				try{new window.Notification(title,{body:'Revisá los gastos de tarjetas en LTC$.',tag:key});}
+				catch{ /* Native notifications are optional. */ }
+			}
+		});
+	},[user?.uid,budgetNotices]);
+	const openBudgetNotice=(notice)=>{
+		try{window.localStorage.setItem('ltc-budget-seen:'+notice.noticeId,'1');}catch{}
+		setBudgetReadTick(n=>n+1);
+		setShowDropdown(false);
+		navigate('/bancos');
+	};
+
 	const paidReminders = useMemo(() => {
 		const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
 		return notifications
@@ -316,7 +406,7 @@ const NotificationDropdown = () => {
 	const unreadReminderCount = activeReminders.filter((item) => !item.readAt).length;
 	const unreadSubscriptionCount =
 		hasSubscriptionNotice && !subscriptionNoticeRead ? 1 : 0;
-	const unreadCount = unreadReminderCount + unreadSubscriptionCount;
+	const unreadCount = unreadReminderCount + unreadSubscriptionCount + unreadBudgetNotices.length;
 
 	useEffect(() => {
 		if (user) {
@@ -511,7 +601,7 @@ const NotificationDropdown = () => {
 										Notificaciones
 									</p>
 									<p className='mt-0.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400'>
-										Vencimientos próximos y hasta 10 días posteriores.
+										Vencimientos y alertas de presupuestos de tarjetas.
 									</p>
 								</div>
 								{activeReminders.length > 0 && (
@@ -532,11 +622,22 @@ const NotificationDropdown = () => {
 								</div>
 							) : (
 								<>
+									{budgetNotices.length>0 && <div className='mt-3 space-y-2'>
+									  <p className='px-1 pb-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400'>Alertas de tarjetas</p>
+									  {budgetNotices.map(notice=><button key={notice.noticeId} type='button' role='menuitem'
+									    onClick={()=>openBudgetNotice(notice)}
+									    className='w-full rounded-xl border border-amber-400/40 bg-amber-50 px-3 py-3 text-left text-xs text-amber-900 dark:bg-amber-900/20 dark:text-amber-200'>
+									    <strong>{notice.type==='historical'?
+									      (notice.level==='exceeded'?'Récord de consumo alcanzado':notice.level==='critical'?'Muy cerca del récord':'Acercándote al récord'):
+									      (notice.level==='exceeded'?'Tope elegido alcanzado':'Aviso del tope elegido')} · {notice.currency}</strong>
+									    <span className='mt-1 block'>{notice.percentage}% {notice.type==='historical'?'del máximo histórico registrado':'de tu límite elegido'} · consumos del ciclo actual (parciales). Ver Bancos →</span>
+									  </button>)}
+									</div>}
 									{renderReminderGroup('Vencidos', overdue)}
 									{renderReminderGroup('Vence hoy', today)}
 									{renderReminderGroup('Próximos', upcoming)}
 									{renderReminderGroup('Pagadas recientemente', paidReminders)}
-									{activeReminders.length === 0 && paidReminders.length === 0 && (
+									{activeReminders.length === 0 && paidReminders.length === 0 && budgetNotices.length===0 && (
 										<div className='my-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-center dark:border-slate-700 dark:bg-slate-800/50'>
 											<FaCheckCircle className='mx-auto h-5 w-5 text-emerald-500' />
 											<p className='mt-2 text-sm font-bold text-slate-700 dark:text-slate-200'>

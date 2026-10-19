@@ -35,3 +35,20 @@ test('do not infer amounts or expose unrelated banks and invalid numbers',()=>{
   expect(context.banks).toHaveLength(1);
   expect(context.cards[0].referenceSnapshot).toEqual({});
 });
+
+test('Lita banks context includes monthly high/low and proposed limits, never raw IDs',()=>{
+  const context=buildBanksLitaContext({
+    banks:[{code:'bank-secret',name:'Banco X',active:true}],
+    cards:[{id:'card-private',bankId:'bank-secret',nickname:'Visa',brand:'Visa',closingDay:20,dueDay:8}],
+    history:[{month:'2026-08',currency:'ARS',total:5000,statementCount:1},
+      {month:'2026-09',currency:'ARS',total:3000,statementCount:2}],
+    manualSpend:{ARS:2100,USD:0,month:'2026-10'},
+    budgets:[{currency:'ARS',enabled:true,limit:2500,warnPercent:80}],
+  });
+  const ars=context.monthlyCardSpending.byCurrency.find(v=>v.currency==='ARS');
+  expect(ars.highest).toEqual({month:'2026-08',amount:5000});
+  expect(ars.lowest).toEqual({month:'2026-09',amount:3000});
+  expect(ars.userBudget.status).toBe('warning');
+  expect(JSON.stringify(context)).not.toContain('card-private');
+  expect(JSON.stringify(context)).not.toContain('bank-secret');
+});

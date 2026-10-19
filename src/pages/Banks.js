@@ -7,6 +7,8 @@ import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEy
 import GenericModal from '../components/GenericModal';
 import BankOnboardingForm from '../components/BankOnboardingForm';
 import StatementLinkEditor from '../components/StatementLinkEditor';
+import CardSpendingControls from '../components/CardSpendingControls';
+import CardConsumptionMarkdownImporter from '../components/CardConsumptionMarkdownImporter';
 import FloatingMenu from '../components/FloatingMenu';
 import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -22,11 +24,13 @@ import {
   subscribeBanks, subscribeBankAccounts, subscribeBankCards, subscribeBankCharges,
   subscribeBankStatementLinks, subscribeImportedStatements,
   createBankBundle, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge,
-  deleteManualCardCharge, saveStatementBankLink, reassignStatementBankLink, unlinkStatementBank,
+  deleteManualCardCharge, importReviewedCardConsumptionMarkdown, saveStatementBankLink, reassignStatementBankLink, unlinkStatementBank,
 } from '../services/bankingService';
 import { sumBankBalances, statementForCard } from '../utils/bankingModel';
 import { suggestCardForImportedStatement } from '../utils/bankLinkSuggestions';
 import { buildBanksLitaContext } from '../utils/banksLitaContext';
+import { subscribeBankBudgets, saveBankBudget } from '../services/bankBudgetService';
+import { statementMonthlyHistory, cardMonthManualSpending, cardCycleDates, budgetStatus } from '../utils/cardSpendingInsights';
 
 const initialAccount = { bankId: '', name: 'Caja de ahorro', type: 'caja_ahorro', currency: 'ARS', balance: '0', alias: '', cbu: '' };
 const initialCard = { bankId: '', nickname: '', brand: 'Visa', lastFour: '', closingDay: '25', dueDay: '10' };
@@ -60,6 +64,10 @@ function BanksWorkspace({ user }) {
   const [charges, setCharges] = useState([]);
   const [statements, setStatements] = useState([]);
   const [links, setLinks] = useState([]);
+  const [budgets, setBudgets] = useState([]);
+  const [budgetError, setBudgetError] = useState(false);
+  const [budgetCollapsed,setBudgetCollapsed] = useState(false);
+  const [showConsumptionImporter,setShowConsumptionImporter] = useState(false);
   const [pending, setPending] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -99,7 +107,7 @@ function BanksWorkspace({ user }) {
 
   useEffect(() => {
     setBanks([]); setAccounts([]); setCards([]); setCharges([]);
-    setStatements([]); setLinks([]); setPending(true); setError('');
+    setStatements([]); setLinks([]); setBudgets([]); setBudgetError(false); setPending(true); setError('');
     if (!uid) return undefined;
     let active = true;
     const received = new Set();
@@ -118,14 +126,19 @@ function BanksWorkspace({ user }) {
       connect(4, subscribeImportedStatements, setStatements),
       connect(5, subscribeBankStatementLinks, setLinks),
     ];
+    const budgetStop=subscribeBankBudgets(uid,(items)=>{if(active){setBudgets(items);setBudgetError(false);}},()=>{if(active)setBudgetError(true);});
     const unsubscribeCategories = dispatch(getCategoriesDataAction(uid));
-    return () => { active = false; clean.forEach((stop) => stop?.()); unsubscribeCategories?.(); };
+    return () => { active = false; clean.forEach((stop) => stop?.()); budgetStop?.(); unsubscribeCategories?.(); };
   }, [dispatch, uid]);
 
   const totals = useMemo(() => sumBankBalances(accounts), [accounts]);
+  const history=useMemo(()=>statementMonthlyHistory(statements,links,cards),[statements,links,cards]);
+  const manualSpend=useMemo(()=>cardMonthManualSpending(charges,statements,links,cards),[charges,statements,links,cards]);
+  const budgetStatuses=useMemo(()=>['ARS','USD'].map(currency=>budgetStatus(manualSpend,
+    budgets.find(item=>item.currency===currency),currency,manualSpend.month)).filter(Boolean),[manualSpend,budgets]);
   const litaBankContext = useMemo(() => buildBanksLitaContext({
-    banks, accounts, cards, charges, statements, links,
-  }), [banks, accounts, cards, charges, statements, links]);
+    banks, accounts, cards, charges, statements, links, history, budgets, manualSpend,
+  }), [banks, accounts, cards, charges, statements, links, history, budgets, manualSpend]);
   const unlinked = statements.filter((statement) => !links.some((link) => link.expenseId === statement.expenseId));
   const editingStatement = statements.find((statement) => statement.expenseId === editingStatementExpenseId);
   const editingStatementLink = links.find((link) => link.expenseId === editingStatementExpenseId);
@@ -282,6 +295,20 @@ function BanksWorkspace({ user }) {
               </p>
             </CollapsibleSection>
 
+            <CollapsibleSection id='bank-spending-alerts' eyebrow='Control mensual'
+              title='Alertas de gastos de tarjetas'
+              description='Topes en ARS y USD, mayores y menores consumos y análisis con Lita'
+              collapsed={budgetCollapsed} onToggle={()=>setBudgetCollapsed(v=>!v)} className='mb-5'>
+              {budgetError && <p role='alert' className='mb-3 rounded-xl border border-amber-400/50 p-3 text-xs text-amber-700 dark:text-amber-300'>
+                No se pudo cargar la configuración de topes. Revisá las reglas de Firestore para bankSpendingBudgets.
+              </p>}
+              <CardSpendingControls budgets={budgets} statuses={budgetStatuses} history={history}
+                spent={manualSpend} canShowValues={showValues}
+                onSave={(currency,values)=>saveBankBudget(uid,currency,values)}
+                onAskLita={()=>setShowLita(true)}
+                onImportMarkdown={()=>setShowConsumptionImporter(true)}/>
+            </CollapsibleSection>
+
             <CollapsibleSection
               id='bank-management'
               eyebrow='Actividad'
@@ -412,6 +439,11 @@ function BanksWorkspace({ user }) {
                       onToggle={() => setOpenCard((value) => value === card.id ? null : card.id)}>
                       <div className='min-w-0 space-y-3'>
                         <button type='button' className={secondary} onClick={() => startCard(id, card)}>Editar tarjeta</button>
+                         <div className='rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs dark:border-slate-700 dark:bg-slate-900/50'>
+                           <p className='font-bold'>Próximo cierre: {cardCycleDates(card).closingDate || 'Sin fecha'}</p>
+                           <p className='mt-1'>Próximo vencimiento: {cardCycleDates(card).dueDate || 'Sin fecha'}</p>
+                           {cardCycleDates(card).estimated && <p className='mt-1 text-amber-700 dark:text-amber-300'>Estimado por los días habituales; confirmá las fechas reales en el banco.</p>}
+                         </div>
                         {card.statementSnapshot && <div className='grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs dark:border-slate-700 dark:bg-slate-900/50'>
                           {[
                             ['lastStatementARS','Último resumen ARS','ARS'],['lastStatementUSD','Último resumen USD','USD'],
@@ -428,6 +460,7 @@ function BanksWorkspace({ user }) {
                         <div className='flex flex-wrap items-center justify-between gap-2'>
                           <h4 className='font-bold'>Consumos registrados</h4>
                           <button type='button' className={secondary} onClick={() => startCharge(card)}><FiPlus/> Agregar consumo manual</button>
+                          <button type='button' className={secondary} onClick={()=>setShowConsumptionImporter(true)}><FiUploadCloud/> Importar Markdown de consumos</button>
                         </div>
                         <p className='text-xs text-slate-600 dark:text-slate-300'>Estos consumos no crean gastos de Transacciones. Los resúmenes analizados se presentan aparte.</p>
                         {chargesForCard(card.id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>No hay consumos manuales.</p>}
@@ -559,6 +592,22 @@ function BanksWorkspace({ user }) {
               if (success) toast.success(success);
             }}
             closeModal={() => setEditingStatementExpenseId(null)}
+          />
+        )}
+        {showConsumptionImporter && (
+          <GenericModal
+            show={showConsumptionImporter}
+            dialogLabel='Importar consumos desde capturas mediante Markdown'
+            component={CardConsumptionMarkdownImporter}
+            banks={banks}
+            cards={cards}
+            charges={charges}
+            onSave={(reviewed)=>importReviewedCardConsumptionMarkdown(uid,reviewed)}
+            onClose={(success)=>{
+              setShowConsumptionImporter(false);
+              if(success)toast.success(success);
+            }}
+            closeModal={()=>setShowConsumptionImporter(false)}
           />
         )}
         <GenericModal

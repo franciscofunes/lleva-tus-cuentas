@@ -86,3 +86,97 @@ until both a valid new bank/card are selected and the destination differs.
 - QA: move a PDF to a different bank/card; move within one bank; verify
   both old/new card lists; unlink and find it in the pending queue; attempt
   cross-user writes, invalid card/bank pairs, missing links, and error handling.
+
+## Spending guardrail notifications and private Lita context
+
+The user can configure an owner-scoped limit for **ARS** and **USD** and a
+warning threshold (50-95%, default 80%) via the **Alertas de gastos de tarjetas**
+card in Bancos. Real-time subscriptions power a dedicated bank-alert section
+inside the global notifications bell. Warnings and maximum breaches have
+separate identifiers per month and currency, acknowledged in browser
+localStorage; no amounts or financial names are cached there.
+
+The alert evaluates *manual purchases entered during the current calendar
+month*, minus purchases already covered by a linked imported PDF closure for
+that specific card. All banks are included, but ARS/USD remain separate.
+It does not add home-banking snapshots or already-paid statement expenses.
+This is only a partial register, not a bank-authoritative total. In-browser
+toast and optional native browser notification (with user-granted permission)
+work while LTC is open. Background push notifications with app closed require
+a separate push service and are not claimed here.
+
+The history graph/high-low panel uses imported, approved and **linked** PDF
+summaries. Deduplicate by expenseId; use `purchases` per native currency,
+falling back to `totals` only with an explicit "estimated" flag. A month
+without a valid PDF is *missing*, never a zero-spending month. A numerical
+reference of 90% of average of up to six statement months is only an initial
+suggestion, never an automatically applied or guaranteed maximum.
+
+Press **Consultar a Lita sobre mis topes** to open the existing
+`section=banks` assistant. The client passes a sanitized `monthlyCardSpending`
+context containing up to 18 periods per currency, highs/lows, averages and
+budget status. Lita cannot update Firestore or see sensitive banking IDs,
+account numbers, CBU/CVU, CVV or full card numbers.
+
+Date estimates shown for each card use the registered typical closing and
+due days with end-of-month clamping; authoritative future bank-provided
+snapshot dates take priority. A projected date is marked estimated.
+
+Before merging: add only `firestore.rules.bankSpendingBudgets` into the
+existing Firestore owner rules. Do not replace unrelated matches. Verify
+create/read/update for the owner and deny cross-user/invalid writes. A rules
+deployment is not available through GitHub or Vercel in this repository.
+
+## ChatGPT screenshot-to-Markdown card spending import (PR #215)
+
+This user workflow deliberately uses ChatGPT **outside** LTC to read user-supplied
+home-banking screenshots; LTC never runs OCR or sends screenshots to Lita.
+The `src/components/CardConsumptionMarkdownImporter.js` dialog provides a
+copyable prompt, a strict Markdown parser with preview, explicit bank/card
+selection on every record, and explicit final confirmation. The user should
+obscure PAN, CBU, CVV and credentials before uploading screenshots.
+
+`- type: snapshot` represents the bank's **current aggregate card consumption**
+as of `fechaConsulta`; fields `consumosARS`, `consumosUSD`, `cierre`,
+`vencimiento` are independently optional except for the date and at least
+one consumption amount. A snapshot atomically **replaces** the current
+`statementSnapshot` reference on the selected existing `bankCards` record.
+Unknown or older currency totals do not get copied to a newer as-of date,
+and an older screenshot cannot overwrite newer card consumption data.
+It does not create a charge or a transaction and is never added to historic
+imported PDF purchases.
+
+`- type: charge` represents an **individual confirmed purchase** only when
+the screenshot actually lists one: commerce, date, currency, amount, and
+installments, optional operation reference. Approved purchases are stored in
+existing `bankCardCharges` with `countedInCashFlow:false` and
+`source:manual`. If a PDF contains that purchase or it is already covered
+by the latest bank screenshot totals, its amount is **not added again** to
+the alert baseline. Existing nearly identical charges are flagged and
+blocked in UI; deterministic SHA-256 owner-scoped imported document IDs and
+a Firestore transaction make exact Markdown retries idempotent across devices.
+The optional reference disambiguates legitimate distinct purchases that
+would otherwise look identical. Imports are limited to 10 items and are
+atomic, so they either commit all reviewed entries or none.
+
+An alert's "current spending" sums the freshest `currentConsumptionARS/USD`
+per card only when its `asOf` is within the current estimated card closing
+cycle, plus strictly **later-dated** manual purchases not already in that
+snapshot. It never sums a bank snapshot with all preceding manual charges,
+nor adds historic summary PDFs to current spending. Cards with no screenshot
+fall back to manually recorded purchases in their open cycle. Both figures
+can be incomplete; historical PDF months and bank card cycles are not
+perfectly aligned.
+
+The separate **historical maximum** signal compares the partial,
+cross-bank per-currency current cycle to the highest eligible monthly
+aggregate from linked reviewed statement PDFs, with warnings at 80%, 95%
+and 100% of that reference. Historical peaks are not affordability targets.
+The user can pick a more conservative personal budget after consulting
+Lita's existing LLM providers. Warnings are deterministic and require
+an open LTC session; no LLM call is triggered on every card purchase.
+
+No new Firestore fields or collections are required for the screenshot
+importer; it uses existing bankCards update and bankCardCharges create rules.
+The separate owner-only `bankSpendingBudgets` rules fragment is still the
+manual release gate for the **new configurable budgets** in PR #215.

@@ -1,0 +1,23 @@
+// ADDITIVE OWNER-SCOPED FRAGMENT ONLY. Insert inside your EXISTING
+// service cloud.firestore match /databases/{database}/documents.
+// This collection does not contain bank credentials or full card numbers.
+// Deploy manually before merging the new LTC UI; do NOT replace other rules.
+match /users/{uid}/bankSpendingBudgets/{currency} {
+  function ownerBudget() {
+    return request.auth != null && request.auth.uid == uid;
+  }
+  function validBudget() {
+    let d=request.resource.data;
+    return currency in ['ARS','USD']
+      && d.keys().hasAll(['currency','limit','warnPercent','enabled','updatedAt'])
+      && d.keys().hasOnly(['currency','limit','warnPercent','enabled','updatedAt'])
+      && d.currency == currency
+      && d.limit is number && d.limit > 0 && d.limit < 1000000000000
+      && d.warnPercent is int && d.warnPercent >= 50 && d.warnPercent <= 95
+      && d.enabled is bool
+      && d.updatedAt is timestamp;
+  }
+  allow get, list: if ownerBudget();
+  allow create, update: if ownerBudget() && validBudget();
+  allow delete: if ownerBudget();
+}

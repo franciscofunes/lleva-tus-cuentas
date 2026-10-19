@@ -4,8 +4,10 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom';
 import Banks from './Banks';
 
+// Stable reference prevents repeated banking snapshot subscriptions in React.
+const mockBankDispatch = (action) => typeof action === 'function' ? action : undefined;
 jest.mock('react-redux', () => ({
-  useDispatch: () => (action) => typeof action === 'function' ? action : undefined,
+  useDispatch: () => mockBankDispatch,
   useSelector: (selector) => selector({
     auth: { user: { uid: 'test-private-user' } },
     database: { categories: [] },
@@ -24,6 +26,11 @@ jest.mock('../components/LitaAssitantPanel', () => ({
 }));
 jest.mock('../services/cardStatementService', () => ({
   getImportedStatement: jest.fn(), saveReviewedStatement: jest.fn(), verifyStatementDraft: jest.fn(),
+}));
+// Owner-specific budgets use Firestore; keep this UI test isolated from SDK initialization.
+jest.mock('../services/bankBudgetService',()=>({
+  subscribeBankBudgets:jest.fn((uid,onData)=>{onData([]);return jest.fn();}),
+  saveBankBudget:jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('../services/bankingService', () => ({
   subscribeBanks: jest.fn(),
