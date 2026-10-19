@@ -209,7 +209,12 @@ test('legacy category without a description never creates an empty tooltip', () 
 });
 
 describe('transaction safety after audit', () => {
-  beforeEach(() => { mockDispatch.mockClear(); deleteCardAction.mockClear(); });
+  beforeEach(() => {
+    mockDispatch.mockClear();
+    deleteCardAction.mockClear();
+    // CRA/Jest resetMocks clears any factory supplied by jest.mock between tests.
+    deleteCardAction.mockImplementation(id => ({ type: 'DELETE_REQUEST', id }));
+  });
 
   test('privacy hides amount and FX fields, keeps edit action available', () => {
     render(<Card {...basicProps} hideValues category='Compra divisas' currencyQuantity='100'
