@@ -210,7 +210,7 @@ function Card({
               ? '••••••'
               : safeCategory.includes(INGRESO_DIVISAS_CATEGORY)
                 ? `$USD ${currencyQuantity}`
-                : `${transactionCurrency === 'USD' ? '$USD' : '$AR'} ${isExpense ? '-' : '+'}${parseFloat(amount)?.toLocaleString('es-AR')}`
+                : `${transactionCurrency === 'USD' ? '$USD' : '$AR'} ${isExpense ? '-' : '+'}${parseFloat(amount)?.toLocaleString()}`
             }
 					</p>
 					<div className='ml-auto flex shrink-0 items-center gap-2'>
