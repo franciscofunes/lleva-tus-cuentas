@@ -45,7 +45,7 @@ describe('LTC landing', () => {
     expect(lita).toHaveClass('bg-white', 'text-slate-900', 'dark:bg-gray-900', 'dark:text-slate-100');
     expect(lita).not.toHaveClass('bg-slate-950', 'text-white');
 
-    const panel = screen.getByText('Preguntale a LITA').closest('.rounded-3xl');
+    const panel = screen.getByText('Ideas de consultas que podés hacer').closest('.rounded-3xl');
     expect(panel).toHaveClass('bg-slate-50', 'dark:bg-slate-800');
     expect(screen.getByRole('link', { name: /Empezar a usar LTC/i }))
       .toHaveClass('bg-purple-600', 'text-white');
