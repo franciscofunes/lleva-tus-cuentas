@@ -7,6 +7,11 @@ import {
   FiArrowUpRight,
   FiBarChart2,
   FiCheck,
+  FiBell,
+  FiCalendar,
+  FiFileText,
+  FiGlobe,
+  FiMapPin,
   FiCreditCard,
   FiLock,
   FiMessageSquare,
@@ -26,27 +31,63 @@ const secondaryButton =
 const capabilities = [
   {
     icon: FiCreditCard,
-    title: 'Movimientos bajo control',
-    description: 'Registrá ingresos y gastos, organizalos por categoría y seguí tu balance.',
-    detail: 'MOVIMIENTOS',
+    title: 'Movimientos en ARS y USD',
+    description: 'Registrá ingresos, gastos y cambios de divisas sin mezclar monedas ni duplicar importes.',
+    detail: 'TRANSACCIONES',
   },
   {
     icon: FiPieChart,
-    title: 'Tu patrimonio, más claro',
-    description: 'Consultá tus cuentas, inversiones, rendimientos y vencimientos en un mismo lugar.',
+    title: 'Inversiones y portfolio',
+    description: 'Seguí cuentas remuneradas, fondos, posiciones, rendimientos y conciliaciones.',
     detail: 'PORTFOLIO',
+  },
+  {
+    icon: FiBell,
+    title: 'Alertas de gastos de tarjetas',
+    description: 'Compará consumos de todos tus bancos, elegí un tope y mirá cuánto margen te queda antes del cierre.',
+    detail: 'CONTROL DE TARJETAS',
+  },
+  {
+    icon: FiFileText,
+    title: 'Resúmenes y capturas',
+    description: 'Vinculá resúmenes PDF y cargá consumos bancarios usando Markdown preparado con ChatGPT y revisado por vos.',
+    detail: 'IMPORTACIONES ASISTIDAS',
+  },
+  {
+    icon: FiCalendar,
+    title: 'Vencimientos y recordatorios',
+    description: 'Gestioná próximas fechas de servicios y tarjetas, cierres y avisos dentro de LTC$.',
+    detail: 'AGENDA FINANCIERA',
+  },
+  {
+    icon: FiGlobe,
+    title: 'Mapa mundial de movimientos',
+    description: 'Explorá ingresos y gastos geolocalizados por regiones o puntos con capas H3 y monedas separadas.',
+    detail: 'ANALÍTICAS GEOGRÁFICAS',
+  },
+  {
+    icon: FiBarChart2,
+    title: 'Gráficos, métricas y exportación',
+    description: 'Analizá categorías, períodos y tendencias; exportá datos para trabajarlos fuera de la app.',
+    detail: 'ANÁLISIS',
+  },
+  {
+    icon: FiShield,
+    title: 'Bancos y tarjetas organizados',
+    description: 'Reuní cuentas, tarjetas, consumos actuales y fechas de pago en un espacio privado.',
+    detail: 'BANCOS',
   },
   {
     icon: FiMessageSquare,
     title: 'Preguntale a LITA',
-    description: 'Explorá tus finanzas con un asistente de IA que usa el contexto disponible en LTC.',
+    description: 'Usá el asistente con IA para interpretar tus números y proponer topes; las decisiones siguen siendo tuyas.',
     detail: 'INTELIGENCIA ARTIFICIAL',
   },
 ];
-
 const exampleQuestions = [
   '¿En qué categorías estoy gastando más?',
   '¿Cómo se distribuyen mis inversiones?',
+  '¿Qué tope mensual me conviene para las tarjetas de todos mis bancos?',
   '¿Qué debería revisar de mis rendimientos?',
 ];
 
@@ -149,7 +190,7 @@ function Home() {
                 <span className='text-purple-600 dark:text-purple-400'>Decidí con más claridad.</span>
               </h1>
               <p className='mt-6 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-300 sm:text-lg sm:leading-relaxed'>
-                Tus movimientos, inversiones y un asistente financiero con inteligencia artificial, todo en un solo lugar. Menos tiempo buscando números, más tiempo entendiendo tus cuentas.
+                Tus movimientos, bancos, tarjetas, vencimientos, inversiones y LITA en un solo lugar. Detectá cuándo te acercás a tu tope y decidí con más información.
               </p>
               <div className='mt-8 flex flex-col gap-3 sm:flex-row'>
                 <Link to={startLink} className={primaryButton}>
@@ -165,6 +206,7 @@ function Home() {
                 <span className='inline-flex items-center gap-1.5'><FiCheck className='text-emerald-600 dark:text-emerald-400' aria-hidden='true' /> Gastos organizados</span>
                 <span className='inline-flex items-center gap-1.5'><FiCheck className='text-emerald-600 dark:text-emerald-400' aria-hidden='true' /> Inversiones en un lugar</span>
                 <span className='inline-flex items-center gap-1.5'><FiCheck className='text-emerald-600 dark:text-emerald-400' aria-hidden='true' /> Consultas con IA</span>
+                <span className='inline-flex items-center gap-1.5'><FiCheck className='text-emerald-600 dark:text-emerald-400' aria-hidden='true' /> Control de tarjetas</span>
               </div>
             </div>
             <ProductPreview />
@@ -175,9 +217,9 @@ function Home() {
           <div className='max-w-2xl'>
             <p className='text-xs font-extrabold uppercase tracking-[0.15em] text-purple-600 dark:text-purple-400'>Todo en un mismo lugar</p>
             <h2 id='features-heading' className='mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl'>Más visión de tus finanzas, menos complicaciones.</h2>
-            <p className='mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-300'>Una herramienta para registrar, seguir y entender tu dinero en el día a día.</p>
+            <p className='mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-300'>Desde la carga de movimientos hasta el seguimiento de tarjetas y la comparación con tus consumos históricos. Elegí los módulos que necesitás.</p>
           </div>
-          <div className='mt-9 grid gap-4 md:grid-cols-3'>
+          <div className='mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
             {capabilities.map(({ icon: Icon, title, description, detail }) => (
               <article key={title} className='group rounded-3xl border border-slate-200 bg-white p-6 transition-colors hover:border-purple-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-purple-500 dark:hover:bg-slate-800'>
                 <div className='flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300'>
@@ -188,6 +230,56 @@ function Home() {
                 <p className='mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300'>{description}</p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section id='control-de-tarjetas' className='border-y border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'
+          aria-labelledby='cards-heading'>
+          <div className='mx-auto grid max-w-7xl gap-9 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-2 lg:items-center'>
+            <div>
+              <p className='text-xs font-extrabold uppercase tracking-widest text-purple-700 dark:text-purple-300'>Controlá el gasto antes del cierre</p>
+              <h2 id='cards-heading' className='mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl'>
+                Todas tus tarjetas. Un presupuesto que entendés.
+              </h2>
+              <p className='mt-4 text-base leading-8 text-slate-600 dark:text-slate-300'>
+                Confrontá los consumos registrados de todas las tarjetas con un tope que vos elegís.
+                LTC$ te muestra el margen restante y cuánto te acercaste a tu récord histórico.
+              </p>
+              <ul className='mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-200'>
+                <li className='flex items-start gap-3'><FiCheck className='mt-1 shrink-0 text-emerald-600 dark:text-emerald-400' aria-hidden='true'/> Topes individuales en ARS y USD, con alertas dentro de la aplicación.</li>
+                <li className='flex items-start gap-3'><FiCheck className='mt-1 shrink-0 text-emerald-600 dark:text-emerald-400' aria-hidden='true'/> Comparación entre resúmenes PDF de todos tus bancos, sin sumar dos veces las compras.</li>
+                <li className='flex items-start gap-3'><FiCheck className='mt-1 shrink-0 text-emerald-600 dark:text-emerald-400' aria-hidden='true'/> Capturas del home banking convertidas en Markdown con ayuda de ChatGPT y confirmadas por vos.</li>
+                <li className='flex items-start gap-3'><FiCheck className='mt-1 shrink-0 text-emerald-600 dark:text-emerald-400' aria-hidden='true'/> LITA puede ayudarte a interpretar máximos, mínimos y opciones de presupuesto.</li>
+              </ul>
+              <p className='mt-5 text-xs text-slate-500 dark:text-slate-400'>
+                Avisos en LTC$ y en el navegador mientras esté abierto. Las notificaciones push con la aplicación cerrada todavía no están disponibles.
+              </p>
+              <Link to={user?'/bancos':'/registrarse'} className={primaryButton+' mt-7'}>
+                {user?'Ir al control de tarjetas':'Empezar a controlar mis tarjetas'}
+                <FiArrowRight aria-hidden='true'/>
+              </Link>
+            </div>
+            <div className='rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-7'
+              aria-label='Ejemplo ilustrativo de margen antes del tope'>
+              <p className='text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400'>Vista ilustrativa · ARS</p>
+              <h3 className='mt-3 text-xl font-extrabold'>¿Cuánto te queda antes del tope?</h3>
+              <div className='mt-5 rounded-2xl border border-orange-400/50 bg-orange-50 p-5 text-orange-950 dark:bg-orange-950/25 dark:text-orange-200'>
+                <p className='text-sm font-bold'><FiBell className='mr-2 inline' aria-hidden='true'/> Te queda poco margen</p>
+                <p className='mt-3 text-3xl font-extrabold tabular-nums'>$ 75.066,07</p>
+                <p className='mt-2 text-sm'>Antes de llegar al tope elegido</p>
+                <div className='mt-4 h-2 overflow-hidden rounded-full bg-orange-200 dark:bg-slate-700'>
+                  <div className='h-full w-[95%] rounded-full bg-orange-500'/>
+                </div>
+                <p className='mt-2 text-xs font-bold'>95% del tope utilizado</p>
+              </div>
+              <div className='mt-4 flex items-start gap-2 rounded-xl border border-cyan-300/40 bg-cyan-50 p-3 text-xs text-cyan-950 dark:border-cyan-500/30 dark:bg-cyan-950/20 dark:text-cyan-200'>
+                <FiMapPin className='mt-0.5 shrink-0' aria-hidden='true'/>
+                El máximo histórico sirve de referencia; el objetivo personal lo decidís vos.
+              </div>
+              <p className='mt-4 text-xs text-slate-500 dark:text-slate-400'>
+                Valores ilustrativos, no datos de una cuenta real ni asesoramiento financiero.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -202,11 +294,12 @@ function Home() {
                 Tus números también pueden darte respuestas.
               </h2>
               <p className='mt-5 max-w-lg text-base leading-8 text-slate-600 dark:text-slate-300 sm:text-lg'>
-                LITA es el asistente de IA integrado en Lleva Tus Cuentas. Hacé preguntas sobre tus movimientos y tu portfolio, y obtené explicaciones basadas en la información disponible en tu cuenta.
+                LITA es el asistente de IA integrado en Lleva Tus Cuentas. Consultá movimientos, portfolio y el historial de consumos de tarjetas de todos tus bancos, y evaluá posibles topes antes de decidir.
               </p>
               <div className='mt-7 flex flex-wrap gap-3 text-sm text-slate-700 dark:text-slate-300'>
                 <span className='inline-flex items-center gap-2'><FiBarChart2 className='text-purple-600 dark:text-purple-400' aria-hidden='true' /> Gastos por categoría</span>
                 <span className='inline-flex items-center gap-2'><FiTrendingUp className='text-purple-600 dark:text-purple-400' aria-hidden='true' /> Seguimiento de inversiones</span>
+                <span className='inline-flex items-center gap-2'><FiBell className='text-purple-600 dark:text-purple-400' aria-hidden='true' /> Topes de tarjetas</span>
               </div>
               <p className='mt-6 flex max-w-lg items-start gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400'>
                 <FiLock className='mt-1 shrink-0' aria-hidden='true' />
@@ -242,7 +335,7 @@ function Home() {
             <div>
               <p className='text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400'>Tu próximo paso</p>
               <h2 id='ready-heading' className='mt-2 text-2xl font-extrabold sm:text-3xl'>Empezá a ver el panorama completo.</h2>
-              <p className='mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300'>Ordená tus movimientos, consultá tu patrimonio y descubrí cómo puede ayudarte LITA.</p>
+              <p className='mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300'>Ordená tus movimientos, consultá tus bancos y tarjetas, revisá el margen disponible y descubrí cómo puede ayudarte LITA.</p>
             </div>
             <Link to={startLink} className={primaryButton + ' shrink-0'}>
               {user ? 'Ir a mi panel' : 'Comenzar'}
