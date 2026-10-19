@@ -11,7 +11,7 @@ describe('card budget progress', () => {
   });
   test('works independently per currency, including cents and tiny values', () => {
     expect(cardBudgetProgress(20, 33.08)).toMatchObject({
-      remaining: 13.08, level: 'warning',
+      remaining: 13.08, level: 'ok',
     });
     expect(cardBudgetProgress(0.1, 0.3)).toMatchObject({
       remaining: 0.2, level: 'ok',

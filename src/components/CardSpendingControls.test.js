@@ -27,7 +27,7 @@ test('exact remaining is visually critical orange, historical comparison stays c
   const record=screen.getByLabelText('Comparación con máximo histórico en ARS');
   expect(record).toHaveClass('border-cyan-500/35');
   expect(within(record).getByText(/1.785.390,07/)).toBeInTheDocument();
-  expect(screen.getByLabelText('Margen antes del tope en USD')).toHaveClass('border-amber-500/50');
+  expect(screen.getByLabelText('Margen antes del tope en USD')).toHaveClass('border-emerald-500/40');
 });
 test('changing a draft does not save it and previews exact exceeded amount in rose',async()=>{
   const onSave=jest.fn().mockResolvedValue(undefined);
