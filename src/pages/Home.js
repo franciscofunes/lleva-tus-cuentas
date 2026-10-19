@@ -106,8 +106,8 @@ function Home() {
                 Tus cuentas, <span className='text-purple-700 dark:text-purple-300'>un poco más claras.</span>
               </h1>
               <p className='mt-7 max-w-[52ch] text-base leading-8 text-slate-600 dark:text-slate-300 sm:text-lg'>
-                Gastos, bancos, tarjetas e inversiones. Todo lo que vas anotando,
-                en un mismo lugar y con tiempo para entenderlo.
+                Gastos, bancos, tarjetas e inversiones en un mismo lugar.
+                Para saber cuánto llevás y decidir con calma.
               </p>
               <div className='mt-8 flex flex-wrap items-center gap-x-6 gap-y-4'>
                 <Link to={startLink} className={action}>
