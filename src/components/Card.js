@@ -17,6 +17,7 @@ function Card({
 	id,
 	expenseId,
 	amount,
+	hideValues = false,
 	transactionCurrency,
 	setTransactionCurrency = () => {},
 	selectedDate,
@@ -69,9 +70,11 @@ function Card({
 				? new Date(paidAt)
 				: null;
 
-	const handleDelete = () => {
-		dispatch(deleteCardAction(id));
-	};
+  const handleDelete = () => {
+    // Firestore deletion has no undo; a stray touch must never erase a movement.
+    if (!window.confirm('¿Eliminar el movimiento "' + (name || 'Sin nombre') + '"? Esta acción no se puede deshacer.')) return;
+    dispatch(deleteCardAction(id));
+  };
 
 	const handleEdit = () => {
 		openModal();
@@ -150,13 +153,13 @@ function Card({
 							<span className='font-semibold text-violet-700 dark:text-violet-200'>
 								Cantidad:{' '}
 							</span>
-							{`$USD ${currencyQuantity}`}
+							{hideValues ? '••••••' : `$USD ${currencyQuantity}`}
 						</p>
 						<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
 							<span className='font-semibold text-violet-700 dark:text-violet-200'>
 								Cotización:{' '}
 							</span>
-							{`$AR ${currencyExchangeRate}`}
+							{hideValues ? '••••••' : `$AR ${currencyExchangeRate}`}
 						</p>
 					</>
 				)}
@@ -177,7 +180,7 @@ function Card({
 					</p>
 				)}
 
-				{displayTransactionCustomDetails(customDetails).length > 0 && (
+				{!hideValues && displayTransactionCustomDetails(customDetails).length > 0 && (
           <div className='mt-2 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200' aria-label='Datos adicionales de la transacción'>
             {displayTransactionCustomDetails(customDetails).map((detail) => (
               <p key={detail.id}><span className='font-bold'>{detail.label}: </span>{detail.value}</p>
@@ -203,15 +206,12 @@ function Card({
 								: 'text-emerald-600 dark:text-emerald-400'
 						}`}
 					>
-						{safeCategory.includes(INGRESO_DIVISAS_CATEGORY)
-							? `$USD ${currencyQuantity}`
-							: `${transactionCurrency === 'USD' ? '$USD' : '$AR'} 
-						${
-							isExpense
-								? `-${parseFloat(amount)?.toLocaleString()}`
-								: `+${parseFloat(amount)?.toLocaleString()}`
-						}
-						`}
+						{hideValues
+              ? '••••••'
+              : safeCategory.includes(INGRESO_DIVISAS_CATEGORY)
+                ? `$USD ${currencyQuantity}`
+                : `${transactionCurrency === 'USD' ? '$USD' : '$AR'} ${isExpense ? '-' : '+'}${parseFloat(amount)?.toLocaleString()}`
+            }
 					</p>
 					<div className='ml-auto flex shrink-0 items-center gap-2'>
 						<button type='button' onClick={handleDelete} aria-label={`Eliminar ${name || 'movimiento'}`} title='Eliminar movimiento'
@@ -225,7 +225,7 @@ function Card({
 					</div>
 				</div>
 			</div>
-			{safeCategory.includes('Resumen tarjeta') && (
+			{!hideValues && safeCategory.includes('Resumen tarjeta') && (
 				<div className='mt-3 min-w-0 border-t border-slate-200 pt-2 dark:border-slate-700'>
 					<CardStatementDetails expenseId={id} />
 				</div>

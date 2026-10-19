@@ -2,6 +2,7 @@ import React from 'react';
 import TransactionChartSurface, { TransactionChartEmpty } from './TransactionChartSurface';
 import { AreaChart } from '@tremor/react';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
+import { getTransactionCurrency } from '../utils/customCategories';
 
 const extractMonthAndYearFromDate = (selectedDate) => {
 	const date = new Date(`${selectedDate}T00:00:00Z`);
@@ -36,7 +37,9 @@ const IncomeExpenseLineChart = ({ chartData, categories }) => {
 
 		// Group data by month and year
 		const groupedData = (Array.isArray(chartData) ? chartData : []).reduce((result, item) => {
-			if (typeof item?.category !== 'string') return result;
+			// Never report a USD amount as pesos in the ARS comparison.
+			if (typeof item?.category !== 'string' || getTransactionCurrency(item) !== 'ARS') return result;
+			if (!/^20\d{2}-\d{2}-\d{2}$/.test(item.selectedDate || '')) return result;
 			const isExpenseCategory = (Array.isArray(categories) ? categories : []).some(
 				(category) => category?.name === item.category && category.isExpense === true
 			);
@@ -101,8 +104,9 @@ const IncomeExpenseLineChart = ({ chartData, categories }) => {
 
 	const chartDataOutcome = generateChartData();
 
-	const valueFormatter = (number) =>
-		`AR$ ${new Intl.NumberFormat('us').format(number).toString()}`;
+	const valueFormatter = (number) => new Intl.NumberFormat('es-AR', {
+    style: 'currency', currency: 'ARS', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  }).format(number);
 
 	return (
     <TransactionChartSurface title='Comparativa de ingresos y gastos' description='Evolución por mes · ARS · Período seleccionado'>

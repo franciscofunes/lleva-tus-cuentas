@@ -29,6 +29,8 @@ on:
       - 'src/components/*LineChart*'
       - 'src/components/ChartViewer*'
       - 'src/components/FinancialChartsSafety.test.js'
+      - 'src/pages/Dashboard.js'
+      - 'src/components/BimonetarySummary.js'
       - 'src/components/RouteErrorBoundary*'
       - 'src/components/Card.js'
       - 'src/components/Card.test.js'
