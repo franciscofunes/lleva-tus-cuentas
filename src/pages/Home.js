@@ -8,14 +8,14 @@ import AppFooter from '../components/AppFooter';
 // Unlike the authenticated dashboard, this is an editorial introduction:
 // one main action, real product capabilities, and illustrative (not user) data.
 const action =
-  'inline-flex min-h-[50px] items-center justify-center gap-3 rounded-lg bg-purple-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-purple-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-purple-400/50';
+  'inline-flex min-h-[50px] w-full items-center justify-center gap-3 rounded-lg bg-purple-600 px-6 py-3 text-center text-sm font-bold text-white transition-colors hover:bg-purple-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-purple-400/50 sm:w-auto';
 const editorialLabel =
   'text-xs font-bold tracking-[0.08em] text-purple-700 dark:text-purple-300';
 const wrap = 'mx-auto w-full max-w-6xl px-5 sm:px-8';
 
 function ProductPagePreview() {
   return (
-    <div className='relative mx-auto w-full max-w-[470px] lg:ml-auto' aria-label='Vista ilustrativa del control de tarjetas'>
+    <figure className='relative mx-auto w-full min-w-0 max-w-[470px] lg:ml-auto' aria-label='Vista ilustrativa del control de tarjetas'>
       <div className='border border-slate-200 bg-white shadow-xl shadow-slate-900/5 dark:border-slate-700 dark:bg-slate-800 dark:shadow-black/20'>
         <div className='flex items-baseline justify-between gap-3 border-b border-slate-200 px-5 py-5 dark:border-slate-700 sm:px-7'>
           <span className='font-Montserrat text-lg font-extrabold tracking-tight'>LTC<span className='text-emerald-600'>$</span></span>
@@ -35,8 +35,11 @@ function ProductPagePreview() {
             <span className='text-slate-600 dark:text-slate-300'>Del presupuesto utilizado</span>
             <strong className='tabular-nums'>72%</strong>
           </div>
-          <div className='mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700'>
-            <div className='h-full w-[72%] rounded-full bg-purple-600' />
+          <div role='progressbar' aria-label='Presupuesto utilizado en el ejemplo'
+            aria-valuemin={0} aria-valuemax={100} aria-valuenow={72}
+            aria-valuetext='72 por ciento del tope de ejemplo utilizado'
+            className='mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700'>
+            <div aria-hidden='true' className='h-full w-[72%] rounded-full bg-purple-600' />
           </div>
           <div className='mt-8 grid grid-cols-2 gap-5 border-t border-slate-200 pt-5 dark:border-slate-700'>
             <div>
@@ -50,10 +53,10 @@ function ProductPagePreview() {
           </div>
         </div>
       </div>
-      <p className='mt-3 text-right text-[11px] text-slate-500 dark:text-slate-400'>
+      <figcaption className='mt-3 text-right text-xs leading-5 text-slate-500 dark:text-slate-400'>
         Ejemplo ilustrativo. No muestra datos reales de ninguna cuenta.
-      </p>
-    </div>
+      </figcaption>
+    </figure>
   );
 }
 
@@ -102,7 +105,7 @@ function Home() {
           <div className={wrap + ' grid items-center gap-12 pb-20 pt-14 sm:pb-24 sm:pt-20 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-16 lg:pb-28 lg:pt-28'}>
             <div className='max-w-[640px]'>
               <p className={editorialLabel}>Un lugar para tus finanzas personales</p>
-              <h1 id='home-heading' className='mt-6 max-w-[12ch] font-Montserrat text-[clamp(2.7rem,6.5vw,5.6rem)] font-bold leading-[1.08] tracking-[-0.055em]'>
+              <h1 id='home-heading' className='ltc-editorial-heading mt-6 max-w-[12ch] font-Montserrat text-[clamp(2.7rem,6.5vw,5.6rem)] font-bold leading-[1.08] tracking-[-0.055em]'>
                 Tus cuentas, <span className='text-purple-700 dark:text-purple-300'>un poco más claras.</span>
               </h1>
               <p className='mt-7 max-w-[52ch] text-base leading-8 text-slate-600 dark:text-slate-300 sm:text-lg'>
@@ -115,24 +118,20 @@ function Home() {
                   <FiArrowRight aria-hidden='true' size={18} />
                 </Link>
                 <a href='#como-funciona'
-                  className='inline-flex min-h-[44px] items-center gap-2 text-sm font-bold text-slate-700 underline decoration-slate-300 underline-offset-4 transition-colors hover:text-purple-700 dark:text-slate-200 dark:decoration-slate-600 dark:hover:text-purple-300'>
+                  className='inline-flex min-h-[44px] items-center gap-2 text-sm font-bold text-slate-700 underline decoration-slate-300 underline-offset-4 transition-colors hover:text-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:text-slate-200 dark:decoration-slate-600 dark:hover:text-purple-300'>
                   Ver cómo funciona <FiArrowUpRight aria-hidden='true' size={16} />
                 </a>
               </div>
-              <p className='mt-7 max-w-md text-xs leading-6 text-slate-500 dark:text-slate-400'>
-                Cada importe que ves en esta portada es ilustrativo. Tus datos se muestran
-                dentro de tu espacio cuando iniciás sesión.
-              </p>
             </div>
             <ProductPagePreview />
           </div>
         </section>
 
-        <section id='como-funciona' className={wrap + ' py-20 sm:py-24 lg:py-28'} aria-labelledby='everyday-heading'>
+        <section id='como-funciona' className={wrap + ' scroll-mt-24 py-20 sm:py-24 lg:py-28'} aria-labelledby='everyday-heading'>
           <div className='grid gap-6 border-b border-slate-200 pb-11 dark:border-slate-700 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20'>
             <p className={editorialLabel}>El día a día</p>
             <div>
-              <h2 id='everyday-heading' className='max-w-[22ch] font-Montserrat text-3xl font-bold leading-tight tracking-tight sm:text-4xl'>
+              <h2 id='everyday-heading' className='ltc-editorial-heading max-w-[22ch] font-Montserrat text-3xl font-bold leading-tight tracking-tight sm:text-4xl'>
                 Tus números, sin tantas vueltas.
               </h2>
               <p className='mt-4 max-w-[55ch] text-base leading-8 text-slate-600 dark:text-slate-300'>
@@ -158,12 +157,12 @@ function Home() {
           </div>
         </section>
 
-        <section id='control-de-tarjetas' className='border-y border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'
+        <section id='control-de-tarjetas' className='scroll-mt-24 border-y border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'
           aria-labelledby='cards-heading'>
           <div className={wrap + ' grid gap-12 py-20 sm:py-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-20'}>
             <div>
               <p className={editorialLabel}>Antes del próximo cierre</p>
-              <h2 id='cards-heading' className='mt-5 max-w-[16ch] font-Montserrat text-3xl font-bold leading-tight tracking-tight sm:text-4xl'>
+              <h2 id='cards-heading' className='ltc-editorial-heading mt-5 max-w-[16ch] font-Montserrat text-3xl font-bold leading-tight tracking-tight sm:text-4xl'>
                 Que la tarjeta no te tome por sorpresa.
               </h2>
               <p className='mt-6 max-w-[52ch] text-base leading-8 text-slate-600 dark:text-slate-300'>
@@ -177,7 +176,7 @@ function Home() {
                 <p className='flex items-start gap-3'><FiCheck className='mt-1 shrink-0 text-purple-700 dark:text-purple-300' aria-hidden='true'/> Capturas del home banking convertidas en Markdown y revisadas antes de guardar.</p>
               </div>
               <Link to={user ? '/bancos' : '/registrarse'}
-                className='mt-8 inline-flex min-h-[44px] items-center gap-2 text-sm font-bold text-purple-700 underline decoration-purple-300 underline-offset-4 hover:text-purple-800 dark:text-purple-300 dark:hover:text-purple-200'>
+                className='mt-8 inline-flex min-h-[44px] items-center gap-2 text-sm font-bold text-purple-700 underline decoration-purple-300 underline-offset-4 hover:text-purple-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:text-purple-300 dark:hover:text-purple-200'>
                 {user ? 'Ir al control de tarjetas' : 'Empezar a controlar mis tarjetas'}
                 <FiArrowUpRight aria-hidden='true' size={16}/>
               </Link>
@@ -204,7 +203,7 @@ function Home() {
           <div className='grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20'>
             <div>
               <p className={editorialLabel}>A tu manera</p>
-              <h2 id='tools-heading' className='mt-4 max-w-[19ch] font-Montserrat text-3xl font-bold leading-tight tracking-tight sm:text-4xl'>
+              <h2 id='tools-heading' className='ltc-editorial-heading mt-4 max-w-[19ch] font-Montserrat text-3xl font-bold leading-tight tracking-tight sm:text-4xl'>
                 Un poco más que anotar gastos.
               </h2>
               <p className='mt-5 max-w-[45ch] text-base leading-8 text-slate-600 dark:text-slate-300'>
@@ -223,12 +222,12 @@ function Home() {
           </div>
         </section>
 
-        <section id='conoce-lita' className='border-y border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-gray-900 dark:text-slate-100'
+        <section id='conoce-lita' className='scroll-mt-24 border-y border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-gray-900 dark:text-slate-100'
           aria-labelledby='lita-heading'>
           <div className={wrap + ' grid gap-9 py-20 sm:py-24 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20'}>
             <div>
               <p className={editorialLabel}>Lita · tu asistente</p>
-              <h2 id='lita-heading' className='mt-4 max-w-[19ch] font-Montserrat text-3xl font-bold leading-tight tracking-tight sm:text-4xl'>
+              <h2 id='lita-heading' className='ltc-editorial-heading mt-4 max-w-[19ch] font-Montserrat text-3xl font-bold leading-tight tracking-tight sm:text-4xl'>
                 Cuando necesitás otra mirada.
               </h2>
               <p className='mt-5 max-w-[48ch] text-base leading-8 text-slate-600 dark:text-slate-300'>
@@ -250,7 +249,7 @@ function Home() {
                   </li>
                 ))}
               </ul>
-              <Link to={startLink} className='mt-5 inline-flex min-h-[44px] items-center gap-2 text-sm font-bold text-purple-700 underline decoration-purple-300 underline-offset-4 hover:text-purple-800 dark:text-purple-300'>
+              <Link to={startLink} className='mt-5 inline-flex min-h-[44px] items-center gap-2 text-sm font-bold text-purple-700 underline decoration-purple-300 underline-offset-4 hover:text-purple-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:text-purple-300'>
                 {user ? 'Abrir Lleva Tus Cuentas' : 'Empezar a usar LTC'}
                 <FiArrowUpRight aria-hidden='true' size={16} />
               </Link>
@@ -261,7 +260,7 @@ function Home() {
         <section className={wrap + ' flex flex-col items-start justify-between gap-8 py-16 sm:py-20 lg:flex-row lg:items-center'} aria-labelledby='ready-heading'>
           <div>
             <p className={editorialLabel}>Para empezar</p>
-            <h2 id='ready-heading' className='mt-3 max-w-[25ch] font-Montserrat text-2xl font-bold tracking-tight sm:text-3xl'>
+            <h2 id='ready-heading' className='ltc-editorial-heading mt-3 max-w-[25ch] font-Montserrat text-2xl font-bold tracking-tight sm:text-3xl'>
               Un lugar propio para llevar tus cuentas.
             </h2>
           </div>
