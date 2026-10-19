@@ -45,14 +45,26 @@ describe('LTC landing', () => {
     expect(lita).toHaveClass('bg-white', 'text-slate-900', 'dark:bg-gray-900', 'dark:text-slate-100');
     expect(lita).not.toHaveClass('bg-slate-950', 'text-white');
 
-    const panel = screen.getByText('Preguntale a LITA').closest('.rounded-3xl');
+    const panel = screen.getByText('Ideas de consultas que podés hacer').closest('.rounded-3xl');
     expect(panel).toHaveClass('bg-slate-50', 'dark:bg-slate-800');
     expect(screen.getByRole('link', { name: /Empezar a usar LTC/i }))
       .toHaveClass('bg-purple-600', 'text-white');
     expect(screen.getByRole('contentinfo')).toHaveClass('dark:bg-gray-900');
   });
 
-  it('does not present decorative sample charts as real account balances', () => {
+  it('shows banking, card budgets, imports, worldwide maps, dates and honest notification limits', () => {
+    renderHome();
+    expect(screen.getByRole('heading', { name: 'Todas tus tarjetas. Un presupuesto que entendés.' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Alertas de gastos de tarjetas' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Mapa mundial de movimientos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Resúmenes y capturas' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Vencimientos y recordatorios' })).toBeInTheDocument();
+    expect(screen.getByText(/Las notificaciones push con la aplicación cerrada todavía no están disponibles/)).toBeInTheDocument();
+    expect(screen.getByText(/Valores ilustrativos, no datos de una cuenta real/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Empezar a controlar mis tarjetas/ })).toHaveAttribute('href','/registrarse');
+  });
+
+    it('does not present decorative sample charts as real account balances', () => {
     renderHome();
     expect(screen.getByText('Vista ilustrativa')).toBeInTheDocument();
     expect(screen.queryByText(/ganancias garantizadas/i)).not.toBeInTheDocument();

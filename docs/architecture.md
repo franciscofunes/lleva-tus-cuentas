@@ -247,3 +247,41 @@ not population or regional estimates.
   map is independent of the user's device location and any country restriction.
 - Privacy mode of `ChartViewer` hides the map completely when balances are
   hidden; there is no new persistence or Firestore schema migration here.
+
+## Credit-card spending guardrail (exact margin + semantic thresholds)
+
+```mermaid
+flowchart LR
+    Bank[Bank screenshots reviewed via ChatGPT Markdown] --> Snap[Owner bankCards current snapshot]
+    Purch[Manual card purchases] --> Cycle[Current open-cycle estimate]
+    Snap --> Cycle
+    Linked[Reviewed linked statement PDFs] --> High[Monthly all-bank historical extrema]
+    Cycle --> Margin[Personal limit margin / overage in cents]
+    Margin --> UI[Emerald / Amber / Orange / Rose card]
+    High --> Ref[Cyan historical reference]
+    Cycle --> Bell[In-app bell + active-browser notices]
+    Margin --> Bell
+    High --> Lita[Sanitized aggregates to Lita]
+```
+
+`cardBudgetProgress` calculates the *visual* state from the draft displayed limit using integer cents. Thresholds are **0–<70%, 70–<90%, 90–<100%, >=100%**. The user-configured `warnPercent` (50–95%) continues driving actual subscribed notifications and is not changed by color. When editing an unsaved limit, mark the visual as **preview only**. A zero/invalid/absent limit has no numeric margin. Never convert ARS to USD without an explicit FX rate.
+
+`CardSpendingControls` orders the current registered amount → editable personal ceiling → remaining/overage in large text → notification options → independent cyan historical reference/high/low. A reported amount is approximate until the banks have been reconciled; a record high is not an affordability guarantee. Privacy toggle masks financial amounts. Avoid conveying warning severity through hue alone: always show explicit text and percentage.
+
+### Proposed future external notification boundary
+
+```mermaid
+flowchart LR
+    LTC[Signed-in LTC PWA] -->|Opt-in device registration| Subscription[users/uid/pushSubscriptions]
+    LTC -->|Owned budgets and card snapshots| Firestore[(Firestore)]
+    Cron[Authenticated server event / scheduled job] --> Evaluator[Deterministic threshold evaluation]
+    Firestore --> Evaluator
+    Evaluator -->|Idempotent 80/95/100 events| Outbox[(Private delivery outbox)]
+    Outbox --> Sender[Lita/Vercel secure server]
+    Sender --> FCM[Firebase Cloud Messaging / Web Push]
+    Sender --> Email[Resend optional email]
+    FCM --> SW[Browser Service Worker]
+    SW --> Device[Installed PWA notification]
+```
+
+This is **a design, not running code**. Lita's backend (not the browser) must verify ownership/authorization, hold server keys, manage retries and deduplication and schedule dispatch. Financial details should remain out of lock-screen text by default. PWA manifest alone is not enough. Full decision record: [External notifications](external-notifications.md).

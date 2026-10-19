@@ -180,3 +180,20 @@ No new Firestore fields or collections are required for the screenshot
 importer; it uses existing bankCards update and bankCardCharges create rules.
 The separate owner-only `bankSpendingBudgets` rules fragment is still the
 manual release gate for the **new configurable budgets** in PR #215.
+
+## Budget margin visual semantics (2026-10-18)
+
+The most prominent panel answers **how much more can I spend before crossing my personal cap?** Use `src/utils/cardBudgetProgress.js`: for a valid chosen `limit`, compute integer-cents `remaining = max(limit - spent, 0)` and `overage = max(spent - limit, 0)`. On an overshoot, show *overage*, not a misleading remaining 0 framed as available funds. The current cycle is approximate, not bank-authoritative debt.
+
+| Percentage of personal limit | Named status | Card style |
+| --- | --- | --- |
+| 0–<70% | `ok`: “Vas bien con tu tope” | Emerald |
+| 70–<90% | `warning`: “Atención: te estás acercando” | Amber |
+| 90–<100% | `critical`: “Te queda poco margen” | Orange |
+| >=100% | `exceeded`: “Te pasaste del tope por ...” | Rose |
+
+The progress percentage is rounded **only for display**; transitions compare unrounded ratios. A user edits a local draft that is explicitly marked **“Vista previa · sin guardar”**; no notification configuration changes before tapping `Guardar tope`. The configurable persisted `warnPercent` (50–95%, default 80) is separate from the **visual** levels above. A disabled-notifications flag does not hide the local visual safety signal. No limit = “Definí un tope” rather than a false available balance.
+
+Historical all-bank high/low is displayed as a **separate cyan information surface**, with explicit disclaimer that PDF months and card cycles may not align and months without PDFs are not zero. The mathematical 90%-of-average proposal is secondary and never applied automatically. Respect the user privacy toggle and both independent currencies. Test at mobile widths and in both theme modes.
+
+External email, SMS and true closed-app push have **not been enabled** by this UI redesign. The architecture, vendor comparison, privacy policy and phased backend work are documented in [external-notifications.md](external-notifications.md).
