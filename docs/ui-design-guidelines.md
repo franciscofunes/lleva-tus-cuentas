@@ -66,3 +66,23 @@ Unlike transaction in/out colors, the user-defined **card ceiling** uses a 4-lev
 Mobile contract: use breakable amounts and tabular digits; ARS and USD separate; badge “Vista previa · sin guardar” for edits; clear inline labels beyond hue for color-blind users; progressbar exposes a numerical value. Values must be hidden when privacy mode is on. A missing/invalid limit must never display a fabricated “remaining” amount.
 
 All future push/email/SMS copy must avoid disclosing exact amounts on shared device lock screens by default.
+
+## Public landing: editorial and human-first (October 2026)
+
+Scope: src/pages/Home.js only. Authenticated product screens keep their existing styles.
+
+Direction: Preserve LTC brand purple, slate neutrals, Montserrat display headings, dark mode and plain navigation. No AI-first hero, gradient/glow, fake social proof, generic repeated feature-card grids, pill collections or attention-grabbing decorative icons.
+
+Narrative and composition:
+1. Large plain-language proposition, one main branded CTA, understated secondary anchor, one clearly labeled illustrative financial preview.
+2. Three *numbered editorial rows* for transactions, banks/cards and portfolio, with descriptions aligned across two columns.
+3. A larger distinct section on credit-card spending limits, balance remaining, all-bank PDF history and reviewed screenshot imports.
+4. Simple definition rows for statements/PDFs, due dates, worldwide map and charts/export.
+5. Lita is a quieter complementary section with practical questions and explicit financial-advice disclaimer.
+6. Auth-aware concluding CTA and existing footer.
+
+Use original brand tokens: secondary rgb(89,40,229), green only for the LTC dollar sign, restrained slate borders/surfaces, Montserrat display headings; preserve dark scheme. Mobile-first, readable body widths, visible focus indicators, meaningful accessibility labels, no horizontal overflow.
+
+Examples are illustrative only and MUST NOT use real bank screenshots or user private values. Do not claim closed-app push notifications exist. The strongest differentiation is helping people keep track of cards, banks and two currencies without losing sight of the spending ceiling.
+
+Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, both light/dark, every module's named capability, guest/member routing and semantic heading order. Code review is not a substitute for actual responsive rendering.

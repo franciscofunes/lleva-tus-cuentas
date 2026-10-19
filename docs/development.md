@@ -90,3 +90,9 @@ Further reading: [Lita operations](https://github.com/franciscofunes/lita-assita
 - Update the public landing and authenticated banking module copy in tandem; avoid marketing features not implemented.
 - Any *new external notification transport* must have verified production credentials stored server-side, owner-scoped device subscription rules, explicit opt-in, rate limits, quiet hours, idempotency keys, error/retry handling and secure unsubscription. Do not add `REACT_APP_*` secrets.
 - Verify branch preview & deployed production separately. The PWA manifest existing in `public/manifest.json` **alone** does not enable background push notifications.
+
+## Public editorial landing regression checklist
+
+The public landing has been intentionally redesigned away from purple icon-card grids and AI-first positioning. Keep the existing LTC design tokens, preserve all seven feature areas, and do not imply push works with the app closed. Keep Lita as a secondary optional helper; never advertise invented customer testimonials or render a user's private finance screenshot as marketing content.
+
+Run Home.test.js and a production CRA build, then inspect at 390px and 1440px widths in light and dark theme. Check there is no text clipping or horizontal scroll; check accessible keyboard focus and all anchors. Signed-out visitors go to registration; signed-in users can reach transactions and the bank section. The financial preview is clearly marked illustrative.

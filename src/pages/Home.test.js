@@ -5,68 +5,79 @@ import { MemoryRouter } from 'react-router-dom';
 import Home from './Home';
 
 let mockCurrentUser = null;
-
 jest.mock('react-redux', () => ({
   useSelector: (selector) => selector({ auth: { user: mockCurrentUser } }),
 }));
 
-const renderHome = () => render(
-  <MemoryRouter><Home /></MemoryRouter>
-);
+const renderHome = () => render(<MemoryRouter><Home /></MemoryRouter>);
 
-describe('LTC landing', () => {
+describe('LTC editorial landing', () => {
   beforeEach(() => { mockCurrentUser = null; });
 
-  it('presents LITA AI and sends guests to signup', () => {
+  it('leads with a clear everyday finance promise, not AI-first language', () => {
     renderHome();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Entendé tu dinero');
-    expect(screen.getByRole('heading', { name: 'Tus números también pueden darte respuestas.' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Empezar ahora/i })).toHaveAttribute('href', '/registrarse');
-    expect(screen.getByRole('link', { name: /Conocé a LITA/i })).toHaveAttribute('href', '#conoce-lita');
-    expect(screen.getByText('Vista ilustrativa')).toBeInTheDocument();
-    expect(screen.getByText('¿En qué categorías estoy gastando más?')).toBeInTheDocument();
-    expect(screen.getByText(/LITA no reemplaza asesoramiento financiero profesional/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 }))
+      .toHaveTextContent('Tus cuentas, un poco más claras.');
+    expect(screen.getByRole('link', { name: /Empezar a organizar mis cuentas/i }))
+      .toHaveAttribute('href', '/registrarse');
+    expect(screen.getByRole('link', { name: /Ver cómo funciona/i }))
+      .toHaveAttribute('href', '#como-funciona');
+    expect(screen.getByRole('heading', { name: 'Cuando necesitás otra mirada.' })).toBeInTheDocument();
   });
 
-  it('sends authenticated users to transactions without losing the AI explanation', () => {
-    mockCurrentUser = { uid: 'example-user' };
+  it('keeps authenticated CTAs routed to existing LTC modules', () => {
+    mockCurrentUser = { uid: 'sample-user' };
     renderHome();
-    expect(screen.getByRole('link', { name: /Ir a mis movimientos/i })).toHaveAttribute('href', '/transacciones');
-    expect(screen.getByRole('link', { name: /Abrir Lleva Tus Cuentas/i })).toHaveAttribute('href', '/transacciones');
-    expect(screen.getByRole('heading', { name: 'Tus números también pueden darte respuestas.' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Ir a mis movimientos/i }))
+      .toHaveAttribute('href', '/transacciones');
+    expect(screen.getByRole('link', { name: /Ir al control de tarjetas/i }))
+      .toHaveAttribute('href', '/bancos');
+    expect(screen.getByRole('link', { name: /Abrir Lleva Tus Cuentas/i }))
+      .toHaveAttribute('href', '/transacciones');
   });
 
-  it('keeps LITA readable in light mode and matches the shared dark page palette', () => {
+  it('preserves every current product capability without a repetitive card grid', () => {
     const { container } = renderHome();
-    const main = container.querySelector('main');
-    const lita = container.querySelector('#conoce-lita');
+    [
+      'Movimientos en ARS y USD',
+      'Bancos y tarjetas organizados',
+      'Inversiones y portfolio',
+      'Resúmenes y capturas',
+      'Vencimientos y recordatorios',
+      'Mapa mundial de movimientos',
+      'Gráficos, métricas y exportación',
+    ].forEach(name => {
+      expect(screen.getByText(name)).toBeInTheDocument();
+    });
+    expect(screen.getByRole('heading', { name: 'Que la tarjeta no te tome por sorpresa.' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Un poco más que anotar gastos.' })).toBeInTheDocument();
+    expect(container.querySelectorAll('#como-funciona article')).toHaveLength(3);
+    expect(container.querySelectorAll('#como-funciona .rounded-3xl')).toHaveLength(0);
+  });
 
-    expect(main).toHaveClass('bg-slate-50', 'dark:bg-gray-900');
-    expect(lita).toHaveClass('bg-white', 'text-slate-900', 'dark:bg-gray-900', 'dark:text-slate-100');
-    expect(lita).not.toHaveClass('bg-slate-950', 'text-white');
+  it('distinguishes illustrative amounts from actual user account data', () => {
+    renderHome();
+    expect(screen.getByText('Vista ilustrativa')).toBeInTheDocument();
+    expect(screen.getByText(/No muestra datos reales de ninguna cuenta/)).toBeInTheDocument();
+    expect(screen.getByText(/un ejemplo ilustrativo/)).toBeInTheDocument();
+    expect(screen.getByText(/todavía no hay push con la app cerrada/)).toBeInTheDocument();
+    expect(screen.queryByText(/ganancias garantizadas/i)).not.toBeInTheDocument();
+  });
 
-    const panel = screen.getByText('Ideas de consultas que podés hacer').closest('.rounded-3xl');
-    expect(panel).toHaveClass('bg-slate-50', 'dark:bg-slate-800');
-    expect(screen.getByRole('link', { name: /Empezar a usar LTC/i }))
-      .toHaveClass('bg-purple-600', 'text-white');
+  it('supports light and dark themes with readable sections and visible focus styles', () => {
+    const { container } = renderHome();
+    expect(container.querySelector('main')).toHaveClass('bg-slate-50','dark:bg-gray-900');
+    expect(container.querySelector('#conoce-lita')).toHaveClass('bg-white','dark:bg-gray-900');
+    expect(screen.getByRole('link', { name: /Empezar a organizar mis cuentas/i }))
+      .toHaveClass('bg-purple-600','text-white','focus-visible:ring-4');
     expect(screen.getByRole('contentinfo')).toHaveClass('dark:bg-gray-900');
   });
 
-  it('shows banking, card budgets, imports, worldwide maps, dates and honest notification limits', () => {
+  it('keeps Lita as a supporting feature and gives useful prompts', () => {
     renderHome();
-    expect(screen.getByRole('heading', { name: 'Todas tus tarjetas. Un presupuesto que entendés.' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Alertas de gastos de tarjetas' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Mapa mundial de movimientos' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Resúmenes y capturas' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Vencimientos y recordatorios' })).toBeInTheDocument();
-    expect(screen.getByText(/Las notificaciones push con la aplicación cerrada todavía no están disponibles/)).toBeInTheDocument();
-    expect(screen.getByText(/Valores ilustrativos, no datos de una cuenta real/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Empezar a controlar mis tarjetas/ })).toHaveAttribute('href','/registrarse');
-  });
-
-    it('does not present decorative sample charts as real account balances', () => {
-    renderHome();
-    expect(screen.getByText('Vista ilustrativa')).toBeInTheDocument();
-    expect(screen.queryByText(/ganancias garantizadas/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/¿En qué categorías estoy gastando más/)).toBeInTheDocument();
+    expect(screen.getByText(/¿Cómo se distribuyen mis inversiones/)).toBeInTheDocument();
+    expect(screen.getByText(/¿Qué tope mensual me conviene para mis tarjetas/)).toBeInTheDocument();
+    expect(screen.getByText(/LITA no reemplaza asesoramiento financiero profesional/)).toBeInTheDocument();
   });
 });
