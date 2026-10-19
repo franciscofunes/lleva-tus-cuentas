@@ -11,6 +11,11 @@
 	--ltc-green: rgb(22, 163, 74);
 }
 
+/* Public landing: optical line balancing without changing financial forms. */
+@supports (text-wrap: balance) {
+  .ltc-editorial-heading { text-wrap: balance; }
+}
+
 /* Firefox */
 * {
 	scrollbar-width: thin;

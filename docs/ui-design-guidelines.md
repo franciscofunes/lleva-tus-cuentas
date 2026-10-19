@@ -86,3 +86,12 @@ Use original brand tokens: secondary rgb(89,40,229), green only for the LTC doll
 Examples are illustrative only and MUST NOT use real bank screenshots or user private values. Do not claim closed-app push notifications exist. The strongest differentiation is helping people keep track of cards, banks and two currencies without losing sight of the spending ceiling.
 
 Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, both light/dark, every module's named capability, guest/member routing and semantic heading order. Code review is not a substitute for actual responsive rendering.
+
+## Landing finish: mobile, semantics and sharing (October 2026)
+
+- Public finance sample is an accessible `figure` with a `figcaption`; its 72% demonstration progress exposes `role=progressbar` and numeric values to assistive technology. Do not represent illustrative data as actual account data.
+- Hero and exit CTAs use the full mobile content width and revert to their natural width on larger screens; text navigation links retain visible keyboard focus.
+- The optional `ltc-editorial-heading` helper balances title text if the browser supports `text-wrap: balance`; it does not affect authenticated UI.
+- Named public sections use `scroll-mt-24` to leave room under persistent site navigation when accessed via anchors.
+- Public app-shell metadata supports plain text preview with Open Graph and Twitter summary tags, without copying private finance values or publishing unverified imagery. No canonical tag was added because private SPA routes share the same HTML shell.
+- The minimal landing footer now names banks and cards instead of leading with AI. Styling and Firebase/financial logic are unchanged.

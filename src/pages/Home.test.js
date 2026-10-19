@@ -3,6 +3,8 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Home from './Home';
+import fs from 'fs';
+import path from 'path';
 
 let mockCurrentUser = null;
 jest.mock('react-redux', () => ({
@@ -79,5 +81,36 @@ describe('LTC editorial landing', () => {
     expect(screen.getByText(/¿Cómo se distribuyen mis inversiones/)).toBeInTheDocument();
     expect(screen.getByText(/¿Qué tope mensual me conviene para mis tarjetas/)).toBeInTheDocument();
     expect(screen.getByText(/LITA no reemplaza asesoramiento financiero profesional/)).toBeInTheDocument();
+  });
+});
+
+describe('Landing finishing details', () => {
+  it('labels its financial illustration and exposes the example progress to assistive technology', () => {
+    const { container } = renderHome();
+    const preview = container.querySelector('figure[aria-label="Vista ilustrativa del control de tarjetas"]');
+    expect(preview).toBeInTheDocument();
+    expect(preview.querySelector('figcaption')).toHaveTextContent('No muestra datos reales de ninguna cuenta');
+    const progress = screen.getByRole('progressbar', { name: 'Presupuesto utilizado en el ejemplo' });
+    expect(progress).toHaveAttribute('aria-valuenow', '72');
+    expect(progress).toHaveAttribute('aria-valuemax', '100');
+  });
+
+  it('keeps named anchors clear of the navbar and text links keyboard accessible', () => {
+    const { container } = renderHome();
+    ['como-funciona','control-de-tarjetas','conoce-lita'].forEach(id => {
+      expect(container.querySelector('#' + id)).toHaveClass('scroll-mt-24');
+    });
+    expect(screen.getByRole('link', { name: /Ver cómo funciona/i })).toHaveClass('focus-visible:ring-2');
+    expect(screen.getByRole('link', { name: /Empezar a organizar mis cuentas/i })).toHaveClass('w-full','sm:w-auto');
+  });
+
+  it('uses product-first footer and public share metadata without financial details', () => {
+    renderHome();
+    expect(screen.getByRole('contentinfo')).toHaveTextContent('Movimientos, bancos, tarjetas e inversiones en un solo lugar.');
+    const source = fs.readFileSync(path.join(process.cwd(),'public','index.html'),'utf8');
+    expect(source).toContain('property="og:title"');
+    expect(source).toContain('property="og:description"');
+    expect(source).toContain('name="twitter:card"');
+    expect(source).not.toContain('property="og:image"');
   });
 });
