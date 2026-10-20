@@ -48,7 +48,7 @@ test('each transaction has a readable, distinct card surface and accessible touc
   render(<Card {...basicProps} category='Salud' comment='Consulta médica' categories={[{ name: 'Salud', isExpense: true }]} />);
   const card = screen.getByRole('article', { name: 'Movimiento: Movimiento importado' });
   expect(card).toHaveClass('rounded-2xl', 'bg-white', 'dark:bg-slate-800', 'dark:border-slate-700', 'ltc-transaction-card');
-  expect(screen.getByText('Nombre:')).toHaveClass('text-violet-700', 'dark:text-violet-200');
+  expect(screen.getByRole('heading', { name: 'Movimiento importado', level: 3 })).toHaveClass('text-slate-900', 'dark:text-slate-50');
   expect(screen.getByText('Consulta médica')).toHaveClass('text-sm');
   const edit = screen.getByRole('button', { name: 'Editar Movimiento importado' });
   const remove = screen.getByRole('button', { name: 'Eliminar Movimiento importado' });
@@ -125,7 +125,7 @@ test('dark transactions use opaque slate surfaces and readable semantic text in 
   const card = container.querySelector('.ltc-transaction-card');
   expect(card).toHaveClass('dark:bg-slate-800', 'dark:border-slate-700');
   expect(card).not.toHaveClass('bg-slate-50/80', 'dark:bg-slate-900/45');
-  expect(screen.getByText('Nombre:')).toHaveClass('dark:text-violet-200');
+  expect(screen.getByRole('heading', { name: 'Movimiento importado', level: 3 })).toHaveClass('dark:text-slate-50');
   expect(screen.getByText('Descripción de un servicio')).toHaveClass('dark:text-slate-200');
   expect(screen.getByLabelText('Datos adicionales de la transacción'))
     .toHaveClass('dark:bg-slate-900/70', 'dark:text-slate-200');
@@ -212,8 +212,6 @@ describe('transaction safety after audit', () => {
   beforeEach(() => {
     mockDispatch.mockClear();
     deleteCardAction.mockClear();
-    // CRA/Jest resetMocks clears any factory supplied by jest.mock between tests.
-    deleteCardAction.mockImplementation(id => ({ type: 'DELETE_REQUEST', id }));
   });
 
   test('privacy hides amount and FX fields, keeps edit action available', () => {
@@ -238,25 +236,22 @@ describe('transaction safety after audit', () => {
     expect(screen.queryByText('Ver consumos del resumen')).not.toBeInTheDocument();
   });
 
-  test('cancel delete keeps Firestore untouched', () => {
-    const ask = jest.spyOn(window, 'confirm').mockReturnValue(false);
-    try {
-      render(<Card {...basicProps} />);
-      fireEvent.click(screen.getByRole('button', { name: 'Eliminar Movimiento importado' }));
-      expect(ask).toHaveBeenCalledWith(expect.stringContaining('no se puede deshacer'));
-      expect(deleteCardAction).not.toHaveBeenCalled();
-      expect(mockDispatch).not.toHaveBeenCalled();
-    } finally { ask.mockRestore(); }
+  test('delete is requested through the page and never calls Firestore on first tap', () => {
+    const onRequestDelete = jest.fn();
+    render(<Card {...basicProps} onRequestDelete={onRequestDelete} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar Movimiento importado' }));
+
+    expect(onRequestDelete).toHaveBeenCalledWith({
+      id: 'test-movement',
+      name: 'Movimiento importado',
+    });
+    expect(onRequestDelete).toHaveBeenCalledTimes(1);
+    expect(deleteCardAction).not.toHaveBeenCalled();
+    expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  test('approved delete dispatches exactly once for the selected transaction', () => {
-    const ask = jest.spyOn(window, 'confirm').mockReturnValue(true);
-    try {
-      render(<Card {...basicProps} />);
-      fireEvent.click(screen.getByRole('button', { name: 'Eliminar Movimiento importado' }));
-      expect(deleteCardAction).toHaveBeenCalledWith('test-movement');
-      expect(mockDispatch).toHaveBeenCalledWith({ type:'DELETE_REQUEST',id:'test-movement' });
-      expect(mockDispatch).toHaveBeenCalledTimes(1);
-    } finally { ask.mockRestore(); }
+  test('missing comment is omitted rather than displaying an empty row', () => {
+    render(<Card {...basicProps} comment='' />);
+    expect(screen.queryByText('Descripción:')).not.toBeInTheDocument();
   });
 });
