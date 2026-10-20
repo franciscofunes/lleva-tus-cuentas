@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 import PageDataSkeleton from "../components/PageDataSkeleton";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import "tippy.js/dist/tippy.css";
-import { FaArrowRight, FaChartPie, FaExchangeAlt, FaPlus, FaListAlt, FaTags, FaRegCalendarCheck, FaUniversity } from "react-icons/fa";
+import { FaListAlt, FaTags, FaRegCalendarCheck } from "react-icons/fa";
 import {
   getCategoriesDataAction,
   getDataAction,
@@ -31,6 +31,7 @@ import { TRANSACTION_PAGE_SIZE, visibleTransactionBatch } from "../utils/transac
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
+import TransactionsHeaderActions from "../components/TransactionsHeaderActions";
 import { TRANSACTIONS_PAGE_COPY } from "../shared/constants/transactionsPageCopy";
 import FinancialOverviewPanel from "../components/FinancialOverviewPanel";
 import TransactionsExportReady from "../components/TransactionsExportReady";
@@ -287,7 +288,7 @@ function Dashboard() {
   const [collapsedSections, setCollapsedSections] = useState({
     overview: false,
     summary: false,
-    charts: false,
+    charts: true,
     transactions: false,
     filters: true,
   });
@@ -301,7 +302,7 @@ function Dashboard() {
       setCollapsedSections({
         overview: false,
         summary: false,
-        charts: false,
+        charts: true,
         transactions: false,
         filters: true,
         ...(saved.collapsedSections || {}),
@@ -312,7 +313,7 @@ function Dashboard() {
       setSortBy(isTransactionSortKey(saved.sortBy) ? saved.sortBy : "date");
       setSortDirection(saved.sortDirection === "asc" ? "asc" : "desc");
     } catch {
-      setCollapsedSections({ overview: false, summary: false, charts: false, transactions: false, filters: true });
+      setCollapsedSections({ overview: false, summary: false, charts: true, transactions: false, filters: true });
       setIsDataVisible(true);
       setSortBy("date");
       setSortDirection("desc");
@@ -619,31 +620,16 @@ function Dashboard() {
             eyebrow={TRANSACTIONS_PAGE_COPY.hero.eyebrow}
             title={TRANSACTIONS_PAGE_COPY.hero.title}
             description={TRANSACTIONS_PAGE_COPY.hero.description}
+            actionsClassName="min-w-0 sm:shrink-0"
           >
-            <button type="button" onClick={openModal} aria-label="Agregar movimiento" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-purple-600 px-3 py-2.5 text-sm font-bold text-white hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"><FaPlus /> <span className="hidden sm:inline">Movimiento</span></button>
-            <Link to="/portfolio" aria-label="Ir a Portfolio" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
-            <Link to="/bancos" aria-label="Ir a Bancos" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaUniversity /> <span className="hidden sm:inline">Bancos</span></Link>
-            <button type="button" onClick={toggleDataVisibility} aria-pressed={!isDataVisible} aria-label={isDataVisible ? "Ocultar importes de la pantalla" : "Mostrar importes de la pantalla"} className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
-          </QuickAccessCard>
-          <FinancialOverviewPanel
-              id="transactions-overview"
-              collapsed={collapsedSections.overview}
-              onToggle={() => toggleDashboardSection("overview")}
-              title={TRANSACTIONS_PAGE_COPY.overview.title}
-              eyebrow={TRANSACTIONS_PAGE_COPY.overview.eyebrow}
-              description={TRANSACTIONS_PAGE_COPY.overview.description}
-              privacyHidden={!isDataVisible}
-              isLoading={isDataFetching || !docs || !categories}
-              actions={[
-                { id: "excel", type: "excel", label: "Exportar archivos", onClick: downloadFilteredTransactions, disabled: isDataFetching || isFilterChanging || !filteredDocs.length },
-                { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
-              ]}
-              metrics={[
-                { id: "count", icon: FaListAlt, label: TRANSACTIONS_PAGE_COPY.metrics.count, value: isDataVisible ? overview.count : "••" },
-                { id: "categories", icon: FaTags, label: TRANSACTIONS_PAGE_COPY.metrics.categories, value: isDataVisible ? overview.categoryCount : "••" },
-                { id: "due", icon: FaRegCalendarCheck, label: TRANSACTIONS_PAGE_COPY.metrics.due, value: isDataVisible ? overview.dueCount : "••" },
-              ]}
+            <TransactionsHeaderActions
+              onAdd={openModal}
+              valuesVisible={isDataVisible}
+              onTogglePrivacy={toggleDataVisibility}
+              visibleIcon={eyeHide}
+              hiddenIcon={closeEye}
             />
+          </QuickAccessCard>
           {isDataFetching && !docs ? (
             <PageDataSkeleton variant="transactions" />
           ) : (
@@ -670,65 +656,17 @@ function Dashboard() {
               hideValues={!isDataVisible}
             />
           </CollapsibleSection>
-          <CollapsibleSection
-            id="transactions-charts"
-            eyebrow="Visualización"
-            title="Gráficos"
-            description="Analizá tus movimientos con la visualización que prefieras."
-            collapsed={collapsedSections.charts}
-            onToggle={() => toggleDashboardSection("charts")}
-            className="mb-5 min-w-0 max-w-full overflow-hidden font-Nunito"
-            contentClassName="min-w-0 max-w-full"
-          >
-            {isDataFetching || !Array.isArray(categories) ? (
-              <ChartSkeleton />
-            ) : (
-              docs && (
-                <>
-                  <ChartViewer
-                    selectedChart={selectedChart}
-                    onSelect={handleChartToggle}
-                    chartComponents={chartComponents}
-                    chartData={filteredDocs}
-                    categories={categories}
-                    hideValues={!isDataVisible}
-                  />
-                </>
-              )
-            )}
-          </CollapsibleSection>
-          {!paymentData && user?.email?.toLowerCase() !== "ffunes90@gmail.com" ? (
-            <AdvertisementContainer advertisements={advertisements} />
-          ) : (
-            ""
-          )}
         </div>
 
         <CollapsibleSection
           id="transactions-list"
           eyebrow="Actividad"
           title="Transacciones"
-          description="Buscá, revisá y editá tus movimientos."
+
           collapsed={collapsedSections.transactions}
           onToggle={() => toggleDashboardSection("transactions")}
           className="lg:col-span-2"
-          action={
-            <Link to="/portfolio" className="hidden sm:inline-flex items-center gap-2 text-sm font-bold text-purple-500">
-              Ver portfolio <FaArrowRight />
-            </Link>
-          }
         >
-            <div className="mb-3 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowCategoryManager(true)}
-                disabled={!categories}
-                aria-label="Gestionar categorías personales"
-                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-purple-400 hover:bg-purple-500/10 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:text-purple-300"
-              >
-                <FaTags size={12} aria-hidden="true" /> Gestionar categorías
-              </button>
-            </div>
             <SearchBar
               query={searchQuery}
               onQueryChange={setSearchQuery}
@@ -747,6 +685,7 @@ function Dashboard() {
               totalCount={(docs || []).length}
               selectedFilter={selectedFilter}
               onClear={clearTransactionFilters}
+              onManageCategories={() => setShowCategoryManager(true)}
               onViewAll={viewAllTransactions}
               disabled={isDataFetching}
             />
@@ -848,8 +787,61 @@ function Dashboard() {
             )}
         </CollapsibleSection>
 
+        <div className="min-w-0 lg:col-span-1" id="transactions-secondary-visualizations">
+          <CollapsibleSection
+            id="transactions-charts"
+            eyebrow="Visualización"
+            title="Gráficos"
+
+            collapsed={collapsedSections.charts}
+            onToggle={() => toggleDashboardSection("charts")}
+            className="mb-5 min-w-0 max-w-full overflow-hidden font-Nunito"
+            contentClassName="min-w-0 max-w-full"
+          >
+            {isDataFetching || !Array.isArray(categories) ? (
+              <ChartSkeleton />
+            ) : (
+              docs && (
+                <>
+                  <ChartViewer
+                    selectedChart={selectedChart}
+                    onSelect={handleChartToggle}
+                    chartComponents={chartComponents}
+                    chartData={filteredDocs}
+                    categories={categories}
+                    hideValues={!isDataVisible}
+                  />
+                </>
+              )
+            )}
+          </CollapsibleSection>
+          {!paymentData && user?.email?.toLowerCase() !== "ffunes90@gmail.com" ? (
+            <AdvertisementContainer advertisements={advertisements} />
+          ) : (
+            ""
+          )}
+        </div>
+
           </div>
           )}
+          <FinancialOverviewPanel
+              id="transactions-overview"
+              collapsed={collapsedSections.overview}
+              onToggle={() => toggleDashboardSection("overview")}
+              title={TRANSACTIONS_PAGE_COPY.overview.title}
+              eyebrow={TRANSACTIONS_PAGE_COPY.overview.eyebrow}
+              privacyHidden={!isDataVisible}
+              isLoading={isDataFetching || !docs || !categories}
+              actions={[
+                { id: "excel", type: "excel", label: "Exportar archivos", onClick: downloadFilteredTransactions, disabled: isDataFetching || isFilterChanging || !filteredDocs.length },
+                { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
+              ]}
+              metrics={[
+                { id: "count", icon: FaListAlt, label: TRANSACTIONS_PAGE_COPY.metrics.count, value: isDataVisible ? overview.count : "••" },
+                { id: "categories", icon: FaTags, label: TRANSACTIONS_PAGE_COPY.metrics.categories, value: isDataVisible ? overview.categoryCount : "••" },
+                { id: "due", icon: FaRegCalendarCheck, label: TRANSACTIONS_PAGE_COPY.metrics.due, value: isDataVisible ? overview.dueCount : "••" },
+              ]}
+            />
         </div>
       </div>
 
