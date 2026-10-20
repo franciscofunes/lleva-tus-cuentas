@@ -50,6 +50,12 @@ function DeleteTransactionDialog({ transaction, onClose, onDelete }) {
             </div>
           </div>
 
+          {transaction.isCardSummary && (
+            <p className='rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200'>
+              Si vinculaste un detalle PDF, ese registro no se elimina automáticamente al borrar este movimiento.
+            </p>
+          )}
+
           {error && <p role='alert' className='rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200'>{error}</p>}
 
           <div className='flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 dark:border-slate-700 sm:flex-row sm:justify-end'>
