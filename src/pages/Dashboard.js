@@ -10,6 +10,7 @@ import {
   getDataAction,
   getPaymentDataAction,
   getTotalBalance,
+  deleteCardAction,
   setSelectedFilter,
 } from "../actionCreators/databaseActions";
 import BarChartWrapper from "../components/BarChartWrapper";
@@ -18,6 +19,7 @@ import ExpenseFilter, { describeSelectedPeriod } from "../components/ExpenseFilt
 import BimonetarySummary from "../components/BimonetarySummary";
 import FloatingMenu from "../components/FloatingMenu";
 import GenericModal from "../components/GenericModal";
+import DeleteTransactionDialog from "../components/DeleteTransactionDialog";
 import LitaAssistantPanel from "../components/LitaAssitantPanel";
 import { summarizeSpendingByCategory } from '../utils/litaSpendingSummary';
 import SearchBar from "../components/SearchBar";
@@ -243,6 +245,7 @@ function Dashboard() {
   const [edit, setEdit] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const [expenseId, setExpenseId] = useState("");
   const [name, setName] = useState("");
@@ -617,10 +620,10 @@ function Dashboard() {
             title={TRANSACTIONS_PAGE_COPY.hero.title}
             description={TRANSACTIONS_PAGE_COPY.hero.description}
           >
-            <button type="button" onClick={openModal} aria-label="Agregar movimiento" className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 text-sm font-bold"><FaPlus /> <span className="hidden sm:inline">Movimiento</span></button>
-            <Link to="/portfolio" aria-label="Ir a Portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
+            <button type="button" onClick={openModal} aria-label="Agregar movimiento" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-purple-600 px-3 py-2.5 text-sm font-bold text-white hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"><FaPlus /> <span className="hidden sm:inline">Movimiento</span></button>
+            <Link to="/portfolio" aria-label="Ir a Portfolio" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
             <Link to="/bancos" aria-label="Ir a Bancos" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaUniversity /> <span className="hidden sm:inline">Bancos</span></Link>
-            <button type="button" onClick={toggleDataVisibility} aria-pressed={!isDataVisible} aria-label={isDataVisible ? "Ocultar importes de la pantalla" : "Mostrar importes de la pantalla"} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
+            <button type="button" onClick={toggleDataVisibility} aria-pressed={!isDataVisible} aria-label={isDataVisible ? "Ocultar importes de la pantalla" : "Mostrar importes de la pantalla"} className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
           </QuickAccessCard>
           <FinancialOverviewPanel
               id="transactions-overview"
@@ -721,7 +724,7 @@ function Dashboard() {
                 onClick={() => setShowCategoryManager(true)}
                 disabled={!categories}
                 aria-label="Gestionar categorías personales"
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-purple-400 hover:bg-purple-500/10 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:text-purple-300"
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-purple-400 hover:bg-purple-500/10 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:text-purple-300"
               >
                 <FaTags size={12} aria-hidden="true" /> Gestionar categorías
               </button>
@@ -751,8 +754,15 @@ function Dashboard() {
             {isDataFetching ? (
               <TransactionListSkeleton />
             ) : !docs?.length ? (
-              <div className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300" role="status">
-                No hay movimientos en este período. Elegí otra fecha o consultá todo el historial.
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-700 dark:border-slate-600 dark:bg-slate-900/50 dark:text-slate-200" role="status">
+                <p className="font-semibold text-slate-900 dark:text-slate-50">No hay movimientos en este período</p>
+                <p className="mt-1">Probá con otro período o consultá todo el historial.</p>
+                {selectedFilter !== "total" && (
+                  <button type="button" onClick={viewAllTransactions}
+                    className="mt-4 min-h-11 rounded-xl border border-violet-500 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200 dark:hover:bg-violet-500/10">
+                    Ver todo el historial
+                  </button>
+                )}
               </div>
             ) : filteredDocs.length === 0 ? (
               <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center dark:border-slate-600 dark:bg-slate-900/50" role="status">
@@ -817,6 +827,7 @@ function Dashboard() {
                     setExpenseId={setExpenseId}
                     categories={categories}
                     openModal={openModal}
+                    onRequestDelete={setPendingDelete}
                   />
                 </div>
               );
@@ -851,8 +862,16 @@ function Dashboard() {
         <FloatingMenu
           openTransactionModal={openModal}
           openLitaModal={handleFloatingButtonClick}
-          isModalOpen={isOpen || showModal}
+          isModalOpen={isOpen || showModal || Boolean(pendingDelete)}
         />
+
+        {pendingDelete && (
+          <DeleteTransactionDialog
+            transaction={pendingDelete}
+            onClose={() => setPendingDelete(null)}
+            onDelete={(transactionId) => dispatch(deleteCardAction(transactionId))}
+          />
+        )}
 
         {isOpen && (
           <GenericModal

@@ -1,8 +1,6 @@
 import { displayCategoryName, categoryDescription } from '../utils/customCategories';
 import moment from 'moment';
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { deleteCardAction } from '../actionCreators/databaseActions';
 import { motion } from 'framer-motion';
 import { FaCheckCircle } from 'react-icons/fa';
 import { FiEdit3, FiTrash2 } from 'react-icons/fi';
@@ -53,8 +51,8 @@ function Card({
 	setExpenseId,
 	categories,
 	openModal,
+	onRequestDelete,
 }) {
-	const dispatch = useDispatch();
 	// Historical imports may omit a category while Firestore categories are still loading.
 	const safeCategory = typeof category === 'string' ? category : '';
 	const safeCategories = Array.isArray(categories) ? categories.filter(Boolean) : [];
@@ -71,9 +69,8 @@ function Card({
 				: null;
 
   const handleDelete = () => {
-    // Firestore deletion has no undo; a stray touch must never erase a movement.
-    if (!window.confirm('¿Eliminar el movimiento "' + (name || 'Sin nombre') + '"? Esta acción no se puede deshacer.')) return;
-    dispatch(deleteCardAction(id));
+    // The page owns the destructive confirmation; never delete on first tap.
+    onRequestDelete?.({ id, name: name || 'Sin nombre' });
   };
 
 	const handleEdit = () => {
@@ -109,17 +106,16 @@ function Card({
 			className={`${FINANCIAL_ITEM_SURFACE_STYLES} mb-3`}
 		>
 			<div className='min-w-0 space-y-1.5'>
-				<p className='min-w-0 break-words text-base font-bold leading-relaxed text-slate-900 dark:text-slate-50'>
-					<span className='font-semibold text-violet-700 dark:text-violet-200'>Nombre: </span>
-					{name}
-				</p>
+				<h3 className='min-w-0 break-words text-base font-bold leading-relaxed text-slate-900 dark:text-slate-50'>
+					{name || 'Sin nombre'}
+				</h3>
 
-				<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
-					<span className='font-semibold text-violet-700 dark:text-violet-200'>
-						Descripción:{' '}
-					</span>{' '}
-					{comment}
-				</p>
+				{comment && (
+					<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
+						<span className='font-semibold text-violet-700 dark:text-violet-200'>Descripción: </span>
+						{comment}
+					</p>
+				)}
 				<div className='min-w-0'>
 					<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
 						<span className='font-semibold text-violet-700 dark:text-violet-200'>
