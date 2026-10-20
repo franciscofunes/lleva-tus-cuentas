@@ -70,7 +70,7 @@ function Card({
 
   const handleDelete = () => {
     // The page owns the destructive confirmation; never delete on first tap.
-    onRequestDelete?.({ id, name: name || 'Sin nombre' });
+    onRequestDelete?.({ id, name: name || 'Sin nombre', isCardSummary: safeCategory.includes('Resumen tarjeta') });
   };
 
 	const handleEdit = () => {
