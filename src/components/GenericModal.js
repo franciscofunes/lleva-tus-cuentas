@@ -97,7 +97,6 @@ const GenericModal = ({ show, component: Component, closeModal, dialogLabel, ...
 									className='inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-600 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-slate-700 dark:bg-slate-800/95 dark:text-white dark:hover:bg-slate-700'
 									onClick={closeModal}
 									aria-label='Cerrar'
-                    autoFocus={Boolean(dialogLabel)}
 								>
 									<IoMdClose size={22} />
 								</button>
