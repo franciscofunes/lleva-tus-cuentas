@@ -2,7 +2,7 @@ import { TRANSACTIONS_PAGE_COPY as copy } from './transactionsPageCopy';
 
 test('the transactions hero focuses on day-to-day spending and income, not portfolio summaries', () => {
   expect(copy.hero).toEqual({
-    eyebrow: 'Tus movimientos, bajo control',
+    eyebrow: 'Control diario',
     title: 'Gastos e ingresos',
     description: expect.stringContaining('movimientos en pesos y dólares'),
   });
