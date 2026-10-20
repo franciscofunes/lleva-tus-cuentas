@@ -51,7 +51,7 @@ const CalendarTrigger = React.forwardRef(({ onClick, disabled }, ref) => (
     disabled={disabled}
     aria-label='Elegir fecha de referencia'
     title='Cambiar fecha de referencia'
-    className='inline-flex min-h-[42px] shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 transition-colors hover:border-purple-400 hover:text-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-wait disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-purple-400 dark:hover:text-purple-200'
+    className='inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 transition-colors hover:border-purple-400 hover:text-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-wait disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-purple-400 dark:hover:text-purple-200'
   >
     <FiCalendar size={17} aria-hidden='true' />
     <span className='hidden min-[370px]:inline'>Fecha</span>
