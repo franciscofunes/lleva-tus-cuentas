@@ -244,6 +244,7 @@ describe('transaction safety after audit', () => {
     expect(onRequestDelete).toHaveBeenCalledWith({
       id: 'test-movement',
       name: 'Movimiento importado',
+      isCardSummary: false,
     });
     expect(onRequestDelete).toHaveBeenCalledTimes(1);
     expect(deleteCardAction).not.toHaveBeenCalled();
