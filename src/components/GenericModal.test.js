@@ -61,7 +61,9 @@ function NestedModalFixture() {
 test('nested category dialog handles Escape without closing the underlying transaction editor', async () => {
   render(<NestedModalFixture />);
   fireEvent.click(screen.getByRole('button', { name: 'Abrir transacción' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Gestionar categorías' }));
+  const nestedTrigger = screen.getByRole('button', { name: 'Gestionar categorías' });
+  nestedTrigger.focus(); // A real pointer/keyboard activation focuses the invoking control.
+  fireEvent.click(nestedTrigger);
   expect(screen.getByRole('dialog', { name: 'Categorías' })).toBeInTheDocument();
   expect(screen.getByRole('dialog', { name: 'Editar transacción' })).toBeInTheDocument();
   fireEvent.keyDown(document, { key: 'Escape' });
