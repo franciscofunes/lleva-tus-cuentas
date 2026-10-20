@@ -23,11 +23,11 @@ import DeleteTransactionDialog from "../components/DeleteTransactionDialog";
 import LitaAssistantPanel from "../components/LitaAssitantPanel";
 import { summarizeSpendingByCategory } from '../utils/litaSpendingSummary';
 import SearchBar from "../components/SearchBar";
-import { filterTransactions } from "../utils/transactionSearch";
-import { sortTransactions, isTransactionSortKey } from "../utils/transactionSort";
+import { isTransactionSortKey } from "../utils/transactionSort";
 import { categoryContains } from "../utils/categoryContains";
 import { getTransactionCurrency } from "../utils/customCategories";
-import { TRANSACTION_PAGE_SIZE, visibleTransactionBatch } from "../utils/transactionsPagination";
+import { TRANSACTION_PAGE_SIZE } from "../utils/transactionsPagination";
+import { selectScopedTransactions, selectTransactionCards } from "../utils/transactionsPageView";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
@@ -187,13 +187,10 @@ function Dashboard() {
 
 
   const filteredDocs = useMemo(
-    () => filterTransactions(docs || [], {
-      query: searchQuery,
-      category: searchCategory,
-      type: searchType,
-      categories: categories || [],
+    () => selectScopedTransactions(docs, categories, {
+      query: searchQuery, category: searchCategory, type: searchType,
     }),
-    [docs, searchQuery, searchCategory, searchType, categories]
+    [docs, categories, searchQuery, searchCategory, searchType]
   );
 
   // Do not offer stale financial exports after changing filters, data, or the
@@ -212,13 +209,11 @@ function Dashboard() {
 
   // Sort only the visible cards, after filtering, before mobile pagination.
   // KPIs, balances, Lita and export keep the unmodified full filtered set.
-  const sortedDocs = useMemo(
-    () => sortTransactions(filteredDocs, sortBy, sortDirection),
-    [filteredDocs, sortBy, sortDirection]
-  );
   const visibleTransactions = useMemo(
-    () => visibleTransactionBatch(sortedDocs, visibleTransactionCount),
-    [sortedDocs, visibleTransactionCount]
+    () => selectTransactionCards(filteredDocs, {
+      sortBy, sortDirection, count: visibleTransactionCount,
+    }),
+    [filteredDocs, sortBy, sortDirection, visibleTransactionCount]
   );
   useEffect(() => {
     setVisibleTransactionCount(TRANSACTION_PAGE_SIZE);
