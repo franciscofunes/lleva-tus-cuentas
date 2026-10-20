@@ -74,3 +74,10 @@ test('keyboard focus remains in the dialog and Escape dismisses it safely', () =
   fireEvent.keyDown(document, { key: 'Escape' });
   expect(onClose).toHaveBeenCalledTimes(1);
 });
+
+
+test('card-summary removal explicitly discloses that linked PDF details are not cascaded', () => {
+  render(<DeleteTransactionDialog transaction={{ ...transaction, isCardSummary: true }}
+    onClose={jest.fn()} onDelete={jest.fn()} />);
+  expect(screen.getByText(/detalle PDF/)).toHaveTextContent('no se elimina automáticamente');
+});
