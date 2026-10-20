@@ -43,8 +43,8 @@ test('PWA app icons are actual PNG binaries in 192 and 512px rather than broken 
 
 test('Portfolio and Transactions use the same React Icon shortcut for Bancos, never a multicolor emoji', () => {
   const portfolio = readFileSync(join(process.cwd(), 'src/pages/Portfolio.js'), 'utf8');
-  const transactions = readFileSync(join(process.cwd(), 'src/pages/Dashboard.js'), 'utf8');
+  const transactions = readFileSync(join(process.cwd(), 'src/components/TransactionsHeaderActions.js'), 'utf8');
   expect(portfolio).toContain('<FaUniversity aria-hidden=');
-  expect(transactions).toContain('<FaUniversity />');
+  expect(transactions).toContain('<FaUniversity aria-hidden=');
   expect(portfolio).not.toContain('🏦');
 });
