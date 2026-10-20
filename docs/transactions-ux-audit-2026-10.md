@@ -1,6 +1,6 @@
 # Transactions UX and accessibility audit — 2026-10-19
 
-**Scope:** `/dashboard` (Transacciones), its transaction cards, search/period controls, and shared dialog. **Method:** audited current React source with Better Design's confirmation-dialog UX principles, content/comprehension checks, hierarchy/touch-target principles, and accessibility code-review rules. No production personal records were accessed.
+**Scope:** `/transacciones` (Transacciones), its transaction cards, search/period controls, and shared dialog. **Method:** audited current React source with Better Design's confirmation-dialog UX principles, content/comprehension checks, hierarchy/touch-target principles, and accessibility code-review rules. No production personal records were accessed.
 
 ## Findings and remediation
 
