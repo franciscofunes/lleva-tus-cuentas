@@ -618,7 +618,6 @@ function Dashboard() {
             id="transactions-summary"
             eyebrow={TRANSACTIONS_PAGE_COPY.summary.eyebrow}
             title={TRANSACTIONS_PAGE_COPY.summary.title}
-            description={TRANSACTIONS_PAGE_COPY.summary.description}
             collapsed={collapsedSections.summary}
             onToggle={() => toggleDashboardSection("summary")}
             className="mb-5 font-Nunito"
