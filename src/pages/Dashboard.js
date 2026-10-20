@@ -99,52 +99,33 @@ const TransactionListSkeleton = () => (
 );
 
 const TransactionsPageSkeleton = () => (
-  <main
-    className="min-h-screen max-w-full bg-slate-50 dark:bg-gray-900 px-3 sm:px-5 lg:px-8 py-5"
-    aria-label="Cargando panel de transacciones"
-  >
-    <div className="max-w-7xl mx-auto w-full animate-pulse">
-      <section className="mb-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-sm">
-        <SkeletonBlock className="h-4 w-48" />
+  <main className="min-h-screen max-w-full bg-slate-50 px-3 py-5 dark:bg-gray-900 sm:px-5 lg:px-8"
+    aria-label="Cargando panel de transacciones">
+    <div className="mx-auto w-full max-w-7xl animate-pulse">
+      <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-6">
+        <SkeletonBlock className="h-4 w-36" />
         <SkeletonBlock className="mt-3 h-8 w-72 max-w-[80%]" />
         <SkeletonBlock className="mt-3 h-4 w-full max-w-xl" />
-        <div className="mt-5 grid grid-cols-3 gap-2 sm:flex">
-          {[0, 1, 2].map((item) => (
-            <SkeletonBlock key={item} className="h-11 sm:w-32 rounded-xl" />
-          ))}
-        </div>
+        <SkeletonBlock className="mt-5 h-11 w-44 rounded-xl" />
       </section>
-
-      <div className="grid min-w-0 grid-cols-1 gap-5 items-start lg:grid-cols-3">
-        <div className="space-y-5">
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
-            <div className="grid grid-cols-2 gap-5">
-              {[0, 1].map((item) => (
-                <div key={item} className="flex flex-col items-center">
-                  <SkeletonBlock className="h-6 w-24" />
-                  <SkeletonBlock className="mt-3 h-5 w-28" />
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 flex flex-col items-center">
-              <SkeletonBlock className="h-6 w-28" />
-              <SkeletonBlock className="mt-3 h-5 w-28" />
-              <SkeletonBlock className="mt-5 h-5 w-20" />
-              <SkeletonBlock className="mt-3 h-8 w-40" />
-            </div>
-            <SkeletonBlock className="mt-6 h-10 w-full rounded-xl" />
-          </section>
-
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
-            <ChartSkeleton />
-          </section>
-        </div>
-
-        <section className="lg:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6 shadow-sm">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-3">
+        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <SkeletonBlock className="h-4 w-36" />
+          <SkeletonBlock className="mt-3 h-6 w-56 max-w-full" />
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <SkeletonBlock className="h-11 w-full" />
+            <SkeletonBlock className="h-11 w-full" />
+          </div>
+          <SkeletonBlock className="mt-4 h-20 w-full rounded-xl" />
+        </section>
+        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-6 lg:col-span-2 lg:row-span-2">
           <SkeletonBlock className="h-4 w-20" />
           <SkeletonBlock className="mt-2 h-8 w-44" />
           <SkeletonBlock className="mt-4 h-11 w-full rounded-xl" />
           <TransactionListSkeleton />
+        </section>
+        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <ChartSkeleton />
         </section>
       </div>
     </div>
@@ -660,7 +641,7 @@ function Dashboard() {
 
           collapsed={collapsedSections.transactions}
           onToggle={() => toggleDashboardSection("transactions")}
-          className="lg:col-span-2"
+          className="min-w-0 lg:col-span-2 lg:row-span-2"
         >
             <SearchBar
               query={searchQuery}
