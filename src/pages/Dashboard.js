@@ -620,10 +620,10 @@ function Dashboard() {
             title={TRANSACTIONS_PAGE_COPY.hero.title}
             description={TRANSACTIONS_PAGE_COPY.hero.description}
           >
-            <button type="button" onClick={openModal} aria-label="Agregar movimiento" className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 text-sm font-bold"><FaPlus /> <span className="hidden sm:inline">Movimiento</span></button>
-            <Link to="/portfolio" aria-label="Ir a Portfolio" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
+            <button type="button" onClick={openModal} aria-label="Agregar movimiento" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-purple-600 px-3 py-2.5 text-sm font-bold text-white hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"><FaPlus /> <span className="hidden sm:inline">Movimiento</span></button>
+            <Link to="/portfolio" aria-label="Ir a Portfolio" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
             <Link to="/bancos" aria-label="Ir a Bancos" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaUniversity /> <span className="hidden sm:inline">Bancos</span></Link>
-            <button type="button" onClick={toggleDataVisibility} aria-pressed={!isDataVisible} aria-label={isDataVisible ? "Ocultar importes de la pantalla" : "Mostrar importes de la pantalla"} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
+            <button type="button" onClick={toggleDataVisibility} aria-pressed={!isDataVisible} aria-label={isDataVisible ? "Ocultar importes de la pantalla" : "Mostrar importes de la pantalla"} className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
           </QuickAccessCard>
           <FinancialOverviewPanel
               id="transactions-overview"
@@ -724,7 +724,7 @@ function Dashboard() {
                 onClick={() => setShowCategoryManager(true)}
                 disabled={!categories}
                 aria-label="Gestionar categorías personales"
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-purple-400 hover:bg-purple-500/10 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:text-purple-300"
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-purple-400 hover:bg-purple-500/10 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:text-purple-300"
               >
                 <FaTags size={12} aria-hidden="true" /> Gestionar categorías
               </button>
