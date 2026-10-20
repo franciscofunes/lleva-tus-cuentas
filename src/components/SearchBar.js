@@ -52,7 +52,7 @@ function SearchBar({
           </span>
           <span className='min-w-0'>
             <span className='block text-sm font-bold text-slate-900 dark:text-slate-100'>Buscar, filtrar y ordenar</span>
-            <span className='block truncate text-xs text-slate-600 dark:text-slate-300'>
+            <span className='block break-words text-xs text-slate-600 dark:text-slate-300'>
               {active ? 'Filtros aplicados' : 'Sin filtros'} · {sortLabel} · {sortDirection === 'asc' ? 'Ascendente' : 'Descendente'}
             </span>
           </span>
@@ -98,7 +98,7 @@ function SearchBar({
                 disabled={disabled}
                 aria-label='Borrar texto de búsqueda'
                 title='Borrar texto'
-                className='absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800'
+                className='absolute right-0.5 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800'
               >
                 <FiX aria-hidden='true' size={19} />
               </button>
