@@ -50,6 +50,16 @@ For financial amounts, keep a visible +/− sign and currency, using rose/red fo
 - Chart axis labels may be abbreviated for space, but position balances, gain/loss values and transaction data must remain unchanged and exact; axis shortening is display-only.
 - Test Portfolio and Transacciones in both modes after changing any shared widget component. Avoid CSS selectors targeting just one page to paper over common layout issues.
 
+## Transactions activity-first layout (issue #221)
+
+- The authenticated Transactions first-read sequence is **add movement + privacy**, current-period ARS/USD summary, searchable/editable activity, then graphs/metrics/exports. Keep the DOM and visual reading order consistent on mobile. On desktop the transaction list spans two grid columns, while the summary/graph are smaller adjacent widgets.
+- Show the primary add-transaction action with a full label on phones, not an unlabeled plus glyph. Keep Portfolio and Bancos shortcuts in the compact native More disclosure instead of deleting them.
+- Preserve saved per-UID collapsible and sort preferences; initial chart collapse is only a fallback when the user has no saved preference.
+- Store one filtered transaction scope for summaries, Lita and all financial exports; sorting/pagination are exclusively visual list operations. Never convert native USD into ARS for sorting or aggregation.
+- Transaction card headings and amounts are first-read anchors with long-value wrapping; retain conditional service due dates, payment badges, PDF drilldown and controlled custom details.
+- A linked card-summary PDF and its nested consumption items are not automatically deleted along with the transaction. Warn before the irreversible operation; no surprise cascading writes.
+- Authenticated screenshots at 390, 1440 and 1728px, light/dark, plus geometry measurement remain mandatory for a completed visual review. See [issue #221 audit](transactions-issue-221.md).
+
 ## Credit-card spending visual language
 
 Unlike transaction in/out colors, the user-defined **card ceiling** uses a 4-level *progress risk* palette with semantic labels, explicit remaining/overage in exact cents and accessible progressbar semantics. Never infer real bank credit from the remaining personal budget.
