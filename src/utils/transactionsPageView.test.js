@@ -2,6 +2,12 @@ import { selectScopedTransactions, selectTransactionCards } from './transactions
 import { buildTransactionOverview, buildTransactionsExportSheets, buildTransactionsLitaMarkdown } from './transactionsExport';
 import { summarizeBimonetaryFlows } from './bimonetarySummary';
 
+// The XLSX writer creates a TextEncoder at module initialization; these tests
+// check scopes and sheet rows, not the binary export engine.
+jest.mock('./portfolioExport', () => ({
+  exportWorkbookXlsx: jest.fn(), buildWorkbookXlsxBytes: jest.fn(),
+}));
+
 const categories = [
   { name: 'Comida', isExpense: true },
   { name: 'Suscripción USD', isExpense: true, currency: 'USD' },
