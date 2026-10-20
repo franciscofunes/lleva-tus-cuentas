@@ -70,3 +70,10 @@ test('search supports combined terms and displays an empty state', async () => {
   expect(screen.getByText('No se encontraron consumos.')).toBeInTheDocument()
   expect(screen.getByText('0 de 2 consumos encontrados')).toBeInTheDocument()
 })
+
+
+test('card statement toggle maintains an accessible 44px target', () => {
+  const { container } = render(<CardStatementDetails expenseId='expense-1' />);
+  const button = container.querySelector('button[aria-expanded]');
+  expect(button).toHaveClass('min-h-[44px]', 'focus-visible:ring-2');
+});
