@@ -256,3 +256,24 @@ describe('transaction safety after audit', () => {
     expect(screen.queryByText('Descripción:')).not.toBeInTheDocument();
   });
 });
+
+
+test('first scan row shows full transaction identity and native currency amount without truncation', () => {
+  const longName = 'Servicio de software recurrente con un nombre especialmente largo';
+  render(<Card {...basicProps} name={longName} amount='9876543210.25' transactionCurrency='USD'
+    category='Software USD' categories={[{ name: 'Software USD', isExpense: true }]} />);
+  const title = screen.getByRole('heading', { name: longName, level: 3 });
+  const value = screen.getByText(/\$USD -9,?876,?543,?210/);
+  expect(title.parentElement).toContainElement(value);
+  expect(title).toHaveClass('break-words');
+  expect(value).toHaveClass('break-all', 'sm:max-w-[48%]', 'tabular-nums');
+});
+
+test('deleting a card summary carries the retained linked-PDF warning through to the modal', () => {
+  const onRequestDelete = jest.fn();
+  render(<Card {...basicProps} category='Resumen tarjeta 💳' onRequestDelete={onRequestDelete} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Eliminar Movimiento importado' }));
+  expect(onRequestDelete).toHaveBeenCalledWith({
+    id: 'test-movement', name: 'Movimiento importado', isCardSummary: true,
+  });
+});
