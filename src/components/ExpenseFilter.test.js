@@ -68,6 +68,9 @@ describe('integrated transaction period control', () => {
     expect(group.querySelectorAll('button')).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Ir al mes anterior' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Ir al mes siguiente' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Ir al mes anterior' })).toHaveClass('h-11', 'w-11');
+    expect(screen.getByRole('button', { name: 'Ir al mes siguiente' })).toHaveClass('h-11', 'w-11');
+    expect(screen.getByRole('button', { name: 'Mes' })).toHaveClass('min-h-[44px]');
     expect(screen.getByRole('button', { name: 'Elegir fecha de referencia' })).toBeInTheDocument();
   });
 
