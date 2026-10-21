@@ -122,3 +122,8 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
 - Use `QuickAccessCard` and existing `CollapsibleSection`/opaque card tokens. Manual card consumption records have names and native-currency amounts that wrap without clipping. Do not infer conversions or duplicate imported statement spending.
 - Deleting a manual consumption always requires an accessible confirmation modal, shows a masked amount when privacy is enabled, and must never unlink the corresponding PDF statement or delete a Transactions record.
 - Every actionable reveal/delete/editor control requires a 44px target, `aria-expanded` or `aria-pressed` where meaningful, and visible focus. See [Bancos #227 phase 1](banks-issue-227-part1.md).
+
+## Cross-page consistency mandate — Transactions as reference
+- The approved reference for all signed-in financial pages is **`/transacciones`**, with shared `QuickAccessCard`, `FinancialHeaderActions`, `CollapsibleSection`, `FinancialMetricCard`, `FINANCIAL_ITEM_SURFACE_STYLES` and `FINANCIAL_RECORD_DISCLOSURE_STYLES`.
+- Page reading order: hero + one prominent action → summary → primary activity → secondary tools; desktop main activity spans 2 of 3 columns. Use the same colors, typography, shadows, borders, padding, 44px targets and first-scan progressive disclosure.
+- A similar-looking copied component is **not** consistent; make changes to the actual shared component and test against both Transactions and Banks. See [contract](financial-ui-contract.md).
