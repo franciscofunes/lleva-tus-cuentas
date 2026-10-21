@@ -99,6 +99,96 @@ test('Bancos reuses the financial header, grouped metrics and collapsible manage
   expect(screen.getByText('Saldos registrados · USD')).toBeInTheDocument();
 });
 
+
+test('primary bank action is visibly labeled on narrow mobile; secondary shortcuts have 44px hit targets', async () => {
+  mount();
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Bancos y tarjetas' })).toBeInTheDocument());
+  const add = screen.getByRole('button', { name: 'Agregar banco' });
+  expect(add).toHaveTextContent('Agregar banco');
+  expect(add).toHaveClass('w-full', 'sm:w-auto');
+  const header = add.closest('section');
+  expect(header).toHaveClass('dark:bg-slate-800');
+  expect(within(header).getByRole('link', { name: 'Transacciones' })).toHaveClass('min-h-[44px]', 'min-w-[44px]');
+  expect(within(header).getByRole('link', { name: 'Portfolio' })).toHaveClass('min-h-[44px]', 'min-w-[44px]');
+});
+
+test('CBU reveal is an accessible 44px disclosure and never opens an editor', async () => {
+  arrange({
+    subscribeBanks: [{ id:'bank-1', code:'bank-1', name:'Banco de prueba', active:true }],
+    subscribeBankAccounts: [{
+      id:'account-1', bankId:'bank-1', name:'Caja en pesos', type:'caja_ahorro',
+      currency:'ARS', balance:2500, cbu:'1234567890123456789012',
+    }],
+  });
+  mount();
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Mis bancos' })).toBeInTheDocument());
+  fireEvent.click(screen.getByRole('button', { name:/Banco de prueba/ }));
+  const reveal=screen.getByRole('button', { name:'Ver CBU de Caja en pesos' });
+  expect(reveal).toHaveClass('min-h-[44px]');
+  expect(reveal).toHaveAttribute('aria-pressed', 'false');
+  expect(screen.queryByText('1234567890123456789012')).not.toBeInTheDocument();
+  fireEvent.click(reveal);
+  const hide=screen.getByRole('button', { name:'Ocultar CBU de Caja en pesos' });
+  expect(hide).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByText(/1234567890123456789012/)).toBeInTheDocument();
+  fireEvent.click(hide);
+  expect(screen.queryByText('1234567890123456789012')).not.toBeInTheDocument();
+});
+
+const manuallyRecordedBankCard = {
+  subscribeBanks: [{ id:'bank-1', code:'bank-1', name:'Banco de prueba', active:true }],
+  subscribeBankCards: [{
+    id:'card-1', bankId:'bank-1', nickname:'Visa Prueba', brand:'Visa',
+    lastFour:'1234', closingDay:25, dueDay:10,
+  }],
+  subscribeBankCharges: [{
+    id:'charge-1', bankId:'bank-1', cardId:'card-1',
+    merchant:'Supermercado de prueba', amount:12345.67, currency:'ARS',
+    purchaseDate:'2026-10-21', installments:1,
+  }],
+};
+
+const openManualCardCharges = async () => {
+  await waitFor(() => expect(screen.getByRole('heading', { name:'Mis bancos' })).toBeInTheDocument());
+  fireEvent.click(screen.getByRole('button', { name:/Banco de prueba/ }));
+  fireEvent.click(screen.getByRole('button', { name:/Visa Prueba/ }));
+  expect(screen.getByText('Supermercado de prueba')).toBeInTheDocument();
+};
+
+test('tapping a manual charge delete only opens a modal, cancellation makes no write', async () => {
+  arrange(manuallyRecordedBankCard);
+  mount();
+  await openManualCardCharges();
+  const removal=screen.getByRole('button', { name:'Eliminar consumo de Supermercado de prueba' });
+  expect(removal).toHaveClass('min-h-[44px]');
+  const row=screen.getByRole('article', { name:'Consumo: Supermercado de prueba' });
+  expect(row).toHaveClass('dark:bg-slate-800');
+  fireEvent.click(removal);
+  const dialog=screen.getByRole('dialog', { name:'Eliminar consumo manual' });
+  expect(dialog).toHaveTextContent('Supermercado de prueba');
+  expect(dialog).toHaveTextContent('No se borrará ningún resumen PDF');
+  expect(banking.deleteManualCardCharge).not.toHaveBeenCalled();
+  fireEvent.click(within(dialog).getByRole('button', { name:'Cancelar' }));
+  expect(banking.deleteManualCardCharge).not.toHaveBeenCalled();
+});
+
+test('confirmed manual charge deletion targets only the owner and selected charge, not its statement', async () => {
+  arrange(manuallyRecordedBankCard);
+  banking.deleteManualCardCharge.mockResolvedValue(undefined);
+  mount();
+  await openManualCardCharges();
+  fireEvent.click(screen.getByRole('button', { name:'Eliminar consumo de Supermercado de prueba' }));
+  const dialog=screen.getByRole('dialog', { name:'Eliminar consumo manual' });
+  expect(within(dialog).getByLabelText('Importe del consumo')).toHaveTextContent('••••');
+  fireEvent.click(within(dialog).getByRole('button', { name:'Eliminar consumo' }));
+  await waitFor(() => expect(banking.deleteManualCardCharge).toHaveBeenCalledWith('test-private-user','charge-1'));
+  expect(banking.deleteManualCardCharge).toHaveBeenCalledTimes(1);
+  expect(require('../services/cardStatementService').saveReviewedStatement).not.toHaveBeenCalled();
+  expect(banking.unlinkStatementBank).not.toHaveBeenCalled();
+  expect(require('../actionCreators/databaseActions').storeDataAction).not.toHaveBeenCalled();
+  await waitFor(() => expect(screen.queryByRole('dialog', { name:'Eliminar consumo manual' })).not.toBeInTheDocument());
+});
+
 test('existing bank accounts and cards keep their data behind the shared nested accordion', async () => {
   arrange({
     subscribeBanks: [{ id:'private-1',code:'private-1',name:'Mi Banco',active:true }],
