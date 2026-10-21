@@ -66,7 +66,7 @@ function TransactionsJourney({ onViewAll = () => {}, onRequestDelete = () => {} 
       <p data-testid='export-count'>{sheets.Movimientos.length - 1}</p>
       <p data-testid='listed-count'>{cards.length}</p>
       <p data-testid='export-currencies'>{sheets.Movimientos.slice(1).map(row => row[11]).join('|')}</p>
-      <div aria-label='Tarjetas de resultados'>
+      <div role='group' aria-label='Tarjetas de resultados'>
         {cards.map((doc) => (
           <Card key={doc.id} id={doc.id} name={doc.expenseName} amount={doc.amount}
             transactionCurrency={doc.transactionCurrency}
