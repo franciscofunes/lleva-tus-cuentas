@@ -606,6 +606,47 @@ function Dashboard() {
               hiddenIcon={closeEye}
             />
           </QuickAccessCard>
+          <section id="transactions-scope" aria-label="Período, búsqueda y filtros de movimientos"
+            className="mb-5 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-5">
+            <div className="mb-4">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-slate-50">Qué movimientos estás viendo</h2>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300 sm:text-sm">
+                El período, la búsqueda y los filtros se aplican a la lista, los resúmenes, los gráficos, Lita y las exportaciones. El orden solo afecta la lista.
+              </p>
+            </div>
+            <div className="grid min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(245px,0.9fr)_minmax(0,1.7fr)]">
+              <div className="min-w-0">
+                <ExpenseFilter onPeriodChange={setSelectedPeriodInfo} />
+              </div>
+              <div className="min-w-0">
+            <SearchBar
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+              selectedCategory={searchCategory}
+              onCategoryChange={setSearchCategory}
+              transactionType={searchType}
+              onTypeChange={setSearchType}
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+              sortDirection={sortDirection}
+              onSortDirectionChange={setSortDirection}
+              collapsed={collapsedSections.filters}
+              onToggle={() => toggleDashboardSection("filters")}
+              categories={categories || []}
+              resultCount={filteredDocs.length}
+              totalCount={(docs || []).length}
+              selectedFilter={selectedFilter}
+              periodDescription={selectedPeriodInfo?.key === selectedFilter
+                ? selectedPeriodInfo.label
+                : describeSelectedPeriod(selectedFilter, new Date())}
+              onClear={clearTransactionFilters}
+              onManageCategories={() => setShowCategoryManager(true)}
+              onViewAll={viewAllTransactions}
+              disabled={isDataFetching || isFilterChanging}
+            />
+              </div>
+            </div>
+          </section>
           {isDataFetching && !docs ? (
             <PageDataSkeleton variant="transactions" />
           ) : (
@@ -622,7 +663,6 @@ function Dashboard() {
             onToggle={() => toggleDashboardSection("summary")}
             className="mb-5 font-Nunito"
           >
-            <ExpenseFilter onPeriodChange={setSelectedPeriodInfo} />
             <BimonetarySummary
               docs={filteredDocs}
               categories={categories}
@@ -642,28 +682,7 @@ function Dashboard() {
           onToggle={() => toggleDashboardSection("transactions")}
           className="min-w-0 lg:col-span-2 lg:row-span-2"
         >
-            <SearchBar
-              query={searchQuery}
-              onQueryChange={setSearchQuery}
-              selectedCategory={searchCategory}
-              onCategoryChange={setSearchCategory}
-              transactionType={searchType}
-              onTypeChange={setSearchType}
-              sortBy={sortBy}
-              onSortByChange={setSortBy}
-              sortDirection={sortDirection}
-              onSortDirectionChange={setSortDirection}
-              collapsed={collapsedSections.filters}
-              onToggle={() => toggleDashboardSection("filters")}
-              categories={categories || []}
-              resultCount={filteredDocs.length}
-              totalCount={(docs || []).length}
-              selectedFilter={selectedFilter}
-              onClear={clearTransactionFilters}
-              onManageCategories={() => setShowCategoryManager(true)}
-              onViewAll={viewAllTransactions}
-              disabled={isDataFetching}
-            />
+
 
             {isDataFetching ? (
               <TransactionListSkeleton />
