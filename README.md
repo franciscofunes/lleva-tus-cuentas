@@ -122,6 +122,7 @@ The web API key is **not** an authorization boundary: enforce ownership in Fires
 
 ### More feature documentation
 
+- [Bancos mobile-first safety and accessible consumption deletion (issue #227, part 1)](docs/banks-issue-227-part1.md)
 - [Banking, credit-card thresholds and imports](docs/banking-workspace.md)
 - [Visual risk design and financial accessibility](docs/ui-design-guidelines.md)
 - [Transactions UX audit (Better Design, October 2026)](docs/transactions-ux-audit-2026-10.md)
