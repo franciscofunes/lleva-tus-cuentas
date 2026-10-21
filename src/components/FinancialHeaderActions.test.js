@@ -14,7 +14,8 @@ const renderShared = (props = {}) => {
     onPrimaryAction={onPrimaryAction}
     valuesVisible={false}
     onTogglePrivacy={onTogglePrivacy}
-    privacyIcon={<span aria-hidden='true'>icono</span>}
+    visibleIcon='/visible.svg'
+    hiddenIcon='/hidden.svg'
     {...props}
   /></MemoryRouter>);
   return {onPrimaryAction,onTogglePrivacy};
