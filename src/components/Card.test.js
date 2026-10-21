@@ -338,7 +338,7 @@ describe('compact transaction details (issue #225)', () => {
     expect(CardStatementDetails).not.toHaveBeenCalled();
     openDetails();
     expect(CardStatementDetails).toHaveBeenCalled();
-    expect(screen.getByTestId('statement-drilldown')).toBeInTheDocument();
+    expect(CardStatementDetails).toHaveBeenCalledWith(expect.objectContaining({ expenseId: 'test-movement' }), expect.anything());
   });
 
   test('privacy never mounts extra private fields or statement drilldown, even after opening details', () => {
