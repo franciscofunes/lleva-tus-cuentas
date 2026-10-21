@@ -609,9 +609,9 @@ function Dashboard() {
           <section id="transactions-scope" aria-label="Período, búsqueda y filtros de movimientos"
             className="mb-5 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-5">
             <div className="mb-4">
-              <h2 className="text-base font-extrabold text-slate-900 dark:text-slate-50">Qué movimientos estás viendo</h2>
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-slate-50">Período y filtros</h2>
               <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300 sm:text-sm">
-                El período, la búsqueda y los filtros se aplican a la lista, los resúmenes, los gráficos, Lita y las exportaciones. El orden solo afecta la lista.
+                Resúmenes, gráficos, Lita y exportaciones usan esta selección. El orden solo cambia la lista.
               </p>
             </div>
             <div className="grid min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(245px,0.9fr)_minmax(0,1.7fr)]">
