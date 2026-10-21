@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useReducedMotion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiPieChart, FiEdit2 } from 'react-icons/fi';
+import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiPieChart, FiEdit2, FiChevronDown } from 'react-icons/fi';
 import GenericModal from '../components/GenericModal';
 import BankOnboardingForm from '../components/BankOnboardingForm';
 import DeleteBankChargeDialog from '../components/DeleteBankChargeDialog';
@@ -17,7 +17,7 @@ import QuickAccessCard from '../components/QuickAccessCard';
 import FinancialHeaderActions from '../components/FinancialHeaderActions';
 import PageDataSkeleton from '../components/PageDataSkeleton';
 import { FinancialMetricCard } from '../components/FinancialOverviewPanel';
-import { FINANCIAL_ITEM_SURFACE_STYLES, COLLAPSIBLE_SURFACE_STYLES, CollapsibleHeading } from '../components/CollapsibleHeading';
+import { FINANCIAL_ITEM_SURFACE_STYLES, FINANCIAL_RECORD_DISCLOSURE_STYLES, COLLAPSIBLE_SURFACE_STYLES, CollapsibleHeading } from '../components/CollapsibleHeading';
 import CardStatementDetails from '../components/CardStatementDetails';
 import CardStatementPdfReview from '../components/CardStatementPdfReview';
 import { getCategoriesDataAction, storeDataAction } from '../actionCreators/databaseActions';
@@ -342,22 +342,41 @@ function BanksWorkspace({ user }) {
                   {bankAccounts(id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>Todavía no agregaste cuentas.</p>}
                   <div className='grid gap-3 md:grid-cols-2'>
                     {bankAccounts(id).map((a) => (
-                      <article key={a.id} className={surface}>
-                        <p className='font-bold'>{a.name}</p>
-                        <p className='text-xs text-slate-600 dark:text-slate-300'>{a.type === 'cuenta_corriente' ? 'Cuenta corriente' : a.type === 'caja_ahorro' ? 'Caja de ahorro' : 'Otra cuenta'} · {a.currency}</p>
-                        <p className='mt-2 text-lg font-extrabold tabular-nums'>{displayMoney(a.balance, a.currency)}</p>
-                        {a.alias && <p className='mt-2 break-all text-sm'>Alias: {a.alias}</p>}
-                        {a.accountNumber && <p className='mt-1 text-xs'>N.º de cuenta: {revealedAccount === a.id ? a.accountNumber : '•••• ' + a.accountNumber.slice(-4)}</p>}
-                        {a.holder && <p className='mt-1 text-xs'>Titular: {a.holder}</p>}
-                        {a.holderTaxId && <p className='mt-1 text-xs'>CUIT/CUIL: {revealedAccount === a.id ? a.holderTaxId : '••••'}</p>}
-                        {a.branch && <p className='mt-1 text-xs'>Sucursal: {a.branch}</p>}
-                        <p className='mt-1 text-xs'>CBU/CVU: {revealedAccount === a.id ? (a.cbu || 'No informado') : maskCbu(a.cbu)}</p>
-                        {a.cbu && <button type='button' onClick={() => setRevealedAccount(revealedAccount === a.id ? null : a.id)}
-                          aria-pressed={revealedAccount === a.id} aria-label={(revealedAccount === a.id ? 'Ocultar CBU de ' : 'Ver CBU de ') + a.name}
-                           className='mt-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200 dark:hover:bg-slate-700'>
-                          {revealedAccount === a.id ? <FiEyeOff/> : <FiEye/>} {revealedAccount === a.id ? 'Ocultar CBU' : 'Ver CBU'}
-                        </button>}
-                        <div className='mt-2'><button type='button' className={secondary} onClick={() => startAccount(id, a)}>Editar cuenta o saldo</button></div>
+                      <article key={a.id} aria-label={'Cuenta: ' + a.name} className={surface}>
+                        <div className='flex min-w-0 flex-wrap items-start justify-between gap-2'>
+                          <h4 className='min-w-0 break-words text-base font-bold text-slate-900 dark:text-slate-50'>{a.name}</h4>
+                          <span className='shrink-0 rounded-full border border-violet-300 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-800 dark:border-violet-700 dark:bg-slate-900/70 dark:text-violet-200'>{a.currency}</span>
+                        </div>
+                        <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>{a.type === 'cuenta_corriente' ? 'Cuenta corriente' : a.type === 'caja_ahorro' ? 'Caja de ahorro' : 'Otra cuenta'}</p>
+                        <p className='mt-2 min-w-0 break-all text-xl font-extrabold tabular-nums text-slate-900 dark:text-slate-50'>{displayMoney(a.balance, a.currency)}</p>
+                        <div className='mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-2.5 dark:border-slate-700'>
+                          {(a.alias || a.accountNumber || a.holder || a.holderTaxId || a.branch || a.cbu) ? (
+                            <details className='group min-w-0'
+                              onToggle={(event) => {
+                                if (!event.currentTarget.open && revealedAccount === a.id) setRevealedAccount(null);
+                              }}>
+                              <summary className={FINANCIAL_RECORD_DISCLOSURE_STYLES + ' cursor-pointer list-none [&::-webkit-details-marker]:hidden'}>
+                                <FiChevronDown aria-hidden='true' className='h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none' />
+                                Ver detalles
+                              </summary>
+                              <div className='mt-2 min-w-0 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200'
+                                aria-label={'Detalles de cuenta ' + a.name}>
+                                {a.alias && <p className='break-all'><strong>Alias: </strong>{a.alias}</p>}
+                                {a.accountNumber && <p className='break-all'>N.º de cuenta: {revealedAccount === a.id ? a.accountNumber : '•••• ' + a.accountNumber.slice(-4)}</p>}
+                                {a.holder && <p className='break-words'>Titular: {a.holder}</p>}
+                                {a.holderTaxId && <p>CUIT/CUIL: {revealedAccount === a.id ? a.holderTaxId : '••••'}</p>}
+                                {a.branch && <p className='break-words'>Sucursal: {a.branch}</p>}
+                                <p className='break-all'>CBU/CVU: {revealedAccount === a.id ? (a.cbu || 'No informado') : maskCbu(a.cbu)}</p>
+                                {a.cbu && <button type='button' onClick={() => setRevealedAccount(revealedAccount === a.id ? null : a.id)}
+                                  aria-pressed={revealedAccount === a.id} aria-label={(revealedAccount === a.id ? 'Ocultar CBU de ' : 'Ver CBU de ') + a.name}
+                                  className='inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200 dark:hover:bg-slate-800'>
+                                  {revealedAccount === a.id ? <FiEyeOff aria-hidden='true'/> : <FiEye aria-hidden='true'/>} {revealedAccount === a.id ? 'Ocultar CBU' : 'Ver CBU'}
+                                </button>}
+                              </div>
+                            </details>
+                          ) : <span aria-hidden='true' />}
+                          <button type='button' className={secondary} onClick={() => startAccount(id, a)}>Editar cuenta o saldo</button>
+                        </div>
                       </article>
                     ))}
                   </div>
