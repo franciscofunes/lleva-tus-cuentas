@@ -36,3 +36,9 @@ All transactions retain the required `selectedDate`. Do not confuse that with a 
 - Render `displayName || name` for user-facing labels; retain `name` as the option value / Firestore financial classification.
 - Verify search, filters, charts, exports and historical transaction editor all display the new label without changing the underlying category.
 - Update `docs/custom-category-editing.md`, scoped Firestore rules and regression tests when editing category behavior.
+
+## Progressive disclosure for transaction cards (issue #225)
+- Preserve the first-scan movement name, full native-currency amount/sign, category, transaction date or due date, any separate/card-statement due date, and visible paid state.
+- Comments, additional fields, currency-purchase quantity/rate, card closing date, paid-at details and card-statement PDF consumption drilldowns belong in a per-card labeled disclosure with `aria-expanded` and `aria-controls`. Mount PDF drilldown only when expanded to avoid unnecessary Firestore work.
+- Hide custom fields and linked PDF details in privacy mode, including when a disclosure remains open. Do not hide or modify monetary data in Firestore, exports or reporting scope.
+- Individual cards must expand independently; keep edit/delete actions visible with accessible 44px targets and recheck all conditional categories after any styling changes.
