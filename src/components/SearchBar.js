@@ -24,6 +24,7 @@ function SearchBar({
   resultCount,
   totalCount,
   selectedFilter,
+  periodDescription,
   onClear,
   onManageCategories,
   onViewAll,
@@ -36,13 +37,15 @@ function SearchBar({
   disabled = false,
 }) {
   const active = Boolean(query.trim() || selectedCategory || transactionType !== 'all');
-  const periodLabel = PERIOD_NAMES[selectedFilter] || 'período seleccionado';
+  const periodLabel = periodDescription || PERIOD_NAMES[selectedFilter] || 'período seleccionado';
   const sortLabel = TRANSACTION_SORT_OPTIONS.find((option) => option.value === sortBy)?.label || 'Fecha del movimiento';
   const categoryOptions = (categories || []).filter((entry) => entry?.name)
     .slice().sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b), 'es-AR'));
+  const activeCategory = categoryOptions.find((entry) => entry.name === selectedCategory);
+  const activeTypeLabel = transactionType === 'expense' ? 'Solo gastos' : 'Solo ingresos';
 
   return (
-    <section aria-label='Buscar y filtrar transacciones' className='mb-5 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/60'>
+    <section aria-label='Buscar y filtrar transacciones' className='min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/60'>
       <button type='button' onClick={onToggle} aria-expanded={!collapsed}
         aria-controls='transactions-filter-fields'
         aria-label={collapsed ? 'Expandir búsqueda y filtros' : 'Contraer búsqueda y filtros'}
@@ -54,14 +57,14 @@ function SearchBar({
           <span className='min-w-0'>
             <span className='block text-sm font-bold text-slate-900 dark:text-slate-100'>Buscar, filtrar y ordenar</span>
             <span className='block break-words text-xs text-slate-600 dark:text-slate-300'>
-              {active ? 'Filtros aplicados' : 'Sin filtros'} · {sortLabel} · {sortDirection === 'asc' ? 'Ascendente' : 'Descendente'}
+              {active ? 'Filtros activos visibles' : 'Sin filtros'} · {sortLabel} · {sortDirection === 'asc' ? 'Ascendente' : 'Descendente'}
             </span>
           </span>
         </span>
         <FiChevronDown aria-hidden='true' size={20}
           className={'shrink-0 text-slate-500 transition-transform duration-200 dark:text-slate-300 ' + (!collapsed ? 'rotate-180' : '')} />
       </button>
-      <div id='transactions-filter-fields' hidden={collapsed} className='border-t border-slate-200 px-3 py-4 dark:border-slate-700 sm:px-4'>
+      <div className='border-t border-slate-200 px-3 py-4 dark:border-slate-700 sm:px-4'>
         <div className='flex flex-col gap-3 sm:flex-row sm:items-end'>
         <div className='min-w-0 flex-1'>
           <label htmlFor='transaction-search' className='mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200'>
@@ -117,6 +120,32 @@ function SearchBar({
           </button>
         )}
       </div>
+
+        {active && (
+          <div role='group' aria-label='Filtros activos' className='mt-3 flex min-w-0 flex-wrap items-center gap-2'>
+            <span className='text-xs font-semibold text-slate-600 dark:text-slate-300'>Filtros activos:</span>
+            {query.trim() && (
+              <button type='button' disabled={disabled} onClick={() => onQueryChange('')} aria-label='Quitar filtro de búsqueda'
+                className='inline-flex min-h-[44px] min-w-0 max-w-full items-center gap-1.5 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-800 hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50 dark:border-violet-600 dark:bg-violet-950/40 dark:text-violet-200 dark:hover:bg-violet-900/50'>
+                <span className='min-w-0 break-all'>Texto: {query.trim()}</span><FiX aria-hidden='true' className='shrink-0' />
+              </button>
+            )}
+            {selectedCategory && (
+              <button type='button' disabled={disabled} onClick={() => onCategoryChange('')} aria-label='Quitar filtro de categoría'
+                className='inline-flex min-h-[44px] min-w-0 max-w-full items-center gap-1.5 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-800 hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50 dark:border-violet-600 dark:bg-violet-950/40 dark:text-violet-200 dark:hover:bg-violet-900/50'>
+                <span className='min-w-0 break-all'>Categoría: {activeCategory ? categoryLabel(activeCategory) : selectedCategory}</span><FiX aria-hidden='true' className='shrink-0' />
+              </button>
+            )}
+            {transactionType !== 'all' && (
+              <button type='button' disabled={disabled} onClick={() => onTypeChange('all')} aria-label='Quitar filtro de tipo'
+                className='inline-flex min-h-[44px] min-w-0 items-center gap-1.5 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-800 hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50 dark:border-violet-600 dark:bg-violet-950/40 dark:text-violet-200 dark:hover:bg-violet-900/50'>
+                {activeTypeLabel}<FiX aria-hidden='true' />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+      <div id='transactions-filter-fields' hidden={collapsed} className='border-t border-slate-200 px-3 py-4 dark:border-slate-700 sm:px-4'>
 
       <div className='mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2'>
         <div className='min-w-0'>
@@ -199,7 +228,7 @@ function SearchBar({
           {active && !disabled ? ' coinciden con tus filtros' : ''}
         </p>
         <p id='transactions-search-hint'>
-          Buscando en: <strong>{periodLabel}</strong>
+          Período: <strong className='capitalize'>{periodLabel}</strong>
           {selectedFilter !== 'total' && (
             <>
               {' · '}
