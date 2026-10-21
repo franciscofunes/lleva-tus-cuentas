@@ -28,7 +28,7 @@ const readline = require('node:readline/promises');
     await page.goto(new URL('/transacciones', parsed).toString(), { waitUntil:'domcontentloaded' });
     await page.locator('#transactions-scope').waitFor({ state:'visible', timeout:25000 });
     await context.storageState({ path:storageFile, indexedDB:true });
-    console.log('Local encrypted-session-capable browser state saved to a gitignored path. Do NOT share it.');
+    console.log('Local authentication session saved to a gitignored path. Treat it as a password; do NOT share it.');
   } finally {
     await context.close();
   }
