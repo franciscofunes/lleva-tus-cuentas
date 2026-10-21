@@ -48,16 +48,16 @@ function SearchBar({
     <section aria-label='Buscar y filtrar transacciones' className='min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/60'>
       <button type='button' onClick={onToggle} aria-expanded={!collapsed}
         aria-controls='transactions-filter-fields'
-        aria-label={collapsed ? 'Expandir búsqueda y filtros' : 'Contraer búsqueda y filtros'}
+        aria-label={collapsed ? 'Expandir filtros avanzados y orden' : 'Contraer filtros avanzados y orden'}
         className='flex min-h-[54px] w-full items-center justify-between gap-3 px-3 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-purple-500 sm:px-4'>
         <span className='flex min-w-0 items-center gap-2.5'>
           <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-700 dark:text-purple-300'>
             <FiSliders size={17} aria-hidden='true' />
           </span>
           <span className='min-w-0'>
-            <span className='block text-sm font-bold text-slate-900 dark:text-slate-100'>Buscar, filtrar y ordenar</span>
+            <span className='block text-sm font-bold text-slate-900 dark:text-slate-100'>Buscar y ordenar</span>
             <span className='block break-words text-xs text-slate-600 dark:text-slate-300'>
-              {active ? 'Filtros activos visibles' : 'Sin filtros'} · {sortLabel} · {sortDirection === 'asc' ? 'Ascendente' : 'Descendente'}
+              {active ? 'Filtros activos' : 'Sin filtros'} · {sortLabel} · {sortDirection === 'asc' ? 'Ascendente' : 'Descendente'}
             </span>
           </span>
         </span>
