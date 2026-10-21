@@ -70,7 +70,7 @@ function Card({
 
   const handleDelete = () => {
     // The page owns the destructive confirmation; never delete on first tap.
-    onRequestDelete?.({ id, name: name || 'Sin nombre' });
+    onRequestDelete?.({ id, name: name || 'Sin nombre', isCardSummary: safeCategory.includes('Resumen tarjeta') });
   };
 
 	const handleEdit = () => {
@@ -106,9 +106,23 @@ function Card({
 			className={`${FINANCIAL_ITEM_SURFACE_STYLES} mb-3`}
 		>
 			<div className='min-w-0 space-y-1.5'>
-				<h3 className='min-w-0 break-words text-base font-bold leading-relaxed text-slate-900 dark:text-slate-50'>
-					{name || 'Sin nombre'}
-				</h3>
+				<div className='flex min-w-0 flex-col gap-1.5 border-b border-slate-200 pb-3 dark:border-slate-700 sm:flex-row sm:items-start sm:justify-between sm:gap-4'>
+					<h3 className='min-w-0 flex-1 break-words text-base font-bold leading-relaxed text-slate-900 dark:text-slate-50'>{name || 'Sin nombre'}</h3>
+					<p
+						className={`min-w-0 break-all text-left sm:max-w-[48%] sm:break-words sm:text-right text-lg font-bold leading-6 tabular-nums sm:text-xl ${
+							isExpense
+								? 'text-rose-600 dark:text-rose-400'
+								: 'text-emerald-600 dark:text-emerald-400'
+						}`}
+					>
+						{hideValues
+              ? '••••••'
+              : safeCategory.includes(INGRESO_DIVISAS_CATEGORY)
+                ? `$USD ${currencyQuantity}`
+                : `${transactionCurrency === 'USD' ? '$USD' : '$AR'} ${isExpense ? '-' : '+'}${parseFloat(amount)?.toLocaleString()}`
+            }
+					</p>
+				</div>
 
 				{comment && (
 					<p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
@@ -194,22 +208,9 @@ function Card({
 						)}
 					</div>
 				)}
-				<div className='mt-3 flex min-w-0 flex-wrap items-center gap-2 border-t border-slate-200 pt-3 dark:border-slate-700'>
-					<p
-						className={`mr-auto min-w-0 break-words text-lg font-bold leading-6 tabular-nums sm:text-xl ${
-							isExpense
-								? 'text-rose-600 dark:text-rose-400'
-								: 'text-emerald-600 dark:text-emerald-400'
-						}`}
-					>
-						{hideValues
-              ? '••••••'
-              : safeCategory.includes(INGRESO_DIVISAS_CATEGORY)
-                ? `$USD ${currencyQuantity}`
-                : `${transactionCurrency === 'USD' ? '$USD' : '$AR'} ${isExpense ? '-' : '+'}${parseFloat(amount)?.toLocaleString()}`
-            }
-					</p>
-					<div className='ml-auto flex shrink-0 items-center gap-2'>
+				<div className='mt-3 flex min-w-0 items-center justify-end gap-2 border-t border-slate-200 pt-3 dark:border-slate-700'>
+
+					<div className='flex shrink-0 items-center gap-2'>
 						<button type='button' onClick={handleDelete} aria-label={`Eliminar ${name || 'movimiento'}`} title='Eliminar movimiento'
 							className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-slate-50 text-slate-700 transition-colors hover:border-rose-400 hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-rose-500/70 dark:hover:bg-rose-500/10 dark:hover:text-rose-300'>
 							<FiTrash2 className='h-[18px] w-[18px]' aria-hidden='true' />

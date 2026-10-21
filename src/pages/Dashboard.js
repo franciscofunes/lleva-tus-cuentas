@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 import PageDataSkeleton from "../components/PageDataSkeleton";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import "tippy.js/dist/tippy.css";
-import { FaArrowRight, FaChartPie, FaExchangeAlt, FaPlus, FaListAlt, FaTags, FaRegCalendarCheck, FaUniversity } from "react-icons/fa";
+import { FaListAlt, FaTags, FaRegCalendarCheck } from "react-icons/fa";
 import {
   getCategoriesDataAction,
   getDataAction,
@@ -23,14 +23,15 @@ import DeleteTransactionDialog from "../components/DeleteTransactionDialog";
 import LitaAssistantPanel from "../components/LitaAssitantPanel";
 import { summarizeSpendingByCategory } from '../utils/litaSpendingSummary';
 import SearchBar from "../components/SearchBar";
-import { filterTransactions } from "../utils/transactionSearch";
-import { sortTransactions, isTransactionSortKey } from "../utils/transactionSort";
+import { isTransactionSortKey } from "../utils/transactionSort";
 import { categoryContains } from "../utils/categoryContains";
 import { getTransactionCurrency } from "../utils/customCategories";
-import { TRANSACTION_PAGE_SIZE, visibleTransactionBatch } from "../utils/transactionsPagination";
+import { TRANSACTION_PAGE_SIZE } from "../utils/transactionsPagination";
+import { selectScopedTransactions, selectTransactionCards } from "../utils/transactionsPageView";
 import TransactionForm from "../components/TransactionForm";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
+import TransactionsHeaderActions from "../components/TransactionsHeaderActions";
 import { TRANSACTIONS_PAGE_COPY } from "../shared/constants/transactionsPageCopy";
 import FinancialOverviewPanel from "../components/FinancialOverviewPanel";
 import TransactionsExportReady from "../components/TransactionsExportReady";
@@ -98,52 +99,33 @@ const TransactionListSkeleton = () => (
 );
 
 const TransactionsPageSkeleton = () => (
-  <main
-    className="min-h-screen max-w-full bg-slate-50 dark:bg-gray-900 px-3 sm:px-5 lg:px-8 py-5"
-    aria-label="Cargando panel de transacciones"
-  >
-    <div className="max-w-7xl mx-auto w-full animate-pulse">
-      <section className="mb-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 sm:p-6 shadow-sm">
-        <SkeletonBlock className="h-4 w-48" />
+  <main className="min-h-screen max-w-full bg-slate-50 px-3 py-5 dark:bg-gray-900 sm:px-5 lg:px-8"
+    aria-label="Cargando panel de transacciones">
+    <div className="mx-auto w-full max-w-7xl animate-pulse">
+      <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-6">
+        <SkeletonBlock className="h-4 w-36" />
         <SkeletonBlock className="mt-3 h-8 w-72 max-w-[80%]" />
         <SkeletonBlock className="mt-3 h-4 w-full max-w-xl" />
-        <div className="mt-5 grid grid-cols-3 gap-2 sm:flex">
-          {[0, 1, 2].map((item) => (
-            <SkeletonBlock key={item} className="h-11 sm:w-32 rounded-xl" />
-          ))}
-        </div>
+        <SkeletonBlock className="mt-5 h-11 w-44 rounded-xl" />
       </section>
-
-      <div className="grid min-w-0 grid-cols-1 gap-5 items-start lg:grid-cols-3">
-        <div className="space-y-5">
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
-            <div className="grid grid-cols-2 gap-5">
-              {[0, 1].map((item) => (
-                <div key={item} className="flex flex-col items-center">
-                  <SkeletonBlock className="h-6 w-24" />
-                  <SkeletonBlock className="mt-3 h-5 w-28" />
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 flex flex-col items-center">
-              <SkeletonBlock className="h-6 w-28" />
-              <SkeletonBlock className="mt-3 h-5 w-28" />
-              <SkeletonBlock className="mt-5 h-5 w-20" />
-              <SkeletonBlock className="mt-3 h-8 w-40" />
-            </div>
-            <SkeletonBlock className="mt-6 h-10 w-full rounded-xl" />
-          </section>
-
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
-            <ChartSkeleton />
-          </section>
-        </div>
-
-        <section className="lg:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6 shadow-sm">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-3">
+        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <SkeletonBlock className="h-4 w-36" />
+          <SkeletonBlock className="mt-3 h-6 w-56 max-w-full" />
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <SkeletonBlock className="h-11 w-full" />
+            <SkeletonBlock className="h-11 w-full" />
+          </div>
+          <SkeletonBlock className="mt-4 h-20 w-full rounded-xl" />
+        </section>
+        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-6 lg:col-span-2 lg:row-span-2">
           <SkeletonBlock className="h-4 w-20" />
           <SkeletonBlock className="mt-2 h-8 w-44" />
           <SkeletonBlock className="mt-4 h-11 w-full rounded-xl" />
           <TransactionListSkeleton />
+        </section>
+        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <ChartSkeleton />
         </section>
       </div>
     </div>
@@ -186,13 +168,10 @@ function Dashboard() {
 
 
   const filteredDocs = useMemo(
-    () => filterTransactions(docs || [], {
-      query: searchQuery,
-      category: searchCategory,
-      type: searchType,
-      categories: categories || [],
+    () => selectScopedTransactions(docs, categories, {
+      query: searchQuery, category: searchCategory, type: searchType,
     }),
-    [docs, searchQuery, searchCategory, searchType, categories]
+    [docs, categories, searchQuery, searchCategory, searchType]
   );
 
   // Do not offer stale financial exports after changing filters, data, or the
@@ -211,13 +190,11 @@ function Dashboard() {
 
   // Sort only the visible cards, after filtering, before mobile pagination.
   // KPIs, balances, Lita and export keep the unmodified full filtered set.
-  const sortedDocs = useMemo(
-    () => sortTransactions(filteredDocs, sortBy, sortDirection),
-    [filteredDocs, sortBy, sortDirection]
-  );
   const visibleTransactions = useMemo(
-    () => visibleTransactionBatch(sortedDocs, visibleTransactionCount),
-    [sortedDocs, visibleTransactionCount]
+    () => selectTransactionCards(filteredDocs, {
+      sortBy, sortDirection, count: visibleTransactionCount,
+    }),
+    [filteredDocs, sortBy, sortDirection, visibleTransactionCount]
   );
   useEffect(() => {
     setVisibleTransactionCount(TRANSACTION_PAGE_SIZE);
@@ -287,7 +264,7 @@ function Dashboard() {
   const [collapsedSections, setCollapsedSections] = useState({
     overview: false,
     summary: false,
-    charts: false,
+    charts: true,
     transactions: false,
     filters: true,
   });
@@ -301,7 +278,7 @@ function Dashboard() {
       setCollapsedSections({
         overview: false,
         summary: false,
-        charts: false,
+        charts: true,
         transactions: false,
         filters: true,
         ...(saved.collapsedSections || {}),
@@ -312,7 +289,7 @@ function Dashboard() {
       setSortBy(isTransactionSortKey(saved.sortBy) ? saved.sortBy : "date");
       setSortDirection(saved.sortDirection === "asc" ? "asc" : "desc");
     } catch {
-      setCollapsedSections({ overview: false, summary: false, charts: false, transactions: false, filters: true });
+      setCollapsedSections({ overview: false, summary: false, charts: true, transactions: false, filters: true });
       setIsDataVisible(true);
       setSortBy("date");
       setSortDirection("desc");
@@ -619,31 +596,16 @@ function Dashboard() {
             eyebrow={TRANSACTIONS_PAGE_COPY.hero.eyebrow}
             title={TRANSACTIONS_PAGE_COPY.hero.title}
             description={TRANSACTIONS_PAGE_COPY.hero.description}
+            actionsClassName="min-w-0 sm:shrink-0"
           >
-            <button type="button" onClick={openModal} aria-label="Agregar movimiento" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-purple-600 px-3 py-2.5 text-sm font-bold text-white hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"><FaPlus /> <span className="hidden sm:inline">Movimiento</span></button>
-            <Link to="/portfolio" aria-label="Ir a Portfolio" className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300"><FaChartPie /> <span className="hidden sm:inline">Portfolio</span></Link>
-            <Link to="/bancos" aria-label="Ir a Bancos" className="inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold"><FaUniversity /> <span className="hidden sm:inline">Bancos</span></Link>
-            <button type="button" onClick={toggleDataVisibility} aria-pressed={!isDataVisible} aria-label={isDataVisible ? "Ocultar importes de la pantalla" : "Mostrar importes de la pantalla"} className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600"><img className="h-5 w-5" src={isDataVisible ? eyeHide : closeEye} alt="" /> <span className="hidden sm:inline">{isDataVisible ? "Ocultar" : "Mostrar"}</span></button>
-          </QuickAccessCard>
-          <FinancialOverviewPanel
-              id="transactions-overview"
-              collapsed={collapsedSections.overview}
-              onToggle={() => toggleDashboardSection("overview")}
-              title={TRANSACTIONS_PAGE_COPY.overview.title}
-              eyebrow={TRANSACTIONS_PAGE_COPY.overview.eyebrow}
-              description={TRANSACTIONS_PAGE_COPY.overview.description}
-              privacyHidden={!isDataVisible}
-              isLoading={isDataFetching || !docs || !categories}
-              actions={[
-                { id: "excel", type: "excel", label: "Exportar archivos", onClick: downloadFilteredTransactions, disabled: isDataFetching || isFilterChanging || !filteredDocs.length },
-                { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
-              ]}
-              metrics={[
-                { id: "count", icon: FaListAlt, label: TRANSACTIONS_PAGE_COPY.metrics.count, value: isDataVisible ? overview.count : "••" },
-                { id: "categories", icon: FaTags, label: TRANSACTIONS_PAGE_COPY.metrics.categories, value: isDataVisible ? overview.categoryCount : "••" },
-                { id: "due", icon: FaRegCalendarCheck, label: TRANSACTIONS_PAGE_COPY.metrics.due, value: isDataVisible ? overview.dueCount : "••" },
-              ]}
+            <TransactionsHeaderActions
+              onAdd={openModal}
+              valuesVisible={isDataVisible}
+              onTogglePrivacy={toggleDataVisibility}
+              visibleIcon={eyeHide}
+              hiddenIcon={closeEye}
             />
+          </QuickAccessCard>
           {isDataFetching && !docs ? (
             <PageDataSkeleton variant="transactions" />
           ) : (
@@ -656,7 +618,6 @@ function Dashboard() {
             id="transactions-summary"
             eyebrow={TRANSACTIONS_PAGE_COPY.summary.eyebrow}
             title={TRANSACTIONS_PAGE_COPY.summary.title}
-            description={TRANSACTIONS_PAGE_COPY.summary.description}
             collapsed={collapsedSections.summary}
             onToggle={() => toggleDashboardSection("summary")}
             className="mb-5 font-Nunito"
@@ -670,65 +631,17 @@ function Dashboard() {
               hideValues={!isDataVisible}
             />
           </CollapsibleSection>
-          <CollapsibleSection
-            id="transactions-charts"
-            eyebrow="Visualización"
-            title="Gráficos"
-            description="Analizá tus movimientos con la visualización que prefieras."
-            collapsed={collapsedSections.charts}
-            onToggle={() => toggleDashboardSection("charts")}
-            className="mb-5 min-w-0 max-w-full overflow-hidden font-Nunito"
-            contentClassName="min-w-0 max-w-full"
-          >
-            {isDataFetching || !Array.isArray(categories) ? (
-              <ChartSkeleton />
-            ) : (
-              docs && (
-                <>
-                  <ChartViewer
-                    selectedChart={selectedChart}
-                    onSelect={handleChartToggle}
-                    chartComponents={chartComponents}
-                    chartData={filteredDocs}
-                    categories={categories}
-                    hideValues={!isDataVisible}
-                  />
-                </>
-              )
-            )}
-          </CollapsibleSection>
-          {!paymentData && user?.email?.toLowerCase() !== "ffunes90@gmail.com" ? (
-            <AdvertisementContainer advertisements={advertisements} />
-          ) : (
-            ""
-          )}
         </div>
 
         <CollapsibleSection
           id="transactions-list"
           eyebrow="Actividad"
           title="Transacciones"
-          description="Buscá, revisá y editá tus movimientos."
+
           collapsed={collapsedSections.transactions}
           onToggle={() => toggleDashboardSection("transactions")}
-          className="lg:col-span-2"
-          action={
-            <Link to="/portfolio" className="hidden sm:inline-flex items-center gap-2 text-sm font-bold text-purple-500">
-              Ver portfolio <FaArrowRight />
-            </Link>
-          }
+          className="min-w-0 lg:col-span-2 lg:row-span-2"
         >
-            <div className="mb-3 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowCategoryManager(true)}
-                disabled={!categories}
-                aria-label="Gestionar categorías personales"
-                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-purple-400 hover:bg-purple-500/10 hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:text-purple-300"
-              >
-                <FaTags size={12} aria-hidden="true" /> Gestionar categorías
-              </button>
-            </div>
             <SearchBar
               query={searchQuery}
               onQueryChange={setSearchQuery}
@@ -747,6 +660,7 @@ function Dashboard() {
               totalCount={(docs || []).length}
               selectedFilter={selectedFilter}
               onClear={clearTransactionFilters}
+              onManageCategories={() => setShowCategoryManager(true)}
               onViewAll={viewAllTransactions}
               disabled={isDataFetching}
             />
@@ -848,8 +762,61 @@ function Dashboard() {
             )}
         </CollapsibleSection>
 
+        <div className="min-w-0 lg:col-span-1" id="transactions-secondary-visualizations">
+          <CollapsibleSection
+            id="transactions-charts"
+            eyebrow="Visualización"
+            title="Gráficos"
+
+            collapsed={collapsedSections.charts}
+            onToggle={() => toggleDashboardSection("charts")}
+            className="mb-5 min-w-0 max-w-full overflow-hidden font-Nunito"
+            contentClassName="min-w-0 max-w-full"
+          >
+            {isDataFetching || !Array.isArray(categories) ? (
+              <ChartSkeleton />
+            ) : (
+              docs && (
+                <>
+                  <ChartViewer
+                    selectedChart={selectedChart}
+                    onSelect={handleChartToggle}
+                    chartComponents={chartComponents}
+                    chartData={filteredDocs}
+                    categories={categories}
+                    hideValues={!isDataVisible}
+                  />
+                </>
+              )
+            )}
+          </CollapsibleSection>
+          {!paymentData && user?.email?.toLowerCase() !== "ffunes90@gmail.com" ? (
+            <AdvertisementContainer advertisements={advertisements} />
+          ) : (
+            ""
+          )}
+        </div>
+
           </div>
           )}
+          <FinancialOverviewPanel
+              id="transactions-overview"
+              collapsed={collapsedSections.overview}
+              onToggle={() => toggleDashboardSection("overview")}
+              title={TRANSACTIONS_PAGE_COPY.overview.title}
+              eyebrow={TRANSACTIONS_PAGE_COPY.overview.eyebrow}
+              privacyHidden={!isDataVisible}
+              isLoading={isDataFetching || !docs || !categories}
+              actions={[
+                { id: "excel", type: "excel", label: "Exportar archivos", onClick: downloadFilteredTransactions, disabled: isDataFetching || isFilterChanging || !filteredDocs.length },
+                { id: "markdown", type: "markdown", label: "Copiar para Lita", onClick: copyTransactionsForLita, disabled: isDataFetching || !filteredDocs.length },
+              ]}
+              metrics={[
+                { id: "count", icon: FaListAlt, label: TRANSACTIONS_PAGE_COPY.metrics.count, value: isDataVisible ? overview.count : "••" },
+                { id: "categories", icon: FaTags, label: TRANSACTIONS_PAGE_COPY.metrics.categories, value: isDataVisible ? overview.categoryCount : "••" },
+                { id: "due", icon: FaRegCalendarCheck, label: TRANSACTIONS_PAGE_COPY.metrics.due, value: isDataVisible ? overview.dueCount : "••" },
+              ]}
+            />
         </div>
       </div>
 

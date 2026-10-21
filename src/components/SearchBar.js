@@ -25,6 +25,7 @@ function SearchBar({
   totalCount,
   selectedFilter,
   onClear,
+  onManageCategories,
   onViewAll,
   sortBy = 'date',
   onSortByChange = () => {},
@@ -119,9 +120,18 @@ function SearchBar({
 
       <div className='mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2'>
         <div className='min-w-0'>
-          <label htmlFor='transaction-category-filter' className='mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300'>
-            <FiSliders aria-hidden='true' /> Categoría
-          </label>
+          <div className='mb-1.5 flex min-w-0 flex-wrap items-center justify-between gap-2'>
+            <label htmlFor='transaction-category-filter' className='flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300'>
+              <FiSliders aria-hidden='true' /> Categoría
+            </label>
+            {onManageCategories && (
+              <button type='button' onClick={onManageCategories} disabled={disabled}
+                aria-label='Gestionar categorías personales'
+                className='inline-flex min-h-[44px] items-center rounded-lg px-2 text-xs font-semibold text-violet-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50 dark:text-violet-200'>
+                Gestionar categorías
+              </button>
+            )}
+          </div>
           <select
             id='transaction-category-filter'
             value={selectedCategory}

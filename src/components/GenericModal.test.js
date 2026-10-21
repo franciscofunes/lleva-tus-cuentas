@@ -37,3 +37,37 @@ test('Tab and Shift+Tab cannot escape a generic modal', () => {
   fireEvent.keyDown(document, { key: 'Tab' });
   expect(close).toHaveFocus();
 });
+
+
+function NestedModalFixture() {
+  const [parent, setParent] = useState(false);
+  const [child, setChild] = useState(false);
+  return (
+    <>
+      <button type='button' onClick={() => setParent(true)}>Abrir transacción</button>
+      <GenericModal show={parent} dialogLabel='Editar transacción'
+        component={<div>
+          <h2>Editar transacción</h2>
+          <button type='button' onClick={() => setChild(true)}>Gestionar categorías</button>
+        </div>}
+        closeModal={() => setParent(false)} />
+      <GenericModal show={child} dialogLabel='Categorías'
+        component={<div><h2>Categorías</h2><button type='button'>Guardar categoría</button></div>}
+        closeModal={() => setChild(false)} />
+    </>
+  );
+}
+
+test('nested category dialog handles Escape without closing the underlying transaction editor', async () => {
+  render(<NestedModalFixture />);
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir transacción' }));
+  const nestedTrigger = screen.getByRole('button', { name: 'Gestionar categorías' });
+  nestedTrigger.focus(); // A real pointer/keyboard activation focuses the invoking control.
+  fireEvent.click(nestedTrigger);
+  expect(screen.getByRole('dialog', { name: 'Categorías' })).toBeInTheDocument();
+  expect(screen.getByRole('dialog', { name: 'Editar transacción' })).toBeInTheDocument();
+  fireEvent.keyDown(document, { key: 'Escape' });
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Categorías' })).not.toBeInTheDocument());
+  expect(screen.getByRole('dialog', { name: 'Editar transacción' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Gestionar categorías' })).toHaveFocus();
+});

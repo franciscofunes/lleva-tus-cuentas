@@ -3,14 +3,14 @@
 // Portfolio balances appear as a separate reference, never as period spending.
 export const TRANSACTIONS_PAGE_COPY = Object.freeze({
   hero: {
-    eyebrow: 'Tus movimientos, bajo control',
+    eyebrow: 'Control diario',
     title: 'Gastos e ingresos',
-    description: 'Descubrí en qué gastás, cuánto ingresa y cómo se mueve tu plata, en pesos y dólares.',
+    description: 'Registrá y revisá movimientos en pesos y dólares.',
   },
   overview: {
-    eyebrow: 'Herramientas y estadísticas',
-    title: 'Tus movimientos en números',
-    description: 'Explorá tus movimientos, consultá estadísticas y exportá tus registros.',
+    eyebrow: 'Herramientas',
+    title: 'Métricas y exportaciones',
+    description: 'Consultá las métricas y descargá tus movimientos.',
   },
   metrics: {
     count: 'Transacciones',
@@ -18,8 +18,8 @@ export const TRANSACTIONS_PAGE_COPY = Object.freeze({
     due: 'Vencimientos registrados',
   },
   summary: {
-    eyebrow: 'Resumen por moneda',
-    title: 'Ingresos y gastos en ARS y USD',
-    description: 'Revisá ingresos, gastos y conversiones por moneda. Tus inversiones se muestran aparte.',
+    eyebrow: 'Período',
+    title: 'Resumen ARS y USD',
+    description: 'Ingresos, gastos y conversiones del período; inversiones aparte.',
   },
 });

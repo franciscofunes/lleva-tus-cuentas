@@ -41,7 +41,7 @@ export default function CardStatementDetails({ expenseId }) {
   return (
     <div className='mt-2 min-w-0 max-w-full'>
       <button type='button' aria-expanded={open} onClick={toggle}
-        className='min-h-[42px] rounded-lg border border-purple-500/70 px-3 py-2 text-sm font-semibold text-purple-700 dark:text-purple-300'>
+        className='min-h-[44px] rounded-lg border border-purple-500/70 px-3 py-2 text-sm font-semibold text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300'>
         {open ? 'Ocultar desglose de tarjeta' : 'Ver consumos del resumen'}
       </button>
       {open && (

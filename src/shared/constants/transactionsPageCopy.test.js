@@ -2,15 +2,15 @@ import { TRANSACTIONS_PAGE_COPY as copy } from './transactionsPageCopy';
 
 test('the transactions hero focuses on day-to-day spending and income, not portfolio summaries', () => {
   expect(copy.hero).toEqual({
-    eyebrow: 'Tus movimientos, bajo control',
+    eyebrow: 'Control diario',
     title: 'Gastos e ingresos',
-    description: expect.stringContaining('en qué gastás'),
+    description: expect.stringContaining('movimientos en pesos y dólares'),
   });
-  expect(copy.overview.title).toBe('Tus movimientos en números');
-  expect(copy.overview.eyebrow).toBe('Herramientas y estadísticas');
-  expect(copy.summary.title).toBe('Ingresos y gastos en ARS y USD');
-  expect(copy.summary.description).toMatch(/conversiones por moneda/);
-  expect(copy.summary.description).toMatch(/inversiones se muestran aparte/);
+  expect(copy.overview.title).toBe('Métricas y exportaciones');
+  expect(copy.overview.eyebrow).toBe('Herramientas');
+  expect(copy.summary.title).toBe('Resumen ARS y USD');
+  expect(copy.summary.description).toMatch(/conversiones del período/);
+  expect(copy.summary.description).toMatch(/inversiones aparte/);
 });
 
 test('the overview labels accurately describe registered data, rather than claiming upcoming due dates', () => {

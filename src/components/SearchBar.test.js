@@ -142,3 +142,20 @@ test('renamed category displays its label but keeps the canonical option value f
   const option = screen.getByRole('option', { name:'Cuidado animal' });
   expect(option).toHaveValue('Mascotas');
 });
+
+
+test('category management is available from expanded advanced filters', () => {
+  const onManageCategories = jest.fn();
+  const props = {
+    query: '', onQueryChange: jest.fn(), selectedCategory: '', onCategoryChange: jest.fn(),
+    transactionType: 'all', onTypeChange: jest.fn(), categories,
+    resultCount: 1, totalCount: 1, selectedFilter: 'month',
+    onClear: jest.fn(), onViewAll: jest.fn(), onManageCategories,
+    collapsed: false,
+  };
+  render(<SearchBar {...props} />);
+  const manage = screen.getByRole('button', { name: 'Gestionar categorías personales' });
+  expect(manage).toHaveClass('min-h-[44px]');
+  fireEvent.click(manage);
+  expect(onManageCategories).toHaveBeenCalledTimes(1);
+});
