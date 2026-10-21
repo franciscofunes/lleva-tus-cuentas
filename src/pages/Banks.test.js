@@ -126,7 +126,7 @@ test('CBU reveal is an accessible 44px disclosure and never opens an editor', as
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Mis bancos' })).toBeInTheDocument());
   fireEvent.click(screen.getByRole('button', { name:/Banco de prueba/ }));
   const account = screen.getByRole('article',{ name:'Cuenta: Caja en pesos' });
-  const disclosure = within(account).getByText('Ver detalles');
+  const disclosure = within(account).getByRole('button', { name:'Ver detalles de Caja en pesos' });
   expect(account).not.toHaveTextContent('1234567890123456789012');
   fireEvent.click(disclosure);
   const reveal=screen.getByRole('button', { name:'Ver CBU de Caja en pesos' });
@@ -209,7 +209,7 @@ test('existing bank accounts and cards keep their data behind the shared nested 
   expect(screen.getByText('Caja USD')).toBeInTheDocument();
   const account = screen.getByRole('article',{ name:'Cuenta: Caja USD' });
   expect(account).not.toHaveTextContent('Alias: cuenta');
-  fireEvent.click(within(account).getByText('Ver detalles'));
+  fireEvent.click(within(account).getByRole('button',{name:'Ver detalles de Caja USD'}));
   expect(within(account).getByText((text, node) => node?.tagName === 'P' && node.textContent === 'Alias: cuenta')).toBeInTheDocument();
   const cardToggle = screen.getByRole('button', { name: /Visa Gold/ });
   expect(cardToggle).toHaveAttribute('aria-expanded', 'false');
