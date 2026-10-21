@@ -21,3 +21,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Authenticated UX QA: contains session tokens and private screenshots
+/.qa-auth/
+/.qa-artifacts/
+/playwright-report/
+/test-results/
