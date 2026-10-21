@@ -316,7 +316,11 @@ function BanksWorkspace({ user }) {
             <CollapsibleSection key={id} id={'bank-' + id} eyebrow='Banco' title={bank.name}
               variant='nested'
               description={bankAccounts(id).length + ' cuentas · ' + bankCards(id).length + ' tarjetas'}
-              collapsed={openBank !== id} onToggle={() => setOpenBank(openBank === id ? null : id)}>
+              collapsed={openBank !== id} onToggle={() => {
+                 setOpenBank(openBank === id ? null : id);
+                 setExpandedAccounts({});
+                 setRevealedAccount(null);
+               }}>
               <div className='space-y-5'>
                 {renameBank?.id === id ? (
                   <form className='flex flex-col gap-2 sm:flex-row sm:items-end'
