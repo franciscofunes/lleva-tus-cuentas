@@ -210,7 +210,7 @@ test('existing bank accounts and cards keep their data behind the shared nested 
   const account = screen.getByRole('article',{ name:'Cuenta: Caja USD' });
   expect(account).not.toHaveTextContent('Alias: cuenta');
   fireEvent.click(within(account).getByText('Ver detalles'));
-  expect(screen.getByText('Alias: cuenta')).toBeInTheDocument();
+  expect(within(account).getByText((text, node) => node?.tagName === 'P' && node.textContent === 'Alias: cuenta')).toBeInTheDocument();
   const cardToggle = screen.getByRole('button', { name: /Visa Gold/ });
   expect(cardToggle).toHaveAttribute('aria-expanded', 'false');
   fireEvent.click(cardToggle);
