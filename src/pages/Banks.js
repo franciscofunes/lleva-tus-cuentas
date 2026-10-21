@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useReducedMotion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiPieChart, FiEdit2, FiChevronDown } from 'react-icons/fi';
+import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiEdit2, FiChevronDown } from 'react-icons/fi';
 import GenericModal from '../components/GenericModal';
 import BankOnboardingForm from '../components/BankOnboardingForm';
 import DeleteBankChargeDialog from '../components/DeleteBankChargeDialog';
@@ -242,7 +241,7 @@ function BanksWorkspace({ user }) {
         <QuickAccessCard
           eyebrow='Organización financiera'
           title='Bancos y tarjetas'
-          description='Administrá tus cuentas, tarjetas, consumos y resúmenes vinculados a Transacciones.'
+          description='Administrá tus bancos, cuentas y tarjetas.'
           note={<span className='inline-flex items-start gap-2'><FiShield className='mt-0.5 shrink-0' aria-hidden='true' />Solo vos podés ver estos datos. No solicitamos claves, CVV ni números completos de tarjeta.</span>}
           actionsClassName='min-w-0 sm:shrink-0'
         >
@@ -266,7 +265,7 @@ function BanksWorkspace({ user }) {
               id='bank-balances'
               eyebrow='Resumen'
               title='Saldos bancarios'
-              description='Totales registrados manualmente, separados por moneda.'
+              description='Saldos manuales en ARS y USD.'
               collapsed={summaryCollapsed}
               onToggle={() => setSummaryCollapsed((value) => !value)}
               className='min-w-0'
@@ -523,7 +522,7 @@ function BanksWorkspace({ user }) {
             </CollapsibleSection>
             <CollapsibleSection id='bank-spending-alerts' eyebrow='Control mensual'
               title='Topes y consumos de tarjetas'
-              description='Controlá cuánto podés gastar antes de tus topes en ARS y USD. El historial es una referencia.'
+              description='Tus límites de consumo en ARS y USD.'
               collapsed={budgetCollapsed} onToggle={()=>setBudgetCollapsed(v=>!v)} className='min-w-0'>
               {budgetError && <p role='alert' className='mb-3 rounded-xl border border-amber-400/50 p-3 text-xs text-amber-700 dark:text-amber-300'>
                 No se pudo cargar la configuración de topes. Revisá las reglas de Firestore para bankSpendingBudgets.
