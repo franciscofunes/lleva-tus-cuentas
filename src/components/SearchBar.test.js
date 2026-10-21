@@ -106,7 +106,7 @@ function CollapsibleSortFixture() {
 describe('collapsible transaction search and sorting', () => {
   it('starts compact without hiding the count and historical scope', () => {
     render(<CollapsibleSortFixture />);
-    const toggle = screen.getByRole('button', { name: 'Expandir búsqueda y filtros' });
+    const toggle = screen.getByRole('button', { name: 'Expandir filtros avanzados y orden' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.getByText('5 de 10 movimientos')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ver todo el historial' })).toBeInTheDocument();
@@ -115,17 +115,17 @@ describe('collapsible transaction search and sorting', () => {
 
   it('changes both sort criterion and direction then keeps selection after collapse', () => {
     render(<CollapsibleSortFixture />);
-    fireEvent.click(screen.getByRole('button', { name: 'Expandir búsqueda y filtros' }));
-    expect(screen.getByRole('button', { name: 'Contraer búsqueda y filtros' })).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros avanzados y orden' }));
+    expect(screen.getByRole('button', { name: 'Contraer filtros avanzados y orden' })).toHaveAttribute('aria-expanded', 'true');
     fireEvent.change(screen.getByLabelText('Ordenar por'), { target: { value: 'amount' } });
     expect(screen.getByLabelText('Ordenar por')).toHaveValue('amount');
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar a orden ascendente' }));
     expect(screen.getByRole('button', { name: 'Cambiar a orden descendente' })).toBeInTheDocument();
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'banco' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Contraer búsqueda y filtros' }));
-    expect(screen.getByText(/Filtros activos visibles.*Importe ARS.*Ascendente/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Contraer filtros avanzados y orden' }));
+    expect(screen.getByText(/Filtros activos.*Importe ARS.*Ascendente/)).toBeInTheDocument();
     expect(screen.getByRole('searchbox')).toHaveValue('banco');
-    fireEvent.click(screen.getByRole('button', { name: 'Expandir búsqueda y filtros' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir filtros avanzados y orden' }));
     expect(screen.getByRole('searchbox')).toHaveValue('banco');
     expect(screen.getByLabelText('Ordenar por')).toHaveValue('amount');
   });
