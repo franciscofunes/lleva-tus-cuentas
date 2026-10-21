@@ -19,7 +19,7 @@ jest.mock('../actionCreators/databaseActions', () => ({
 const { deleteCardAction } = require('../actionCreators/databaseActions');
 
 jest.mock('./CardStatementDetails', () => jest.fn(() => <span data-testid='statement-drilldown'>Consumos PDF</span>));
-const CardStatementDetails = require('./CardStatementDetails').default;
+const CardStatementDetails = require('./CardStatementDetails');
 jest.mock('./InfoTooltip', () => ({ content }) => <span data-testid='category-tooltip'>{content}</span>);
 
 const openDetails = (name = 'Movimiento importado') => fireEvent.click(screen.getByRole('button', { name: 'Ver detalles de ' + name }));
@@ -91,7 +91,7 @@ test('services with configured due dates preserve their due-date label and paid 
   expect(screen.queryByText('Fecha transacción:')).not.toBeInTheDocument();
   expect(screen.getByText('Pagado')).toBeInTheDocument();
   openDetails();
-  expect(screen.getByText('13/10/2026')).toBeInTheDocument();
+  expect(screen.getAllByText('13/10/2026').length).toBeGreaterThanOrEqual(2);
   expect(screen.getByText('12/10/2026')).toBeInTheDocument();
 });
 
