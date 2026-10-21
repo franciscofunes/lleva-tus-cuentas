@@ -14,6 +14,7 @@ import FloatingMenu from '../components/FloatingMenu';
 import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
 import QuickAccessCard from '../components/QuickAccessCard';
+import FinancialHeaderActions from '../components/FinancialHeaderActions';
 import PageDataSkeleton from '../components/PageDataSkeleton';
 import { FinancialMetricCard } from '../components/FinancialOverviewPanel';
 import { FINANCIAL_ITEM_SURFACE_STYLES, COLLAPSIBLE_SURFACE_STYLES, CollapsibleHeading } from '../components/CollapsibleHeading';
@@ -243,31 +244,24 @@ function BanksWorkspace({ user }) {
           title='Bancos y tarjetas'
           description='Administrá tus cuentas, tarjetas, consumos y resúmenes vinculados a Transacciones.'
           note={<span className='inline-flex items-start gap-2'><FiShield className='mt-0.5 shrink-0' aria-hidden='true' />Solo vos podés ver estos datos. No solicitamos claves, CVV ni números completos de tarjeta.</span>}
-          actionsClassName='flex w-full flex-wrap items-center gap-2 sm:w-auto'
+          actionsClassName='min-w-0 sm:shrink-0'
         >
-          <button type='button' disabled={pending} onClick={() => setShowBankForm(true)}
-            aria-label='Agregar banco' className={buttonClass + ' w-full sm:w-auto'}>
-            <FiPlus aria-hidden='true'/> <span>Agregar banco</span>
-          </button>
-          <Link to='/transacciones' title='Transacciones' aria-label='Transacciones'
-            className='inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300'>
-            <FiCreditCard aria-hidden='true'/> <span className='hidden sm:inline'>Transacciones</span>
-          </Link>
-          <Link to='/portfolio' title='Portfolio' aria-label='Portfolio'
-            className='inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300'>
-            <FiPieChart aria-hidden='true'/> <span className='hidden sm:inline'>Portfolio</span>
-          </Link>
-          <button type='button' aria-label={showValues?'Ocultar importes':'Mostrar importes'}
-            aria-pressed={!showValues} onClick={toggleVisibility} className={secondary}>
-            {showValues ? <FiEyeOff aria-hidden='true'/> : <FiEye aria-hidden='true'/>}
-            <span className='hidden sm:inline'>{showValues ? 'Ocultar' : 'Mostrar'}</span>
-          </button>
+          <FinancialHeaderActions
+            currentSection='banks'
+            primaryLabel='Agregar banco'
+            onPrimaryAction={() => setShowBankForm(true)}
+            primaryDisabled={pending}
+            valuesVisible={showValues}
+            onTogglePrivacy={toggleVisibility}
+            privacyIcon={showValues ? <FiEyeOff className='h-5 w-5' aria-hidden='true'/> : <FiEye className='h-5 w-5' aria-hidden='true'/>}
+          />
         </QuickAccessCard>
         <ErrorMessage error={error} />
         {pending ? (
           <PageDataSkeleton variant='banks' />
         ) : (
           <>
+            <div id='banks-workspace' className='grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-3'>
             <CollapsibleSection
               id='bank-balances'
               eyebrow='Resumen'
@@ -275,7 +269,7 @@ function BanksWorkspace({ user }) {
               description='Totales registrados manualmente, separados por moneda.'
               collapsed={summaryCollapsed}
               onToggle={() => setSummaryCollapsed((value) => !value)}
-              className='mb-5'
+              className='min-w-0'
             >
               <div className='grid min-w-0 grid-cols-2 gap-2 sm:gap-3' aria-label='Saldos manuales por moneda'>
                 {['ARS', 'USD'].map((currency, index) => (
@@ -298,20 +292,6 @@ function BanksWorkspace({ user }) {
               </p>
             </CollapsibleSection>
 
-            <CollapsibleSection id='bank-spending-alerts' eyebrow='Control mensual'
-              title='Alertas de gastos de tarjetas'
-              description='Topes en ARS y USD, mayores y menores consumos y análisis con Lita'
-              collapsed={budgetCollapsed} onToggle={()=>setBudgetCollapsed(v=>!v)} className='mb-5'>
-              {budgetError && <p role='alert' className='mb-3 rounded-xl border border-amber-400/50 p-3 text-xs text-amber-700 dark:text-amber-300'>
-                No se pudo cargar la configuración de topes. Revisá las reglas de Firestore para bankSpendingBudgets.
-              </p>}
-              <CardSpendingControls budgets={budgets} statuses={budgetStatuses} history={history}
-                spent={manualSpend} canShowValues={showValues}
-                onSave={(currency,values)=>saveBankBudget(uid,currency,values)}
-                onAskLita={()=>setShowLita(true)}
-                onImportMarkdown={()=>setShowConsumptionImporter(true)}/>
-            </CollapsibleSection>
-
             <CollapsibleSection
               id='bank-management'
               eyebrow='Actividad'
@@ -319,12 +299,12 @@ function BanksWorkspace({ user }) {
               description={`${banks.filter((bank) => bank.active).length} bancos · ${accounts.length} cuentas · ${cards.length} tarjetas`}
               collapsed={manageCollapsed}
               onToggle={() => setManageCollapsed((value) => !value)}
-              className='mb-5'
+              className='min-w-0 lg:col-span-2 lg:row-span-2'
             >
               <div className='space-y-4'>
         {banks.length === 0 && (
           <div className='rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300'>
-            Todavía no agregaste bancos. Usá el botón + del encabezado para crear uno o rellenar sus datos con Markdown.
+            Todavía no agregaste bancos. Usá «Agregar banco» para crear uno o completar sus datos con Markdown.
           </div>
         )}
         {banks.filter((bank) => bank.active).map((bank) => {
@@ -522,6 +502,21 @@ function BanksWorkspace({ user }) {
 
               </div>
             </CollapsibleSection>
+            <CollapsibleSection id='bank-spending-alerts' eyebrow='Control mensual'
+              title='Topes y consumos de tarjetas'
+              description='Controlá cuánto podés gastar antes de tus topes en ARS y USD. El historial es una referencia.'
+              collapsed={budgetCollapsed} onToggle={()=>setBudgetCollapsed(v=>!v)} className='min-w-0'>
+              {budgetError && <p role='alert' className='mb-3 rounded-xl border border-amber-400/50 p-3 text-xs text-amber-700 dark:text-amber-300'>
+                No se pudo cargar la configuración de topes. Revisá las reglas de Firestore para bankSpendingBudgets.
+              </p>}
+              <CardSpendingControls budgets={budgets} statuses={budgetStatuses} history={history}
+                spent={manualSpend} canShowValues={showValues}
+                onSave={(currency,values)=>saveBankBudget(uid,currency,values)}
+                onAskLita={()=>setShowLita(true)}
+                onImportMarkdown={()=>setShowConsumptionImporter(true)}/>
+            </CollapsibleSection>
+
+          </div>
         {pdfCardId && selectedPdfCard && (
           <section className={`${COLLAPSIBLE_SURFACE_STYLES.root} p-4 sm:p-5`}>
             <div className='flex flex-wrap items-start justify-between gap-3'>
