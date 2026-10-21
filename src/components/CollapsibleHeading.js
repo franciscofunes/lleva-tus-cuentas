@@ -18,6 +18,10 @@ export const COLLAPSIBLE_SURFACE_STYLES = Object.freeze({
   content: 'min-w-0 border-t border-slate-200 px-4 pb-4 pt-4 dark:border-slate-700 sm:px-5 sm:pb-5 sm:pt-5',
 });
 
+// The same reveal control is used in Transactions movement cards and Banks account cards.
+export const FINANCIAL_RECORD_DISCLOSURE_STYLES =
+  'inline-flex min-h-[44px] min-w-0 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200 dark:hover:bg-slate-900/70';
+
 // Shared record-card surface for individual transactions and bank accounts.
 // Keep hover, radius, and spacing consistent across modules.
 export const FINANCIAL_ITEM_SURFACE_STYLES =
