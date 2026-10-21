@@ -111,3 +111,8 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
 - Main search and removable active chips must remain visible while advanced fields are collapsed. Removal actions have 44px targets. Clearing chips or all in-page filters **does not reset the period**; full history is explicitly requested.
 - One filtered scope drives summaries, charts, Lita and financial exports. Sorting and paging change cards only, never FX or currency calculations.
 - Review authenticated 390/1440/1728px light/dark screenshots separately from green CI. See [issue #223 notes](transactions-issue-223.md).
+
+## Compact Transactions records and repeatable cross-page UX (issue #225)
+- Scan-first cards show movement name, exact native ARS/USD amount/sign, category, transaction/due date, separate summary/service expiration and paid status. Details disclose long notes, FX amount/rate, custom metadata, card closing date and paid-at history as needed; the PDF drilldown mounts lazily only in expanded state.
+- Per-record details are labeled, keyboard-operable and don't alter reporting/exports. Privacy hides values/custom fields/PDF even when expanded; 44px edit/delete/disclosure targets, readable dark/slate surfaces and long-value wrapping remain mandatory.
+- Carry the same audit and regression process to Banks, Portfolio and Lita. See [UX roadmap](ux-consistency-roadmap.md).
