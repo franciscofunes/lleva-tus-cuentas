@@ -177,12 +177,12 @@ function ExpenseFilter({ onPeriodChange }) {
           <div role='group' aria-label='Navegación mensual' className='flex items-center gap-1'>
             <button type='button' aria-label='Ir al mes anterior' title='Ir al mes anterior'
               disabled={isFilterChanging || !userId} onClick={() => navigateMonth(-1)}
-              className='inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition-colors hover:border-purple-400 hover:text-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-wait disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-purple-400 dark:hover:text-purple-200 sm:h-9 sm:w-9'>
+              className='inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition-colors hover:border-purple-400 hover:text-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-wait disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-purple-400 dark:hover:text-purple-200'>
               <FiChevronLeft size={17} aria-hidden='true' />
             </button>
             <button type='button' aria-label='Ir al mes siguiente' title='Ir al mes siguiente'
               disabled={isFilterChanging || !userId} onClick={() => navigateMonth(1)}
-              className='inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition-colors hover:border-purple-400 hover:text-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-wait disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-purple-400 dark:hover:text-purple-200 sm:h-9 sm:w-9'>
+              className='inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition-colors hover:border-purple-400 hover:text-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-wait disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-purple-400 dark:hover:text-purple-200'>
               <FiChevronRight size={17} aria-hidden='true' />
             </button>
           </div>
@@ -211,7 +211,7 @@ function ExpenseFilter({ onPeriodChange }) {
               aria-pressed={active}
               disabled={isFilterChanging || !userId}
               onClick={() => selectPeriod(key)}
-              className={'min-h-[40px] min-w-0 rounded-lg px-1 text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-wait disabled:opacity-50 sm:text-sm ' +
+              className={'min-h-[44px] min-w-0 rounded-lg px-1 text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-wait disabled:opacity-50 sm:text-sm ' +
                 (active
                   ? 'bg-purple-600 text-white shadow-sm'
                   : 'text-slate-700 hover:bg-white/80 dark:text-slate-200 dark:hover:bg-slate-700')}
