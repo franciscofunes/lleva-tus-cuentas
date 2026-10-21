@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { FaCheckCircle } from 'react-icons/fa';
 import { FiChevronDown, FiEdit3, FiTrash2 } from 'react-icons/fi';
 import InfoTooltip from '../components/InfoTooltip';
-import { FINANCIAL_ITEM_SURFACE_STYLES } from './CollapsibleHeading';
+import { FINANCIAL_ITEM_SURFACE_STYLES, FINANCIAL_RECORD_DISCLOSURE_STYLES } from './CollapsibleHeading';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 import { usesSelectedDateAsDueDate, usesSeparateDueDate } from '../utils/transactionDueDates';
 import { displayTransactionCustomDetails } from '../utils/categoryExtraFields';
@@ -168,7 +168,7 @@ function Card({
               aria-expanded={detailsExpanded}
               aria-controls={detailsId}
               aria-label={(detailsExpanded ? 'Ocultar detalles de ' : 'Ver detalles de ') + (name || 'movimiento')}
-              className='inline-flex min-h-[44px] min-w-0 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200 dark:hover:bg-slate-900/70'>
+              className={FINANCIAL_RECORD_DISCLOSURE_STYLES}>
               <FiChevronDown aria-hidden='true' className={'h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ' + (detailsExpanded ? 'rotate-180' : '')} />
               <span>{detailsExpanded ? 'Ocultar detalles' : 'Ver detalles'}</span>
             </button>
