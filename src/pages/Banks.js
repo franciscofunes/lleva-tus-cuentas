@@ -103,6 +103,7 @@ function BanksWorkspace({ user }) {
   const [chargeDraft, setChargeDraft] = useState(null);
   const [deleteChargeTarget, setDeleteChargeTarget] = useState(null);
   const [revealedAccount, setRevealedAccount] = useState(null);
+  const [expandedAccounts, setExpandedAccounts] = useState({});
   const [pdfCardId, setPdfCardId] = useState('');
   const [pdfDraft, setPdfDraft] = useState(null);
   const lastPdfShaRef = useRef(null);
@@ -353,32 +354,37 @@ function BanksWorkspace({ user }) {
                         <p className='mt-2 min-w-0 break-all text-xl font-extrabold tabular-nums text-slate-900 dark:text-slate-50'>{displayMoney(a.balance, a.currency)}</p>
                         <div className='mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-2.5 dark:border-slate-700'>
                           {(a.alias || a.accountNumber || a.holder || a.holderTaxId || a.branch || a.cbu) ? (
-                            <details className='group min-w-0'
-                              onToggle={(event) => {
-                                if (!event.currentTarget.open && revealedAccount === a.id) setRevealedAccount(null);
+                            <button type='button' className={FINANCIAL_RECORD_DISCLOSURE_STYLES}
+                              aria-expanded={Boolean(expandedAccounts[a.id])}
+                              aria-controls={'bank-account-details-' + a.id}
+                              aria-label={(expandedAccounts[a.id] ? 'Ocultar detalles de ' : 'Ver detalles de ') + a.name}
+                              onClick={() => {
+                                if (expandedAccounts[a.id] && revealedAccount === a.id) setRevealedAccount(null);
+                                setExpandedAccounts((prev) => ({ ...prev, [a.id]: !prev[a.id] }));
                               }}>
-                              <summary className={FINANCIAL_RECORD_DISCLOSURE_STYLES + ' cursor-pointer list-none [&::-webkit-details-marker]:hidden'}>
-                                <FiChevronDown aria-hidden='true' className='h-4 w-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none' />
-                                Ver detalles
-                              </summary>
-                              <div className='mt-2 min-w-0 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200'
-                                aria-label={'Detalles de cuenta ' + a.name}>
-                                {a.alias && <p className='break-all'><strong>Alias: </strong>{a.alias}</p>}
-                                {a.accountNumber && <p className='break-all'>N.º de cuenta: {revealedAccount === a.id ? a.accountNumber : '•••• ' + a.accountNumber.slice(-4)}</p>}
-                                {a.holder && <p className='break-words'>Titular: {a.holder}</p>}
-                                {a.holderTaxId && <p>CUIT/CUIL: {revealedAccount === a.id ? a.holderTaxId : '••••'}</p>}
-                                {a.branch && <p className='break-words'>Sucursal: {a.branch}</p>}
-                                <p className='break-all'>CBU/CVU: {revealedAccount === a.id ? (a.cbu || 'No informado') : maskCbu(a.cbu)}</p>
-                                {a.cbu && <button type='button' onClick={() => setRevealedAccount(revealedAccount === a.id ? null : a.id)}
-                                  aria-pressed={revealedAccount === a.id} aria-label={(revealedAccount === a.id ? 'Ocultar CBU de ' : 'Ver CBU de ') + a.name}
-                                  className='inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200 dark:hover:bg-slate-800'>
-                                  {revealedAccount === a.id ? <FiEyeOff aria-hidden='true'/> : <FiEye aria-hidden='true'/>} {revealedAccount === a.id ? 'Ocultar CBU' : 'Ver CBU'}
-                                </button>}
-                              </div>
-                            </details>
+                              <FiChevronDown aria-hidden='true'
+                                className={'h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ' + (expandedAccounts[a.id] ? 'rotate-180' : '')}/>
+                              {expandedAccounts[a.id] ? 'Ocultar detalles' : 'Ver detalles'}
+                            </button>
                           ) : <span aria-hidden='true' />}
                           <button type='button' className={secondary} onClick={() => startAccount(id, a)}>Editar cuenta o saldo</button>
                         </div>
+                        {Boolean(expandedAccounts[a.id]) && (
+                          <section id={'bank-account-details-' + a.id} aria-label={'Detalles de cuenta ' + a.name}
+                            className='mt-3 min-w-0 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200'>
+                            {a.alias && <p className='break-all'><strong>Alias: </strong>{a.alias}</p>}
+                            {a.accountNumber && <p className='break-all'>N.º de cuenta: {revealedAccount === a.id ? a.accountNumber : '•••• ' + a.accountNumber.slice(-4)}</p>}
+                            {a.holder && <p className='break-words'>Titular: {a.holder}</p>}
+                            {a.holderTaxId && <p>CUIT/CUIL: {revealedAccount === a.id ? a.holderTaxId : '••••'}</p>}
+                            {a.branch && <p className='break-words'>Sucursal: {a.branch}</p>}
+                            <p className='break-all'>CBU/CVU: {revealedAccount === a.id ? (a.cbu || 'No informado') : maskCbu(a.cbu)}</p>
+                            {a.cbu && <button type='button' onClick={() => setRevealedAccount(revealedAccount === a.id ? null : a.id)}
+                              aria-pressed={revealedAccount === a.id} aria-label={(revealedAccount === a.id ? 'Ocultar CBU de ' : 'Ver CBU de ') + a.name}
+                              className='inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200 dark:hover:bg-slate-800'>
+                              {revealedAccount === a.id ? <FiEyeOff aria-hidden='true'/> : <FiEye aria-hidden='true'/>} {revealedAccount === a.id ? 'Ocultar CBU' : 'Ver CBU'}
+                            </button>}
+                          </section>
+                        )}
                       </article>
                     ))}
                   </div>
