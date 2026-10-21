@@ -105,3 +105,9 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
 - Named public sections use `scroll-mt-24` to leave room under persistent site navigation when accessed via anchors.
 - Public app-shell metadata supports plain text preview with Open Graph and Twitter summary tags, without copying private finance values or publishing unverified imagery. No canonical tag was added because private SPA routes share the same HTML shell.
 - The minimal landing footer now names banks and cards instead of leading with AI. Styling and Firebase/financial logic are unchanged.
+
+## Transactions unified scope toolbar (issue #223)
+- Period and in-page search/category/type/sort share one **top-level scope toolbar** before summaries and activity. The existing Firestore/Redux period remains the source of truth; search receives a human-readable reference-date label.
+- Main search and removable active chips must remain visible while advanced fields are collapsed. Removal actions have 44px targets. Clearing chips or all in-page filters **does not reset the period**; full history is explicitly requested.
+- One filtered scope drives summaries, charts, Lita and financial exports. Sorting and paging change cards only, never FX or currency calculations.
+- Review authenticated 390/1440/1728px light/dark screenshots separately from green CI. See [issue #223 notes](transactions-issue-223.md).
