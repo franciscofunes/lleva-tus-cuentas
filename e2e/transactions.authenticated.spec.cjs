@@ -7,6 +7,9 @@ async function ready(page) {
   await page.goto('/transacciones');
   await expect(page.locator('#transactions-scope')).toBeVisible();
   await expect(page.getByRole('searchbox', { name:'Buscar movimientos' })).toBeEnabled({ timeout:30000 });
+  const list = page.locator('#transactions-list');
+  const listDisclosure = list.locator('button[aria-expanded]').first();
+  if (await listDisclosure.getAttribute('aria-expanded') === 'false') await listDisclosure.click();
 }
 
 async function showTheme(page, dark) {
@@ -49,7 +52,7 @@ for (const viewport of viewports) {
             width:rect.width,height:rect.height };
         });
         return {viewportWidth:window.innerWidth, scrollWidth:document.documentElement.scrollWidth, blocks,
-          smallScopeTargets:scopeButtons.filter(b => b.width < 43.5 || b.height < 43.5)};
+          smallScopeTargets:scopeButtons.filter(b => b.width > 0 && b.height > 0 && (b.width < 43.5 || b.height < 43.5))};
       });
       fs.writeFileSync(info.outputPath(`layout-${viewport.width}-${theme}.json`), JSON.stringify(geometry,null,2));
       expect(geometry.scrollWidth, 'no horizontal overflow').toBeLessThanOrEqual(geometry.viewportWidth + 1);
@@ -63,6 +66,9 @@ for (const viewport of viewports) {
 test('authenticated search, filter chips, keyboard and explicit all-history action', async ({ page }) => {
   await ready(page);
   const search=page.getByRole('searchbox', { name:'Buscar movimientos' });
+  if (!(await page.locator('#transactions-list [role="article"]').count())) {
+    throw new Error('Seed an isolated QA user with at least one synthetic transaction in the selected month to verify filtering.');
+  }
   await search.fill('LTCSyntheticUnmatchedQueryForQA');
   await expect(page.getByRole('button', { name:'Quitar filtro de búsqueda' })).toBeVisible();
   await expect(page.getByText('No encontramos movimientos')).toBeVisible();
@@ -96,4 +102,23 @@ test('navigation and per-card disclosure are keyboard accessible, without financ
   await expect(page.getByRole('heading', { name:'Mis bancos' })).toBeVisible();
   await page.goto('/portfolio');
   await expect(page.locator('main').first()).toBeVisible();
+});
+
+test('edit and delete dialogs can be opened and safely cancelled, with no writes', async ({page}, info) => {
+  await ready(page);
+  const card = page.locator('#transactions-list [role="article"]').first();
+  if (!(await card.count())) {
+    info.annotations.push({ type:'coverage-gap', description:'No test movement present; cannot verify edit/delete cancellation.' });
+    return;
+  }
+  await card.getByRole('button', {name:/^Editar /}).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await card.getByRole('button', {name:/^Eliminar /}).click();
+  const confirmation = page.getByRole('dialog', {name:'Eliminar movimiento'});
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', {name:'Cancelar'}).click();
+  await expect(confirmation).toHaveCount(0);
+  await expect(card).toBeVisible();
 });
