@@ -116,3 +116,9 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
 - Scan-first cards show movement name, exact native ARS/USD amount/sign, category, transaction/due date, separate summary/service expiration and paid status. Details disclose long notes, FX amount/rate, custom metadata, card closing date and paid-at history as needed; the PDF drilldown mounts lazily only in expanded state.
 - Per-record details are labeled, keyboard-operable and don't alter reporting/exports. Privacy hides values/custom fields/PDF even when expanded; 44px edit/delete/disclosure targets, readable dark/slate surfaces and long-value wrapping remain mandatory.
 - Carry the same audit and regression process to Banks, Portfolio and Lita. See [UX roadmap](ux-consistency-roadmap.md).
+
+## Banks — action and destructive-flow baseline (#227)
+- The primary add-bank action is readable at 390px and occupies the first mobile row; secondary navigation remains smaller and consistently keyboard-focusable.
+- Use `QuickAccessCard` and existing `CollapsibleSection`/opaque card tokens. Manual card consumption records have names and native-currency amounts that wrap without clipping. Do not infer conversions or duplicate imported statement spending.
+- Deleting a manual consumption always requires an accessible confirmation modal, shows a masked amount when privacy is enabled, and must never unlink the corresponding PDF statement or delete a Transactions record.
+- Every actionable reveal/delete/editor control requires a 44px target, `aria-expanded` or `aria-pressed` where meaningful, and visible focus. See [Bancos #227 phase 1](banks-issue-227-part1.md).

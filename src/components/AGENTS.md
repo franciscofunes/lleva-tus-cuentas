@@ -42,3 +42,9 @@ All transactions retain the required `selectedDate`. Do not confuse that with a 
 - Comments, additional fields, currency-purchase quantity/rate, card closing date, paid-at details and card-statement PDF consumption drilldowns belong in a per-card labeled disclosure with `aria-expanded` and `aria-controls`. Mount PDF drilldown only when expanded to avoid unnecessary Firestore work.
 - Hide custom fields and linked PDF details in privacy mode, including when a disclosure remains open. Do not hide or modify monetary data in Firestore, exports or reporting scope.
 - Individual cards must expand independently; keep edit/delete actions visible with accessible 44px targets and recheck all conditional categories after any styling changes.
+
+## Bank consumptions and confirmation dialogs (issue #227)
+- Keep the add-bank primary action labeled at phone widths; don't replace it with an unlabelled plus glyph.
+- Removing a manual bank card consumption must always show `DeleteBankChargeDialog` before any deletion write. Only the owning user's `deleteManualCardCharge(uid, id)` is allowed after explicit confirmation. Never cascade into statement PDFs, linked imports or a Transactions record.
+- Hide the amount in the confirmation while bank privacy is active, including after errors. Keep keyboard focus trapping, Escape, 44px targets, pending double-tap lock and retry-on-failure tests.
+- Reuse the existing `QuickAccessCard`, `CollapsibleSection`, `FINANCIAL_ITEM_SURFACE_STYLES` and semantic ARS/USD labels; don't change Firestore rules for this UI.

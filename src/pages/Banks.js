@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiPieChart, FiEdit2 } from 'react-icons/fi';
 import GenericModal from '../components/GenericModal';
 import BankOnboardingForm from '../components/BankOnboardingForm';
+import DeleteBankChargeDialog from '../components/DeleteBankChargeDialog';
 import StatementLinkEditor from '../components/StatementLinkEditor';
 import CardSpendingControls from '../components/CardSpendingControls';
 import CardConsumptionMarkdownImporter from '../components/CardConsumptionMarkdownImporter';
@@ -98,6 +99,7 @@ function BanksWorkspace({ user }) {
   const [cardDraft, setCardDraft] = useState(null);
   const [cardEditingId, setCardEditingId] = useState(null);
   const [chargeDraft, setChargeDraft] = useState(null);
+  const [deleteChargeTarget, setDeleteChargeTarget] = useState(null);
   const [revealedAccount, setRevealedAccount] = useState(null);
   const [pdfCardId, setPdfCardId] = useState('');
   const [pdfDraft, setPdfDraft] = useState(null);
@@ -241,17 +243,18 @@ function BanksWorkspace({ user }) {
           title='Bancos y tarjetas'
           description='Administrá tus cuentas, tarjetas, consumos y resúmenes vinculados a Transacciones.'
           note={<span className='inline-flex items-start gap-2'><FiShield className='mt-0.5 shrink-0' aria-hidden='true' />Solo vos podés ver estos datos. No solicitamos claves, CVV ni números completos de tarjeta.</span>}
+          actionsClassName='flex w-full flex-wrap items-center gap-2 sm:w-auto'
         >
           <button type='button' disabled={pending} onClick={() => setShowBankForm(true)}
-            aria-label='Agregar banco' className={buttonClass}>
-            <FiPlus aria-hidden='true'/> <span className='hidden sm:inline'>Banco</span>
+            aria-label='Agregar banco' className={buttonClass + ' w-full sm:w-auto'}>
+            <FiPlus aria-hidden='true'/> <span>Agregar banco</span>
           </button>
           <Link to='/transacciones' title='Transacciones' aria-label='Transacciones'
-            className='inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-600 dark:text-purple-300'>
+            className='inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300'>
             <FiCreditCard aria-hidden='true'/> <span className='hidden sm:inline'>Transacciones</span>
           </Link>
           <Link to='/portfolio' title='Portfolio' aria-label='Portfolio'
-            className='inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-600 dark:text-purple-300'>
+            className='inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300'>
             <FiPieChart aria-hidden='true'/> <span className='hidden sm:inline'>Portfolio</span>
           </Link>
           <button type='button' aria-label={showValues?'Ocultar importes':'Mostrar importes'}
@@ -370,7 +373,8 @@ function BanksWorkspace({ user }) {
                         {a.branch && <p className='mt-1 text-xs'>Sucursal: {a.branch}</p>}
                         <p className='mt-1 text-xs'>CBU/CVU: {revealedAccount === a.id ? (a.cbu || 'No informado') : maskCbu(a.cbu)}</p>
                         {a.cbu && <button type='button' onClick={() => setRevealedAccount(revealedAccount === a.id ? null : a.id)}
-                          className='mt-2 inline-flex min-h-[40px] items-center gap-1 text-xs font-semibold text-purple-700 dark:text-purple-300'>
+                          aria-pressed={revealedAccount === a.id} aria-label={(revealedAccount === a.id ? 'Ocultar CBU de ' : 'Ver CBU de ') + a.name}
+                           className='mt-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200 dark:hover:bg-slate-700'>
                           {revealedAccount === a.id ? <FiEyeOff/> : <FiEye/>} {revealedAccount === a.id ? 'Ocultar CBU' : 'Ver CBU'}
                         </button>}
                         <div className='mt-2'><button type='button' className={secondary} onClick={() => startAccount(id, a)}>Editar cuenta o saldo</button></div>
@@ -464,11 +468,19 @@ function BanksWorkspace({ user }) {
                         </div>
                         <p className='text-xs text-slate-600 dark:text-slate-300'>Estos consumos no crean gastos de Transacciones. Los resúmenes analizados se presentan aparte.</p>
                         {chargesForCard(card.id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>No hay consumos manuales.</p>}
-                        {chargesForCard(card.id).map((charge) => <div key={charge.id} className='flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
-                          <div><p className='font-semibold'>{charge.merchant}</p><p className='text-xs text-slate-600 dark:text-slate-300'>{charge.purchaseDate} · {charge.installments} cuota(s)</p></div>
-                          <span className='font-extrabold tabular-nums'>{displayMoney(charge.amount, charge.currency)}</span>
-                          <button type='button' className='min-h-[40px] text-xs text-rose-600 dark:text-rose-300' onClick={() => run(() => deleteManualCardCharge(uid, charge.id), 'Consumo eliminado')}>Eliminar</button>
-                        </div>)}
+                        {chargesForCard(card.id).map((charge) => <article key={charge.id}
+                          aria-label={'Consumo: ' + charge.merchant}
+                          className='flex min-w-0 flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between'>
+                          <div className='min-w-0 flex-1'>
+                            <p className='break-words font-semibold text-slate-900 dark:text-slate-50'>{charge.merchant}</p>
+                            <p className='text-xs text-slate-600 dark:text-slate-300'>{charge.purchaseDate} · {charge.installments} cuota(s)</p>
+                          </div>
+                          <span className='min-w-0 break-all text-base font-extrabold tabular-nums text-slate-900 dark:text-slate-50'>{displayMoney(charge.amount, charge.currency)}</span>
+                          <button type='button' disabled={busy}
+                            aria-label={'Eliminar consumo de ' + charge.merchant}
+                            className='inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-xl border border-rose-300 px-3 text-sm font-semibold text-rose-700 hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-50 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-950/40'
+                            onClick={() => setDeleteChargeTarget(charge)}>Eliminar</button>
+                        </article>)}
                         {chargeDraft?.cardId === card.id && (
                           <form className='grid gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700 sm:grid-cols-2'
                             onSubmit={(event)=>{event.preventDefault();run(async()=>{await saveManualCardCharge(uid,chargeDraft);setChargeDraft(null)},'Consumo agregado');}}>
@@ -608,6 +620,17 @@ function BanksWorkspace({ user }) {
               if(success)toast.success(success);
             }}
             closeModal={()=>setShowConsumptionImporter(false)}
+          />
+        )}
+        {deleteChargeTarget && (
+          <DeleteBankChargeDialog
+            charge={deleteChargeTarget}
+            privacyHidden={!showValues}
+            onClose={() => setDeleteChargeTarget(null)}
+            onDelete={async (chargeId) => {
+              await deleteManualCardCharge(uid, chargeId);
+              toast.success('Consumo manual eliminado.');
+            }}
           />
         )}
         <GenericModal
