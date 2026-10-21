@@ -13,7 +13,7 @@ const destinations = [
 export default function FinancialHeaderActions({
   primaryLabel, onPrimaryAction, primaryDisabled = false,
   valuesVisible, onTogglePrivacy,
-  visibleIcon, hiddenIcon, privacyIcon,
+  visibleIcon, hiddenIcon,
   currentSection,
 }) {
   const privacyLabel = valuesVisible ? 'Ocultar importes de la pantalla' : 'Mostrar importes de la pantalla';
@@ -29,7 +29,7 @@ export default function FinancialHeaderActions({
       <button type='button' onClick={onTogglePrivacy} aria-pressed={!valuesVisible}
         aria-label={privacyLabel} title={valuesVisible ? 'Ocultar importes' : 'Mostrar importes'}
         className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 hover:border-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200'>
-        {privacyIcon || <img className='h-5 w-5' alt='' src={valuesVisible ? visibleIcon : hiddenIcon} />}
+        <img className='h-5 w-5' alt='' src={valuesVisible ? visibleIcon : hiddenIcon} />
       </button>
       <details className='group relative shrink-0'>
         <summary className='flex min-h-[44px] cursor-pointer list-none items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:border-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 [&::-webkit-details-marker]:hidden'>
