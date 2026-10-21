@@ -8,7 +8,7 @@ const categories = [
   { name: 'Alimentación', isExpense: true },
 ];
 
-function TestSearchBar({ onViewAll = () => {}, selectedFilter = 'month' }) {
+function TestSearchBar({ onViewAll = () => {}, selectedFilter = 'month', periodDescription }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [type, setType] = useState('all');
@@ -24,6 +24,7 @@ function TestSearchBar({ onViewAll = () => {}, selectedFilter = 'month' }) {
       resultCount={2}
       totalCount={12}
       selectedFilter={selectedFilter}
+      periodDescription={periodDescription}
       onClear={() => { setQuery(''); setCategory(''); setType('all'); }}
       onViewAll={onViewAll}
     />
@@ -109,7 +110,7 @@ describe('collapsible transaction search and sorting', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.getByText('5 de 10 movimientos')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ver todo el historial' })).toBeInTheDocument();
-    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(screen.getByRole('searchbox')).toBeInTheDocument();
   });
 
   it('changes both sort criterion and direction then keeps selection after collapse', () => {
@@ -122,8 +123,8 @@ describe('collapsible transaction search and sorting', () => {
     expect(screen.getByRole('button', { name: 'Cambiar a orden descendente' })).toBeInTheDocument();
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'banco' } });
     fireEvent.click(screen.getByRole('button', { name: 'Contraer búsqueda y filtros' }));
-    expect(screen.getByText(/Filtros aplicados.*Importe ARS.*Ascendente/)).toBeInTheDocument();
-    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(screen.getByText(/Filtros activos visibles.*Importe ARS.*Ascendente/)).toBeInTheDocument();
+    expect(screen.getByRole('searchbox')).toHaveValue('banco');
     fireEvent.click(screen.getByRole('button', { name: 'Expandir búsqueda y filtros' }));
     expect(screen.getByRole('searchbox')).toHaveValue('banco');
     expect(screen.getByLabelText('Ordenar por')).toHaveValue('amount');
@@ -158,4 +159,37 @@ test('category management is available from expanded advanced filters', () => {
   expect(manage).toHaveClass('min-h-[44px]');
   fireEvent.click(manage);
   expect(onManageCategories).toHaveBeenCalledTimes(1);
+});
+
+describe('unified Transactions toolbar', () => {
+  it('shows the selected reference month instead of a generic month label', () => {
+    render(<TestSearchBar periodDescription='septiembre 2026' />);
+    expect(screen.getByText('septiembre 2026')).toBeInTheDocument();
+  });
+
+  it('keeps text search accessible with advanced fields collapsed and allows clearing its chip', () => {
+    render(<CollapsibleSortFixture />);
+    const input = screen.getByRole('searchbox', { name: 'Buscar movimientos' });
+    fireEvent.change(input, { target: { value: '  pago Visa ' } });
+    expect(screen.getByRole('group', { name: 'Filtros activos' })).toHaveTextContent('pago Visa');
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar filtro de búsqueda' }));
+    expect(input).toHaveValue('');
+    expect(screen.queryByRole('group', { name: 'Filtros activos' })).not.toBeInTheDocument();
+  });
+
+  it('removes category and type independently without changing the year', () => {
+    render(<TestSearchBar selectedFilter='year' periodDescription='2025' />);
+    fireEvent.change(screen.getByLabelText('Categoría'), { target: { value: 'Alimentación' } });
+    fireEvent.change(screen.getByLabelText('Tipo de movimiento'), { target: { value: 'expense' } });
+    const active = screen.getByRole('group', { name: 'Filtros activos' });
+    expect(active).toHaveTextContent('Categoría: Alimentación');
+    expect(active).toHaveTextContent('Solo gastos');
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar filtro de categoría' }));
+    expect(screen.getByLabelText('Categoría')).toHaveValue('');
+    expect(active).toHaveTextContent('Solo gastos');
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar filtro de tipo' }));
+    expect(screen.getByLabelText('Tipo de movimiento')).toHaveValue('all');
+    expect(screen.getByText('2025')).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Filtros activos' })).not.toBeInTheDocument();
+  });
 });
