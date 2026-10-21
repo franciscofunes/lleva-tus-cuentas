@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import eyeHide from '../imgs/eyeHide.svg';
+import closeEye from '../imgs/closeEye.svg';
 import { useReducedMotion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -252,7 +254,8 @@ function BanksWorkspace({ user }) {
             primaryDisabled={pending}
             valuesVisible={showValues}
             onTogglePrivacy={toggleVisibility}
-            privacyIcon={showValues ? <FiEyeOff className='h-5 w-5' aria-hidden='true'/> : <FiEye className='h-5 w-5' aria-hidden='true'/>}
+            visibleIcon={eyeHide}
+            hiddenIcon={closeEye}
           />
         </QuickAccessCard>
         <ErrorMessage error={error} />
