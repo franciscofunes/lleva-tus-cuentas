@@ -132,3 +132,9 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
 - Use the *same* FinancialHeaderActions, QuickAccessCard, CollapsibleSection, FINANCIAL_ITEM_SURFACE_STYLES and FINANCIAL_RECORD_DISCLOSURE_STYLES as Transactions, not a similar standalone implementation.
 - Mobile scan path: financial summary → positions → charts → tools/export. Desktop: positions span two of three columns as the Transactions activity panel does. Names, native-currency balances and rates are first scan, while FCI NAV/history and capital movement metadata are on-demand.
 - Projected monthly/daily yield remains an estimate; capital withdrawals are not losses; position valuation is not realized interest; never merge ARS and USD without FX.
+
+## Lita UX #229 — host and iframe consistency
+- The Lita overlay follows the exact LTC white/slate-800 surfaces, shared widget typography, violet focus/primary actions, 44px touch targets and responsive sheet geometry. No independent chat color system.
+- The Next.js iframe must also match these tokens and contrast in both themes; both repos participate in review. A ready iframe alone does not prove the combined LTC product is visually coherent.
+- The privacy toggle from Transactions, Bancos or Portfolio suppresses numeric context, conversation history and historic lookups at the postMessage boundary. Do not add screen-only masking that still sends balances to the embedded Lita app.
+- Destructive conversation deletion requires confirmation and parent Firestore acknowledgment. Keep saved histories on failures; show retry without leaking raw backend exceptions. See [Lita #229](lita-ux-229.md).
