@@ -7,6 +7,9 @@ import PageDataSkeleton from '../components/PageDataSkeleton';
 import FinancialOverviewPanel from '../components/FinancialOverviewPanel';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt, FaUniversity } from 'react-icons/fa';
 import QuickAccessCard from '../components/QuickAccessCard';
+import FinancialHeaderActions from '../components/FinancialHeaderActions';
+import { FINANCIAL_RECORD_DISCLOSURE_STYLES } from '../components/CollapsibleHeading';
+import { FaChevronDown } from 'react-icons/fa';
 import CollapsibleSection from '../components/CollapsibleSection';
 import InfoTooltip from '../components/InfoTooltip';
 import PortfolioCharts from '../components/PortfolioCharts';
@@ -687,32 +690,21 @@ function Portfolio() {
 				<QuickAccessCard
 					eyebrow='Tu patrimonio, en un solo lugar'
 					title='Cuentas e inversiones'
-					description='Saldos, rendimientos y vencimientos con el mismo acceso rápido que usás en Movimientos.'
+					description='Consultá tus saldos y posiciones por moneda.'
+					actionsClassName='min-w-0 sm:shrink-0'
 				>
-					<button type='button' onClick={() => setShowForm(true)} className='inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 text-sm font-bold'><FaPlus /> <span className='hidden sm:inline'>Posición</span></button>
-					<Link to='/transacciones' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaExchangeAlt /> <span className='hidden sm:inline'>Movimientos</span></Link>
-					<Link to='/bancos' className='inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 px-3 py-2.5 text-sm font-bold'><FaUniversity aria-hidden='true' /> <span className='hidden sm:inline'>Bancos</span></Link>
-					<button type='button' onClick={() => setHideValues((value) => !value)} className='inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm font-bold' aria-pressed={hideValues}><img className='h-5 w-5' src={hideValues ? closeEye : eyeHide} alt='' /> <span className='hidden sm:inline'>{hideValues ? 'Mostrar' : 'Ocultar'}</span></button>
-				</QuickAccessCard>
-				<FinancialOverviewPanel
-						isLoading={loading}
-						id='portfolio-overview'
-						collapsed={collapsedSections.overview}
-						onToggle={() => togglePortfolioSection('overview')}
-						title='Portfolio de un vistazo'
-						description='Exportá tus activos o prepará un análisis para Lita.'
-						privacyHidden={hideValues}
-						actions={[
-							{ id: 'excel', type: 'excel', label: 'Exportar archivos', onClick: openPortfolioExport, disabled: loading || !positions.length },
-							{ id: 'markdown', type: 'markdown', label: 'Copiar para Lita', onClick: copyLlmPrompt, disabled: !positions.length },
-						]}
-						metrics={[
-							{ id: 'positions', icon: FaWallet, label: 'Posiciones', value: privateCount(portfolioMeta.positions) },
-							{ id: 'currencies', icon: FaChartLine, label: 'Monedas', value: privateCount(portfolioMeta.currencies) },
-							{ id: 'earnings', icon: FaRegClock, label: 'Con ganancias', value: privateCount(positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length) },
-						]}
+					<FinancialHeaderActions
+						currentSection='portfolio'
+						primaryLabel='Agregar posición'
+						onPrimaryAction={() => { reset(); setShowForm(true); }}
+						valuesVisible={!hideValues}
+						onTogglePrivacy={() => setHideValues((value) => !value)}
+						visibleIcon={eyeHide}
+						hiddenIcon={closeEye}
 					/>
+				</QuickAccessCard>
 				{loading ? <PageDataSkeleton variant='portfolio' withKpiCards={false} /> : <>
+				<div id='portfolio-workspace' className='grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-3'>
 				<CollapsibleSection
 					id='portfolio-summary'
 					eyebrow='Resumen'
@@ -720,8 +712,8 @@ function Portfolio() {
 					description='Saldos, rendimiento estimado y tasa ponderada por moneda.'
 					collapsed={collapsedSections.summary}
 					onToggle={() => togglePortfolioSection('summary')}
-					className='mb-5'
-					contentClassName='grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3'
+					className='min-w-0'
+					contentClassName='grid min-w-0 gap-3'
 				>
 					{Object.entries(totals).map(([currency, total]) => (
 						<div key={currency} className='min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/70'>
@@ -736,25 +728,13 @@ function Portfolio() {
 				</CollapsibleSection>
 
 				<CollapsibleSection
-					id='portfolio-charts'
-					eyebrow='Visualización'
-					title='Composición del portfolio'
-					description='Distribución, evolución y simulaciones de tus posiciones.'
-					collapsed={collapsedSections.charts}
-					onToggle={() => togglePortfolioSection('charts')}
-					className='mb-5'
-				>
-					<PortfolioCharts positions={positions} snapshots={snapshots} hideValues={hideValues} />
-				</CollapsibleSection>
-
-				<CollapsibleSection
 					id='portfolio-positions'
 					eyebrow='Actividad'
 					title='Posiciones'
 					description={`${privateCount(positions.length)} activas · cuentas e inversiones cargadas`}
 					collapsed={collapsedSections.positions}
 					onToggle={() => togglePortfolioSection('positions')}
-					className='mb-6 lg:mb-8'
+					className='min-w-0 lg:col-span-2 lg:row-span-2'
 					contentClassName='space-y-3'
 				>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
@@ -762,8 +742,8 @@ function Portfolio() {
 							<div className='border border-dashed dark:border-slate-700 rounded-2xl p-8 text-center'>
 								<div className='w-12 h-12 mx-auto mb-3 rounded-full bg-purple-100 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center'><FaWallet /></div>
 								<h3 className='font-semibold'>Tu portfolio está vacío</h3>
-								<p className='text-sm text-gray-500 mt-1'>Agregá tu primera cuenta o inversión desde el botón +.</p>
-								<button type='button' onClick={() => setShowForm(true)} className='mt-4 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors'>Agregar posición</button>
+								<p className='text-sm text-gray-500 mt-1'>Agregá tu primera cuenta o inversión con «Agregar posición».</p>
+								<button type='button' onClick={() => setShowForm(true)} className='mt-4 min-h-[44px] rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500'>Agregar posición</button>
 							</div>
 						)}
 						{!loading && positions.length > 0 && (
@@ -843,7 +823,39 @@ function Portfolio() {
 							</Reorder.Group>
 						)}
 				</CollapsibleSection>
+				<CollapsibleSection
+					id='portfolio-charts'
+					eyebrow='Visualización'
+					title='Composición del portfolio'
+					description='Distribución, evolución y simulaciones de tus posiciones.'
+					collapsed={collapsedSections.charts}
+					onToggle={() => togglePortfolioSection('charts')}
+					className='min-w-0'
+				>
+					<PortfolioCharts positions={positions} snapshots={snapshots} hideValues={hideValues} />
+				</CollapsibleSection>
+
+				</div>
 				</>}
+				<FinancialOverviewPanel
+						isLoading={loading}
+						id='portfolio-overview'
+						collapsed={collapsedSections.overview}
+						onToggle={() => togglePortfolioSection('overview')}
+						title='Portfolio de un vistazo'
+						description='Exportá tus activos o prepará un análisis para Lita.'
+						privacyHidden={hideValues}
+						actions={[
+							{ id: 'excel', type: 'excel', label: 'Exportar archivos', onClick: openPortfolioExport, disabled: loading || !positions.length },
+							{ id: 'markdown', type: 'markdown', label: 'Copiar para Lita', onClick: copyLlmPrompt, disabled: !positions.length },
+						]}
+						metrics={[
+							{ id: 'positions', icon: FaWallet, label: 'Posiciones', value: privateCount(portfolioMeta.positions) },
+							{ id: 'currencies', icon: FaChartLine, label: 'Monedas', value: privateCount(portfolioMeta.currencies) },
+							{ id: 'earnings', icon: FaRegClock, label: 'Con ganancias', value: privateCount(positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length) },
+						]}
+					/>
+
 			</div>
 
 			<GenericModal
