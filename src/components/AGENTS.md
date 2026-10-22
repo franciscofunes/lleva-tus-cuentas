@@ -56,3 +56,8 @@ All transactions retain the required `selectedDate`. Do not confuse that with a 
 ## Portfolio #228 first scan
 - SortablePortfolioPositionCard uses FINANCIAL_ITEM_SURFACE_STYLES (the actual Transactions surface). Preserve 44px drag handle and existing sortable/keyboard functions.
 - Reuse FINANCIAL_RECORD_DISCLOSURE_STYLES with aria-expanded and conditional mounting for the secondary position metrics; keep primary balance/rate and native currency visible with privacy applied. Don't flatten different asset kinds into one mathematical model.
+
+## Lita host and iframe boundary (#229)
+- Use shared CollapsibleHeading typography, opaque LTC surfaces and 44px controls in LitaAssitantPanel. Preserve visualViewport keyboard correction, iframe identity and origin/source verification.
+- Pass privacyHidden from every page: no balances, history or historic queries may cross while hidden. The sibling Lita iframe handles this status explicitly.
+- Before acknowledging a conversation deletion, await deleteLitaChat(uid,id); never report success optimistically. Document the LTC-first deployment order in [Lita UX](../../docs/lita-ux-229.md).
