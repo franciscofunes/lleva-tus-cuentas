@@ -989,6 +989,7 @@ function Portfolio() {
 					setIsOpen={setShowLita}
 					section='portfolio'
 					context={litaPortfolioContext}
+					privacyHidden={hideValues}
 				/>
 			)}
 
