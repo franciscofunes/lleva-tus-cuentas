@@ -52,3 +52,7 @@ All transactions retain the required `selectedDate`. Do not confuse that with a 
 ## Mandatory cross-page style reuse
 - `FinancialHeaderActions` owns the shared Transacciones/Bancos/Portfolio primary action, privacy toggle and secondary “Más” nav. Don't recreate its JSX separately on a financial page.
 - `FINANCIAL_RECORD_DISCLOSURE_STYLES` is the shared control treatment for record details, with opaque nested `dark:bg-slate-900/70` and full 44px hit targets. Compare directly against Transactions `Card.js` before styling bank or portfolio records. See [UI contract](../../docs/financial-ui-contract.md).
+
+## Portfolio #228 first scan
+- SortablePortfolioPositionCard uses FINANCIAL_ITEM_SURFACE_STYLES (the actual Transactions surface). Preserve 44px drag handle and existing sortable/keyboard functions.
+- Reuse FINANCIAL_RECORD_DISCLOSURE_STYLES with aria-expanded and conditional mounting for the secondary position metrics; keep primary balance/rate and native currency visible with privacy applied. Don't flatten different asset kinds into one mathematical model.

@@ -45,7 +45,8 @@ test('Portfolio and Transactions use the same React Icon shortcut for Bancos, ne
   const portfolio = readFileSync(join(process.cwd(), 'src/pages/Portfolio.js'), 'utf8');
   const transactions = readFileSync(join(process.cwd(), 'src/components/TransactionsHeaderActions.js'), 'utf8');
   const shared = readFileSync(join(process.cwd(), 'src/components/FinancialHeaderActions.js'), 'utf8');
-  expect(portfolio).toContain('<FaUniversity aria-hidden=');
+  expect(portfolio).toContain('<FinancialHeaderActions');
+  expect(portfolio).toContain("currentSection='portfolio'");
   expect(transactions).toContain('<FinancialHeaderActions');
   expect(shared).toContain("id:'banks', href:'/bancos', label:'Bancos', Icon:FaUniversity");
   expect(shared).toContain('<Icon aria-hidden=');

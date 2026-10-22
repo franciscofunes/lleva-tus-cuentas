@@ -1,6 +1,7 @@
 import React from 'react';
 import { Reorder, useDragControls } from 'framer-motion';
 import { FaGripVertical } from 'react-icons/fa';
+import { FINANCIAL_ITEM_SURFACE_STYLES } from './CollapsibleHeading';
 
 function SortablePortfolioPositionCard({
 	position,
@@ -30,7 +31,7 @@ function SortablePortfolioPositionCard({
 			onDragEnd={onDragEnd}
 			layout='position'
 			whileDrag={{ scale: 1.01, zIndex: 30 }}
-			className='relative min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-4 pt-16 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 sm:p-5 sm:pt-5'
+			className={FINANCIAL_ITEM_SURFACE_STYLES + ' relative !pt-16 sm:!pt-5'}
 		>
 			<button
 				type='button'

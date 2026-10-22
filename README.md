@@ -125,6 +125,8 @@ The web API key is **not** an authorization boundary: enforce ownership in Fires
 - [Bancos mobile-first safety and accessible consumption deletion (issue #227, part 1)](docs/banks-issue-227-part1.md)
 - [Banking, credit-card thresholds and imports](docs/banking-workspace.md)
 - [LTC financial UI contract — Transactions is the reference for Banks, Portfolio and Lita](docs/financial-ui-contract.md)
+- [Portfolio UX #228, phase 1 — shared financial interface and safe per-position details](docs/portfolio-issue-228-phase1.md)
+
 - [Visual risk design and financial accessibility](docs/ui-design-guidelines.md)
 - [Transactions UX audit (Better Design, October 2026)](docs/transactions-ux-audit-2026-10.md)
 - [Transactions activity-first follow-up, issue #221](docs/transactions-issue-221.md)
