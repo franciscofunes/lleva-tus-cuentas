@@ -188,6 +188,49 @@ describe('LITA iframe integration', () => {
 		});
 	});
 
+
+	test('acknowledges history deletion only after Firestore confirms the owner-scoped write', async () => {
+		const { deleteLitaChat } = require('../services/litaChatService');
+		let resolveDeletion;
+		deleteLitaChat.mockImplementationOnce(() => new Promise((resolve) => { resolveDeletion = resolve; }));
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
+		const iframe=screen.getByTitle('Lita Assistant');
+		const post=jest.spyOn(iframe.contentWindow, 'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message', {
+				origin, source:iframe.contentWindow,
+				data:{type:'lita:history:delete',payload:{id:'synthetic-thread',requestId:'remove123'}},
+			}));
+		});
+		expect(deleteLitaChat).toHaveBeenCalledWith('test-user','synthetic-thread');
+		expect(post).not.toHaveBeenCalledWith(expect.objectContaining({type:'lita:history:delete:result'}),origin);
+		await act(async () => { resolveDeletion(); });
+		await waitFor(() => expect(post).toHaveBeenCalledWith({
+			type:'lita:history:delete:result',
+			payload:{id:'synthetic-thread',requestId:'remove123',success:true},
+		},origin));
+	});
+
+	test('deletion failures are acknowledged and foreign senders cannot delete chats', async () => {
+		const { deleteLitaChat }=require('../services/litaChatService');
+		deleteLitaChat.mockRejectedValueOnce({code:'permission-denied'});
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
+		const iframe=screen.getByTitle('Lita Assistant');
+		const post=jest.spyOn(iframe.contentWindow,'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message',{origin,source:iframe.contentWindow,
+				data:{type:'lita:history:delete',payload:{id:'synthetic-thread',requestId:'remove124'}}}));
+		});
+		expect(post).toHaveBeenCalledWith({type:'lita:history:delete:result',
+			payload:{id:'synthetic-thread',requestId:'remove124',success:false,reason:'permission-denied'}},origin);
+		jest.clearAllMocks();
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message',{origin:'https://example.invalid',
+				source:iframe.contentWindow,data:{type:'lita:history:delete',payload:{id:'other-thread',requestId:'remove125'}}}));
+		});
+		expect(deleteLitaChat).not.toHaveBeenCalled();
+	});
+
 	test('reports Firestore subscription permission errors to LITA', async () => {
 		const { subscribeLitaChats } = require('../services/litaChatService');
 		subscribeLitaChats.mockImplementationOnce((uid, onData, onError) => {
