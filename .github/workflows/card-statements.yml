@@ -57,7 +57,7 @@ on:
       - 'src/services/litaAdviceService*'
       - 'src/components/LitaAssistant.js'
       - 'src/utils/litaChatMessages*'
-      - 'src/components/LitaIframeClipboard.test.js'
+      - 'src/components/LitaIframeClipboard.test.js src/components/LitaAssitantPanel.test.js'
       - 'src/components/FinancialOverviewPanel.test.js'
       - 'src/components/ExpenseFilter*'
       - 'src/components/SearchBar*'
