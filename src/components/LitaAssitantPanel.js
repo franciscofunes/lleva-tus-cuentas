@@ -37,6 +37,7 @@ const LitaAssistantPanel = ({
 	setIsOpen,
 	section = 'transactions',
 	context = {},
+	privacyHidden = false,
 }) => {
 	const iframeRef = useRef(null);
 	const closeButtonRef = useRef(null);
@@ -65,11 +66,10 @@ const LitaAssistantPanel = ({
 	}, [src]);
 
 	const financialContext = useMemo(
-		() => ({
-			section,
-			...context,
-		}),
-		[section, context]
+		() => privacyHidden
+			? { section, scope: 'privacy-hidden', privacyHidden: true }
+			: { section, ...context },
+		[section, context, privacyHidden]
 	);
 
 	const postToLita = useCallback(
