@@ -48,3 +48,7 @@ All transactions retain the required `selectedDate`. Do not confuse that with a 
 - Removing a manual bank card consumption must always show `DeleteBankChargeDialog` before any deletion write. Only the owning user's `deleteManualCardCharge(uid, id)` is allowed after explicit confirmation. Never cascade into statement PDFs, linked imports or a Transactions record.
 - Hide the amount in the confirmation while bank privacy is active, including after errors. Keep keyboard focus trapping, Escape, 44px targets, pending double-tap lock and retry-on-failure tests.
 - Reuse the existing `QuickAccessCard`, `CollapsibleSection`, `FINANCIAL_ITEM_SURFACE_STYLES` and semantic ARS/USD labels; don't change Firestore rules for this UI.
+
+## Mandatory cross-page style reuse
+- `FinancialHeaderActions` owns the shared Transacciones/Bancos/Portfolio primary action, privacy toggle and secondary “Más” nav. Don't recreate its JSX separately on a financial page.
+- `FINANCIAL_RECORD_DISCLOSURE_STYLES` is the shared control treatment for record details, with opaque nested `dark:bg-slate-900/70` and full 44px hit targets. Compare directly against Transactions `Card.js` before styling bank or portfolio records. See [UI contract](../../docs/financial-ui-contract.md).

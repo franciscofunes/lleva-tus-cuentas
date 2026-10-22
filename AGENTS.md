@@ -28,3 +28,8 @@ These instructions apply to all contributors and coding agents working in this r
 - Never sum or sort USD and ARS amounts as comparable values. ARS charts/totals must exclude native USD. Display USD spending separately in summaries and exports.
 - Preserve FX `currencyQuantity`, `currencyExchangeRate` semantics for the dedicated divisas categories. Do not infer a conversion for native USD spending.
 - Any field added to user categories or expenses requires a narrowly scoped Firebase rules snippet and regression tests. See [docs/native-currency-transactions.md](docs/native-currency-transactions.md).
+
+## Cross-page consistency (explicit user requirement, Oct 2026)
+- **Transactions is the design source of truth for Banks, Portfolio and the Lita host.** Compare its actual JSX components and responsive ordering before editing another page.
+- Reuse `FinancialHeaderActions`, `QuickAccessCard`, `CollapsibleSection`, `FINANCIAL_ITEM_SURFACE_STYLES` and `FINANCIAL_RECORD_DISCLOSURE_STYLES`. No independent header/card pattern per page; add cross-page contract tests when changing a shared primitive.
+- Read [docs/financial-ui-contract.md](docs/financial-ui-contract.md) and review 390/1440/1728px light/dark authenticated screenshots before calling a visual redesign verified.

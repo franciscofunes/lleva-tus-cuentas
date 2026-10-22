@@ -83,7 +83,7 @@ test('Bancos reuses the financial header, grouped metrics and collapsible manage
   expect(screen.getByRole('heading', { name: 'Bancos y tarjetas' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Saldos bancarios' })).toBeInTheDocument();
   expect(screen.getByText(/0 bancos · 0 cuentas · 0 tarjetas/)).toBeInTheDocument();
-  expect(screen.getByText(/Usá el botón \+ del encabezado/)).toBeInTheDocument();
+  expect(screen.getByText(/Usá «Agregar banco»/)).toBeInTheDocument();
   expect(screen.queryByText('Banco Santander')).not.toBeInTheDocument();
   expect(screen.queryByText('Banco Ciudad')).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Nombre del banco')).not.toBeInTheDocument();
@@ -105,11 +105,13 @@ test('primary bank action is visibly labeled on narrow mobile; secondary shortcu
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Bancos y tarjetas' })).toBeInTheDocument());
   const add = screen.getByRole('button', { name: 'Agregar banco' });
   expect(add).toHaveTextContent('Agregar banco');
-  expect(add).toHaveClass('w-full', 'sm:w-auto');
+  expect(add).toHaveClass('min-h-[44px]', 'bg-violet-600');
   const header = add.closest('section');
   expect(header).toHaveClass('dark:bg-slate-800');
-  expect(within(header).getByRole('link', { name: 'Transacciones' })).toHaveClass('min-h-[44px]', 'min-w-[44px]');
-  expect(within(header).getByRole('link', { name: 'Portfolio' })).toHaveClass('min-h-[44px]', 'min-w-[44px]');
+  const more = within(header).getByText('Más');
+  fireEvent.click(more);
+  expect(within(header).getByRole('link', { name: 'Transacciones' })).toHaveAttribute('href', '/transacciones');
+  expect(within(header).getByRole('link', { name: 'Portfolio' })).toHaveAttribute('href', '/portfolio');
 });
 
 test('CBU reveal is an accessible 44px disclosure and never opens an editor', async () => {
@@ -123,6 +125,10 @@ test('CBU reveal is an accessible 44px disclosure and never opens an editor', as
   mount();
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Mis bancos' })).toBeInTheDocument());
   fireEvent.click(screen.getByRole('button', { name:/Banco de prueba/ }));
+  const account = screen.getByRole('article',{ name:'Cuenta: Caja en pesos' });
+  const disclosure = within(account).getByRole('button', { name:'Ver detalles de Caja en pesos' });
+  expect(account).not.toHaveTextContent('1234567890123456789012');
+  fireEvent.click(disclosure);
   const reveal=screen.getByRole('button', { name:'Ver CBU de Caja en pesos' });
   expect(reveal).toHaveClass('min-h-[44px]');
   expect(reveal).toHaveAttribute('aria-pressed', 'false');
@@ -201,7 +207,10 @@ test('existing bank accounts and cards keep their data behind the shared nested 
   expect(bankToggle).toHaveAttribute('aria-expanded', 'false');
   fireEvent.click(bankToggle);
   expect(screen.getByText('Caja USD')).toBeInTheDocument();
-  expect(screen.getByText('Alias: cuenta')).toBeInTheDocument();
+  const account = screen.getByRole('article',{ name:'Cuenta: Caja USD' });
+  expect(account).not.toHaveTextContent('Alias: cuenta');
+  fireEvent.click(within(account).getByRole('button',{name:'Ver detalles de Caja USD'}));
+  expect(within(account).getByText((text, node) => node?.tagName === 'P' && node.textContent === 'Alias: cuenta')).toBeInTheDocument();
   const cardToggle = screen.getByRole('button', { name: /Visa Gold/ });
   expect(cardToggle).toHaveAttribute('aria-expanded', 'false');
   fireEvent.click(cardToggle);
@@ -297,4 +306,34 @@ test('unlinking a linked statement requires explicit confirmation and never reim
     'test-private-user','expense-statement-1'));
   expect(require('../services/cardStatementService').saveReviewedStatement).not.toHaveBeenCalled();
   expect(require('../actionCreators/databaseActions').storeDataAction).not.toHaveBeenCalled();
+});
+
+test('Bancos uses the same first-read hierarchy as Transacciones and shared header actions', async () => {
+  mount();
+  await waitFor(() => expect(screen.getByRole('heading', { name:'Mis bancos' })).toBeInTheDocument());
+  const hero=screen.getByRole('heading',{name:'Bancos y tarjetas'}).closest('section');
+  expect(within(hero).getByRole('button',{name:'Agregar banco'})).toBeInTheDocument();
+  expect(within(hero).getByRole('button',{name:'Mostrar importes de la pantalla'})).toHaveAttribute('aria-pressed','true');
+  expect(hero).toHaveClass('bg-white','dark:bg-slate-800');
+  const workspace=document.getElementById('banks-workspace');
+  expect(workspace).toHaveClass('grid','lg:grid-cols-3');
+  const ids=['bank-balances','bank-management','bank-spending-alerts'];
+  const elements=ids.map(id=>document.getElementById(id));
+  elements.forEach(element=>expect(element).not.toBeNull());
+  expect(elements[0].compareDocumentPosition(elements[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(elements[1].compareDocumentPosition(elements[2]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(elements[1]).toHaveClass('lg:col-span-2','lg:row-span-2');
+  expect(elements[0]).toHaveClass('dark:bg-slate-800');
+  expect(elements[1]).toHaveClass('dark:bg-slate-800');
+  expect(elements[2]).toHaveClass('dark:bg-slate-800');
+});
+
+test('Bancos keeps PDF linking beneath the dashboard, not ahead of the bank activity', async () => {
+  mount();
+  await waitFor(() => expect(screen.getByRole('heading',{name:'Mis bancos'})).toBeInTheDocument());
+  const workspace=document.getElementById('banks-workspace');
+  const importSection=document.getElementById('bank-imported-statements');
+  expect(importSection).not.toBeNull();
+  expect(workspace.contains(importSection)).toBe(false);
+  expect(workspace.compareDocumentPosition(importSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });

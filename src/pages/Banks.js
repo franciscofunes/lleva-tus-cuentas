@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import eyeHide from '../imgs/eyeHide.svg';
+import closeEye from '../imgs/closeEye.svg';
 import { useReducedMotion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiPieChart, FiEdit2 } from 'react-icons/fi';
+import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiEdit2, FiChevronDown } from 'react-icons/fi';
 import GenericModal from '../components/GenericModal';
 import BankOnboardingForm from '../components/BankOnboardingForm';
 import DeleteBankChargeDialog from '../components/DeleteBankChargeDialog';
@@ -14,9 +15,10 @@ import FloatingMenu from '../components/FloatingMenu';
 import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
 import QuickAccessCard from '../components/QuickAccessCard';
+import FinancialHeaderActions from '../components/FinancialHeaderActions';
 import PageDataSkeleton from '../components/PageDataSkeleton';
 import { FinancialMetricCard } from '../components/FinancialOverviewPanel';
-import { FINANCIAL_ITEM_SURFACE_STYLES, COLLAPSIBLE_SURFACE_STYLES, CollapsibleHeading } from '../components/CollapsibleHeading';
+import { FINANCIAL_ITEM_SURFACE_STYLES, FINANCIAL_RECORD_DISCLOSURE_STYLES, COLLAPSIBLE_SURFACE_STYLES, CollapsibleHeading } from '../components/CollapsibleHeading';
 import CardStatementDetails from '../components/CardStatementDetails';
 import CardStatementPdfReview from '../components/CardStatementPdfReview';
 import { getCategoriesDataAction, storeDataAction } from '../actionCreators/databaseActions';
@@ -101,6 +103,7 @@ function BanksWorkspace({ user }) {
   const [chargeDraft, setChargeDraft] = useState(null);
   const [deleteChargeTarget, setDeleteChargeTarget] = useState(null);
   const [revealedAccount, setRevealedAccount] = useState(null);
+  const [expandedAccounts, setExpandedAccounts] = useState({});
   const [pdfCardId, setPdfCardId] = useState('');
   const [pdfDraft, setPdfDraft] = useState(null);
   const lastPdfShaRef = useRef(null);
@@ -241,41 +244,35 @@ function BanksWorkspace({ user }) {
         <QuickAccessCard
           eyebrow='Organización financiera'
           title='Bancos y tarjetas'
-          description='Administrá tus cuentas, tarjetas, consumos y resúmenes vinculados a Transacciones.'
+          description='Administrá tus bancos, cuentas y tarjetas.'
           note={<span className='inline-flex items-start gap-2'><FiShield className='mt-0.5 shrink-0' aria-hidden='true' />Solo vos podés ver estos datos. No solicitamos claves, CVV ni números completos de tarjeta.</span>}
-          actionsClassName='flex w-full flex-wrap items-center gap-2 sm:w-auto'
+          actionsClassName='min-w-0 sm:shrink-0'
         >
-          <button type='button' disabled={pending} onClick={() => setShowBankForm(true)}
-            aria-label='Agregar banco' className={buttonClass + ' w-full sm:w-auto'}>
-            <FiPlus aria-hidden='true'/> <span>Agregar banco</span>
-          </button>
-          <Link to='/transacciones' title='Transacciones' aria-label='Transacciones'
-            className='inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300'>
-            <FiCreditCard aria-hidden='true'/> <span className='hidden sm:inline'>Transacciones</span>
-          </Link>
-          <Link to='/portfolio' title='Portfolio' aria-label='Portfolio'
-            className='inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500 px-3 py-2.5 text-sm font-bold text-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300'>
-            <FiPieChart aria-hidden='true'/> <span className='hidden sm:inline'>Portfolio</span>
-          </Link>
-          <button type='button' aria-label={showValues?'Ocultar importes':'Mostrar importes'}
-            aria-pressed={!showValues} onClick={toggleVisibility} className={secondary}>
-            {showValues ? <FiEyeOff aria-hidden='true'/> : <FiEye aria-hidden='true'/>}
-            <span className='hidden sm:inline'>{showValues ? 'Ocultar' : 'Mostrar'}</span>
-          </button>
+          <FinancialHeaderActions
+            currentSection='banks'
+            primaryLabel='Agregar banco'
+            onPrimaryAction={() => setShowBankForm(true)}
+            primaryDisabled={pending}
+            valuesVisible={showValues}
+            onTogglePrivacy={toggleVisibility}
+            visibleIcon={eyeHide}
+            hiddenIcon={closeEye}
+          />
         </QuickAccessCard>
         <ErrorMessage error={error} />
         {pending ? (
           <PageDataSkeleton variant='banks' />
         ) : (
           <>
+            <div id='banks-workspace' className='grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-3'>
             <CollapsibleSection
               id='bank-balances'
               eyebrow='Resumen'
               title='Saldos bancarios'
-              description='Totales registrados manualmente, separados por moneda.'
+              description='Saldos manuales en ARS y USD.'
               collapsed={summaryCollapsed}
               onToggle={() => setSummaryCollapsed((value) => !value)}
-              className='mb-5'
+              className='min-w-0'
             >
               <div className='grid min-w-0 grid-cols-2 gap-2 sm:gap-3' aria-label='Saldos manuales por moneda'>
                 {['ARS', 'USD'].map((currency, index) => (
@@ -298,20 +295,6 @@ function BanksWorkspace({ user }) {
               </p>
             </CollapsibleSection>
 
-            <CollapsibleSection id='bank-spending-alerts' eyebrow='Control mensual'
-              title='Alertas de gastos de tarjetas'
-              description='Topes en ARS y USD, mayores y menores consumos y análisis con Lita'
-              collapsed={budgetCollapsed} onToggle={()=>setBudgetCollapsed(v=>!v)} className='mb-5'>
-              {budgetError && <p role='alert' className='mb-3 rounded-xl border border-amber-400/50 p-3 text-xs text-amber-700 dark:text-amber-300'>
-                No se pudo cargar la configuración de topes. Revisá las reglas de Firestore para bankSpendingBudgets.
-              </p>}
-              <CardSpendingControls budgets={budgets} statuses={budgetStatuses} history={history}
-                spent={manualSpend} canShowValues={showValues}
-                onSave={(currency,values)=>saveBankBudget(uid,currency,values)}
-                onAskLita={()=>setShowLita(true)}
-                onImportMarkdown={()=>setShowConsumptionImporter(true)}/>
-            </CollapsibleSection>
-
             <CollapsibleSection
               id='bank-management'
               eyebrow='Actividad'
@@ -319,12 +302,12 @@ function BanksWorkspace({ user }) {
               description={`${banks.filter((bank) => bank.active).length} bancos · ${accounts.length} cuentas · ${cards.length} tarjetas`}
               collapsed={manageCollapsed}
               onToggle={() => setManageCollapsed((value) => !value)}
-              className='mb-5'
+              className='min-w-0 lg:col-span-2 lg:row-span-2'
             >
               <div className='space-y-4'>
         {banks.length === 0 && (
           <div className='rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300'>
-            Todavía no agregaste bancos. Usá el botón + del encabezado para crear uno o rellenar sus datos con Markdown.
+            Todavía no agregaste bancos. Usá «Agregar banco» para crear uno o completar sus datos con Markdown.
           </div>
         )}
         {banks.filter((bank) => bank.active).map((bank) => {
@@ -333,7 +316,11 @@ function BanksWorkspace({ user }) {
             <CollapsibleSection key={id} id={'bank-' + id} eyebrow='Banco' title={bank.name}
               variant='nested'
               description={bankAccounts(id).length + ' cuentas · ' + bankCards(id).length + ' tarjetas'}
-              collapsed={openBank !== id} onToggle={() => setOpenBank(openBank === id ? null : id)}>
+              collapsed={openBank !== id} onToggle={() => {
+                 setOpenBank(openBank === id ? null : id);
+                 setExpandedAccounts({});
+                 setRevealedAccount(null);
+               }}>
               <div className='space-y-5'>
                 {renameBank?.id === id ? (
                   <form className='flex flex-col gap-2 sm:flex-row sm:items-end'
@@ -362,22 +349,46 @@ function BanksWorkspace({ user }) {
                   {bankAccounts(id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>Todavía no agregaste cuentas.</p>}
                   <div className='grid gap-3 md:grid-cols-2'>
                     {bankAccounts(id).map((a) => (
-                      <article key={a.id} className={surface}>
-                        <p className='font-bold'>{a.name}</p>
-                        <p className='text-xs text-slate-600 dark:text-slate-300'>{a.type === 'cuenta_corriente' ? 'Cuenta corriente' : a.type === 'caja_ahorro' ? 'Caja de ahorro' : 'Otra cuenta'} · {a.currency}</p>
-                        <p className='mt-2 text-lg font-extrabold tabular-nums'>{displayMoney(a.balance, a.currency)}</p>
-                        {a.alias && <p className='mt-2 break-all text-sm'>Alias: {a.alias}</p>}
-                        {a.accountNumber && <p className='mt-1 text-xs'>N.º de cuenta: {revealedAccount === a.id ? a.accountNumber : '•••• ' + a.accountNumber.slice(-4)}</p>}
-                        {a.holder && <p className='mt-1 text-xs'>Titular: {a.holder}</p>}
-                        {a.holderTaxId && <p className='mt-1 text-xs'>CUIT/CUIL: {revealedAccount === a.id ? a.holderTaxId : '••••'}</p>}
-                        {a.branch && <p className='mt-1 text-xs'>Sucursal: {a.branch}</p>}
-                        <p className='mt-1 text-xs'>CBU/CVU: {revealedAccount === a.id ? (a.cbu || 'No informado') : maskCbu(a.cbu)}</p>
-                        {a.cbu && <button type='button' onClick={() => setRevealedAccount(revealedAccount === a.id ? null : a.id)}
-                          aria-pressed={revealedAccount === a.id} aria-label={(revealedAccount === a.id ? 'Ocultar CBU de ' : 'Ver CBU de ') + a.name}
-                           className='mt-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200 dark:hover:bg-slate-700'>
-                          {revealedAccount === a.id ? <FiEyeOff/> : <FiEye/>} {revealedAccount === a.id ? 'Ocultar CBU' : 'Ver CBU'}
-                        </button>}
-                        <div className='mt-2'><button type='button' className={secondary} onClick={() => startAccount(id, a)}>Editar cuenta o saldo</button></div>
+                      <article key={a.id} aria-label={'Cuenta: ' + a.name} className={surface}>
+                        <div className='flex min-w-0 flex-wrap items-start justify-between gap-2'>
+                          <h4 className='min-w-0 break-words text-base font-bold text-slate-900 dark:text-slate-50'>{a.name}</h4>
+                          <span className='shrink-0 rounded-full border border-violet-300 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-800 dark:border-violet-700 dark:bg-slate-900/70 dark:text-violet-200'>{a.currency}</span>
+                        </div>
+                        <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>{a.type === 'cuenta_corriente' ? 'Cuenta corriente' : a.type === 'caja_ahorro' ? 'Caja de ahorro' : 'Otra cuenta'}</p>
+                        <p className='mt-2 min-w-0 break-all text-xl font-extrabold tabular-nums text-slate-900 dark:text-slate-50'>{displayMoney(a.balance, a.currency)}</p>
+                        <div className='mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-2.5 dark:border-slate-700'>
+                          {(a.alias || a.accountNumber || a.holder || a.holderTaxId || a.branch || a.cbu) ? (
+                            <button type='button' className={FINANCIAL_RECORD_DISCLOSURE_STYLES}
+                              aria-expanded={Boolean(expandedAccounts[a.id])}
+                              aria-controls={'bank-account-details-' + a.id}
+                              aria-label={(expandedAccounts[a.id] ? 'Ocultar detalles de ' : 'Ver detalles de ') + a.name}
+                              onClick={() => {
+                                if (expandedAccounts[a.id] && revealedAccount === a.id) setRevealedAccount(null);
+                                setExpandedAccounts((prev) => ({ ...prev, [a.id]: !prev[a.id] }));
+                              }}>
+                              <FiChevronDown aria-hidden='true'
+                                className={'h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ' + (expandedAccounts[a.id] ? 'rotate-180' : '')}/>
+                              {expandedAccounts[a.id] ? 'Ocultar detalles' : 'Ver detalles'}
+                            </button>
+                          ) : <span aria-hidden='true' />}
+                          <button type='button' className={secondary} onClick={() => startAccount(id, a)}>Editar cuenta o saldo</button>
+                        </div>
+                        {Boolean(expandedAccounts[a.id]) && (
+                          <section id={'bank-account-details-' + a.id} aria-label={'Detalles de cuenta ' + a.name}
+                            className='mt-3 min-w-0 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200'>
+                            {a.alias && <p className='break-all'><strong>Alias: </strong>{a.alias}</p>}
+                            {a.accountNumber && <p className='break-all'>N.º de cuenta: {revealedAccount === a.id ? a.accountNumber : '•••• ' + a.accountNumber.slice(-4)}</p>}
+                            {a.holder && <p className='break-words'>Titular: {a.holder}</p>}
+                            {a.holderTaxId && <p>CUIT/CUIL: {revealedAccount === a.id ? a.holderTaxId : '••••'}</p>}
+                            {a.branch && <p className='break-words'>Sucursal: {a.branch}</p>}
+                            <p className='break-all'>CBU/CVU: {revealedAccount === a.id ? (a.cbu || 'No informado') : maskCbu(a.cbu)}</p>
+                            {a.cbu && <button type='button' onClick={() => setRevealedAccount(revealedAccount === a.id ? null : a.id)}
+                              aria-pressed={revealedAccount === a.id} aria-label={(revealedAccount === a.id ? 'Ocultar CBU de ' : 'Ver CBU de ') + a.name}
+                              className='inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200 dark:hover:bg-slate-800'>
+                              {revealedAccount === a.id ? <FiEyeOff aria-hidden='true'/> : <FiEye aria-hidden='true'/>} {revealedAccount === a.id ? 'Ocultar CBU' : 'Ver CBU'}
+                            </button>}
+                          </section>
+                        )}
                       </article>
                     ))}
                   </div>
@@ -522,6 +533,21 @@ function BanksWorkspace({ user }) {
 
               </div>
             </CollapsibleSection>
+            <CollapsibleSection id='bank-spending-alerts' eyebrow='Control mensual'
+              title='Topes y consumos de tarjetas'
+              description='Tus límites de consumo en ARS y USD.'
+              collapsed={budgetCollapsed} onToggle={()=>setBudgetCollapsed(v=>!v)} className='min-w-0'>
+              {budgetError && <p role='alert' className='mb-3 rounded-xl border border-amber-400/50 p-3 text-xs text-amber-700 dark:text-amber-300'>
+                No se pudo cargar la configuración de topes. Revisá las reglas de Firestore para bankSpendingBudgets.
+              </p>}
+              <CardSpendingControls budgets={budgets} statuses={budgetStatuses} history={history}
+                spent={manualSpend} canShowValues={showValues}
+                onSave={(currency,values)=>saveBankBudget(uid,currency,values)}
+                onAskLita={()=>setShowLita(true)}
+                onImportMarkdown={()=>setShowConsumptionImporter(true)}/>
+            </CollapsibleSection>
+
+          </div>
         {pdfCardId && selectedPdfCard && (
           <section className={`${COLLAPSIBLE_SURFACE_STYLES.root} p-4 sm:p-5`}>
             <div className='flex flex-wrap items-start justify-between gap-3'>
