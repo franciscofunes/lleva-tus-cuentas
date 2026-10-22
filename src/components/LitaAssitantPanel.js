@@ -272,11 +272,27 @@ const LitaAssistantPanel = ({
 				return;
 			}
 
-			if (event.data?.type === 'lita:history:delete' && user?.uid) {
+			if (event.data?.type === 'lita:history:delete') {
+				const { id, requestId } = event.data.payload || {};
+				if (typeof id !== 'string' || !id || id.length > 128) return;
+				// Legacy LITA builds send only {id}; keep supporting them.
+				const confirmedRequest = typeof requestId === 'string' &&
+					/^[a-zA-Z0-9_-]{1,70}$/.test(requestId);
+				const reply = (success, reason) => {
+					if (!confirmedRequest) return;
+					postToLita({ type: 'lita:history:delete:result',
+						payload: { requestId, id, success, ...(reason ? { reason } : {}) } });
+				};
+				if (!user?.uid) {
+					reply(false, 'unauthenticated');
+					return;
+				}
 				try {
-					await deleteLitaChat(user.uid, event.data?.payload?.id);
+					await deleteLitaChat(user.uid, id);
+					reply(true);
 				} catch (error) {
 					console.warn('Could not delete LITA chat history', error);
+					reply(false, error?.code === 'permission-denied' ? 'permission-denied' : 'delete-failed');
 				}
 			}
 		};
