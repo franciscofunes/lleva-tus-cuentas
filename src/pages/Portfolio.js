@@ -691,7 +691,7 @@ function Portfolio() {
 				<QuickAccessCard
 					eyebrow='Tu patrimonio, en un solo lugar'
 					title='Cuentas e inversiones'
-					description='Consultá tus saldos y posiciones por moneda.'
+					description='Saldos y posiciones por moneda.'
 					actionsClassName='min-w-0 sm:shrink-0'
 				>
 					<FinancialHeaderActions
@@ -840,7 +840,7 @@ function Portfolio() {
 				<CollapsibleSection
 					id='portfolio-charts'
 					eyebrow='Visualización'
-					title='Composición del portfolio'
+					title='Gráficos'
 					description='Distribución, evolución y simulaciones de tus posiciones.'
 					collapsed={collapsedSections.charts}
 					onToggle={() => togglePortfolioSection('charts')}
@@ -856,7 +856,7 @@ function Portfolio() {
 						id='portfolio-overview'
 						collapsed={collapsedSections.overview}
 						onToggle={() => togglePortfolioSection('overview')}
-						title='Portfolio de un vistazo'
+						title='Herramientas y métricas'
 						description='Exportá tus activos o prepará un análisis para Lita.'
 						privacyHidden={hideValues}
 						actions={[
