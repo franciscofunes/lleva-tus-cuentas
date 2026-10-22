@@ -148,6 +148,7 @@ function Portfolio() {
 		try { return JSON.parse(localStorage.getItem('ltc:portfolio:view:guest') || '{}').hideValues || false; } catch { return false; }
 	});
 	const [collapsedSections, setCollapsedSections] = useState({ overview:false, summary:false, charts:false, positions:false });
+	const [expandedPositionIds, setExpandedPositionIds] = useState({});
 	const [preferencesLoadedFor, setPreferencesLoadedFor] = useState(null);
 	
 
@@ -778,6 +779,17 @@ function Portfolio() {
 										<p className='text-xl font-bold text-emerald-700 dark:text-emerald-400 sm:text-2xl'>{privatePercent(position.annualRate)} <span className='text-sm'>{position.rateType || ''}</span></p>
 										<p className='text-sm text-slate-600 dark:text-slate-300'>{position.liquidity || 'Liquidez no informada'}</p>
 										<p className='text-sm text-green-600 mt-1'>≈ {privateMoney(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 12, position.currency)} / mes proyectado</p>
+										<button type='button' aria-expanded={Boolean(expandedPositionIds[position.id])}
+											aria-controls={'portfolio-position-details-' + position.id}
+											aria-label={(expandedPositionIds[position.id] ? 'Ocultar detalles de ' : 'Ver detalles de ') + position.name}
+											onClick={() => setExpandedPositionIds((prev) => ({ ...prev, [position.id]: !prev[position.id] }))}
+											className={FINANCIAL_RECORD_DISCLOSURE_STYLES + ' mt-2'}>
+											<FaChevronDown aria-hidden='true' className={'h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ' + (expandedPositionIds[position.id] ? 'rotate-180' : '')}/>
+											{expandedPositionIds[position.id] ? 'Ocultar detalles' : 'Ver detalles'}
+										</button>
+										{Boolean(expandedPositionIds[position.id]) && (
+											<section id={'portfolio-position-details-' + position.id} aria-label={'Detalles de ' + position.name}
+												className='mt-2 min-w-0 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left text-sm dark:border-slate-700 dark:bg-slate-900/70'>
 										{position.trackingMode === 'DAILY_RATE' && <p className='text-xs text-gray-400'>Esperado hoy: {privateMoney(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 365, position.currency)}</p>}
 										{position.trackingMode === 'MATURITY' && position.maturityDate && <p className='text-xs text-gray-400'>Seguimiento al vencimiento: {position.maturityDate}</p>}
 										<p className='text-xs text-gray-400'>Tracking: {position.trackingMode || 'MANUAL'}</p>
@@ -806,10 +818,12 @@ function Portfolio() {
 												)}
 											</>
 										)}
+											</section>
+										)}
 									</div>
 								</div>
 								<div className='flex flex-col gap-3 mt-4'>
-									<button className='min-h-[44px] w-full rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 sm:w-auto' onClick={() => requestVerify(position)}>{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'Actualizar cuotaparte' : 'Verificar saldo'}</button>
+									<button className='min-h-[44px] w-full rounded-xl border border-violet-300 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-800 transition-colors hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-violet-700 dark:bg-slate-900/70 dark:text-violet-200 dark:hover:bg-slate-900 sm:w-auto' onClick={() => requestVerify(position)}>{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'Actualizar cuotaparte' : 'Verificar saldo'}</button>
 									<div className='flex w-full flex-wrap items-center gap-2'>
 										{position.infoUrl && <button title='Información oficial del activo' aria-label='Información oficial del activo' className='inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 hover:text-blue-400' onClick={() => openInfo(position)}><FaBookOpen /></button>}
 										{(position.category === 'Cuenta remunerada' || /earn\s*vault/i.test(`${position.name || ''} ${position.category || ''}`)) && <button title='Actualizar tasa rápidamente' aria-label='Actualizar tasa rápidamente' className='inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 hover:text-green-400' onClick={() => requestRateUpdate(position)}><FaPercent /></button>}
