@@ -90,13 +90,14 @@ const LitaAssistantPanel = ({
 	const sendHistory = useCallback(() => {
 		postToLita({
 			type: 'lita:history',
-			payload: chatHistory,
+			payload: privacyHidden ? [] : chatHistory,
 		});
-	}, [chatHistory, postToLita]);
+	}, [chatHistory, postToLita, privacyHidden]);
 
 	const sendHistoryStatus = useCallback(() => {
-		postToLita({ type: 'lita:history:status', payload: historyStatus });
-	}, [historyStatus, postToLita]);
+		postToLita({ type: 'lita:history:status',
+			payload: privacyHidden ? { state: 'unavailable', reason: 'privacy-hidden' } : historyStatus });
+	}, [historyStatus, postToLita, privacyHidden]);
 
 	const sendTheme = useCallback(() => {
 		postToLita({ type: 'lita:theme', payload: theme });
@@ -225,7 +226,7 @@ const LitaAssistantPanel = ({
 				const response = { type: 'lita:historical:result', payload: {
 					requestId: request.requestId, success: false,
 				} };
-				if (!user?.uid || section !== 'transactions') {
+				if (!user?.uid || section !== 'transactions' || privacyHidden) {
 					response.payload.reason = 'La consulta requiere tu sesión de Transacciones.';
 				} else {
 					try {
@@ -322,6 +323,7 @@ const LitaAssistantPanel = ({
 		user?.uid,
 		section,
 		context?.categories,
+		privacyHidden,
 	]);
 
 	// Resend on initial mount and any theme/context/history updates.
