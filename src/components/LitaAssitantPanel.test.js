@@ -141,6 +141,50 @@ describe('LITA iframe integration', () => {
 		}
 	});
 
+
+	test('privacy mode never posts private balances or saved messages into the cross-origin iframe', async () => {
+		const { subscribeLitaChats } = require('../services/litaChatService');
+		subscribeLitaChats.mockImplementationOnce((uid,onData)=>{
+			onData([{id:'stored1',title:'Saldo confidencial',messages:[{role:'user',content:'Mi saldo es USD 12345'}]}]);
+			return jest.fn();
+		});
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='portfolio'
+			privacyHidden context={{balance:12345,positions:[{currency:'USD',amount:12345}]}} />);
+		const iframe=screen.getByTitle('Lita Assistant');
+		const post=jest.spyOn(iframe.contentWindow,'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message',{
+				origin,source:iframe.contentWindow,data:{type:'lita:ready'},
+			}));
+		});
+		expect(post).toHaveBeenCalledWith({type:'lita:context',payload:{
+			section:'portfolio',scope:'privacy-hidden',privacyHidden:true,
+		}},origin);
+		expect(post).toHaveBeenCalledWith({type:'lita:history',payload:[]},origin);
+		expect(post).toHaveBeenCalledWith({type:'lita:history:status',payload:{
+			state:'unavailable',reason:'privacy-hidden',
+		}},origin);
+		const messages=post.mock.calls.map(([message])=>message);
+		expect(JSON.stringify(messages)).not.toContain('12345');
+		expect(JSON.stringify(messages)).not.toContain('Saldo confidencial');
+	});
+
+	test('privacy mode declines historical transaction requests before reading user finances', async () => {
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='transactions'
+			privacyHidden context={{balance:45521,categories:['private']}} />);
+		const iframe=screen.getByTitle('Lita Assistant');
+		const post=jest.spyOn(iframe.contentWindow,'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message',{
+				origin,source:iframe.contentWindow,
+				data:{type:'lita:historical:request',payload:{requestId:'history789',from:'2026-01-01',to:'2026-01-31'}},
+			}));
+		});
+		expect(post).toHaveBeenCalledWith(expect.objectContaining({
+			type:'lita:historical:result',
+			payload:expect.objectContaining({requestId:'history789',success:false}),
+		}),origin);
+	});
 	test('sends a save result only after Firestore confirms the write', async () => {
 		const { saveLitaChat } = require('../services/litaChatService');
 		saveLitaChat.mockResolvedValueOnce(undefined);
