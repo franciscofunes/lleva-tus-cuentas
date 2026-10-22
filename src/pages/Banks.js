@@ -683,6 +683,7 @@ function BanksWorkspace({ user }) {
             setIsOpen={setShowLita}
             section='banks'
             context={litaBankContext}
+            privacyHidden={!showValues}
           />
         )}
       </div>
