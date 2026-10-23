@@ -44,3 +44,7 @@ Do not close #226 or merge a screenshot claim without actual session-backed evid
 ## Carry-forward to other pages
 
 The same Playwright capture framework can be extended for `/bancos`, `/portfolio` and Lita. Those modules have separate issues [#227](https://github.com/franciscofunes/lleva-tus-cuentas/issues/227), [#228](https://github.com/franciscofunes/lleva-tus-cuentas/issues/228), and [#229](https://github.com/franciscofunes/lleva-tus-cuentas/issues/229). Preserve native ARS/USD, privacy, and document ownership everywhere.
+
+## Cross-page extension
+
+The existing auth/bootstrap and Transactions read-only Playwright tests now share an opt-in browser runner with [financial visual QA](financial-ui-visual-qa.md): 18 theme/viewport/page screenshots, geometry, design token parity, first-scan order and Lita host smoke checks. It needs an **isolated, signed-in QA session**; CI only verifies its static policy/manifest tests. Run `npx playwright test --config=playwright.config.cjs e2e/financial-surfaces.authenticated.spec.cjs` after `prepare-auth.cjs` and keep all artifacts private.

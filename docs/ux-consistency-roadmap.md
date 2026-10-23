@@ -24,3 +24,7 @@ Lita is split between the LTC iframe host and [the separate Lita Assistant repo]
 5. Document what was verified and clearly separate unresolved manual QA from automated coverage. Every stage should have a trackable issue, reviewable PR and precise release notes.
 
 Changes affecting shared surfaces need at least one cross-page regression check against the other modules before merge.
+
+## Shared authenticated visual evidence gate (Oct 2026)
+
+The earlier source-only UX phases are implemented, but issues #226–#229 remain open until signed-in screenshots and interaction evidence exist. Use [one 18-screenshot cross-page QA matrix](financial-ui-visual-qa.md) covering Transactions, Banks, Portfolio and Lita host overlays, not one ad hoc screenshot process per page. Never substitute successful GitHub builds for actual browser evidence.

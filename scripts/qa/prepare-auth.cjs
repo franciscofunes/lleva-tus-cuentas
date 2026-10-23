@@ -3,14 +3,13 @@ const { chromium } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
 const readline = require('node:readline/promises');
+const { validateQaTarget } = require('./target-policy.cjs');
 
 (async () => {
-  const base = process.env.LTC_QA_BASE_URL;
-  if (!base || !/^https?:\/\//.test(base)) throw new Error('Provide LTC_QA_BASE_URL for a test/preview environment.');
-  const parsed = new URL(base);
-  if (parsed.hostname === 'llevatuscuentas.vercel.app' && process.env.LTC_QA_ALLOW_PRODUCTION !== 'yes') {
-    throw new Error('Production is deliberately blocked. Use an authorized preview/test deployment.');
-  }
+  const parsed = validateQaTarget(
+    process.env.LTC_QA_BASE_URL,
+    process.env.LTC_QA_ALLOW_PRODUCTION === 'yes'
+  );
   const root = process.cwd();
   const storageFile = path.resolve(root, process.env.LTC_QA_AUTH_STATE || '.qa-auth/storage-state.json');
   fs.mkdirSync(path.dirname(storageFile), { recursive:true });

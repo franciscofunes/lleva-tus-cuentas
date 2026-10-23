@@ -2,12 +2,13 @@
 const { defineConfig } = require('@playwright/test');
 const { existsSync } = require('node:fs');
 const path = require('node:path');
+const { validateQaTarget } = require('./scripts/qa/target-policy.cjs');
 
 const stateFile = path.resolve(process.env.LTC_QA_AUTH_STATE || '.qa-auth/storage-state.json');
-const baseURL = process.env.LTC_QA_BASE_URL;
-if (!baseURL || !/^https?:\/\//.test(baseURL)) {
-  throw new Error('Set LTC_QA_BASE_URL to the authorized LTC test/preview site (not a private Firebase API).');
-}
+const baseURL = validateQaTarget(
+  process.env.LTC_QA_BASE_URL,
+  process.env.LTC_QA_ALLOW_PRODUCTION === 'yes'
+).origin;
 if (!existsSync(stateFile)) {
   throw new Error('Authenticated QA state missing: run node scripts/qa/prepare-auth.cjs with an isolated synthetic test account.');
 }

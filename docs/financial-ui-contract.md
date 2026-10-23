@@ -45,3 +45,7 @@ Banks must not put an oversized card-budget settings UI above the user's bank re
 5. Avoid Firestore/schema changes, numeric calculations or new UX features while standardizing visual design.
 
 **Applied in Banks #227 phase 2:** the existing one-off bank header was replaced with `FinancialHeaderActions`, core widgets reordered as Summary → Banks activity → Card spending tools, and account record details changed to the same disclosure style used by Transactions. PDF and card-specific flows remain intact for dedicated future review.
+
+## Actual rendered QA gate
+
+Use the [authenticated visual matrix](financial-ui-visual-qa.md) to compare the same shared hero, CTA and privacy tokens **computed in Chromium**, plus masked 390/1440/1728px screenshots in both themes for all 3 financial pages and Lita. Its standalone manifest/security tests run in GitHub CI, but screenshot evidence requires an authorized synthetic signed-in account.
