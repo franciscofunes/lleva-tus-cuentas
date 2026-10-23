@@ -129,6 +129,7 @@ The web API key is **not** an authorization boundary: enforce ownership in Fires
 - [Lita UX #229: unified chat, privacy and history acknowledgment](docs/lita-ux-229.md)
 
 - [Portfolio UX #228, phase 1 — shared financial interface and safe per-position details](docs/portfolio-issue-228-phase1.md)
+- [Portfolio UX #228, phase 2 — shared detail screen and explicit bank identifier reveal](docs/portfolio-issue-228-phase2.md)
 
 - [Visual risk design and financial accessibility](docs/ui-design-guidelines.md)
 - [Transactions UX audit (Better Design, October 2026)](docs/transactions-ux-audit-2026-10.md)
