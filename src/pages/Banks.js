@@ -9,6 +9,7 @@ import GenericModal from '../components/GenericModal';
 import BankOnboardingForm from '../components/BankOnboardingForm';
 import DeleteBankChargeDialog from '../components/DeleteBankChargeDialog';
 import StatementLinkEditor from '../components/StatementLinkEditor';
+import PendingStatementLinkCard from '../components/PendingStatementLinkCard';
 import CardSpendingControls from '../components/CardSpendingControls';
 import CardConsumptionMarkdownImporter from '../components/CardConsumptionMarkdownImporter';
 import FloatingMenu from '../components/FloatingMenu';
@@ -30,7 +31,6 @@ import {
   deleteManualCardCharge, importReviewedCardConsumptionMarkdown, saveStatementBankLink, reassignStatementBankLink, unlinkStatementBank,
 } from '../services/bankingService';
 import { sumBankBalances, statementForCard } from '../utils/bankingModel';
-import { suggestCardForImportedStatement } from '../utils/bankLinkSuggestions';
 import { buildBanksLitaContext } from '../utils/banksLitaContext';
 import { subscribeBankBudgets, saveBankBudget } from '../services/bankBudgetService';
 import { statementMonthlyHistory, cardMonthManualSpending, cardCycleDates, budgetStatus } from '../utils/cardSpendingInsights';
@@ -108,7 +108,6 @@ function BanksWorkspace({ user }) {
   const [pdfDraft, setPdfDraft] = useState(null);
   const lastPdfShaRef = useRef(null);
   const [pendingExpenseId, setPendingExpenseId] = useState(null);
-  const [assignments, setAssignments] = useState({});
 
   useEffect(() => {
     setBanks([]); setAccounts([]); setCards([]); setCharges([]);
@@ -570,44 +569,29 @@ function BanksWorkspace({ user }) {
           </section>
         )}
 
-        <CollapsibleSection id='bank-imported-statements' eyebrow='Tarjetas · paso pendiente' title='Vincular resúmenes a tarjetas'
+        <CollapsibleSection id='bank-imported-statements' eyebrow='Tarjetas · organización' title='Vincular resúmenes a tarjetas'
           description={unlinked.length ? unlinked.length + ' resumen(es) ya importado(s) esperan una tarjeta' : 'Todos los resúmenes importados están organizados'}
           collapsed={!showUnlinked} onToggle={() => setShowUnlinked((value) => !value)}>
-          <div className='mb-4 rounded-xl border border-purple-400/40 bg-purple-500/5 p-3 text-sm'>
+          <div className='mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-900/70'>
             <p className='font-bold'>¿Qué significa vincular un resumen?</p>
             <p className='mt-1 text-slate-600 dark:text-slate-300'>El PDF y la transacción ya están guardados. Elegí la tarjeta a la que corresponde para verlos juntos. No se crea otro gasto, no se carga otra compra y no se modifica el importe.</p>
-            <p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>Paso 1 · Revisá el resumen → Paso 2 · Elegí banco y tarjeta → Paso 3 · Confirmá la asociación.</p>
+            <p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>Expandí el resumen, elegí la tarjeta y revisá la asociación antes de confirmar.</p>
           </div>
           {unlinked.length === 0 && <p role='status' className='rounded-xl border border-slate-200 p-4 text-sm dark:border-slate-700'>No tenés resúmenes pendientes de vincular.</p>}
-          {unlinked.map((statement) => {
-            const suggestion = suggestCardForImportedStatement(statement, banks, cards);
-            const chosen = assignments[statement.expenseId] || { bankId:'', cardId:'' };
-            const candidateCards = cards.filter((card)=>card.bankId === chosen.bankId);
-            const chosenCard = candidateCards.find((card) => card.id === chosen.cardId);
-            const chosenBank = banks.find((bank) => bank.code === chosen.bankId);
-            return <article key={statement.id} className='mb-3 space-y-3 rounded-xl border border-slate-300 bg-slate-50/60 p-3 dark:border-slate-700 dark:bg-slate-900/40 sm:p-4'>
-              <div className='flex flex-wrap items-start justify-between gap-2'>
-                <div className='min-w-0'>
-                  <p className='text-xs font-extrabold uppercase tracking-wide text-purple-700 dark:text-purple-300'>Resumen pendiente de asociar</p>
-                  <h3 className='mt-1 text-base font-extrabold'>{statement.institution} · {statement.cardBrand}</h3>
-                  <p className='text-sm text-slate-600 dark:text-slate-300'>Período {statement.period} · Cierre {statement.closingDate} · Vence {statement.dueDate}</p>
-                </div>
-                <span className='rounded-full border border-amber-400/60 px-2 py-1 text-xs font-bold text-amber-700 dark:text-amber-300'>Sin tarjeta</span>
-              </div>
-              <p className='text-sm font-semibold tabular-nums'>{displayMoney(statement.totals?.ARS,'ARS')} · {displayMoney(statement.totals?.USD,'USD')}</p>
-              {showValues && <CardStatementDetails expenseId={statement.expenseId}/>}
-              {suggestion && <div className='flex flex-wrap items-center gap-2 rounded-lg border border-purple-300/70 p-3 text-sm dark:border-purple-600/60'>
-                <p className='min-w-0 flex-1'>Coincidencia probable: <strong>{banks.find((b)=>b.code===suggestion.bankId)?.name} · {cards.find((c)=>c.id===suggestion.cardId)?.nickname}</strong></p>
-                <button type='button' className={secondary} disabled={busy} onClick={()=>setAssignments((prev)=>({...prev,[statement.expenseId]:suggestion}))}>Usar sugerencia</button>
-              </div>}
-              <div className='grid gap-3 sm:grid-cols-2'>
-                <Field title='1. Banco del resumen'><select aria-label={'Banco para ' + statement.period} className={inputClass} value={chosen.bankId} onChange={(e)=>setAssignments((prev)=>({...prev,[statement.expenseId]:{bankId:e.target.value,cardId:''}}))}><option value=''>Elegí banco</option>{banks.map((bank)=><option key={bank.code} value={bank.code}>{bank.name}</option>)}</select></Field>
-                <Field title='2. Tarjeta a la que pertenece'><select aria-label={'Tarjeta para ' + statement.period} className={inputClass} value={chosen.cardId} disabled={!chosen.bankId} onChange={(e)=>setAssignments((prev)=>({...prev,[statement.expenseId]:{...chosen,cardId:e.target.value}}))}><option value=''>Elegí tarjeta</option>{candidateCards.map((card)=><option key={card.id} value={card.id}>{card.nickname} {card.lastFour ? '•••• '+card.lastFour : ''}</option>)}</select></Field>
-              </div>
-              {chosenCard && <p className='text-xs text-slate-600 dark:text-slate-300'>Se asociará con <strong>{chosenBank?.name} · {chosenCard.nickname}</strong>. La operación se puede consultar desde esa tarjeta.</p>}
-              <button type='button' className={buttonClass} disabled={busy || !chosen.cardId} onClick={()=>run(()=>saveStatementBankLink(uid,statement.expenseId,chosen.bankId,chosen.cardId),'Resumen asociado correctamente · sin crear gastos')}>3. Confirmar asociación</button>
-            </article>;
-          })}
+          <div className='space-y-3'>
+            {unlinked.map(statement => (
+              <PendingStatementLinkCard
+                key={statement.expenseId || statement.id}
+                statement={statement}
+                banks={banks}
+                cards={cards}
+                privacyHidden={!showValues}
+                disabled={busy}
+                onLink={(expenseId, bankId, cardId) => saveStatementBankLink(uid, expenseId, bankId, cardId)}
+                onLinked={() => toast.success('Resumen vinculado a la tarjeta sin crear gastos nuevos.')}
+              />
+            ))}
+          </div>
         </CollapsibleSection>
           </>
         )}
