@@ -3,7 +3,9 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { FaCopy, FaPencilAlt, FaTrashAlt } from 'react-icons/fa';
-import { CollapsibleChevron, CollapsibleHeading } from '../components/CollapsibleHeading';
+import { FINANCIAL_ITEM_SURFACE_STYLES, FINANCIAL_RECORD_DISCLOSURE_STYLES } from '../components/CollapsibleHeading';
+import CollapsibleSection from '../components/CollapsibleSection';
+import QuickAccessCard from '../components/QuickAccessCard';
 import { deletePortfolioSnapshot, registerReconciliationTransaction, savePortfolioReconciliation, subscribePortfolioPositions, subscribePortfolioReconciliations, subscribePortfolioSnapshots, updatePortfolioSnapshot } from '../services/portfolioService';
 import PortfolioHistoryModal from '../components/PortfolioHistoryModal';
 import PortfolioAccountOverview from '../components/PortfolioAccountOverview';
@@ -18,16 +20,6 @@ const startOf = (date, mode) => {
 	if (mode === 'month') { d.setDate(1); d.setHours(0,0,0,0); }
 	return d;
 };
-const DetailSection = ({ id, title, subtitle, open, onToggle, children }) => (
-	<section className='mt-5 rounded-2xl border dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden'>
-		<button type='button' onClick={onToggle} aria-expanded={open} aria-controls={id} className='w-full p-5 flex items-center justify-between gap-4 text-left'>
-			<CollapsibleHeading title={title} description={subtitle} />
-			<CollapsibleChevron expanded={open} />
-		</button>
-		{open && <div id={id} className='px-5 pb-5'>{children}</div>}
-	</section>
-);
-
 const movementTone = (row) => {
   const type = accountMovementType(row);
   if (type === 'earning') return Number(row.observedEarning || 0) < 0
@@ -44,12 +36,14 @@ export default function PortfolioDetail() {
 	const user = useSelector((state) => state.auth.user);
 	const [positions,setPositions]=useState([]); const [snapshots,setSnapshots]=useState([]); const [reconciliations,setReconciliations]=useState([]); const [mode,setMode]=useState('day');
 	const [historyFilter,setHistoryFilter]=useState('all');
+	const [revealedAccountFields,setRevealedAccountFields]=useState({});
+	useEffect(()=>setRevealedAccountFields({}),[positionId]);
 	const [editing,setEditing]=useState(null); const [deleting,setDeleting]=useState(null); const [pendingAction,setPendingAction]=useState('');
 	const openEditModal = (row) => { if (pendingAction) return; setDeleting(null); setEditing({...row}); };
 	const openDeleteModal = (row) => { if (pendingAction) return; setEditing(null); setDeleting(row); };
 	const closeHistoryModal = useCallback(() => { if (pendingAction) return; setEditing(null); setDeleting(null); }, [pendingAction]);
 	const detailPreferenceKey = user?.uid ? `ltc:portfolio:detail:${user.uid}` : 'ltc:portfolio:detail';
-	const [openSections,setOpenSections]=useState({ overview:true, earnings:true, account:true, monthly:true, history:true });
+	const [openSections,setOpenSections]=useState({ overview:true, earnings:true, account:false, monthly:true, history:true });
 	useEffect(()=>{ if(!user) return; try { const saved=JSON.parse(localStorage.getItem(detailPreferenceKey) || '{}'); if(saved.openSections) setOpenSections((current)=>({...current,...saved.openSections})); } catch {} },[user,detailPreferenceKey]);
 	useEffect(()=>{ if(!user) return; localStorage.setItem(detailPreferenceKey,JSON.stringify({openSections})); },[user,detailPreferenceKey,openSections]);
 	const toggleSection=(key)=>setOpenSections((current)=>({...current,[key]:!current[key]}));
@@ -99,9 +93,15 @@ export default function PortfolioDetail() {
 	return <>
 		<main className='min-h-screen bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-white px-4 py-6'>
 			<div className='max-w-5xl mx-auto'>
-				<Link to='/portfolio' className='text-purple-500 font-semibold'>← Volver al Portfolio</Link>
-				<DetailSection id='portfolio-overview' title={`${position.institution} · ${position.name}`} subtitle='Resumen de la posición' open={openSections.overview} onToggle={()=>toggleSection('overview')}>
-					{isFci && <><p className='uppercase text-sm font-bold text-purple-500'>{position.institution}</p><h1 className='text-3xl font-bold mt-1'>{position.name}</h1></>}
+				<QuickAccessCard eyebrow='Detalle del Portfolio' title={position.name}
+					description={position.institution + ' · ' + position.currency}
+					actionsClassName='min-w-0 sm:shrink-0'>
+					<Link to='/portfolio' className='inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-violet-400 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-700'>
+						← Volver al Portfolio
+					</Link>
+				</QuickAccessCard>
+				<CollapsibleSection id='portfolio-overview' title='Resumen de la posición' description='Datos actuales por moneda y tipo de activo.' collapsed={!openSections.overview} onToggle={()=>toggleSection('overview')} className='mt-5'>
+					
 					{isRemunerated ? <PortfolioAccountOverview position={position} snapshots={history} /> : isFci ? (
 						<div className='grid grid-cols-2 md:grid-cols-4 gap-3 mt-5'>
 							<div><p className='text-xs text-gray-500'>Valuación actual</p><p className='text-xl font-bold'>{money(position.balance,position.currency)}</p></div>
@@ -117,13 +117,13 @@ export default function PortfolioDetail() {
 							<div><p className='text-xs text-gray-500'>Verificaciones</p><p className='text-xl font-bold'>{history.length}</p></div>
 						</div>
 					)}
-				</DetailSection>
-				<DetailSection
+				</CollapsibleSection>
+				<CollapsibleSection
 					id='portfolio-earnings'
 					title={isFci ? 'Evolución de la cuotaparte' : 'Rendimientos registrados'}
-					subtitle={isFci ? 'Seguimiento de NAV y valuación. No se trata como ganancia realizada hasta rescatar.' : 'Solo movimientos marcados como interés. Los retiros y aportes no son ganancias ni pérdidas.'}
-					open={openSections.earnings}
-					onToggle={()=>toggleSection('earnings')}
+					description={isFci ? 'Seguimiento de NAV y valuación. No se trata como ganancia realizada hasta rescatar.' : 'Solo movimientos marcados como interés. Los retiros y aportes no son ganancias ni pérdidas.'}
+					collapsed={!openSections.earnings}
+					onToggle={()= className='mt-5'>toggleSection('earnings')}
 				>
 					{isFci ? (
 						<div className='mt-4 space-y-3'>
@@ -146,23 +146,42 @@ export default function PortfolioDetail() {
 							<p className='mt-3 text-xs text-slate-600 dark:text-slate-300'>El esperado es una estimación por día con datos cargados, no se duplica al verificar varias veces.</p><div className='mt-4 space-y-3'>{grouped.length===0?<p className='text-gray-500'>Todavía no hay verificaciones para graficar.</p>:grouped.map((row)=>{const max=Math.max(...grouped.map(x=>Math.abs(x.earning)),1);return <div key={row.date.toISOString()}><div className='flex justify-between text-sm'><span>{row.date.toLocaleDateString('es-AR')}</span><strong className={row.earning>=0?'text-green-500':'text-red-500'}>{money(row.earning,position.currency)}</strong></div><div className='h-2 rounded bg-slate-200 dark:bg-slate-700 mt-1 overflow-hidden'><div className='h-full bg-purple-500' style={{width:`${Math.min(100,Math.abs(row.earning)/max*100)}%`}} /></div><p className='text-xs text-gray-500 mt-1'>{row.checks} verificación(es) · esperado {money(row.expected,position.currency)}</p></div>})}</div>
 						</>
 					)}
-				</DetailSection>
-				{hasAccountDetails && <DetailSection id='portfolio-account' title='Datos de cuenta' subtitle='Datos para recibir transferencias o fondear esta posición.' open={openSections.account} onToggle={()=>toggleSection('account')}>
+				</CollapsibleSection>
+				{hasAccountDetails && <CollapsibleSection id='portfolio-account' title='Datos de cuenta' description='Datos para recibir transferencias o fondear esta posición.' collapsed={!openSections.account} onToggle={()= className='mt-5'>toggleSection('account')}>
 					<div className='grid md:grid-cols-2 gap-3 mt-5'>
 						{position.accountHolder && <div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Titular</p><p className='font-semibold mt-1'>{position.accountHolder}</p></div>}
 						{position.bankName && <div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Banco receptor</p><p className='font-semibold mt-1'>{position.bankName}</p></div>}
 						{position.accountType && <div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Tipo de cuenta</p><p className='font-semibold mt-1'>{position.accountType}</p></div>}
-						{accountRows.map(([label,value]) => <div key={label} className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3 flex items-center justify-between gap-3'><div className='min-w-0'><p className='text-xs text-gray-500'>{label}</p><p className='font-semibold mt-1 break-all'>{value}</p></div><button type='button' onClick={()=>copyValue(label,value)} title={`Copiar ${label}`} aria-label={`Copiar ${label}`} className='shrink-0 w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-600 hover:text-purple-500'><FaCopy /></button></div>)}
+						{accountRows.map(([label,value]) => {
+							const visible=Boolean(revealedAccountFields[label]);
+							return <div key={label} className='flex min-w-0 flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/70'>
+								<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>{label}</p>
+									<p className='mt-1 break-all font-semibold' aria-label={visible ? label : label + ' oculto'}>{visible ? value : '••••••'}</p></div>
+								<div className='flex flex-wrap items-center gap-2'>
+									<button type='button' aria-pressed={visible}
+										aria-label={(visible ? 'Ocultar ' : 'Mostrar ') + label}
+										onClick={()=>setRevealedAccountFields((current)=>({...current,[label]:!current[label]}))}
+										className={FINANCIAL_RECORD_DISCLOSURE_STYLES + ' border border-slate-300 px-3 dark:border-slate-600'}>
+										{visible ? 'Ocultar' : 'Mostrar'}
+									</button>
+									{visible && <button type='button' onClick={()=>copyValue(label,value)}
+										aria-label={'Copiar ' + label}
+										className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 hover:border-violet-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100'>
+										<FaCopy aria-hidden='true'/>
+									</button>}
+								</div>
+							</div>;
+						})}
 					</div>
 					{position.bankAddress && <div className='mt-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Dirección del banco</p><p className='font-semibold mt-1'>{position.bankAddress}</p></div>}
 					{position.depositInstructions && <div className='mt-3 rounded-xl border border-purple-200 dark:border-purple-900/60 p-3'><p className='text-xs text-gray-500'>Instrucciones</p><p className='text-sm mt-1'>{position.depositInstructions}</p></div>}
-				</DetailSection>}
-				<DetailSection
+				</CollapsibleSection>}
+				<CollapsibleSection
 					id='portfolio-monthly'
 					title={isFci ? 'Rendimiento publicado del fondo' : 'Cierre mensual'}
-					subtitle={isFci ? 'Información porcentual publicada por el fondo. Es distinta de tu ganancia realizada.' : 'Consolida solamente verificaciones clasificadas como rendimiento. Todavía no crea una transacción.'}
-					open={openSections.monthly}
-					onToggle={()=>toggleSection('monthly')}
+					description={isFci ? 'Información porcentual publicada por el fondo. Es distinta de tu ganancia realizada.' : 'Consolida solamente verificaciones clasificadas como rendimiento. Todavía no crea una transacción.'}
+					collapsed={!openSections.monthly}
+					onToggle={()= className='mt-5'>toggleSection('monthly')}
 				>
 					{isFci ? (
 						<div className='mt-4'>
@@ -188,13 +207,13 @@ export default function PortfolioDetail() {
 					) : (
 						<div className='mt-4 space-y-3'>{monthly.length===0?<p className='text-gray-500'>Todavía no hay meses para conciliar.</p>:monthly.map(item=>{const saved=reconciliations.find(r=>r.positionId===positionId&&r.month===item.month); const busy=pendingAction===`month-${item.month}`; return <div key={item.month} className='rounded-xl border dark:border-slate-700 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3'><div><p className='font-bold'>{new Date(`${item.month}-01T12:00:00`).toLocaleDateString('es-AR',{month:'long',year:'numeric'})}</p><p className='text-sm text-gray-500'>{money(item.amount,position.currency)} confirmados · {item.rows.filter(r=>r.changeType==='earning').length} rendimiento(s)</p><p className={`text-xs mt-1 ${saved?'text-green-500':'text-amber-500'}`}>{saved?.transactionId?'Registrado en Transacciones':saved?'Cierre guardado · pendiente de registrar en Transacciones':'Pendiente de cierre'}</p></div><div className='flex flex-col sm:flex-row gap-2'><button type='button' onClick={()=>closeMonth(item)} disabled={Boolean(pendingAction) || Boolean(saved?.transactionId)} className='min-w-[130px] rounded-lg border border-purple-500 text-purple-500 py-2 px-3 font-semibold disabled:opacity-50'>{busy?<span className='inline-block w-5 h-5 rounded-full border-2 border-purple-300 border-t-purple-600 animate-spin'/>:(saved?.transactionId?'Cierre registrado':saved?'Actualizar cierre':'Cerrar mes')}</button>{saved && <button type='button' onClick={()=>registerMonth(saved)} disabled={Boolean(pendingAction) || Boolean(saved.transactionId)} className='min-w-[170px] rounded-lg bg-green-600 text-white py-2 px-3 font-semibold disabled:opacity-50'>{pendingAction===`register-${item.month}`?<span className='inline-block w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin'/>:(saved.transactionId?'Registrado ✓':'Registrar en Transacciones')}</button>}</div></div>})}</div>
 					)}
-				</DetailSection>
-				<DetailSection
+				</CollapsibleSection>
+				<CollapsibleSection
 					id='portfolio-history'
 					title={isFci ? 'Historial de valuaciones' : 'Movimientos y verificaciones'}
-					subtitle={isFci ? 'Cada registro representa un valor de cuotaparte observado y la valuación resultante.' : 'Rendimientos, aportes, retiros y ajustes. Un retiro no es una pérdida de inversión.'}
-					open={openSections.history}
-					onToggle={()=>toggleSection('history')}
+					description={isFci ? 'Cada registro representa un valor de cuotaparte observado y la valuación resultante.' : 'Rendimientos, aportes, retiros y ajustes. Un retiro no es una pérdida de inversión.'}
+					collapsed={!openSections.history}
+					onToggle={()= className='mt-5'>toggleSection('history')}
 				>
 					{isFci ? (
 						<>
@@ -236,7 +255,7 @@ export default function PortfolioDetail() {
 							<div className='mt-4 hidden md:block overflow-x-auto'><table className='w-full min-w-[760px] text-sm'><thead><tr className='text-left text-gray-500'><th className='py-2 pr-4'>Fecha</th><th className='pr-4'>Saldo</th><th className='pr-4'>Cambio</th><th className='pr-4'>Tipo</th><th className='pr-4'>Esperado</th><th className='text-right'>Acciones</th></tr></thead><tbody>{[...filteredHistory].reverse().map(row=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3 pr-4 whitespace-nowrap'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td className='pr-4 whitespace-nowrap'>{money(row.balance,position.currency)}</td><td className={`pr-4 whitespace-nowrap ${movementTone(row)}`}>{movementValue(row,position.currency)}</td><td className='pr-4 whitespace-nowrap'>{accountMovementLabel(accountMovementType(row))}</td><td className='pr-4 whitespace-nowrap'>{money(row.expectedEarning,position.currency)}</td><td><div className='flex justify-end gap-2'><button type='button' onClick={()=>openEditModal(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border dark:border-slate-600' aria-label='Editar verificación'><FaPencilAlt /></button><button type='button' onClick={()=>openDeleteModal(row)} className='w-9 h-9 inline-flex items-center justify-center rounded-lg border border-red-400 text-red-500' aria-label='Eliminar verificación'><FaTrashAlt /></button></div></td></tr>)}</tbody></table></div>
 						</>
 					)}
-				</DetailSection>
+				</CollapsibleSection>
 				<p className='mt-4 text-xs text-amber-600 dark:text-amber-400'>{isFci ? 'En FCI, la variación del valor de cuotaparte modifica la valuación de la posición, pero no se considera ganancia realizada hasta que exista un rescate/venta.' : 'Las verificaciones nuevas separan rendimiento, aporte, retiro y ajuste. Los snapshots históricos sin clasificación no se suman como rendimiento confirmado ni se envían a Transacciones.'}</p>
 			</div>
 		</main>
