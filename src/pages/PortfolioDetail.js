@@ -127,7 +127,7 @@ export default function PortfolioDetail() {
 					title={isFci ? 'Evolución de la cuotaparte' : 'Rendimientos registrados'}
 					description={isFci ? 'Seguimiento de NAV y valuación. No se trata como ganancia realizada hasta rescatar.' : 'Solo movimientos marcados como interés. Los retiros y aportes no son ganancias ni pérdidas.'}
 					collapsed={!openSections.earnings}
-					onToggle={()= className='mt-5'>toggleSection('earnings')}
+					onToggle={()=>toggleSection('earnings')} className='mt-5'
 				>
 					{isFci ? (
 						<div className='mt-4 space-y-3'>
@@ -151,7 +151,7 @@ export default function PortfolioDetail() {
 						</>
 					)}
 				</CollapsibleSection>
-				{hasAccountDetails && <CollapsibleSection id='portfolio-account' title='Datos de cuenta' description='Datos para recibir transferencias o fondear esta posición.' collapsed={!openSections.account} onToggle={()= className='mt-5'>toggleSection('account')}>
+				{hasAccountDetails && <CollapsibleSection id='portfolio-account' title='Datos de cuenta' description='Datos para recibir transferencias o fondear esta posición.' collapsed={!openSections.account} onToggle={()=>{toggleSection('account');setRevealedAccountFields({});}} className='mt-5'>
 					<div className='grid md:grid-cols-2 gap-3 mt-5'>
 						{position.accountHolder && <div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Titular</p><p className='font-semibold mt-1'>{position.accountHolder}</p></div>}
 						{position.bankName && <div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Banco receptor</p><p className='font-semibold mt-1'>{position.bankName}</p></div>}
@@ -185,7 +185,7 @@ export default function PortfolioDetail() {
 					title={isFci ? 'Rendimiento publicado del fondo' : 'Cierre mensual'}
 					description={isFci ? 'Información porcentual publicada por el fondo. Es distinta de tu ganancia realizada.' : 'Consolida solamente verificaciones clasificadas como rendimiento. Todavía no crea una transacción.'}
 					collapsed={!openSections.monthly}
-					onToggle={()= className='mt-5'>toggleSection('monthly')}
+					onToggle={()=>toggleSection('monthly')} className='mt-5'
 				>
 					{isFci ? (
 						<div className='mt-4'>
@@ -217,7 +217,7 @@ export default function PortfolioDetail() {
 					title={isFci ? 'Historial de valuaciones' : 'Movimientos y verificaciones'}
 					description={isFci ? 'Cada registro representa un valor de cuotaparte observado y la valuación resultante.' : 'Rendimientos, aportes, retiros y ajustes. Un retiro no es una pérdida de inversión.'}
 					collapsed={!openSections.history}
-					onToggle={()= className='mt-5'>toggleSection('history')}
+					onToggle={()=>toggleSection('history')} className='mt-5'
 				>
 					{isFci ? (
 						<>
