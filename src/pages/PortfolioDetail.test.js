@@ -57,9 +57,38 @@ jest.mock('../services/portfolioService', () => ({
 	registerReconciliationTransaction: jest.fn(() => Promise.resolve()),
 }));
 
+// Create React App enables Jest resetMocks, so implementations configured
+// only in jest.mock(...) disappear before tests. Reinstall isolated fixtures.
 beforeEach(() => {
 	jest.clearAllMocks();
 	window.localStorage.clear();
+	const service = require('../services/portfolioService');
+	service.subscribePortfolioPositions.mockImplementation((uid,onData) => {
+		onData([{
+			id:'position-1', institution:'Banco ejemplo', name:'Caja de ahorro',
+			category:'Cuenta remunerada', currency:'USD', balance:11000,
+			cbu:'2850590940090418135201', alias:'banco.prueba.sintetico',
+			accountNumber:'12345678909876543210', interestRate:1.75,
+		}]);
+		return () => {};
+	});
+	service.subscribePortfolioSnapshots.mockImplementation((uid,onData) => {
+		onData([{
+			id:'snapshot-1', positionId:'position-1',
+			capturedAt:new Date('2026-10-08T14:41:23Z'), balance:11000,
+			observedEarning:-128.53, expectedEarning:0.55, confirmedEarning:0,
+			changeType:'withdrawal', note:'Retiro registrado',
+		}]);
+		return () => {};
+	});
+	service.subscribePortfolioReconciliations.mockImplementation((uid,onData) => {
+		onData([]);
+		return () => {};
+	});
+	service.updatePortfolioSnapshot.mockResolvedValue(undefined);
+	service.deletePortfolioSnapshot.mockResolvedValue(undefined);
+	service.savePortfolioReconciliation.mockResolvedValue(undefined);
+	service.registerReconciliationTransaction.mockResolvedValue(undefined);
 });
 
 test('mobile edit action opens modal instead of an inline form and persists the new classification', async () => {
