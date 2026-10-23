@@ -61,3 +61,7 @@ All transactions retain the required `selectedDate`. Do not confuse that with a 
 - Use shared CollapsibleHeading typography, opaque LTC surfaces and 44px controls in LitaAssitantPanel. Preserve visualViewport keyboard correction, iframe identity and origin/source verification.
 - Pass privacyHidden from every page: no balances, history or historic queries may cross while hidden. The sibling Lita iframe handles this status explicitly.
 - Before acknowledging a conversation deletion, await deleteLitaChat(uid,id); never report success optimistically. Document the LTC-first deployment order in [Lita UX](../../docs/lita-ux-229.md).
+
+## Portfolio Detail #228
+- `src/pages/PortfolioDetail.js` renders **actual** `QuickAccessCard` and `CollapsibleSection` from Transactions; its historic records reuse `FINANCIAL_ITEM_SURFACE_STYLES`, no custom wrapper lookalike.
+- In account detail, mask CBU, alias, account number, routing and SWIFT in the DOM until the user explicitly shows each. Expose copy only when shown and remask on section close or position change. Use ≥44px targets and visible focus; preserve FCI NAV vs realized gains.

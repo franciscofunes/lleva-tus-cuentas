@@ -138,3 +138,9 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
 - The Next.js iframe must also match these tokens and contrast in both themes; both repos participate in review. A ready iframe alone does not prove the combined LTC product is visually coherent.
 - The privacy toggle from Transactions, Bancos or Portfolio suppresses numeric context, conversation history and historic lookups at the postMessage boundary. Do not add screen-only masking that still sends balances to the embedded Lita app.
 - Destructive conversation deletion requires confirmation and parent Firestore acknowledgment. Keep saved histories on failures; show retry without leaking raw backend exceptions. See [Lita #229](lita-ux-229.md).
+
+## Portfolio asset details, phase 2 (#228)
+
+- The asset detail page uses the **real** `QuickAccessCard`, `CollapsibleSection`, `FINANCIAL_ITEM_SURFACE_STYLES`, and `FINANCIAL_RECORD_DISCLOSURE_STYLES` from Transactions. Do not invent a separate detail-card UI. Maintain one h1, a 44px back action and ≥44px history edit/delete/filter buttons.
+- Sensitive CBU, alias, account number, routing and SWIFT fields must not be present in the rendered DOM until individually revealed. The reveal and copy controls use explicit accessible labels, and closing the section remasks all values. Keep masking independent of the remembered section expansion state.
+- Asset-specific valuation math and financial labels are unchanged. See [Portfolio detail UX #228 phase 2](portfolio-issue-228-phase2.md).
