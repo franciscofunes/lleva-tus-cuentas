@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import PortfolioDetail from './PortfolioDetail';
 import { deletePortfolioSnapshot, updatePortfolioSnapshot } from '../services/portfolioService';
 
@@ -123,7 +123,8 @@ test('mobile delete action opens confirmation modal and does not delete on Cance
 	expect(deletePortfolioSnapshot).not.toHaveBeenCalled();
 
 	fireEvent.click(deleteButtons[1]);
-	fireEvent.click(screen.getByRole('button', { name: 'Eliminar verificación' }));
+	const confirmation = screen.getByRole('dialog', { name: 'Eliminar verificación' });
+	fireEvent.click(within(confirmation).getByRole('button', { name: 'Eliminar verificación' }));
 	await waitFor(() => expect(deletePortfolioSnapshot).toHaveBeenCalledWith('user-1', 'snapshot-1'));
 });
 
