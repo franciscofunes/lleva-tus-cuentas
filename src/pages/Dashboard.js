@@ -943,6 +943,7 @@ function Dashboard() {
               setIsOpen={setShowModal}
               section="transactions"
               context={litaTransactionContext}
+              privacyHidden={!isDataVisible}
             />
           </motion.div>
         )}

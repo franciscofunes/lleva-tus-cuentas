@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux';
 import { FiMaximize2, FiMinimize2 } from 'react-icons/fi';
 import { IoMdClose } from 'react-icons/io';
+import { COLLAPSIBLE_HEADER_STYLES } from './CollapsibleHeading';
 import {
 	LITA_CHAT_LOCALHOST,
 	LITA_CHAT_VERCEL_URL,
@@ -36,8 +37,11 @@ const LitaAssistantPanel = ({
 	setIsOpen,
 	section = 'transactions',
 	context = {},
+	privacyHidden = false,
 }) => {
 	const iframeRef = useRef(null);
+	const closeButtonRef = useRef(null);
+	const triggerFocusRef = useRef(null);
 	const user = useSelector((state) => state.auth.user);
 	const [chatHistory, setChatHistory] = useState([]);
 	const [historyStatus, setHistoryStatus] = useState({ state: 'loading' });
@@ -46,6 +50,7 @@ const LitaAssistantPanel = ({
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [keyboardViewport, setKeyboardViewport] = useState(null);
 	const largestViewportHeightRef = useRef(0);
+	const sectionLabel = section === 'portfolio' ? 'Portfolio' : section === 'banks' ? 'Bancos' : 'Transacciones';
 
 	const src =
 		process.env.NODE_ENV === 'development'
@@ -61,11 +66,10 @@ const LitaAssistantPanel = ({
 	}, [src]);
 
 	const financialContext = useMemo(
-		() => ({
-			section,
-			...context,
-		}),
-		[section, context]
+		() => privacyHidden
+			? { section, scope: 'privacy-hidden', privacyHidden: true }
+			: { section, ...context },
+		[section, context, privacyHidden]
 	);
 
 	const postToLita = useCallback(
@@ -86,13 +90,14 @@ const LitaAssistantPanel = ({
 	const sendHistory = useCallback(() => {
 		postToLita({
 			type: 'lita:history',
-			payload: chatHistory,
+			payload: privacyHidden ? [] : chatHistory,
 		});
-	}, [chatHistory, postToLita]);
+	}, [chatHistory, postToLita, privacyHidden]);
 
 	const sendHistoryStatus = useCallback(() => {
-		postToLita({ type: 'lita:history:status', payload: historyStatus });
-	}, [historyStatus, postToLita]);
+		postToLita({ type: 'lita:history:status',
+			payload: privacyHidden ? { state: 'unavailable', reason: 'privacy-hidden' } : historyStatus });
+	}, [historyStatus, postToLita, privacyHidden]);
 
 	const sendTheme = useCallback(() => {
 		postToLita({ type: 'lita:theme', payload: theme });
@@ -107,6 +112,16 @@ const LitaAssistantPanel = ({
 		updateTheme();
 		return () => observer.disconnect();
 	}, []);
+
+	// The overlay returns focus to the originating financial page after dismissal.
+	useEffect(() => {
+		if (!isOpen) return undefined;
+		triggerFocusRef.current = document.activeElement;
+		closeButtonRef.current?.focus();
+		return () => {
+			if (triggerFocusRef.current?.isConnected) triggerFocusRef.current.focus();
+		};
+	}, [isOpen]);
 
 	// Don't scroll the page behind the fixed chat on touch devices.
 	useEffect(() => {
@@ -211,7 +226,7 @@ const LitaAssistantPanel = ({
 				const response = { type: 'lita:historical:result', payload: {
 					requestId: request.requestId, success: false,
 				} };
-				if (!user?.uid || section !== 'transactions') {
+				if (!user?.uid || section !== 'transactions' || privacyHidden) {
 					response.payload.reason = 'La consulta requiere tu sesión de Transacciones.';
 				} else {
 					try {
@@ -258,11 +273,27 @@ const LitaAssistantPanel = ({
 				return;
 			}
 
-			if (event.data?.type === 'lita:history:delete' && user?.uid) {
+			if (event.data?.type === 'lita:history:delete') {
+				const { id, requestId } = event.data.payload || {};
+				if (typeof id !== 'string' || !id || id.length > 128) return;
+				// Legacy LITA builds send only {id}; keep supporting them.
+				const confirmedRequest = typeof requestId === 'string' &&
+					/^[a-zA-Z0-9_-]{1,70}$/.test(requestId);
+				const reply = (success, reason) => {
+					if (!confirmedRequest) return;
+					postToLita({ type: 'lita:history:delete:result',
+						payload: { requestId, id, success, ...(reason ? { reason } : {}) } });
+				};
+				if (!user?.uid) {
+					reply(false, 'unauthenticated');
+					return;
+				}
 				try {
-					await deleteLitaChat(user.uid, event.data?.payload?.id);
+					await deleteLitaChat(user.uid, id);
+					reply(true);
 				} catch (error) {
 					console.warn('Could not delete LITA chat history', error);
+					reply(false, error?.code === 'permission-denied' ? 'permission-denied' : 'delete-failed');
 				}
 			}
 		};
@@ -292,6 +323,7 @@ const LitaAssistantPanel = ({
 		user?.uid,
 		section,
 		context?.categories,
+		privacyHidden,
 	]);
 
 	// Resend on initial mount and any theme/context/history updates.
@@ -313,7 +345,8 @@ const LitaAssistantPanel = ({
 				<>
 					<motion.button
 						type='button'
-						aria-label='Cerrar LITA'
+						aria-label='Cerrar LITA al tocar fuera del chat'
+						tabIndex={-1}
 						className='fixed inset-0 z-[74] bg-slate-950/30 backdrop-blur-[1px] dark:bg-slate-950/55'
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
@@ -336,22 +369,30 @@ const LitaAssistantPanel = ({
 					} : undefined}
 					className={[
 							'fixed z-[80] flex flex-col overflow-hidden border shadow-2xl shadow-black/40',
-							'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950',
+							'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800',
 							isExpanded
 								? 'inset-0 h-[100dvh] w-full max-h-none rounded-none border-0'
-								: 'bottom-3 left-3 right-3 h-[76dvh] max-h-[720px] rounded-3xl sm:bottom-5 sm:left-auto sm:right-5 sm:h-[72dvh] sm:w-[420px] lg:w-[440px]',
+								: 'bottom-0 left-0 right-0 h-[88dvh] max-h-[720px] rounded-t-2xl sm:bottom-5 sm:left-auto sm:right-5 sm:h-[72dvh] sm:w-[420px] sm:rounded-2xl lg:w-[440px]',
 						].join(' ')}
 						initial={{ opacity: 0, y: 24, scale: 0.98 }}
 						animate={{ opacity: 1, y: 0, scale: 1 }}
 						exit={{ opacity: 0, y: 18, scale: 0.98 }}
 						transition={{ type: 'spring', stiffness: 360, damping: 32 }}
-						aria-label='LITA, asistente financiero'
+						role='dialog'
+						aria-modal='true'
+						aria-labelledby='lita-panel-title'
+						aria-describedby='lita-panel-context'
 					>
-						<div className='flex h-11 shrink-0 items-center justify-end gap-2 border-b border-slate-200 bg-white px-2.5 dark:border-slate-800 dark:bg-slate-950'>
+						<div className='flex min-h-[56px] shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 dark:border-slate-700 dark:bg-slate-800'>
+							<div className='min-w-0'>
+								<p id='lita-panel-title' className={COLLAPSIBLE_HEADER_STYLES.eyebrow}>Chat de LTC$</p>
+								<p id='lita-panel-context' className='truncate text-xs font-medium text-slate-600 dark:text-slate-300'>{sectionLabel}</p>
+							</div>
+							<div className='flex shrink-0 items-center gap-2'>
 							<button
 								type='button'
 								onClick={() => setIsExpanded((value) => !value)}
-								className='inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-300 text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+								className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700'
 								aria-label={isExpanded ? 'Restaurar tamaño de LITA' : 'Expandir LITA a pantalla completa'}
 								aria-pressed={isExpanded}
 								title={isExpanded ? 'Restaurar tamaño' : 'Pantalla completa'}
@@ -362,11 +403,13 @@ const LitaAssistantPanel = ({
 								type='button'
 								onClick={() => setIsOpen(false)}
 								id='lita-assistant-panel-close-button'
-								className='inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-300 text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:hover:text-white'
+								ref={closeButtonRef}
+								className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition-colors hover:border-violet-400 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700'
 								aria-label='Cerrar LITA'
 							>
 								<IoMdClose className='h-5 w-5' />
 							</button>
+							</div>
 						</div>
 
 						<iframe
@@ -374,7 +417,7 @@ const LitaAssistantPanel = ({
 							src={src}
 							allow='clipboard-write'
 							title='Lita Assistant'
-							className='min-h-0 w-full flex-1 border-none bg-white dark:bg-slate-950'
+							className='min-h-0 w-full flex-1 border-none bg-white dark:bg-slate-800'
 							onLoad={() => {
 								sendContext();
 								sendHistory();

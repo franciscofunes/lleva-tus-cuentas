@@ -77,6 +77,259 @@ describe('LITA iframe integration', () => {
 		expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
 	});
 
+
+	test('shares Transactions visual chrome and uses accessible 44px dialog actions', () => {
+		const { container } = render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='banks' />);
+		const dialog = screen.getByRole('dialog', {name: 'Chat de LTC
+		expect(visibleKeyboardLayout(
+			{ height: 425.8, offsetTop: 4, scale: 1 }, 800, 390
+		)).toEqual({ height: 426, top: 4 });
+		expect(visibleKeyboardLayout(
+			{ height: 800, offsetTop: 0, scale: 1 }, 800, 390
+		)).toBeNull();
+		expect(visibleKeyboardLayout(
+			{ height: 425, offsetTop: 0, scale: 1 }, 800, 1200
+		)).toBeNull();
+		expect(visibleKeyboardLayout(
+			{ height: 425, offsetTop: 0, scale: 1.25 }, 800, 390
+		)).toBeNull();
+	});
+
+	test('keeps the same iframe above Android keyboard, and restores normal panel when keyboard hides', () => {
+		const previousWidth = Object.getOwnPropertyDescriptor(window, 'innerWidth');
+		const previousHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+		const previousViewport = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+		const events = {};
+		const viewport = {
+			height: 800, offsetTop: 0, scale: 1,
+			addEventListener: jest.fn((name, fn) => { events[name] = fn; }),
+			removeEventListener: jest.fn(),
+		};
+		Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+		Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+		Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
+		try {
+			const { container, unmount } = render(
+				<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='transactions' />
+			);
+			const iframe = screen.getByTitle('Lita Assistant');
+			const panel = container.querySelector('aside');
+			expect(panel.style.height).toBe('');
+			act(() => {
+				viewport.height = 405;
+				viewport.offsetTop = 2;
+				events.resize();
+			});
+			expect(panel.style.height).toBe('405px');
+			expect(panel.style.top).toBe('2px');
+			expect(panel.style.bottom).toBe('auto');
+			expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
+			act(() => {
+				viewport.height = 800;
+				viewport.offsetTop = 0;
+				events.resize();
+			});
+			expect(panel.style.height).toBe('');
+			expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
+			unmount();
+			expect(viewport.removeEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
+		} finally {
+			if (previousWidth) Object.defineProperty(window, 'innerWidth', previousWidth);
+			if (previousHeight) Object.defineProperty(window, 'innerHeight', previousHeight);
+			if (previousViewport) Object.defineProperty(window, 'visualViewport', previousViewport);
+			else delete window.visualViewport;
+		}
+	});
+
+
+	test('privacy mode never posts private balances or saved messages into the cross-origin iframe', async () => {
+		const { subscribeLitaChats } = require('../services/litaChatService');
+		subscribeLitaChats.mockImplementationOnce((uid,onData)=>{
+			onData([{id:'stored1',title:'Saldo confidencial',messages:[{role:'user',content:'Mi saldo es USD 12345'}]}]);
+			return jest.fn();
+		});
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='portfolio'
+			privacyHidden context={{balance:12345,positions:[{currency:'USD',amount:12345}]}} />);
+		const iframe=screen.getByTitle('Lita Assistant');
+		const post=jest.spyOn(iframe.contentWindow,'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message',{
+				origin,source:iframe.contentWindow,data:{type:'lita:ready'},
+			}));
+		});
+		expect(post).toHaveBeenCalledWith({type:'lita:context',payload:{
+			section:'portfolio',scope:'privacy-hidden',privacyHidden:true,
+		}},origin);
+		expect(post).toHaveBeenCalledWith({type:'lita:history',payload:[]},origin);
+		expect(post).toHaveBeenCalledWith({type:'lita:history:status',payload:{
+			state:'unavailable',reason:'privacy-hidden',
+		}},origin);
+		const messages=post.mock.calls.map(([message])=>message);
+		expect(JSON.stringify(messages)).not.toContain('12345');
+		expect(JSON.stringify(messages)).not.toContain('Saldo confidencial');
+	});
+
+	test('privacy mode declines historical transaction requests before reading user finances', async () => {
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='transactions'
+			privacyHidden context={{balance:45521,categories:['private']}} />);
+		const iframe=screen.getByTitle('Lita Assistant');
+		const post=jest.spyOn(iframe.contentWindow,'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message',{
+				origin,source:iframe.contentWindow,
+				data:{type:'lita:historical:request',payload:{requestId:'history789',from:'2026-01-01',to:'2026-01-31'}},
+			}));
+		});
+		expect(post).toHaveBeenCalledWith(expect.objectContaining({
+			type:'lita:historical:result',
+			payload:expect.objectContaining({requestId:'history789',success:false}),
+		}),origin);
+	});
+	test('sends a save result only after Firestore confirms the write', async () => {
+		const { saveLitaChat } = require('../services/litaChatService');
+		saveLitaChat.mockResolvedValueOnce(undefined);
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
+		const iframe = screen.getByTitle('Lita Assistant');
+		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
+
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message', {
+				origin,
+				source: iframe.contentWindow,
+				data: { type: 'lita:history:save', payload: { requestId: 'req1', id: 'chat1', messages: [] } },
+			}));
+		});
+
+		await waitFor(() => {
+			expect(saveLitaChat).toHaveBeenCalled();
+			expect(postMessage).toHaveBeenCalledWith({
+				type: 'lita:history:save:result',
+				payload: { requestId: 'req1', id: 'chat1', success: true },
+			}, origin);
+		});
+	});
+
+	test('sends a permission-denied save failure instead of silent success', async () => {
+		const { saveLitaChat } = require('../services/litaChatService');
+		saveLitaChat.mockRejectedValueOnce({ code: 'permission-denied' });
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
+		const iframe = screen.getByTitle('Lita Assistant');
+		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
+
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message', {
+				origin,
+				source: iframe.contentWindow,
+				data: { type: 'lita:history:save', payload: { requestId: 'req2', id: 'chat2', messages: [] } },
+			}));
+		});
+
+		await waitFor(() => {
+			expect(postMessage).toHaveBeenCalledWith({
+				type: 'lita:history:save:result',
+				payload: { requestId: 'req2', id: 'chat2', success: false, reason: 'permission-denied' },
+			}, origin);
+		});
+	});
+
+
+	test('acknowledges history deletion only after Firestore confirms the owner-scoped write', async () => {
+		const { deleteLitaChat } = require('../services/litaChatService');
+		let resolveDeletion;
+		deleteLitaChat.mockImplementationOnce(() => new Promise((resolve) => { resolveDeletion = resolve; }));
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
+		const iframe=screen.getByTitle('Lita Assistant');
+		const post=jest.spyOn(iframe.contentWindow, 'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message', {
+				origin, source:iframe.contentWindow,
+				data:{type:'lita:history:delete',payload:{id:'synthetic-thread',requestId:'remove123'}},
+			}));
+		});
+		expect(deleteLitaChat).toHaveBeenCalledWith('test-user','synthetic-thread');
+		expect(post).not.toHaveBeenCalledWith(expect.objectContaining({type:'lita:history:delete:result'}),origin);
+		await act(async () => { resolveDeletion(); });
+		await waitFor(() => expect(post).toHaveBeenCalledWith({
+			type:'lita:history:delete:result',
+			payload:{id:'synthetic-thread',requestId:'remove123',success:true},
+		},origin));
+	});
+
+	test('deletion failures are acknowledged and foreign senders cannot delete chats', async () => {
+		const { deleteLitaChat }=require('../services/litaChatService');
+		deleteLitaChat.mockRejectedValueOnce({code:'permission-denied'});
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
+		const iframe=screen.getByTitle('Lita Assistant');
+		const post=jest.spyOn(iframe.contentWindow,'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message',{origin,source:iframe.contentWindow,
+				data:{type:'lita:history:delete',payload:{id:'synthetic-thread',requestId:'remove124'}}}));
+		});
+		expect(post).toHaveBeenCalledWith({type:'lita:history:delete:result',
+			payload:{id:'synthetic-thread',requestId:'remove124',success:false,reason:'permission-denied'}},origin);
+		jest.clearAllMocks();
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message',{origin:'https://example.invalid',
+				source:iframe.contentWindow,data:{type:'lita:history:delete',payload:{id:'other-thread',requestId:'remove125'}}}));
+		});
+		expect(deleteLitaChat).not.toHaveBeenCalled();
+	});
+
+	test('reports Firestore subscription permission errors to LITA', async () => {
+		const { subscribeLitaChats } = require('../services/litaChatService');
+		subscribeLitaChats.mockImplementationOnce((uid, onData, onError) => {
+			onError({ code: 'permission-denied' });
+			return () => {};
+		});
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
+		const iframe = screen.getByTitle('Lita Assistant');
+		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
+
+		await waitFor(() => {
+			expect(postMessage).toHaveBeenCalledWith({
+				type: 'lita:history:status',
+				payload: { state: 'error', reason: 'permission-denied' },
+			}, origin);
+		});
+	});
+});
+});
+		expect(dialog).toHaveAttribute('aria-modal', 'true');
+		expect(dialog).toHaveAttribute('aria-describedby', 'lita-panel-context');
+		expect(screen.getByText('Bancos')).toBeInTheDocument();
+		expect(dialog).toHaveClass('bg-white','dark:bg-slate-800');
+		expect(dialog).toHaveClass('h-[88dvh]','rounded-t-2xl');
+		const close=screen.getByRole('button', {name:'Cerrar LITA'});
+		expect(close).toHaveClass('h-11','w-11');
+		expect(close).toHaveFocus();
+		const expand=screen.getByRole('button', {name:'Expandir LITA a pantalla completa'});
+		expect(expand).toHaveClass('h-11','w-11');
+		expect(screen.getByTitle('Lita Assistant')).toHaveClass('dark:bg-slate-800');
+		expect(container.querySelector('aside')).toBe(dialog);
+	});
+
+	test('returns focus to the originating button when the modal closes, preserving the iframe', () => {
+		const onChange=jest.fn();
+		const { rerender } = render(<>
+			<button type='button'>Abrir asistente</button>
+			<LitaAssistantPanel isOpen={false} setIsOpen={onChange} section='portfolio' />
+		</>);
+		const trigger=screen.getByRole('button', {name:'Abrir asistente'});
+		trigger.focus();
+		rerender(<>
+			<button type='button'>Abrir asistente</button>
+			<LitaAssistantPanel isOpen setIsOpen={onChange} section='portfolio' />
+		</>);
+		expect(screen.getByRole('button', {name:'Cerrar LITA'})).toHaveFocus();
+		const iframe=screen.getByTitle('Lita Assistant');
+		fireEvent.click(screen.getByRole('button', {name:'Expandir LITA a pantalla completa'}));
+		expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
+		rerender(<>
+			<button type='button'>Abrir asistente</button>
+			<LitaAssistantPanel isOpen={false} setIsOpen={onChange} section='portfolio' />
+		</>);
+		expect(trigger).toHaveFocus();
+	});
 	test('uses the visual viewport only for an occluded mobile keyboard', () => {
 		expect(visibleKeyboardLayout(
 			{ height: 425.8, offsetTop: 4, scale: 1 }, 800, 390
