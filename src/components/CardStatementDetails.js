@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { COLLAPSIBLE_SURFACE_STYLES, FINANCIAL_RECORD_DISCLOSURE_STYLES } from './CollapsibleHeading'
 import { FiSearch } from 'react-icons/fi'
 import { filterCardStatementItems } from '../utils/cardStatementSearch'
 import { auth, firestore } from '../shared/config/firebase/firebase.config'
@@ -14,40 +15,81 @@ export default function CardStatementDetails({ expenseId }) {
   const [statement, setStatement] = useState(null)
   const [items, setItems] = useState([])
   const [search, setSearch] = useState('')
-  const visibleItems = useMemo(() => filterCardStatementItems(items, search), [items, search])
+  const [currencyFilter, setCurrencyFilter] = useState('all')
+  const pendingRef = useRef(false)
+  const requestRef = useRef(0)
+  const visibleItems = useMemo(() => filterCardStatementItems(items, search)
+    .filter(item => currencyFilter === 'all' || item.currency === currencyFilter),
+    [items, search, currencyFilter])
 
-  const toggle = async () => {
-    if (open) { setOpen(false); return }
-    setOpen(true)
-    if (statement || error || loading) return
+  useEffect(() => {
+    // Navigating to another expense or unmounting (e.g. banking privacy
+    // activated) invalidates outstanding Firestore reads.
+    setOpen(false)
+    setStatement(null)
+    setItems([])
+    setError('')
+    setLoading(false)
+    setSearch('')
+    setCurrencyFilter('all')
+    return () => { requestRef.current += 1; pendingRef.current = false }
+  }, [expenseId])
+
+  const load = async () => {
+    if (pendingRef.current || statement) return
+    pendingRef.current = true
+    const requestId = ++requestRef.current
+    setError('')
     setLoading(true)
     try {
       const uid = auth.currentUser?.uid
-      if (!uid || !expenseId) throw new Error('Iniciá sesión para ver el desglose.')
+      if (!uid || !expenseId) throw new Error('unauthorized')
       const results = await firestore.collection('users').doc(uid)
         .collection('cardStatements').where('expenseId', '==', expenseId).limit(1).get()
+      if (requestId !== requestRef.current) return
       if (results.empty) {
-        setError('No hay detalle PDF guardado. Podés agregarlo al editar este resumen.')
+        setError('No hay un detalle PDF guardado para este resumen.')
         return
       }
       const doc = results.docs[0]
       const details = await doc.ref.collection('items').orderBy('date', 'asc').get()
+      if (requestId !== requestRef.current || auth.currentUser?.uid !== uid) return
       setStatement(doc.data())
       setItems(details.docs.map((snapshot) => snapshot.data()))
-    } catch (e) {
-      setError(e.message || 'No se pudo consultar este resumen.')
-    } finally { setLoading(false) }
+    } catch (cause) {
+      if (requestId === requestRef.current) {
+        setError(cause?.message === 'unauthorized'
+          ? 'Iniciá sesión para consultar el desglose.'
+          : 'No se pudo consultar el PDF. Revisá la conexión y volvé a intentar.')
+      }
+    } finally {
+      if (requestId === requestRef.current) {
+        setLoading(false)
+        pendingRef.current = false
+      }
+    }
+  }
+  const toggle = () => {
+    if (open) { setOpen(false); return }
+    setOpen(true)
+    if (!statement) load()
   }
   return (
     <div className='mt-2 min-w-0 max-w-full'>
       <button type='button' aria-expanded={open} onClick={toggle}
-        className='min-h-[44px] rounded-lg border border-purple-500/70 px-3 py-2 text-sm font-semibold text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-purple-300'>
+        className={FINANCIAL_RECORD_DISCLOSURE_STYLES + ' border border-slate-300 px-3 dark:border-slate-600'}>
         {open ? 'Ocultar desglose de tarjeta' : 'Ver consumos del resumen'}
       </button>
       {open && (
-        <div className='mt-2 max-w-full rounded-lg border border-slate-300 bg-white p-3 text-sm text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100'>
+        <div className={COLLAPSIBLE_SURFACE_STYLES.nested + ' mt-2 max-w-full p-3 text-sm text-slate-800 dark:text-slate-100'}>
           {loading && <p role='status'>Cargando el desglose…</p>}
-          {error && <p role='status'>{error}</p>}
+          {error && <div className='flex flex-wrap items-center gap-2'>
+            <p role='alert' className='min-w-0 flex-1 text-rose-700 dark:text-rose-300'>{error}</p>
+            <button type='button' onClick={load} disabled={loading}
+              className='inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 px-3 text-sm font-semibold text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:text-violet-200'>
+              Reintentar consulta
+            </button>
+          </div>}
           {statement && (
             <>
               <h4 className='font-extrabold'>Detalle importado · {statement.period}</h4>
@@ -66,6 +108,22 @@ export default function CardStatementDetails({ expenseId }) {
                   <p>Saldo anterior pendiente ARS: {formatAmount(statement.previousCreditArs, 'ARS')}</p>
                 </div>
               )}
+              <div className='mb-3 flex flex-wrap items-center gap-2' role='group' aria-label='Filtrar consumos por moneda'>
+                {[
+                  ['all','Todos'],
+                  ['ARS','ARS'],
+                  ['USD','USD'],
+                ].map(([currency, label]) => (
+                  <button key={currency} type='button' aria-pressed={currencyFilter === currency}
+                    aria-label={'Filtrar consumos: ' + label}
+                    onClick={() => setCurrencyFilter(currency)}
+                    className={`inline-flex min-h-[44px] items-center justify-center rounded-xl border px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${currencyFilter === currency
+                      ? 'border-violet-600 bg-violet-600 text-white'
+                      : 'border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
               <div className='relative mb-2'>
                 <FiSearch aria-hidden='true' className='pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-400' />
                 <input
@@ -75,16 +133,16 @@ export default function CardStatementDetails({ expenseId }) {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   autoComplete='off'
-                  className='w-full min-w-0 rounded-lg border border-slate-300 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-500 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400'
+                  className='min-h-[44px] w-full min-w-0 rounded-xl border border-slate-300 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-500 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400'
                 />
               </div>
-              {search.trim() && (
+              {(search.trim() || currencyFilter !== 'all') && (
                 <p role='status' className='mb-2 text-xs text-slate-600 dark:text-slate-300'>
                   {visibleItems.length} de {items.length} consumos encontrados
                 </p>
               )}
               <div className='max-h-[45dvh] space-y-2 overflow-y-auto'>
-                {visibleItems.length === 0 && search.trim() && (
+                {visibleItems.length === 0 && (search.trim() || currencyFilter !== 'all') && (
                   <p className='py-3 text-center text-sm text-slate-600 dark:text-slate-300'>No se encontraron consumos.</p>
                 )}
                 {visibleItems.map((item, index) => (
