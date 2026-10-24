@@ -147,3 +147,6 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
 
 ## Banks imported PDF linking (issue #227, phase 3)
 Use the **real Transactions record surface / disclosure tokens** for pending statements. First scan shows document identity, period, close/due dates, masked ARS/USD totals and one 44px review action. Keep candidate selection and PDF line-items behind a disclosure. Use the existing shared GenericModal to confirm the exact target bank/card; don't write until confirmed, never optimistically create expenses or duplicate imported consumptions. Keep Firestore errors actionable without exposing backend details. See [Banks PDF linking](banks-issue-227-phase3.md).
+
+## Linked imported PDF summaries — Banks UX #227 phase 4
+Use the real shared Transactions `FINANCIAL_ITEM_SURFACE_STYLES` and `FINANCIAL_RECORD_DISCLOSURE_STYLES`. An already linked statement must start compact and mount its PDF drilldown only after the 44px explicit review action, separately from association correction. If banking privacy is hidden, both original totals and the entire Firebase detail subtree must be unmounted. ARS/USD filters are read-only; they never alter imported PDF totals, transaction counts, due dates or persist purchases. See [phase 4](banks-issue-227-phase4.md).
