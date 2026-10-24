@@ -20,7 +20,7 @@ import FinancialHeaderActions from '../components/FinancialHeaderActions';
 import PageDataSkeleton from '../components/PageDataSkeleton';
 import { FinancialMetricCard } from '../components/FinancialOverviewPanel';
 import { FINANCIAL_ITEM_SURFACE_STYLES, FINANCIAL_RECORD_DISCLOSURE_STYLES, COLLAPSIBLE_SURFACE_STYLES, CollapsibleHeading } from '../components/CollapsibleHeading';
-import CardStatementDetails from '../components/CardStatementDetails';
+import LinkedStatementCard from '../components/LinkedStatementCard';
 import CardStatementPdfReview from '../components/CardStatementPdfReview';
 import { getCategoriesDataAction, storeDataAction } from '../actionCreators/databaseActions';
 import { getImportedStatement, saveReviewedStatement, verifyStatementDraft } from '../services/cardStatementService';
@@ -505,19 +505,17 @@ function BanksWorkspace({ user }) {
                         )}
                         <h4 className='font-bold'>Resúmenes de tarjeta vinculados</h4>
                         {statementsForCard(card.id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>Todavía no hay resúmenes vinculados.</p>}
-                        {statementsForCard(card.id).map((statement) => <article key={statement.id} className='rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
-                          <p className='font-bold'>Resumen {statement.period} · {statement.cardBrand}</p>
-                          <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>Cierre {statement.closingDate} · Vencimiento {statement.dueDate} · {statement.itemCount} consumos</p>
-                          <p className='mt-1 text-sm font-bold'>{displayMoney(statement.totals?.ARS,'ARS')} · {displayMoney(statement.totals?.USD,'USD')}</p>
-                          {showValues ? <CardStatementDetails expenseId={statement.expenseId}/> : <p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>Mostrá los importes para consultar el desglose.</p>}
-                          <div className='mt-3 border-t border-slate-200 pt-3 dark:border-slate-700'>
-                            <button type='button' className={secondary} disabled={busy}
-                              aria-label={'Corregir vínculo del resumen ' + statement.period}
-                              onClick={() => setEditingStatementExpenseId(statement.expenseId)}>
-                              <FiEdit2 aria-hidden='true' /> Corregir vínculo
-                            </button>
-                          </div>
-                        </article>)}
+                        <div className='space-y-3'>
+                          {statementsForCard(card.id).map(statement => (
+                            <LinkedStatementCard
+                              key={statement.expenseId || statement.id}
+                              statement={statement}
+                              privacyHidden={!showValues}
+                              disabled={busy}
+                              onCorrect={setEditingStatementExpenseId}
+                            />
+                          ))}
+                        </div>
                         <button type='button' className={secondary} onClick={()=>{setPdfCardId(card.id);setPdfDraft(null);setPendingExpenseId(null);}}>
                           <FiUploadCloud/> Importar resumen PDF de esta tarjeta
                         </button>

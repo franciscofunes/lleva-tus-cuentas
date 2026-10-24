@@ -77,3 +77,49 @@ test('card statement toggle maintains an accessible 44px target', () => {
   const button = container.querySelector('button[aria-expanded]');
   expect(button).toHaveClass('min-h-[44px]', 'focus-visible:ring-2');
 });
+
+test('ARS/USD filter is presentation-only, independent of search and preserves imported totals',async()=>{
+  const usd={merchant:'Streaming Test',category:'Suscripciones',date:'2026-09-01',amount:'12.50',currency:'USD',includeInAnalytics:true};
+  const getItems=jest.fn().mockResolvedValue({docs:[...purchases,usd].map(item=>({data:()=>item}))});
+  const detailsRef = {collection:()=>({orderBy:()=>({get:getItems})})};
+  const statementDoc = {
+    data:()=>({...statement,totals:{ARS:'48169.00',USD:'12.50'}}),
+    ref:detailsRef,
+  };
+  const getStatement=jest.fn().mockResolvedValue({empty:false,docs:[statementDoc]});
+  const query={where:()=>({limit:()=>({get:getStatement})})};
+  firestore.collection.mockImplementation(()=>({doc:()=>({collection:()=>query})}));
+  render(<CardStatementDetails expenseId='synthetic-1' />);
+  fireEvent.click(screen.getByRole('button',{name:'Ver consumos del resumen'}));
+  expect(await screen.findByText('Streaming Test')).toBeInTheDocument();
+  const usdFilter=screen.getByRole('button',{name:'Filtrar consumos: USD'});
+  expect(usdFilter).toHaveClass('min-h-[44px]');
+  fireEvent.click(usdFilter);
+  expect(usdFilter).toHaveAttribute('aria-pressed','true');
+  expect(screen.getByText('Streaming Test')).toBeInTheDocument();
+  expect(screen.queryByText('Farmacity')).not.toBeInTheDocument();
+  expect(screen.getByText('1 de 3 consumos encontrados')).toBeInTheDocument();
+  expect(screen.getByText(/3 operaciones vinculadas/)).toBeInTheDocument();
+  expect(screen.getAllByText(/12,50/).length).toBeGreaterThan(0);
+  fireEvent.click(screen.getByRole('button',{name:'Filtrar consumos: ARS'}));
+  expect(screen.queryByText('Streaming Test')).not.toBeInTheDocument();
+  expect(screen.getByText('Farmacity')).toBeInTheDocument();
+  expect(screen.getByText('2 de 3 consumos encontrados')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Filtrar consumos: Todos'}));
+  expect(screen.getByText('Streaming Test')).toBeInTheDocument();
+  expect(getItems).toHaveBeenCalledTimes(1);
+});
+
+test('a denied PDF query gives a sanitized error and a retry without changing any purchases',async()=>{
+  const get=jest.fn().mockRejectedValue(new Error('/users/alice/cardStatements/private-token permission-denied'));
+  firestore.collection.mockImplementationOnce(()=>({
+    doc:()=>({collection:()=>({where:()=>({limit:()=>({get})})})}),
+  }));
+  render(<CardStatementDetails expenseId='expense1' />);
+  fireEvent.click(screen.getByRole('button',{name:'Ver consumos del resumen'}));
+  expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo consultar el PDF');
+  expect(screen.getByRole('alert')).not.toHaveTextContent('private-token');
+  fireEvent.click(screen.getByRole('button',{name:'Reintentar consulta'}));
+  expect(await screen.findByText('Farmacity')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});

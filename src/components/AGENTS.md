@@ -68,3 +68,6 @@ All transactions retain the required `selectedDate`. Do not confuse that with a 
 
 ## Pending imported bank statements (#227)
 `PendingStatementLinkCard` must reuse shared Transactions `FINANCIAL_ITEM_SURFACE_STYLES`/`FINANCIAL_RECORD_DISCLOSURE_STYLES` and `GenericModal`. Auto-matching is a suggestion ONLY; require user selection and explicit confirmation, an in-flight ref guard and a confirmed owner-scoped `saveStatementBankLink`. Do not import another PDF or create a Transactions expense as a side effect. Preserve ARS/USD separation, true close/due dates, privacy masking and retryable Firestore errors. See [Banks phase 3](../../docs/banks-issue-227-phase3.md).
+
+## Linked card statements (#227 phase 4)
+`LinkedStatementCard` shares **exact** Transactions item + disclosure styling with `PendingStatementLinkCard`. Only mount `CardStatementDetails` when explicitly expanded and values are visible; the child is removed immediately when privacy is hidden. Association correction still belongs to `StatementLinkEditor`. Currency-specific ARS/USD consumption filters and retry in `CardStatementDetails` are read-only and must not change original statement totals or convert currency. See [documentation](../../docs/banks-issue-227-phase4.md).
