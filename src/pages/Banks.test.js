@@ -337,3 +337,28 @@ test('Bancos keeps PDF linking beneath the dashboard, not ahead of the bank acti
   expect(workspace.contains(importSection)).toBe(false);
   expect(workspace.compareDocumentPosition(importSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
+
+test('pending PDF link is read-only until confirmation; saves only the selected bank/card association', async () => {
+  arrange({...linkedStatementData,subscribeBankStatementLinks:[]});
+  banking.saveStatementBankLink.mockResolvedValue(undefined);
+  mount();
+  await waitFor(()=>expect(screen.getByRole('heading',{name:'Vincular resúmenes a tarjetas'})).toBeInTheDocument());
+  const pending=screen.getByRole('article',{name:'Resumen pendiente 2026-10'});
+  expect(within(pending).getByRole('button',{name:'Revisar vínculo'})).toBeInTheDocument();
+  expect(within(pending).getByLabelText('Totales de resumen por moneda')).toHaveTextContent('ARS •••• · USD ••••');
+  expect(within(pending).queryByLabelText('Tarjeta para 2026-10')).not.toBeInTheDocument();
+  fireEvent.click(within(pending).getByRole('button',{name:'Revisar vínculo'}));
+  fireEvent.click(within(pending).getByRole('button',{name:'Usar sugerencia'}));
+  expect(banking.saveStatementBankLink).not.toHaveBeenCalled();
+  fireEvent.click(within(pending).getByRole('button',{name:'Revisar asociación'}));
+  const dialog=screen.getByRole('dialog',{name:'Confirmar vínculo del resumen 2026-10'});
+  expect(dialog).toHaveTextContent('Banco Ciudad · Visa Ciudad');
+  expect(banking.saveStatementBankLink).not.toHaveBeenCalled();
+  fireEvent.click(within(dialog).getByRole('button',{name:'Confirmar vínculo'}));
+  await waitFor(()=>expect(banking.saveStatementBankLink).toHaveBeenCalledWith(
+    'test-private-user','expense-statement-1','ciudad','city-visa'));
+  expect(banking.saveStatementBankLink).toHaveBeenCalledTimes(1);
+  expect(require('../actionCreators/databaseActions').storeDataAction).not.toHaveBeenCalled();
+  expect(require('../services/cardStatementService').saveReviewedStatement).not.toHaveBeenCalled();
+  expect(banking.saveManualCardCharge).not.toHaveBeenCalled();
+});

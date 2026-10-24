@@ -65,3 +65,6 @@ All transactions retain the required `selectedDate`. Do not confuse that with a 
 ## Portfolio Detail #228
 - `src/pages/PortfolioDetail.js` renders **actual** `QuickAccessCard` and `CollapsibleSection` from Transactions; its historic records reuse `FINANCIAL_ITEM_SURFACE_STYLES`, no custom wrapper lookalike.
 - In account detail, mask CBU, alias, account number, routing and SWIFT in the DOM until the user explicitly shows each. Expose copy only when shown and remask on section close or position change. Use ≥44px targets and visible focus; preserve FCI NAV vs realized gains.
+
+## Pending imported bank statements (#227)
+`PendingStatementLinkCard` must reuse shared Transactions `FINANCIAL_ITEM_SURFACE_STYLES`/`FINANCIAL_RECORD_DISCLOSURE_STYLES` and `GenericModal`. Auto-matching is a suggestion ONLY; require user selection and explicit confirmation, an in-flight ref guard and a confirmed owner-scoped `saveStatementBankLink`. Do not import another PDF or create a Transactions expense as a side effect. Preserve ARS/USD separation, true close/due dates, privacy masking and retryable Firestore errors. See [Banks phase 3](../../docs/banks-issue-227-phase3.md).

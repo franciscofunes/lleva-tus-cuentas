@@ -148,3 +148,5 @@ Run `CI=true npm test -- --watch=false --runInBand` for regression coverage and 
 The older `LitaAssistant` component now sends user questions to the authenticated Lita backend via `src/services/litaAdviceService.js` → `POST https://holalita.vercel.app/api/ltc/advice`, using the signed Firebase ID token from the current user's session. Lita owns all AI provider keys, enforces financial scope and returns sanitized financial answers. The legacy `/v1/completions` browser call and the retired `text-davinci-003` model have been removed. The main Lita iframe and existing PDF analyzer are unchanged.
 
 **Deployment order:** deploy the companion [Lita backend](https://github.com/franciscofunes/lita-assitant) endpoint first, then LTC. Confirm Lita `FIREBASE_PROJECT_ID` matches LTC's `REACT_APP_PROJECT_ID`, and that the browser origin is allowed. After both deploy, **rotate the previously browser-exposed OpenAI key and delete `REACT_APP_OPENAI_API_KEY` from Vercel/Netlify environments**. No `REACT_APP_` key is secret in a client build.
+
+- [Banks UX #227, phase 3 — safe imported PDF association without duplicate expenses](docs/banks-issue-227-phase3.md)
