@@ -154,8 +154,53 @@ test('synthetic PDF: analyze → review ARS/USD → one expense → save metadat
   expect(mockDb.items[1].currency).toBe('USD');
   expect(banking.saveManualCardCharge).not.toHaveBeenCalled();
   const linked=await screen.findByRole('article',{name:'Resumen vinculado 2026-10 Visa'});
+  // Once explicitly revealed for import approval, totals remain visible
+  // until the user toggles banking privacy back on.
+  expect(within(linked).getByLabelText('Totales del resumen vinculado por moneda'))
+    .toHaveTextContent('ARS 
+  fireEvent.click(within(linked).getByRole('button',{name:'Ver consumos del resumen'}));
+  expect(await within(linked).findByText('LTC QA Compra USD')).toBeInTheDocument();
+  fireEvent.click(within(linked).getByRole('button',{name:'Filtrar consumos: USD'}));
+  expect(within(linked).queryByText('LTC QA Compra ARS')).not.toBeInTheDocument();
+  const search=within(linked).getByRole('searchbox',{name:'Buscar consumos del resumen'});
+  fireEvent.change(search,{target:{value:'LTC QA Compra USD'}});
+  expect(within(linked).getByText('LTC QA Compra USD')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Ocultar importes de la pantalla'}));
+  expect(within(linked).queryByRole('searchbox',{name:'Buscar consumos del resumen'})).not.toBeInTheDocument();
   expect(within(linked).getByLabelText('Totales del resumen vinculado por moneda'))
     .toHaveTextContent('ARS •••• · USD ••••');
+  expect(storeDataAction).toHaveBeenCalledTimes(1);
+  expect(banking.saveStatementBankLink).toHaveBeenCalledTimes(1);
+});
+
+test('hidden bank balances also hide the new PDF draft and disable financial confirmation until reviewed',async()=>{
+  render(<MemoryRouter><Banks/></MemoryRouter>);
+  await screen.findByRole('heading',{name:'Mis bancos'});
+  fireEvent.click(screen.getByRole('button',{name:/LTC QA Banco/}));
+  fireEvent.click(screen.getByRole('button',{name:/LTC QA Visa/}));
+  fireEvent.click(screen.getByRole('button',{name:'Importar resumen PDF de esta tarjeta'}));
+  const upload=screen.getByLabelText('Elegir resumen bancario en PDF');
+  fireEvent.change(upload,{target:{files:[new File(['%PDF-1.7 synthetic'],'ltc-qa-bank-secret.pdf',{type:'application/pdf'})]}});
+  await waitFor(()=>expect(analyzeStatementPdf).toHaveBeenCalledTimes(1));
+  expect(await screen.findByText(/Resumen analizado y conciliado/)).toBeInTheDocument();
+  const approve=screen.getByRole('button',{name:'Guardar resumen revisado y vincular'});
+  expect(approve).toBeDisabled();
+  expect(screen.queryByText('LTC QA Compra ARS')).not.toBeInTheDocument();
+  expect(screen.queryByText('ltc-qa-bank-secret.pdf')).not.toBeInTheDocument();
+  expect(screen.queryByText('Total ARS')).not.toBeInTheDocument();
+  fireEvent.click(approve);
+  expect(storeDataAction).not.toHaveBeenCalled();
+  expect(saveReviewedStatement).not.toHaveBeenCalled();
+  expect(banking.saveStatementBankLink).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'Mostrar importes de la pantalla'}));
+  expect(screen.getByText('Totales conciliados')).toBeInTheDocument();
+  expect(approve).toBeEnabled();
+  fireEvent.click(screen.getByRole('button',{name:'Ocultar importes de la pantalla'}));
+  expect(approve).toBeDisabled();
+  expect(screen.queryByText('ltc-qa-bank-secret.pdf')).not.toBeInTheDocument();
+  expect(storeDataAction).not.toHaveBeenCalled();
+});
+);
   fireEvent.click(within(linked).getByRole('button',{name:'Revisar resumen'}));
   fireEvent.click(within(linked).getByRole('button',{name:'Ver consumos del resumen'}));
   expect(await within(linked).findByText('LTC QA Compra USD')).toBeInTheDocument();
