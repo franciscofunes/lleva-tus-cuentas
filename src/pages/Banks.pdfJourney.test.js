@@ -157,7 +157,10 @@ test('synthetic PDF: analyze → review ARS/USD → one expense → save metadat
   // Once explicitly revealed for import approval, totals remain visible
   // until the user toggles banking privacy back on.
   expect(within(linked).getByLabelText('Totales del resumen vinculado por moneda'))
-    .toHaveTextContent('ARS 
+    .toHaveTextContent(/ARS/);
+  expect(within(linked).getByLabelText('Totales del resumen vinculado por moneda'))
+    .not.toHaveTextContent('ARS ••••');
+  fireEvent.click(within(linked).getByRole('button',{name:'Revisar resumen'}));
   fireEvent.click(within(linked).getByRole('button',{name:'Ver consumos del resumen'}));
   expect(await within(linked).findByText('LTC QA Compra USD')).toBeInTheDocument();
   fireEvent.click(within(linked).getByRole('button',{name:'Filtrar consumos: USD'}));
