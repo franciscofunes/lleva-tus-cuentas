@@ -35,7 +35,7 @@ export default function LinkedStatementCard({ statement, privacyHidden = false, 
           <p className='mt-2 break-words text-sm font-bold tabular-nums text-slate-900 dark:text-slate-50'
             aria-label='Totales del resumen vinculado por moneda'>
             {privacyHidden ? 'ARS •••• · USD ••••'
-              : money(statement.totals?.ARS, 'ARS') + ' · ' + money(statement.totals?.USD, 'USD')}
+              : 'ARS ' + money(statement.totals?.ARS, 'ARS') + ' · USD ' + money(statement.totals?.USD, 'USD')}
           </p>
         </div>
         <button type='button' aria-controls={detailsId} aria-expanded={expanded}
