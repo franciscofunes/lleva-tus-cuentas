@@ -72,3 +72,7 @@ Record screenshots and any failures on the corresponding issue after running the
 Create/edit/delete financial movements, FCI NAV reconciliation, imported bank PDF linking, AI provider health, iframe origin configuration, Firestore rules denials and actual Android virtual keyboard behavior are **not** exercised by a read-only screenshot suite. They remain tracked manually or by their existing isolated component tests.
 
 See [Transactions QA #226](transactions-qa-226.md), [UI design contract](financial-ui-contract.md) and [UX roadmap](ux-consistency-roadmap.md).
+
+## Banks PDF browser journey #227
+
+The former `financial-surfaces.authenticated.spec.cjs` checks cross-page layout only. The new **read-only** `e2e/banks.authenticated.spec.cjs` additionally checks existing synthetic linked and pending imported statements, bank/card selectors, review/cancel dialogs, ARS/USD filtering, merchant search, immediate privacy remasking, and the imported-PDF upload controls **without submitting**. It deliberately requires `.qa-auth/banks-fixture.json` (a synthetic-only fixture, no credentials or balances) and an existing isolated Firebase QA account. CI validates syntax and runs deterministic contract/Jest tests, **not authenticated browser journeys**. See [Banks authenticated E2E](banks-authenticated-e2e.md) for fixtures, exact CLI and screenshot evaluation.
