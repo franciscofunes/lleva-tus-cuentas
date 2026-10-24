@@ -15,7 +15,7 @@ const MAX_CATEGORY_CHARS = 70;
 export const eligibleMerchant = (value) => {
   const name = String(value || '').trim();
   return Boolean(name) && name.length <= MAX_MERCHANT_CHARS
-    && !/@|https?:|\b\d{5,}\b|(?:\d[ -]?){12,}/i.test(name);
+    && !/@|https?:|\d{5,}|(?:\d[ -]?){12,}/i.test(name);
 };
 
 export const safeCategoryNames = (categories) => [...new Set((categories || [])
