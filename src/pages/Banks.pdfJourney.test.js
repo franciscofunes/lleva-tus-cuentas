@@ -124,6 +124,8 @@ test('synthetic PDF: analyze → review ARS/USD → one expense → save metadat
   fireEvent.click(screen.getByRole('button',{name:/LTC QA Banco/}));
   fireEvent.click(screen.getByRole('button',{name:/LTC QA Visa/}));
   fireEvent.click(screen.getByRole('button',{name:'Importar resumen PDF de esta tarjeta'}));
+  // The user must reveal amounts before approving a financial import.
+  fireEvent.click(screen.getByRole('button',{name:'Mostrar importes de la pantalla'}));
   const upload=screen.getByLabelText('Elegir resumen bancario en PDF');
   fireEvent.change(upload,{target:{files:[new File(['%PDF-1.7 synthetic'], 'ltc-qa-statement.pdf',{type:'application/pdf'})]}});
   expect(await screen.findByText('Totales conciliados')).toBeInTheDocument();
@@ -154,7 +156,6 @@ test('synthetic PDF: analyze → review ARS/USD → one expense → save metadat
   const linked=await screen.findByRole('article',{name:'Resumen vinculado 2026-10 Visa'});
   expect(within(linked).getByLabelText('Totales del resumen vinculado por moneda'))
     .toHaveTextContent('ARS •••• · USD ••••');
-  fireEvent.click(screen.getByRole('button',{name:'Mostrar importes de la pantalla'}));
   fireEvent.click(within(linked).getByRole('button',{name:'Revisar resumen'}));
   fireEvent.click(within(linked).getByRole('button',{name:'Ver consumos del resumen'}));
   expect(await within(linked).findByText('LTC QA Compra USD')).toBeInTheDocument();
