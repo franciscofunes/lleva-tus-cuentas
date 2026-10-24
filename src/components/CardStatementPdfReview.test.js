@@ -59,7 +59,7 @@ test('toggling privacy removes reviewed PDF DOM and restores same unsaved catego
   expect(screen.getByText('LTC-QA-secret-141234.pdf')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button',{name:/Revisar y categorizar consumos/}));
   expect(screen.getByText('LTC QA Compra ARS')).toBeInTheDocument();
-  const select=screen.getByLabelText('Categoría sugerida',{selector:'select'});
+  const select=screen.getAllByLabelText('Categoría sugerida',{selector:'select'})[0];
   fireEvent.change(select,{target:{value:'Compras'}});
   expect(onDraft).toHaveBeenLastCalledWith(expect.objectContaining({
     items:expect.arrayContaining([expect.objectContaining({merchant:'LTC QA Compra ARS',suggestedCategory:'Compras'})]),
@@ -72,7 +72,7 @@ test('toggling privacy removes reviewed PDF DOM and restores same unsaved catego
   rerender(<CardStatementPdfReview categories={[{name:'Compras',isExpense:true}]} onDraft={onDraft}
     onApply={onApply} privacyHidden={false}/>);
   expect(screen.getByText('LTC QA Compra ARS')).toBeInTheDocument();
-  expect(screen.getByLabelText('Categoría sugerida',{selector:'select'})).toHaveValue('Compras');
+  expect(screen.getAllByLabelText('Categoría sugerida',{selector:'select'})[0]).toHaveValue('Compras');
   expect(onApply).not.toHaveBeenCalled();
 });
 
