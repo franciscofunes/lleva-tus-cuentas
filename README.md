@@ -152,3 +152,5 @@ The older `LitaAssistant` component now sends user questions to the authenticate
 - [Banks UX #227, phase 3 — safe imported PDF association without duplicate expenses](docs/banks-issue-227-phase3.md)
 
 - [Banks UX #227, phase 4 — linked PDF summary review and ARS/USD consumption filters](docs/banks-issue-227-phase4.md)
+
+- [Banks QA #227 — synthetic full PDF journey + authenticated read-only browser suite](docs/banks-authenticated-e2e.md)
