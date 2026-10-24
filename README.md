@@ -150,3 +150,5 @@ The older `LitaAssistant` component now sends user questions to the authenticate
 **Deployment order:** deploy the companion [Lita backend](https://github.com/franciscofunes/lita-assitant) endpoint first, then LTC. Confirm Lita `FIREBASE_PROJECT_ID` matches LTC's `REACT_APP_PROJECT_ID`, and that the browser origin is allowed. After both deploy, **rotate the previously browser-exposed OpenAI key and delete `REACT_APP_OPENAI_API_KEY` from Vercel/Netlify environments**. No `REACT_APP_` key is secret in a client build.
 
 - [Banks UX #227, phase 3 — safe imported PDF association without duplicate expenses](docs/banks-issue-227-phase3.md)
+
+- [Banks UX #227, phase 4 — linked PDF summary review and ARS/USD consumption filters](docs/banks-issue-227-phase4.md)
