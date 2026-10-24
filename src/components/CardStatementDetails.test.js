@@ -81,12 +81,14 @@ test('card statement toggle maintains an accessible 44px target', () => {
 test('ARS/USD filter is presentation-only, independent of search and preserves imported totals',async()=>{
   const usd={merchant:'Streaming Test',category:'Suscripciones',date:'2026-09-01',amount:'12.50',currency:'USD',includeInAnalytics:true};
   const getItems=jest.fn().mockResolvedValue({docs:[...purchases,usd].map(item=>({data:()=>item}))});
-  firestore.collection.mockImplementation(()=>({
-    doc:()=>({collection:()=>({where:()=>({limit:()=>({get:()=>Promise.resolve({
-      empty:false,docs:[{data:()=>({...statement,totals:{ARS:'48169.00',USD:'12.50'}}),
-        ref:{collection:()=>({orderBy:()=>({get:getItems})})}}],
-    })})})})})}),
-  }));
+  const detailsRef = {collection:()=>({orderBy:()=>({get:getItems})})};
+  const statementDoc = {
+    data:()=>({...statement,totals:{ARS:'48169.00',USD:'12.50'}}),
+    ref:detailsRef,
+  };
+  const getStatement=jest.fn().mockResolvedValue({empty:false,docs:[statementDoc]});
+  const query={where:()=>({limit:()=>({get:getStatement})})};
+  firestore.collection.mockImplementation(()=>({doc:()=>({collection:()=>query})}));
   render(<CardStatementDetails expenseId='synthetic-1' />);
   fireEvent.click(screen.getByRole('button',{name:'Ver consumos del resumen'}));
   expect(await screen.findByText('Streaming Test')).toBeInTheDocument();
