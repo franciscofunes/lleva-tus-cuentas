@@ -213,7 +213,7 @@ function BanksWorkspace({ user }) {
     setPdfDraft(draft);
   };
   const storePdf = async () => {
-    if (!uid || !selectedPdfCard || !pdfDraft || busy) return;
+    if (!uid || !selectedPdfCard || !pdfDraft || busy || !showValues) return;
     await run(async () => {
       verifyStatementDraft(pdfDraft);
       const existing = await getImportedStatement(uid, pdfDraft.fileSha256);
@@ -554,11 +554,12 @@ function BanksWorkspace({ user }) {
             </div>
             <div className='mt-4 space-y-3 border-t border-slate-200 pt-4 dark:border-slate-700'>
               <CardStatementPdfReview categories={categories || []} onDraft={resetPDF}
-                showApplyButton={false} disabled={busy}/>
+                showApplyButton={false} disabled={busy} privacyHidden={!showValues}/>
             {pdfDraft && <div className='space-y-2 rounded-xl border border-amber-300 p-3 text-sm dark:border-amber-800'>
               <p className='font-bold'>Confirmar resumen {pdfDraft.statement?.period}</p>
               <p>Se creará una única transacción Resumen tarjeta con el importe ARS declarado, y el detalle quedará excluido de los totales de gastos. El USD no se convertirá automáticamente.</p>
-              <button type='button' className={buttonClass} disabled={busy || !statementCategory} onClick={storePdf}>
+              {!showValues && <p role='status' className='font-semibold text-amber-800 dark:text-amber-200'>Mostrá los importes de Bancos para revisar los montos antes de confirmar.</p>}
+              <button type='button' className={buttonClass} disabled={busy || !statementCategory || !showValues} onClick={storePdf}>
                 {busy ? <FiRefreshCw className='animate-spin'/> : <FiCreditCard/>}
                 Guardar resumen revisado y vincular
               </button>

@@ -74,3 +74,6 @@ All transactions retain the required `selectedDate`. Do not confuse that with a 
 
 ## Bank PDF E2E #227
 The immutable accounting contract is covered by `src/pages/Banks.pdfJourney.test.js`: synthetic parser → one ARS expense (USD separate) → imported details → bank/card link → read-only currency search → privacy remasking. For actual Chromium, `e2e/banks.authenticated.spec.cjs` is intentionally READ ONLY, requires an isolated signed-in QA account and `.qa-auth/banks-fixture.json`, and must NEVER upload/confirm/create/reassign/delete real financial data. Green Jest is not visual certification; use [Banks QA instructions](../../docs/banks-authenticated-e2e.md).
+
+## PDF review privacy and optional browser AI
+In Bancos, `CardStatementPdfReview` receives `privacyHidden={!showValues}`. While hidden, never render filenames, balances, PDF purchase merchants, per-item category form or any editable financial approval, and never allow `storePdf` to persist. Re-revealing resumes the same draft. Browser AI SDK is research-only, opt-in suggestions constrained to existing categories (no auto writes), as documented in [feasibility](../../docs/browser-ai-sdk-ltc-feasibility.md). See `CardStatementPdfReview.test.js` and `Banks.pdfJourney.test.js`.
