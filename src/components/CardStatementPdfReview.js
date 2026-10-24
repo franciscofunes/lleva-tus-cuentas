@@ -1,7 +1,10 @@
-import React, { useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { FINANCIAL_RECORD_DISCLOSURE_STYLES } from './CollapsibleHeading'
 import { FiUploadCloud, FiFileText, FiCheckCircle, FiRefreshCw } from 'react-icons/fi'
 import { analyzeStatementPdf } from '../services/cardStatementService'
+import {
+  localCategoryCandidateRows, localModelAvailability, suggestLocalCategories,
+} from '../services/localCategorySuggestions'
 
 const format = (amount, currency) => new Intl.NumberFormat('es-AR', {
   style: 'currency', currency, minimumFractionDigits: 2,
@@ -27,7 +30,10 @@ const guessCategory = (merchant, names) => {
 }
 
 /** Intentionally a review form, not an automatic transaction import. */
-export default function CardStatementPdfReview({ categories = [], onDraft, onApply, disabled = false, showApplyButton = true, privacyHidden = false }) {
+export default function CardStatementPdfReview({ categories = [], onDraft, onApply, disabled = false, showApplyButton = true, privacyHidden = false,
+  enableOnDeviceSuggestions = process.env.NODE_ENV === 'development'
+    || process.env.REACT_APP_LTC_LOCAL_AI_CATEGORIES === 'true',
+}) {
   const [state, setState] = useState('idle')
   const [error, setError] = useState('')
   const [draft, setDraft] = useState(null)
@@ -35,11 +41,99 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
   const [fileInfo, setFileInfo] = useState(null)
   const [dragging, setDragging] = useState(false)
   const fileRef = useRef(null)
+  const localRequestRef = useRef(0)
+  const localAbortRef = useRef(null)
+  const [localAvailability, setLocalAvailability] = useState('checking')
+  const [localStage, setLocalStage] = useState('idle')
+  const [localOffers, setLocalOffers] = useState([])
+  const [localProgress, setLocalProgress] = useState(null)
+  const [localDuration, setLocalDuration] = useState(null)
   const expenseCategories = useMemo(() => (categories || [])
     .filter((c) => c.isExpense && !String(c.name).includes('Resumen tarjeta'))
     .map((c) => c.name), [categories])
 
+  const localCandidates = useMemo(
+    () => localCategoryCandidateRows(draft?.items || [], expenseCategories),
+    [draft, expenseCategories]
+  )
+  const cancelLocal = () => {
+    localRequestRef.current += 1
+    localAbortRef.current?.abort()
+    localAbortRef.current = null
+    setLocalOffers([])
+    setLocalStage('idle')
+    setLocalProgress(null)
+  }
+
+  useEffect(() => {
+    if (!enableOnDeviceSuggestions || privacyHidden || !expanded || !draft?.fileSha256) {
+      localRequestRef.current += 1
+      localAbortRef.current?.abort()
+      localAbortRef.current = null
+      setLocalOffers([])
+      setLocalStage('idle')
+      return
+    }
+    let active = true
+    setLocalAvailability('checking')
+    localModelAvailability().then(status => {
+      if (active) setLocalAvailability(status)
+    })
+    return () => {
+      active = false
+      localRequestRef.current += 1
+      localAbortRef.current?.abort()
+      localAbortRef.current = null
+    }
+  }, [enableOnDeviceSuggestions, privacyHidden, expanded, draft?.fileSha256])
+
+  const runLocalSuggestions = async () => {
+    if (!enableOnDeviceSuggestions || privacyHidden || disabled
+        || localStage === 'running' || !localCandidates.length
+        || !['available','downloadable','downloading'].includes(localAvailability)) return
+    const id = ++localRequestRef.current
+    const controller = new AbortController()
+    localAbortRef.current = controller
+    setLocalStage('running')
+    setLocalOffers([])
+    setLocalProgress(null)
+    setLocalDuration(null)
+    try {
+      const result = await suggestLocalCategories({
+        items: draft.items,
+        categories: expenseCategories,
+        signal: controller.signal,
+        onDownloadProgress: value => {
+          if (id === localRequestRef.current) setLocalProgress(value)
+        },
+      })
+      if (!controller.signal.aborted && id === localRequestRef.current) {
+        setLocalOffers(result.proposals)
+        setLocalDuration(Math.round(result.durationMs / 1000))
+        setLocalStage('ready')
+      }
+    } catch {
+      if (!controller.signal.aborted && id === localRequestRef.current) {
+        setLocalStage('error')
+      }
+    } finally {
+      if (id === localRequestRef.current) localAbortRef.current = null
+    }
+  }
+  const acceptLocalOffer = (offer) => {
+    const original = draft?.items?.[offer.index]
+    // The model is not authoritative. Check source and owner category again
+    // immediately before making a DRAFT-only change.
+    if (privacyHidden || disabled || !original
+      || original.suggestedCategory !== 'Sin categorizar'
+      || original.merchant !== offer.merchant
+      || !expenseCategories.includes(offer.category)) return
+    editItem(offer.index, {suggestedCategory:offer.category})
+    setLocalOffers(current => current.filter(item => item.index !== offer.index))
+  }
+
   const analyze = async (file) => {
+    cancelLocal()
     setError('')
     setDraft(null)
     onDraft(null)
@@ -181,6 +275,64 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
             className={FINANCIAL_RECORD_DISCLOSURE_STYLES + ' w-full justify-between border border-slate-300 px-3 dark:border-slate-600'}>
             <span>Revisar y categorizar consumos ({draft.items.length})</span><span>{expanded ? '▲' : '▼'}</span>
           </button>
+          {expanded && enableOnDeviceSuggestions && localCandidates.length > 0 && (
+            <section className='rounded-xl border border-violet-200 bg-violet-50/60 p-3 text-sm dark:border-violet-900 dark:bg-slate-900/70'
+              aria-label='Sugerencias locales de categorías'>
+              <p className='font-bold text-slate-900 dark:text-slate-100'>Categorías sugeridas en este dispositivo (experimental)</p>
+              <p className='mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300'>
+                Opcional: el modelo del navegador recibe solo nombres de comercios pendientes y categorías disponibles.
+                No enviamos el PDF ni importes a un proveedor de IA. Podría descargarse un modelo local.
+                Cada sugerencia requiere tu aprobación.
+              </p>
+              {localAvailability === 'checking' && <p role='status' className='mt-2 text-xs'>Comprobando disponibilidad del modelo local…</p>}
+              {localAvailability === 'unavailable' && (
+                <p role='status' className='mt-2 text-xs text-amber-700 dark:text-amber-300'>
+                  Este navegador no ofrece el modelo local. Podés seguir categorizando manualmente.
+                </p>
+              )}
+              {['available','downloadable','downloading'].includes(localAvailability) && (
+                <div className='mt-3 flex flex-wrap items-center gap-2'>
+                  <button type='button' onClick={runLocalSuggestions}
+                    disabled={disabled || localStage === 'running'}
+                    className='inline-flex min-h-[44px] items-center justify-center rounded-xl border border-violet-500 px-3 py-2 font-semibold text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50 dark:text-violet-200'>
+                    {localStage === 'running' ? 'Analizando localmente…' : 'Sugerir categorías en este dispositivo'}
+                  </button>
+                  {localStage === 'running' && (
+                    <button type='button' onClick={cancelLocal}
+                      className='min-h-[44px] rounded-xl border border-slate-300 px-3 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600'>
+                      Cancelar IA
+                    </button>
+                  )}
+                </div>
+              )}
+              {localStage === 'running' && <p role='status' className='mt-2 text-xs'>
+                Modelo local en uso{localProgress === null ? '…' : ' · Descarga ' + localProgress + '%'}
+              </p>}
+              {localStage === 'error' && <p role='alert' className='mt-2 text-xs text-rose-700 dark:text-rose-300'>
+                No se pudieron obtener sugerencias locales. Tus categorías siguen sin cambios.
+              </p>}
+              {localStage === 'ready' && (
+                <p role='status' className='mt-2 text-xs text-slate-600 dark:text-slate-300'>
+                  {localOffers.length} propuesta(s) válidas · {localDuration} s. No se aplicó ninguna automáticamente.
+                </p>
+              )}
+              {localOffers.length > 0 && <div className='mt-3 space-y-2'>
+                {localOffers.filter(offer => draft.items[offer.index]?.suggestedCategory === 'Sin categorizar'
+                  && draft.items[offer.index]?.merchant === offer.merchant
+                  && expenseCategories.includes(offer.category)).map(offer => (
+                  <div key={offer.index} className='flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-800'>
+                    <p className='min-w-0 flex-1 break-words text-xs'>
+                      <strong>{offer.merchant}</strong> · Propuesta: <strong>{offer.category}</strong>
+                    </p>
+                    <button type='button' onClick={() => acceptLocalOffer(offer)}
+                      className='min-h-[44px] rounded-xl border border-violet-400 px-3 font-semibold text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200'>
+                      Aplicar sugerencia
+                    </button>
+                  </div>
+                ))}
+              </div>}
+            </section>
+          )}
           {expanded && (
             <div className='max-h-[55dvh] space-y-2 overflow-y-auto overscroll-contain rounded-lg border border-slate-300 p-2 dark:border-slate-600'>
               {draft.items.map((item, index) => (
