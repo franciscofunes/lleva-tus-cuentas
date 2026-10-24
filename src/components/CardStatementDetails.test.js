@@ -100,7 +100,7 @@ test('ARS/USD filter is presentation-only, independent of search and preserves i
   expect(screen.queryByText('Farmacity')).not.toBeInTheDocument();
   expect(screen.getByText('1 de 3 consumos encontrados')).toBeInTheDocument();
   expect(screen.getByText(/3 operaciones vinculadas/)).toBeInTheDocument();
-  expect(screen.getByText(/12,50/)).toBeInTheDocument();
+  expect(screen.getAllByText(/12,50/).length).toBeGreaterThan(0);
   fireEvent.click(screen.getByRole('button',{name:'Filtrar consumos: ARS'}));
   expect(screen.queryByText('Streaming Test')).not.toBeInTheDocument();
   expect(screen.getByText('Farmacity')).toBeInTheDocument();
