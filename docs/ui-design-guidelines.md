@@ -150,3 +150,6 @@ Use the **real Transactions record surface / disclosure tokens** for pending sta
 
 ## Linked imported PDF summaries — Banks UX #227 phase 4
 Use the real shared Transactions `FINANCIAL_ITEM_SURFACE_STYLES` and `FINANCIAL_RECORD_DISCLOSURE_STYLES`. An already linked statement must start compact and mount its PDF drilldown only after the 44px explicit review action, separately from association correction. If banking privacy is hidden, both original totals and the entire Firebase detail subtree must be unmounted. ARS/USD filters are read-only; they never alter imported PDF totals, transaction counts, due dates or persist purchases. See [phase 4](banks-issue-227-phase4.md).
+
+## Banks PDF privacy guard (#227 phase 6)
+When the global Bancos privacy control is hidden, the PDF import review must not render source filenames, monetary amounts, merchant text, dates or the per-consumption category editor. Keep the draft intact in memory for review after the user explicitly reveals values; block `Guardar resumen revisado y vincular` until the user can actually inspect the amounts. Use shared record-disclosure tokens, 44px buttons and category select targets. Never use AI to bypass review or financial validation. See [Browser AI feasibility](browser-ai-sdk-ltc-feasibility.md) for future optional local proposals (no runtime dependency in this PR).
