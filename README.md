@@ -156,3 +156,5 @@ The older `LitaAssistant` component now sends user questions to the authenticate
 - [Banks QA #227 — synthetic full PDF journey + authenticated read-only browser suite](docs/banks-authenticated-e2e.md)
 
 - [Browser AI SDK feasibility — private on-device categorization candidates](docs/browser-ai-sdk-ltc-feasibility.md)
+
+- [Local Browser AI pilot #242 — optional per-consumption category proposals](docs/browser-ai-local-category-pilot.md) (native Prompt API, desktop experimental, feature flag off in production, no auto saves)

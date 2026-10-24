@@ -153,3 +153,6 @@ Use the real shared Transactions `FINANCIAL_ITEM_SURFACE_STYLES` and `FINANCIAL_
 
 ## Banks PDF privacy guard (#227 phase 6)
 When the global Bancos privacy control is hidden, the PDF import review must not render source filenames, monetary amounts, merchant text, dates or the per-consumption category editor. Keep the draft intact in memory for review after the user explicitly reveals values; block `Guardar resumen revisado y vincular` until the user can actually inspect the amounts. Use shared record-disclosure tokens, 44px buttons and category select targets. Never use AI to bypass review or financial validation. See [Browser AI feasibility](browser-ai-sdk-ltc-feasibility.md) for future optional local proposals (no runtime dependency in this PR).
+
+## Local category proposal interaction (#242)
+The optional native Prompt API pilot is hidden behind `REACT_APP_LTC_LOCAL_AI_CATEGORIES=true` in preview (or local development). On the existing PDF review surface, show browser-local suggestions only with explicit user request and when privacy is unmasked; no data is sent to a cloud AI provider and there is never a remote fallback. Never auto-select or persist an AI category. Reuse the same 44px actions and manual category selector; hide and abort immediately when privacy is toggled. See [pilot spec](browser-ai-local-category-pilot.md).

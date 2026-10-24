@@ -77,3 +77,6 @@ The immutable accounting contract is covered by `src/pages/Banks.pdfJourney.test
 
 ## PDF review privacy and optional browser AI
 In Bancos, `CardStatementPdfReview` receives `privacyHidden={!showValues}`. While hidden, never render filenames, balances, PDF purchase merchants, per-item category form or any editable financial approval, and never allow `storePdf` to persist. Re-revealing resumes the same draft. Browser AI SDK is research-only, opt-in suggestions constrained to existing categories (no auto writes), as documented in [feasibility](../../docs/browser-ai-sdk-ltc-feasibility.md). See `CardStatementPdfReview.test.js` and `Banks.pdfJourney.test.js`.
+
+## Browser-local classification proposal contract (#242)
+`CardStatementPdfReview` may *optionally* call `localCategorySuggestions` only while reviewed amounts are visible. The native Prompt API is behind a disabled-by-default production build flag. Send just safe merchant descriptors and an explicit allow-list of existing categories, not amounts or PDF bytes. Model proposals must be allow-list validated and applied to the unsaved draft only by the user's per-row click, never automatically. Avoid AI SDK dependency migration without benchmark evidence. Read [local pilot](../../docs/browser-ai-local-category-pilot.md).
