@@ -71,3 +71,6 @@ All transactions retain the required `selectedDate`. Do not confuse that with a 
 
 ## Linked card statements (#227 phase 4)
 `LinkedStatementCard` shares **exact** Transactions item + disclosure styling with `PendingStatementLinkCard`. Only mount `CardStatementDetails` when explicitly expanded and values are visible; the child is removed immediately when privacy is hidden. Association correction still belongs to `StatementLinkEditor`. Currency-specific ARS/USD consumption filters and retry in `CardStatementDetails` are read-only and must not change original statement totals or convert currency. See [documentation](../../docs/banks-issue-227-phase4.md).
+
+## Bank PDF E2E #227
+The immutable accounting contract is covered by `src/pages/Banks.pdfJourney.test.js`: synthetic parser → one ARS expense (USD separate) → imported details → bank/card link → read-only currency search → privacy remasking. For actual Chromium, `e2e/banks.authenticated.spec.cjs` is intentionally READ ONLY, requires an isolated signed-in QA account and `.qa-auth/banks-fixture.json`, and must NEVER upload/confirm/create/reassign/delete real financial data. Green Jest is not visual certification; use [Banks QA instructions](../../docs/banks-authenticated-e2e.md).
