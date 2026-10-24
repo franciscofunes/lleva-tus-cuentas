@@ -275,6 +275,11 @@ const openCityStatement = async () => {
   fireEvent.click(screen.getByRole('button',{name:/Banco Ciudad/}));
   fireEvent.click(screen.getByRole('button',{name:/Visa Ciudad/}));
   expect(screen.getByText('Resumen 2026-10 · Visa')).toBeInTheDocument();
+  const linked = screen.getByRole('article', {name:'Resumen vinculado 2026-10 Visa'});
+  expect(linked).toHaveClass('ltc-transaction-card','dark:bg-slate-800');
+  expect(within(linked).getByRole('button',{name:'Revisar resumen'})).toHaveAttribute('aria-expanded','false');
+  expect(within(linked).queryByRole('button',{name:'Corregir vínculo del resumen 2026-10'})).not.toBeInTheDocument();
+  fireEvent.click(within(linked).getByRole('button',{name:'Revisar resumen'}));
 };
 
 test('a linked statement exposes correction and updates only its link to a different bank', async () => {
@@ -361,4 +366,18 @@ test('pending PDF link is read-only until confirmation; saves only the selected 
   expect(require('../actionCreators/databaseActions').storeDataAction).not.toHaveBeenCalled();
   expect(require('../services/cardStatementService').saveReviewedStatement).not.toHaveBeenCalled();
   expect(banking.saveManualCardCharge).not.toHaveBeenCalled();
+});
+
+test('linked statements redact totals and exclude the PDF drilldown while banking privacy is hidden',async()=>{
+  arrange(linkedStatementData);
+  mount();
+  await openCityStatement();
+  const linked=screen.getByRole('article',{name:'Resumen vinculado 2026-10 Visa'});
+  expect(within(linked).getByLabelText('Totales del resumen vinculado por moneda'))
+    .toHaveTextContent('ARS •••• · USD ••••');
+  expect(within(linked).getByText(/Mostrá los importes en Bancos/)).toBeInTheDocument();
+  expect(within(linked).queryByRole('button',{name:'Ver consumos del resumen'})).not.toBeInTheDocument();
+  expect(within(linked).getByRole('button',{name:'Corregir vínculo del resumen 2026-10'})).toBeInTheDocument();
+  expect(banking.reassignStatementBankLink).not.toHaveBeenCalled();
+  expect(banking.saveStatementBankLink).not.toHaveBeenCalled();
 });
