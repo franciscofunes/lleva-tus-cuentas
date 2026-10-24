@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react'
+import { FINANCIAL_RECORD_DISCLOSURE_STYLES } from './CollapsibleHeading'
 import { FiUploadCloud, FiFileText, FiCheckCircle, FiRefreshCw } from 'react-icons/fi'
 import { analyzeStatementPdf } from '../services/cardStatementService'
 
@@ -26,7 +27,7 @@ const guessCategory = (merchant, names) => {
 }
 
 /** Intentionally a review form, not an automatic transaction import. */
-export default function CardStatementPdfReview({ categories = [], onDraft, onApply, disabled = false, showApplyButton = true }) {
+export default function CardStatementPdfReview({ categories = [], onDraft, onApply, disabled = false, showApplyButton = true, privacyHidden = false }) {
   const [state, setState] = useState('idle')
   const [error, setError] = useState('')
   const [draft, setDraft] = useState(null)
@@ -116,7 +117,7 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
           <div className='mt-3 flex min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 text-left dark:border-slate-700 dark:bg-slate-800'>
             <FiFileText className='shrink-0 text-purple-700 dark:text-purple-300' size={20}/>
             <div className='min-w-0 flex-1'>
-              <p className='break-all text-xs font-semibold'>{fileInfo.name}</p>
+              <p className='break-all text-xs font-semibold'>{privacyHidden ? 'Archivo PDF seleccionado' : fileInfo.name}</p>
               <p className='text-xs text-slate-500 dark:text-slate-300'>{(fileInfo.size / 1024).toFixed(0)} KB · PDF</p>
             </div>
             {state === 'ready' && <FiCheckCircle className='shrink-0 text-emerald-600 dark:text-emerald-400' size={20}/>}
@@ -141,7 +142,12 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
       </div>
       {state === 'loading' && <p role='status' aria-live='polite' className='mt-3 text-sm'>Extrayendo y conciliando consumos, esperá…</p>}
       {error && <p role='alert' className='mt-3 text-sm font-semibold text-rose-600 dark:text-rose-300'>{error}</p>}
-      {draft && (
+      {draft && privacyHidden && (
+        <p role='status' className='mt-3 rounded-xl border border-slate-300 bg-slate-50 p-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200'>
+          Resumen analizado y conciliado. Mostrá los importes de Bancos para revisar el PDF y sus consumos antes de guardar.
+        </p>
+      )}
+      {draft && !privacyHidden && (
         <div className='mt-3 space-y-3'>
           <div className='grid grid-cols-1 gap-2 rounded-lg bg-white p-3 text-sm dark:bg-slate-900 sm:grid-cols-2'>
             <div><span className='block text-xs text-slate-500 dark:text-slate-300'>Total ARS</span>
@@ -167,12 +173,12 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
           </div>
           {showApplyButton && (
             <button type='button' onClick={() => onApply(draft.statement)}
-              className='w-full rounded-lg border border-purple-500 bg-purple-600 px-3 py-2.5 font-bold text-white hover:bg-purple-700'>
+              className='min-h-[44px] w-full rounded-xl border border-violet-500 bg-violet-600 px-3 py-2.5 font-bold text-white hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500'>
               Completar campos del formulario (revisar antes de guardar)
             </button>
           )}
           <button type='button' aria-expanded={expanded} onClick={() => setExpanded(!expanded)}
-            className='flex w-full items-center justify-between rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold dark:border-slate-600'>
+            className={FINANCIAL_RECORD_DISCLOSURE_STYLES + ' w-full justify-between border border-slate-300 px-3 dark:border-slate-600'}>
             <span>Revisar y categorizar consumos ({draft.items.length})</span><span>{expanded ? '▲' : '▼'}</span>
           </button>
           {expanded && (
@@ -193,7 +199,7 @@ export default function CardStatementPdfReview({ categories = [], onDraft, onApp
                   </label>
                   <select id={'card-category-' + index} value={item.suggestedCategory}
                     onChange={(event) => editItem(index, { suggestedCategory: event.target.value })}
-                    className='mt-1 w-full min-w-0 rounded-lg border border-slate-300 bg-white p-2 text-sm dark:border-slate-600 dark:bg-slate-800'>
+                    className='mt-1 min-h-[44px] w-full min-w-0 rounded-xl border border-slate-300 bg-white p-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800'>
                     <option value='Sin categorizar'>Sin categorizar</option>
                     {expenseCategories.map((category) => <option key={category} value={category}>{category}</option>)}
                   </select>
