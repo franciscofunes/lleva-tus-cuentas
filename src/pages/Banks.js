@@ -474,7 +474,7 @@ function BanksWorkspace({ user }) {
                         <div className='flex flex-wrap items-center justify-between gap-2'>
                           <h4 className='font-bold'>Consumos registrados</h4>
                           <button type='button' className={secondary} onClick={() => startCharge(card)}><FiPlus/> Agregar consumo manual</button>
-                          <button type='button' className={secondary} onClick={()=>setShowConsumptionImporter(true)}><FiUploadCloud/> Importar Markdown de consumos</button>
+                          <button type='button' className={secondary} onClick={()=>setShowConsumptionImporter(true)}><FiUploadCloud/> Importar consumos desde captura o Markdown</button>
                         </div>
                         <p className='text-xs text-slate-600 dark:text-slate-300'>Estos consumos no crean gastos de Transacciones. Los resúmenes analizados se presentan aparte.</p>
                         {chargesForCard(card.id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>No hay consumos manuales.</p>}
@@ -618,11 +618,13 @@ function BanksWorkspace({ user }) {
         {showConsumptionImporter && (
           <GenericModal
             show={showConsumptionImporter}
-            dialogLabel='Importar consumos desde capturas mediante Markdown'
+            dialogLabel='Importar consumos desde capturas o Markdown'
             component={CardConsumptionMarkdownImporter}
             banks={banks}
             cards={cards}
             charges={charges}
+            privacyHidden={!showValues}
+            onRevealValues={toggleVisibility}
             onSave={(reviewed)=>importReviewedCardConsumptionMarkdown(uid,reviewed)}
             onClose={(success)=>{
               setShowConsumptionImporter(false);

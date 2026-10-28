@@ -5,9 +5,10 @@ import { MemoryRouter } from 'react-router-dom';
 import Portfolio from './Portfolio';
 
 const mockUid = 'qa-synthetic-investor';
-jest.mock('react-redux', () => ({
-  useSelector: (selector) => selector({auth:{user:{uid:'qa-synthetic-investor'},isFetching:false}}),
-}));
+jest.mock('react-redux', () => {
+  const stableAuthState={auth:{user:{uid:'qa-synthetic-investor'},isFetching:false}};
+  return {useSelector: (selector) => selector(stableAuthState)};
+});
 jest.mock('framer-motion', () => ({
   Reorder:{
     Group: ({children,className}) => <div className={className}>{children}</div>,
@@ -25,6 +26,10 @@ jest.mock('../components/FloatingMenu', () => () => null);
 jest.mock('../components/InfoTooltip', () => () => null);
 jest.mock('../components/GenericModal', () => ({show,component}) => show ? <div role='dialog'>{component}</div> : null);
 jest.mock('../components/PortfolioExportReady', () => () => null);
+// The export implementation initializes TextEncoder at import time, unrelated to UI tests.
+jest.mock('../utils/portfolioExport', () => ({
+  preparePortfolioExport:jest.fn(),buildPortfolioLlmMarkdown:jest.fn(),
+}));
 jest.mock('../services/portfolioService', () => ({
   subscribePortfolioPositions:jest.fn(),
   subscribePortfolioSnapshots:jest.fn(),
@@ -74,6 +79,17 @@ test('Portfolio reuses the identical Transactions/Banks header and always shows 
   fireEvent.click(add);
   expect(screen.getByRole('dialog')).toBeInTheDocument();
   expect(within(screen.getByRole('dialog')).getByText('Nueva posición')).toBeInTheDocument();
+});
+
+test('position form reuses local screenshot reader and the existing editable comparison',async()=>{
+  mount();
+  await getWorkspace();
+  fireEvent.click(screen.getByRole('button',{name:'Agregar posición'}));
+  const dialog=screen.getByRole('dialog');
+  fireEvent.click(within(dialog).getByRole('button',{name:'Importar desde captura o Markdown'}));
+  expect(within(dialog).getByLabelText('Elegir captura para lectura local')).toBeInTheDocument();
+  expect(within(dialog).getByLabelText('Texto para enriquecer posición')).toBeInTheDocument();
+  expect(within(dialog).getByRole('button',{name:'Comparar datos detectados'})).toBeDisabled();
 });
 
 test('summary precedes positions, positions span two columns, tools and export follow activity', async () => {
