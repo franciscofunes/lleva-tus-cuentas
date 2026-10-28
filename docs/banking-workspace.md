@@ -129,8 +129,12 @@ deployment is not available through GitHub or Vercel in this repository.
 
 ## ChatGPT screenshot-to-Markdown card spending import (PR #215)
 
-This user workflow deliberately uses ChatGPT **outside** LTC to read user-supplied
-home-banking screenshots; LTC never runs OCR or sends screenshots to Lita.
+The original Markdown workflow uses ChatGPT **outside** LTC to read user-supplied
+home-banking screenshots. Since the local OCR enhancement, the importer also offers
+**Desde captura**, reading one image in the browser with `runonweb/ocr`, never
+uploading screenshots to Lita or automatically persisting OCR guesses.
+See [local screenshot OCR](local-screenshot-ocr.md) for model download,
+conservative extraction, privacy, review and browser compatibility.
 The `src/components/CardConsumptionMarkdownImporter.js` dialog provides a
 copyable prompt, a strict Markdown parser with preview, explicit bank/card
 selection on every record, and explicit final confirmation. The user should

@@ -14,10 +14,12 @@ import CollapsibleSection from '../components/CollapsibleSection';
 import InfoTooltip from '../components/InfoTooltip';
 import PortfolioCharts from '../components/PortfolioCharts';
 import GenericModal from '../components/GenericModal';
+import LocalScreenshotOcr from '../components/LocalScreenshotOcr';
 import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import FloatingMenu from '../components/FloatingMenu';
 import SortablePortfolioPositionCard from '../components/SortablePortfolioPositionCard';
 import { parsePortfolioMarkdown } from '../utils/portfolioMarkdown';
+import { preparePortfolioOcrText } from '../utils/localPortfolioOcr';
 import { preparePortfolioExport, buildPortfolioLlmMarkdown } from '../utils/portfolioExport';
 import PortfolioExportReady from '../components/PortfolioExportReady';
 import { auditPortfolioEarnings } from '../utils/portfolioEarningsAudit';
@@ -583,12 +585,17 @@ function Portfolio() {
 		<form onSubmit={submit} className='space-y-2 text-white max-h-[78dvh] overflow-y-auto pr-4 mr-1 [scrollbar-gutter:stable]'>
 										<h2 className='text-lg font-bold pr-10 mb-2'>{editingId ? 'Editar posición' : 'Nueva posición'}</h2>
 										<div className='mb-2'>
-											<button type='button' onClick={() => setShowMarkdownImport((value) => !value)} className='w-full py-2 rounded-lg border border-purple-500 text-purple-300 text-sm font-semibold'>{showMarkdownImport ? 'Ocultar importador' : editingId ? 'Enriquecer con Markdown' : 'Pegar Markdown y autocompletar'}</button>
-											{showMarkdownImport && <div className='mt-2 p-3 rounded-lg border border-slate-700 bg-slate-950/30'>
-												<textarea className='portfolio-input min-h-[120px] text-sm' value={markdownImport} onChange={(event) => { setMarkdownImport(event.target.value); setImportPreview([]); }} placeholder={'Pegá Markdown generado desde fuentes oficiales...\n\nEjemplo FCI:\nRentabilidad mensual 2026:\n- Ene: 0,62%\n- Feb: 0,29%\n- Mar: 0,95%\nTotal YTD publicado: 3,75%'} />
-												<p className='text-xs text-gray-400 mt-1'>Primero compara. Nada se modifica hasta que selecciones campos y guardes la posición.</p>
-												<button type='button' disabled={!markdownImport.trim()} onClick={importMarkdown} className='w-full mt-2 py-2 rounded-lg bg-secondary disabled:opacity-40 text-white font-semibold'>Comparar Markdown</button>
-												{importPreview.length > 0 && <div className='mt-3 space-y-2'>
+											<button type='button' aria-expanded={showMarkdownImport} onClick={() => setShowMarkdownImport((value) => !value)} className='min-h-[44px] w-full rounded-xl border border-violet-500 bg-slate-800 px-3 py-2 text-sm font-semibold text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400'>{showMarkdownImport ? 'Ocultar importador' : editingId ? 'Enriquecer posición desde captura o Markdown' : 'Importar desde captura o Markdown'}</button>
+											{showMarkdownImport && <div className='mt-2 space-y-3 rounded-xl border border-slate-700 bg-slate-900/70 p-3'>
+												{hideValues ? <div className='space-y-2 rounded-lg border border-amber-700 p-3 text-sm text-amber-200'><p role='status'>Mostrá los importes del Portfolio para analizar una captura y comparar campos.</p><button type='button' onClick={()=>setHideValues(false)} className='min-h-[44px] rounded-xl border border-violet-500 px-3 py-2 text-sm font-semibold text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400'>Mostrar importes y continuar</button></div> : <>
+													<LocalScreenshotOcr onRecognized={({text})=>{setMarkdownImport(preparePortfolioOcrText(text));setImportPreview([]);}} privacyHidden={hideValues} disabled={pendingAction==='save'}/>
+													<label className='block text-sm font-semibold text-slate-100'>Texto reconocido o Markdown
+														<textarea aria-label='Texto para enriquecer posición' className='portfolio-input mt-2 min-h-[120px] text-sm' value={markdownImport} onChange={(event) => { setMarkdownImport(event.target.value); setImportPreview([]); }} placeholder={'Podés leer una captura o pegar datos publicados.\n\nEjemplo FCI:\nRentabilidad mensual 2026:\n- Ene: 0,62%\n- Feb: 0,29%\n- Mar: 0,95%\nTotal YTD publicado: 3,75%'} />
+													</label>
+													<p className='text-xs text-slate-300'>Revisá los valores detectados y elegí qué campos aplicar. Los cambios de saldo no son ganancias.</p>
+													<button type='button' disabled={!markdownImport.trim()} onClick={importMarkdown} className='min-h-[44px] w-full rounded-xl bg-secondary px-3 py-2 font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 disabled:opacity-40'>Comparar datos detectados</button>
+												</>}
+												{!hideValues && importPreview.length > 0 && <div className='mt-3 space-y-2'>
 													<div className='flex flex-wrap gap-2'><button type='button' onClick={() => selectImportFields('missing')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Solo faltantes</button><button type='button' onClick={() => selectImportFields('all')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Todos los cambios</button><button type='button' onClick={() => selectImportFields('none')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Ninguno</button></div>
 													{importPreview.map((item) => <label key={item.field} className='flex gap-3 rounded-lg border border-slate-700 p-2 text-sm cursor-pointer'><input type='checkbox' checked={item.selected} onChange={() => toggleImportField(item.field)} /><span className='min-w-0'><strong>{item.field.startsWith('monthlyReturns.') ? `Rentabilidad ${monthLabelByKey[item.field.split('.')[1]] || item.field.split('.')[1].toUpperCase()}` : item.field}</strong>{item.missing && <span className='ml-2 text-green-400 text-xs'>FALTANTE</span>}<span className='block text-xs text-slate-400 break-all'>{String(item.current || '—')} → <span className='text-white'>{String(item.value)}</span></span></span></label>)}
 													<button type='button' onClick={applyImportFields} className='w-full py-2 rounded-lg bg-ltc-green text-white font-bold'>Aplicar campos seleccionados</button>
