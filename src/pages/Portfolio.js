@@ -25,6 +25,7 @@ import { preparePortfolioExport, buildPortfolioLlmMarkdown } from '../utils/port
 import PortfolioExportReady from '../components/PortfolioExportReady';
 import { auditPortfolioEarnings } from '../utils/portfolioEarningsAudit';
 import { sortedAccountSnapshots, summarizeAccountActivity } from '../utils/portfolioAccountActivity';
+import { formattedPublishedReturn, parsePublishedReturn, publishedReturnTone, summarizePublishedReturns } from '../utils/portfolioPublishedReturns';
 import eyeHide from '../imgs/eyeHide.svg';
 import closeEye from '../imgs/closeEye.svg';
 import {
@@ -96,6 +97,10 @@ const money = (value, currency) =>
 		currency,
 		maximumFractionDigits: currency === 'ARS' ? 0 : 2,
 	}).format(Number(value || 0));
+
+const modalPublishedRateTone = (value) => value == null || value === 0
+	? 'text-slate-100'
+	: value > 0 ? 'text-emerald-300' : 'text-rose-300';
 
 function Portfolio() {
 	const user = useSelector((state) => state.auth.user);
@@ -182,6 +187,8 @@ function Portfolio() {
 	const togglePortfolioSection = (section) => setCollapsedSections((current) => ({ ...current, [section]: !current[section] }));
 	const privateMoney = (value, currency) => hideValues ? '••••••' : money(value, currency);
 	const privatePercent = (value, suffix = '%') => hideValues ? '••••' : `${Number(value || 0).toFixed(2)}${suffix}`;
+	const privateReportedRate = (raw) => hideValues ? '••••' : formattedPublishedReturn(parsePublishedReturn(raw));
+	const reportedRateTone = (raw) => hideValues ? 'text-slate-900 dark:text-slate-50' : publishedReturnTone(parsePublishedReturn(raw));
 	const privateCount = (value) => hideValues ? '••' : value;
 
 	useEffect(() => {
@@ -346,9 +353,7 @@ function Portfolio() {
 
 	const monthKeys = [['jan','Ene'],['feb','Feb'],['mar','Mar'],['apr','Abr'],['may','May'],['jun','Jun'],['jul','Jul'],['aug','Ago'],['sep','Sep'],['oct','Oct'],['nov','Nov'],['dec','Dic']];
 	const monthLabelByKey = Object.fromEntries(monthKeys);
-	const monthlyValues = Object.values(form.monthlyReturns || {}).map(Number).filter(Number.isFinite);
-	const monthlySimpleTotal = monthlyValues.reduce((sum, value) => sum + value, 0);
-	const monthlyCompoundTotal = (monthlyValues.reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100;
+	const monthlySummary = summarizePublishedReturns(form.monthlyReturns);
 	const onMonthlyReturnChange = (month, value) => setForm((current) => ({ ...current, monthlyReturns: { ...(current.monthlyReturns || {}), [month]: value } }));
 
 	const reset = () => {
@@ -625,20 +630,20 @@ function Portfolio() {
 											<div className='space-y-2'>
 												<input className='portfolio-input' name='institution' value={form.institution} onChange={onChange} placeholder='Institución / plataforma' required />
 												<input className='portfolio-input' name='name' value={form.name} onChange={onChange} placeholder='Producto / cuenta' required />
-												<select className='portfolio-input' name='category' value={form.category} onChange={onChange}>
+												<select aria-label='Tipo de activo' className='portfolio-input' name='category' value={form.category} onChange={onChange}>
 													{['Cuenta remunerada','Plazo fijo','FCI','ETF','Crypto / staking','Cash','Carry trade','Otro'].map((item) => <option key={item}>{item}</option>)}
 												</select>
 												<div className='grid grid-cols-2 gap-2'>
-													<select className='portfolio-input' name='currency' value={form.currency} onChange={onChange}>
+													<select aria-label='Moneda de la posición' className='portfolio-input' name='currency' value={form.currency} onChange={onChange}>
 														<option>ARS</option><option>USD</option><option>EUR</option><option>USDT</option>
 													</select>
 													<input className='portfolio-input' type='number' step='0.01' min='0' name='balance' value={form.balance} onChange={onChange} placeholder='Capital actual' required />
 												</div>
 												<div className='grid grid-cols-2 gap-2'>
-													<input className='portfolio-input' type='number' step='0.01' min='0' name='annualRate' value={form.annualRate} onChange={onChange} placeholder='Tasa anual %' />
+													<input aria-label='Tasa anual informada' className='portfolio-input' type='number' step='0.01' min='0' name='annualRate' value={form.annualRate} onChange={onChange} placeholder='Tasa anual %' />
 													<select className='portfolio-input' name='rateType' value={form.rateType} onChange={onChange}><option>TNA</option><option>TEA</option><option>TIR</option><option>APY</option><option>Variable</option></select>
 												</div>
-												<select className='portfolio-input' name='trackingMode' value={form.trackingMode || 'MANUAL'} onChange={onChange}>
+											<select aria-label='Modo de seguimiento' className='portfolio-input' name='trackingMode' value={form.trackingMode || 'MANUAL'} onChange={onChange}>
 													<option value='DAILY_RATE'>Cuenta remunerada · diario</option>
 													<option value='MATURITY'>Plazo fijo · vencimiento</option>
 													<option value='NAV'>FCI · valuación</option>
@@ -655,7 +660,16 @@ function Portfolio() {
 														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' name='fundType' value={form.fundType} onChange={onChange} placeholder='Tipo (ej. Renta fija)' /><input className='portfolio-input' name='investmentHorizon' value={form.investmentHorizon} onChange={onChange} placeholder='Horizonte' /></div>
 														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='date' name='fundStartDate' value={form.fundStartDate} onChange={onChange} /><input className='portfolio-input' name='rating' value={form.rating} onChange={onChange} placeholder='Calificación' /></div>
 														<input className='portfolio-input' type='number' step='any' min='0' name='volatility21dAnnualized' value={form.volatility21dAnnualized} onChange={onChange} placeholder='Volatilidad 21d anualizada %' />
-										<div className='rounded-lg border border-slate-600 p-3 space-y-3'><div><p className='text-sm font-bold text-white'>Rentabilidad mensual</p><p className='text-xs text-gray-300'>Cargá los porcentajes publicados por el fondo. LTC conserva el total publicado y calcula también el acumulado compuesto.</p></div><div className='grid grid-cols-3 gap-2'>{monthKeys.map(([key,label]) => <label key={key} className='text-xs font-semibold text-gray-200'>{label}<input className='portfolio-input mt-1' type='number' step='0.01' value={form.monthlyReturns?.[key] ?? ''} onChange={(event) => onMonthlyReturnChange(key, event.target.value)} placeholder='0.00' /></label>)}</div><div className='grid grid-cols-2 gap-2'><div className='rounded-lg bg-slate-800 p-2'><p className='text-xs text-gray-300'>Suma simple</p><p className='font-bold'>{monthlySimpleTotal.toFixed(2)}%</p></div><div className='rounded-lg bg-slate-800 p-2'><p className='text-xs text-gray-300'>Acumulado compuesto</p><p className='font-bold text-green-400'>{monthlyCompoundTotal.toFixed(2)}%</p></div></div><input className='portfolio-input' type='number' step='0.01' name='publishedYtdReturn' value={form.publishedYtdReturn || ''} onChange={onChange} placeholder='Total YTD publicado por el fondo %' /></div>
+										<div className='space-y-3 rounded-lg border border-slate-600 p-3'>
+											<div><p className='text-sm font-bold text-white'>Rentabilidad mensual</p><p className='text-xs text-slate-300'>Cargá porcentajes publicados por el fondo. Un mes vacío no equivale a 0%. Los acumulados usan solo los meses informados, no representan ganancias realizadas.</p></div>
+											<div className='grid grid-cols-3 gap-2'>{monthKeys.map(([key,label]) => <label key={key} className='text-xs font-semibold text-slate-200'>{label}<input className='portfolio-input mt-1' type='number' step='0.01' value={form.monthlyReturns?.[key] ?? ''} onChange={(event) => onMonthlyReturnChange(key, event.target.value)} placeholder='Sin dato' /></label>)}</div>
+											{monthlySummary.entries.length === 0 && <p className='text-xs text-slate-300' role='status'>Sin rentabilidades mensuales cargadas.</p>}
+											<div className='grid grid-cols-2 gap-2'>
+												<div className='min-w-0 rounded-lg bg-slate-800 p-2'><p className='text-xs text-slate-300'>Suma simple</p><p className={`break-words font-bold tabular-nums ${hideValues ? 'text-slate-100' : modalPublishedRateTone(monthlySummary.simple)}`}>{privateReportedRate(monthlySummary.simple)}</p></div>
+												<div className='min-w-0 rounded-lg bg-slate-800 p-2'><p className='text-xs text-slate-300'>Acumulado compuesto</p><p className={`break-words font-bold tabular-nums ${hideValues ? 'text-slate-100' : modalPublishedRateTone(monthlySummary.compound)}`}>{privateReportedRate(monthlySummary.compound)}</p></div>
+											</div>
+											<input aria-label='YTD publicado por el fondo' className='portfolio-input' type='number' step='0.01' name='publishedYtdReturn' value={form.publishedYtdReturn ?? ''} onChange={onChange} placeholder='Total YTD publicado por el fondo %' />
+										</div>
 													</div>
 												)}
 												<div className='rounded-xl border border-slate-700 p-3 space-y-2'>
@@ -817,11 +831,20 @@ function Portfolio() {
 										<p className='mt-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300'>{position.category}</p>
 										<p className='mt-3 break-words text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50 sm:text-3xl'>{privateMoney(position.balance, position.currency)}</p>
 									</div>
-									<div className='text-left sm:text-right sm:min-w-[14rem]'>
-										<p className='text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300'>Rendimiento</p>
-										<p className='text-xl font-bold text-emerald-700 dark:text-emerald-400 sm:text-2xl'>{privatePercent(position.annualRate)} <span className='text-sm'>{position.rateType || ''}</span></p>
+									<div className='min-w-0 text-left sm:min-w-[14rem] sm:text-right'>
+										<p className='text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300'>{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'YTD publicado por el fondo' : 'Tasa anual informada'}</p>
+										<p className={`break-words text-xl font-bold tabular-nums sm:text-2xl ${reportedRateTone(position.category === 'FCI' || position.trackingMode === 'NAV' ? position.publishedYtdReturn : position.annualRate)}`}>
+											{privateReportedRate(position.category === 'FCI' || position.trackingMode === 'NAV' ? position.publishedYtdReturn : position.annualRate)}
+											{position.category !== 'FCI' && position.trackingMode !== 'NAV' && <span className='text-sm text-slate-600 dark:text-slate-300'> {position.rateType || ''}</span>}
+										</p>
 										<p className='text-sm text-slate-600 dark:text-slate-300'>{position.liquidity || 'Liquidez no informada'}</p>
-										<p className='text-sm text-green-600 mt-1'>≈ {privateMoney(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 12, position.currency)} / mes proyectado</p>
+										{position.category === 'FCI' || position.trackingMode === 'NAV' ? (
+											<p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>Valuación NAV · no es ganancia realizada</p>
+										) : parsePublishedReturn(position.annualRate) !== null ? (
+											<p className='mt-1 break-words text-sm text-slate-600 dark:text-slate-300'>≈ {privateMoney(Number(position.balance || 0) * Number(position.annualRate) / 100 / 12, position.currency)} / mes estimado</p>
+										) : (
+											<p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>Sin proyección: tasa no informada</p>
+										)}
 										<button type='button' aria-expanded={Boolean(expandedPositionIds[position.id])}
 											aria-controls={'portfolio-position-details-' + position.id}
 											aria-label={(expandedPositionIds[position.id] ? 'Ocultar detalles de ' : 'Ver detalles de ') + position.name}
@@ -833,13 +856,13 @@ function Portfolio() {
 										{Boolean(expandedPositionIds[position.id]) && (
 											<section id={'portfolio-position-details-' + position.id} aria-label={'Detalles de ' + position.name}
 												className='mt-2 min-w-0 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left text-sm dark:border-slate-700 dark:bg-slate-900/70'>
-										{position.trackingMode === 'DAILY_RATE' && <p className='text-xs text-gray-400'>Esperado hoy: {privateMoney(Number(position.balance || 0) * Number(position.annualRate || 0) / 100 / 365, position.currency)}</p>}
-										{position.trackingMode === 'MATURITY' && position.maturityDate && <p className='text-xs text-gray-400'>Seguimiento al vencimiento: {position.maturityDate}</p>}
-										<p className='text-xs text-gray-400'>Tracking: {position.trackingMode || 'MANUAL'}</p>
-										{position.category === 'FCI' && position.ticker && <p className='text-xs text-gray-400'>Ticker: {position.ticker}</p>}
-										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-gray-400'>NAV: {hideValues ? '••••••' : Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
-										{position.category === 'FCI' && Number(position.performance1Y || 0) !== 0 && <p className='text-xs text-green-600 dark:text-green-500'>Rend. 1A: {privatePercent(position.performance1Y)}</p>}
-										{position.category === 'FCI' && position.monthlyReturns && Object.keys(position.monthlyReturns).length > 0 && <p className='text-sm font-bold text-green-600 dark:text-green-400'>YTD compuesto: {hideValues ? '••••' : `${((Object.values(position.monthlyReturns).map(Number).filter(Number.isFinite).reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100).toFixed(2)}%`}</p>}
+										{position.trackingMode === 'DAILY_RATE' && parsePublishedReturn(position.annualRate) !== null && <p className='text-xs text-slate-600 dark:text-slate-300'>Esperado hoy: {privateMoney(Number(position.balance || 0) * Number(position.annualRate) / 100 / 365, position.currency)}</p>}
+										{position.trackingMode === 'MATURITY' && position.maturityDate && <p className='text-xs text-slate-600 dark:text-slate-300'>Seguimiento al vencimiento: {position.maturityDate}</p>}
+										<p className='text-xs text-slate-600 dark:text-slate-300'>Tracking: {position.trackingMode || 'MANUAL'}</p>
+										{position.category === 'FCI' && position.ticker && <p className='text-xs text-slate-600 dark:text-slate-300'>Ticker: {position.ticker}</p>}
+										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-slate-600 dark:text-slate-300'>NAV: {hideValues ? '••••••' : Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}
+										{position.category === 'FCI' && parsePublishedReturn(position.performance1Y) !== null && <p className={`text-xs font-semibold ${reportedRateTone(position.performance1Y)}`}>Rend. 1A publicado: {privateReportedRate(position.performance1Y)}</p>}
+										{position.category === 'FCI' && summarizePublishedReturns(position.monthlyReturns).entries.length > 0 && <p className={`text-sm font-bold ${reportedRateTone(summarizePublishedReturns(position.monthlyReturns).compound)}`}>Compuesto (meses cargados): {privateReportedRate(summarizePublishedReturns(position.monthlyReturns).compound)}</p>}
 										{accountActivityByPosition[position.id] ? (
 											<div className='mt-2 space-y-1 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800'>
 												<p className='font-semibold text-slate-900 dark:text-slate-50'>Rendimientos clasificados: <span className='text-emerald-700 dark:text-emerald-400'>{privateMoney(accountActivityByPosition[position.id].userTaggedEarnings,position.currency)}</span></p>

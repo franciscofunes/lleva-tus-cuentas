@@ -3,6 +3,7 @@ import {
   monthlyPublishedReturnEntries,
   parsePublishedReturn,
   publishedReturnTone,
+  summarizePublishedReturns,
 } from './portfolioPublishedReturns';
 
 test('distinguishes absent published fund returns from an explicitly reported zero', () => {
@@ -35,4 +36,15 @@ test('positive, negative, zero and unreported returns have distinct accessible t
   expect(formattedPublishedReturn(3.5)).toBe('+3.50%');
   expect(formattedPublishedReturn(0)).toBe('0.00%');
   expect(formattedPublishedReturn(null)).toBe('—');
+});
+
+test('summary distinguishes incomplete published months from reported zeros', () => {
+  expect(summarizePublishedReturns({jan: '', feb: null})).toEqual({entries: [], simple: null, compound: null});
+  expect(summarizePublishedReturns({jan: '0'})).toEqual({
+    entries: [{month: 'jan', value: 0}], simple: 0, compound: 0,
+  });
+  const summary = summarizePublishedReturns({jan: -2, feb: 1});
+  expect(summary.entries).toHaveLength(2);
+  expect(summary.simple).toBe(-1);
+  expect(summary.compound).toBeCloseTo(-1.02, 5);
 });

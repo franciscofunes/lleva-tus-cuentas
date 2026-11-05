@@ -156,6 +156,18 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
   realized profit; native-currency balances and large mobile history amounts
   must wrap without clipping. See [Portfolio phase 3](portfolio-issue-228-phase3.md).
 
+## Portfolio position list and editor, phase 4 (#228)
+
+- Apply the **same** published-return parser and compound calculation in the
+  position card, editor and detail. Never turn an unentered month into 0%.
+- FCI/NAV cards show fund-published YTD when present, **not** a fixed annual
+  rate or monthly interest projection; partial compound returns must be named
+  as months entered, not mislabelled YTD.
+- Other positions show estimated monthly income only when an annual rate was
+  explicitly supplied. Keep rates clearly labelled as user-entered estimates.
+- Percentage privacy applies to both values and sign-dependent colors. See
+  [Portfolio phase 4](portfolio-issue-228-phase4.md).
+
 ## Banks imported PDF linking (issue #227, phase 3)
 Use the **real Transactions record surface / disclosure tokens** for pending statements. First scan shows document identity, period, close/due dates, masked ARS/USD totals and one 44px review action. Keep candidate selection and PDF line-items behind a disclosure. Use the existing shared GenericModal to confirm the exact target bank/card; don't write until confirmed, never optimistically create expenses or duplicate imported consumptions. Keep Firestore errors actionable without exposing backend details. See [Banks PDF linking](banks-issue-227-phase3.md).
 
