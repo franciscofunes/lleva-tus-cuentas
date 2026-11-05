@@ -8,12 +8,14 @@ const mobileBrowser = () => typeof navigator !== 'undefined' && /Android|iPhone|
 
 function ocrFailureMessage(error, stage) {
   const message = String(error?.message || '').toLowerCase();
-  if (message.includes('no pudimos leer texto')) return 'No se encontró texto legible. Probá con otra foto, mejor luz o más cerca.';
-  if (/memory|allocation|out of bounds|out of memory/.test(message)) return 'El dispositivo se quedó sin memoria para leer la imagen. Elegí el modelo liviano y cerrá otras pestañas.';
-  if (/fetch|network|cors|http|download/.test(message)) return 'No se pudo descargar el modelo de lectura. Revisá la conexión y probá nuevamente; la imagen no se envió.';
-  if (/wasm|backend|webgpu|inference|mismatch/.test(message)) return 'No se pudo iniciar el motor de lectura en este navegador. Probá el modelo liviano o pegá los datos manualmente.';
-  if (stage === 'reading') return 'El modelo se preparó, pero no pudo leer esta imagen. Probá otra foto o completá los campos manualmente.';
-  return 'No se pudo iniciar la lectura local. Probá el modelo liviano o completá los datos manualmente.';
+  // Stable, non-sensitive codes allow debugging user reports without logging
+  // financial screenshots, OCR text or raw browser error messages.
+  if (message.includes('no pudimos leer texto')) return '[OCR-TEXT] No se encontró texto legible. Probá con otra foto, mejor luz o más cerca.';
+  if (/memory|allocation|out of bounds|out of memory/.test(message)) return '[OCR-MEM] El dispositivo se quedó sin memoria. Elegí el modelo liviano y cerrá otras pestañas.';
+  if (/fetch|network|cors|http|download|could not load|failed to load|dictionary/.test(message)) return '[OCR-NET] No se pudo descargar el modelo. Revisá la conexión y reintentá; la imagen no se envió.';
+  if (/wasm|backend|webgpu|inference|mismatch|compile|instantiate/.test(message)) return '[OCR-MOTOR] No se pudo iniciar el lector local. Recargá esta página y reintentá con el modelo liviano.';
+  if (stage === 'reading') return '[OCR-IMG] El modelo se preparó, pero no pudo leer esta imagen. Probá otra foto.';
+  return '[OCR-INIT] No se pudo iniciar la lectura local. Recargá esta página y reintentá.';
 }
 
 /** Explicitly opt-in, image-only OCR. No image or recognized text is sent to Lita or Firestore. */
@@ -185,7 +187,7 @@ export default function LocalScreenshotOcr({ onRecognized, privacyHidden = false
   return <section aria-label='Lectura local de capturas' className='space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-900 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-50'>
     <div className='flex items-start gap-2'>
       <FiShield aria-hidden='true' className='mt-0.5 shrink-0 text-emerald-700 dark:text-emerald-400'/>
-      <p className='text-xs text-slate-700 dark:text-slate-200'>La lectura ocurre acá. El modelo se descarga una vez ({modelSize === 'tiny' ? 'aprox. 6 MB' : 'aprox. 31 MB'}). Tu imagen no se envía ni se guarda.</p>
+      <p className='text-xs text-slate-700 dark:text-slate-200'>Lector local v2 · El modelo se descarga una vez ({modelSize === 'tiny' ? 'aprox. 6 MB' : 'aprox. 31 MB'}). Tu imagen no se envía ni se guarda.</p>
     </div>
     {privacyHidden ? (
       <p role='status' className='text-sm font-semibold text-amber-700 dark:text-amber-300'>Mostrá los importes para analizar y revisar una captura.</p>
