@@ -161,7 +161,7 @@ test('FCI and remunerated secondary metadata are independent, lazy disclosures w
 test('FCI position card shows published negative YTD instead of a fabricated fixed monthly yield', async () => {
   mount();
   await getWorkspace();
-  const fciCard = screen.getByRole('link', {name:'Ver detalle de Fondo de prueba'}).closest('article');
+  const fciCard = screen.getByRole('link', {name:'Abrir ficha de Fondo de prueba'}).closest('article');
   expect(within(fciCard).getByText('YTD publicado por el fondo')).toBeInTheDocument();
   expect(within(fciCard).getByText('-4.20%')).toHaveClass('text-rose-700', 'dark:text-rose-400');
   expect(within(fciCard).queryByText(/mes estimado|mes proyectado/i)).not.toBeInTheDocument();
@@ -219,4 +219,39 @@ test('each position retains explicit verify and edit controls and accessible 44p
   expect(screen.getByRole('button',{name:'Actualizar cuotaparte'})).toBeInTheDocument();
   expect(screen.getByRole('button',{name:'Verificar saldo'})).toBeInTheDocument();
   expect(screen.getAllByRole('button',{name:'Eliminar posición'})).toHaveLength(2);
+});
+
+test('Cash with 0% stored is presented as liquid principal, not a monthly yield', async () => {
+  service.subscribePortfolioPositions.mockImplementationOnce((uid, onData) => {
+    onData([{ id:'cash-qa', institution:'Billetera QA', name:'Efectivo líquido',
+      category:'Cash',currency:'USD',balance:25661.59,annualRate:0,rateType:'TNA',
+      trackingMode:'MANUAL',liquidity:'Inmediata' }]);
+    return jest.fn();
+  });
+  mount();
+  await getWorkspace();
+  const cash = screen.getByRole('link',{name:'Abrir ficha de Efectivo líquido'}).closest('article');
+  expect(within(cash).getByText('Disponibilidad')).toBeInTheDocument();
+  expect(within(cash).getByText('Efectivo sin rendimiento')).toHaveClass('text-slate-900','dark:text-slate-50');
+  expect(within(cash).getByText('Inmediata')).toBeInTheDocument();
+  expect(within(cash).queryByText('0.00%')).not.toBeInTheDocument();
+  expect(within(cash).queryByText('TNA')).not.toBeInTheDocument();
+  expect(within(cash).queryByText(/mes estimado|mes proyectado/)).not.toBeInTheDocument();
+  expect(within(cash).getByRole('button',{name:'Verificar saldo'})).toBeInTheDocument();
+  expect(within(cash).getByRole('button',{name:'Ver detalles de Efectivo líquido'})).toHaveClass('min-h-[44px]');
+  expect(within(cash).getByRole('link',{name:'Abrir ficha de Efectivo líquido'})).toHaveAttribute('href','/portfolio/cash-qa');
+});
+
+test('Charts and tools have their own mobile gap and remain separate collapsible widgets', async () => {
+  mount();
+  await getWorkspace();
+  const charts = document.getElementById('portfolio-charts');
+  const tools = document.getElementById('portfolio-overview');
+  const toolsSpacing = screen.getByTestId('portfolio-tools-spacing');
+  expect(toolsSpacing).toHaveClass('mt-5');
+  expect(toolsSpacing).toContainElement(tools);
+  expect(charts.compareDocumentPosition(toolsSpacing) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(charts).toHaveClass('rounded-2xl','dark:bg-slate-800');
+  expect(tools).toHaveAttribute('aria-label','Herramientas y métricas');
+  expect(screen.getByRole('button',{name:/Gráficos/})).toHaveAttribute('aria-expanded');
 });
