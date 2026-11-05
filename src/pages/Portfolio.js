@@ -8,6 +8,7 @@ import FinancialOverviewPanel from '../components/FinancialOverviewPanel';
 import { FaWallet, FaChartLine, FaRegClock, FaPencilAlt, FaTrashAlt, FaExternalLinkAlt, FaBookOpen, FaPercent, FaFileExcel, FaFileAlt, FaPlus, FaExchangeAlt, FaUniversity } from 'react-icons/fa';
 import QuickAccessCard from '../components/QuickAccessCard';
 import FinancialHeaderActions from '../components/FinancialHeaderActions';
+import ScreenshotImportShortcut from '../components/ScreenshotImportShortcut';
 import { FINANCIAL_RECORD_DISCLOSURE_STYLES } from '../components/CollapsibleHeading';
 import { FaChevronDown } from 'react-icons/fa';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -134,6 +135,7 @@ function Portfolio() {
 	const [showLita, setShowLita] = useState(false);
 	const [markdownImport, setMarkdownImport] = useState('');
 	const [showMarkdownImport, setShowMarkdownImport] = useState(false);
+	const [screenshotTargetId, setScreenshotTargetId] = useState('');
 	const [importPreview, setImportPreview] = useState([]);
 	const [deleteTarget, setDeleteTarget] = useState(null);
 	const [verifyTarget, setVerifyTarget] = useState(null);
@@ -425,6 +427,9 @@ function Portfolio() {
 	};
 
 	const edit = (position) => {
+		setMarkdownImport('');
+		setImportPreview([]);
+		setShowMarkdownImport(false);
 		setEditingId(position.id);
 		setForm({
 			...emptyForm,
@@ -449,6 +454,20 @@ function Portfolio() {
 			publishedYtdReturn: String(position.publishedYtdReturn ?? ''),
 		});
 		setShowForm(true);
+	};
+
+	const openScreenshotImport = () => {
+		if (screenshotTargetId === '__new__') {
+			reset();
+			setShowForm(true);
+		} else {
+			const target = positions.find((position) => position.id === screenshotTargetId);
+			if (!target) return;
+			edit(target);
+		}
+		setMarkdownImport('');
+		setImportPreview([]);
+		setShowMarkdownImport(true);
 	};
 
 	const requestDelete = (position) => setDeleteTarget(position);
@@ -745,6 +764,23 @@ function Portfolio() {
 					className='min-w-0 lg:col-span-2 lg:row-span-2'
 					contentClassName='space-y-3'
 				>
+						<ScreenshotImportShortcut
+							title='Importar captura de inversión'
+							description='Elegí qué posición actualizar o creá una nueva. La captura se lee en tu dispositivo y los cambios requieren confirmación.'
+							actionLabel='Importar captura'
+							onAction={openScreenshotImport}
+							disabled={!screenshotTargetId || (screenshotTargetId !== '__new__' && !positions.some((position) => position.id === screenshotTargetId))}
+							hint='Podés comparar los datos detectados antes de modificar el Portfolio.'
+						>
+							<label className='block text-sm font-semibold text-slate-900 dark:text-slate-50'>Posición de destino
+								<select aria-label='Posición para importar captura' value={screenshotTargetId} onChange={(event) => setScreenshotTargetId(event.target.value)}
+									className='mt-1 min-h-[44px] w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50'>
+									<option value=''>Elegí una posición</option>
+									<option value='__new__'>Nueva posición</option>
+									{positions.map((position) => <option key={position.id} value={position.id}>{position.institution} · {position.name}</option>)}
+								</select>
+							</label>
+						</ScreenshotImportShortcut>
 						{loading && <p className='text-gray-500'>Cargando portfolio...</p>}
 						{!loading && !positions.length && (
 							<div className='border border-dashed dark:border-slate-700 rounded-2xl p-8 text-center'>

@@ -17,6 +17,7 @@ import LitaAssistantPanel from '../components/LitaAssitantPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
 import QuickAccessCard from '../components/QuickAccessCard';
 import FinancialHeaderActions from '../components/FinancialHeaderActions';
+import ScreenshotImportShortcut from '../components/ScreenshotImportShortcut';
 import PageDataSkeleton from '../components/PageDataSkeleton';
 import { FinancialMetricCard } from '../components/FinancialOverviewPanel';
 import { FINANCIAL_ITEM_SURFACE_STYLES, FINANCIAL_RECORD_DISCLOSURE_STYLES, COLLAPSIBLE_SURFACE_STYLES, CollapsibleHeading } from '../components/CollapsibleHeading';
@@ -304,6 +305,14 @@ function BanksWorkspace({ user }) {
               className='min-w-0 lg:col-span-2 lg:row-span-2'
             >
               <div className='space-y-4'>
+        <ScreenshotImportShortcut
+          title='Importar captura de consumos'
+          description='Leé una captura del home banking en este dispositivo. Después elegí el banco y la tarjeta y revisá cada importe.'
+          actionLabel='Importar captura'
+          onAction={() => setShowConsumptionImporter(true)}
+          disabled={cards.length === 0}
+          hint={cards.length === 0 ? 'Para importar consumos, agregá primero una tarjeta a uno de tus bancos.' : 'No se crea ningún gasto de Transacciones automáticamente.'}
+        />
         {banks.length === 0 && (
           <div className='rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300'>
             Todavía no agregaste bancos. Usá «Agregar banco» para crear uno o completar sus datos con Markdown.

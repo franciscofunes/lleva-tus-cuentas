@@ -8,6 +8,8 @@ LTC can read **PNG, JPG, or WEBP screenshots** with [`runonweb/ocr`](https://git
 
 ## Banks: existing review and financial contract
 
+**Finding the feature:** open `/bancos`, expand **Mis bancos**, and use the visible **Importar captura de consumos → Importar captura** shortcut above the list of banks. You need at least one registered card; the importer asks which bank/card receives the reviewed data. You no longer need to expand an individual bank and card to discover the feature. The original per-card entry remains available.
+
 `CardConsumptionMarkdownImporter` offers **Desde captura** and **Pegar Markdown**. Both converge on the existing `parseCardConsumptionMarkdown` validator, explicit bank/card assignment, duplicate checks and `importReviewedCardConsumptionMarkdown` confirmation. A screenshot creates one reviewed **snapshot** (current card consumption) or one **charge** (individual purchase) at a time. For screenshots with multiple individual purchases, import separately or use the existing batch Markdown path (10 records maximum).
 
 - The OCR adapter pre-fills only *unambiguous*, explicitly labeled `Consumos ARS/USD` and an explicitly labeled consultation date. A single dated merchant row with an explicit currency may also suggest one charge; multiple rows are never silently collapsed into one. Anything missing, ambiguous or error-prone is left blank for owner correction. Plain balances or card payments are never inferred as purchases.
@@ -16,6 +18,8 @@ LTC can read **PNG, JPG, or WEBP screenshots** with [`runonweb/ocr`](https://git
 - Privacy mode hides the entire financial import/review UI and blocks new recognition and confirmation. Close/reopen resets ephemeral screenshot state.
 
 ## Portfolio: existing Markdown comparison
+
+**Finding the feature:** open `/portfolio`, expand **Posiciones**, then use **Importar captura de inversión**. Choose an existing position or **Nueva posición** and click **Importar captura**; the existing editor opens with the OCR reader already expanded. This does not save data until you explicitly review, apply, and save the position. The original edit-form Markdown entry remains available.
 
 The **new/edit position** modal includes the same local screenshot reader above its editable source-text field. Exact supported labels such as `Saldo actual`, `Cuotapartes`, `Valor cuotaparte`, `Tasa anual` and `Vencimiento` become explicitly labeled suggestions for the existing `parsePortfolioMarkdown` comparison. Source text remains visible for owner verification; unmatched fields are ignored.
 

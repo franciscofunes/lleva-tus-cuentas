@@ -92,6 +92,35 @@ test('position form reuses local screenshot reader and the existing editable com
   expect(within(dialog).getByRole('button',{name:'Comparar datos detectados'})).toBeDisabled();
 });
 
+test('a visible Portfolio shortcut targets an existing position and opens OCR review without saving', async () => {
+  mount();
+  await getWorkspace();
+  const shortcut = screen.getByRole('region', { name: 'Importar captura de inversión' });
+  const action = within(shortcut).getByRole('button', { name: 'Importar captura' });
+  expect(action).toHaveClass('min-h-[44px]');
+  expect(action).toBeDisabled();
+  fireEvent.change(within(shortcut).getByLabelText('Posición para importar captura'), { target: { value: 'fci-1' } });
+  expect(action).toBeEnabled();
+  fireEvent.click(action);
+  const dialog = screen.getByRole('dialog');
+  expect(within(dialog).getByText('Editar posición')).toBeInTheDocument();
+  expect(within(dialog).getByLabelText('Elegir captura para lectura local')).toBeInTheDocument();
+  expect(within(dialog).getByLabelText('Texto para enriquecer posición')).toBeInTheDocument();
+  expect(service.updatePortfolioPosition).not.toHaveBeenCalled();
+});
+
+test('Portfolio shortcut can begin a new position with the screenshot reader already open', async () => {
+  mount();
+  await getWorkspace();
+  const shortcut = screen.getByRole('region', { name: 'Importar captura de inversión' });
+  fireEvent.change(within(shortcut).getByLabelText('Posición para importar captura'), { target: { value: '__new__' } });
+  fireEvent.click(within(shortcut).getByRole('button', { name: 'Importar captura' }));
+  const dialog = screen.getByRole('dialog');
+  expect(within(dialog).getByText('Nueva posición')).toBeInTheDocument();
+  expect(within(dialog).getByLabelText('Elegir captura para lectura local')).toBeInTheDocument();
+  expect(service.createPortfolioPosition).not.toHaveBeenCalled();
+});
+
 test('summary precedes positions, positions span two columns, tools and export follow activity', async () => {
   mount();
   const workspace=await getWorkspace();
