@@ -10,7 +10,7 @@ import { deletePortfolioSnapshot, registerReconciliationTransaction, savePortfol
 import PortfolioHistoryModal from '../components/PortfolioHistoryModal';
 import PortfolioAccountOverview from '../components/PortfolioAccountOverview';
 import { accountMovementType, accountMovementLabel, groupAccountEarnings, sortedAccountSnapshots } from '../utils/portfolioAccountActivity';
-import { formattedPublishedReturn, monthlyPublishedReturnEntries, parsePublishedReturn, publishedReturnTone } from '../utils/portfolioPublishedReturns';
+import { formattedPublishedReturn, parsePublishedReturn, publishedReturnTone, summarizePublishedReturns } from '../utils/portfolioPublishedReturns';
 
 const money = (value, currency = 'USD') => new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(Number(value || 0));
 const asDate = (value) => value?.toDate ? value.toDate() : new Date(value);
@@ -79,10 +79,10 @@ export default function PortfolioDetail() {
 		[valuationHistory]
 	);
 	const monthLabels = { jan:'Ene', feb:'Feb', mar:'Mar', apr:'Abr', may:'May', jun:'Jun', jul:'Jul', aug:'Ago', sep:'Sep', oct:'Oct', nov:'Nov', dec:'Dic' };
-	const publishedMonthlyEntries = monthlyPublishedReturnEntries(position?.monthlyReturns);
-	const publishedMonthlyValues = publishedMonthlyEntries.map(({ value }) => value);
-	const publishedSimpleTotal = publishedMonthlyValues.reduce((sum, value) => sum + value, 0);
-	const publishedCompoundTotal = (publishedMonthlyValues.reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100;
+	const publishedSummary = summarizePublishedReturns(position?.monthlyReturns);
+	const publishedMonthlyEntries = publishedSummary.entries;
+	const publishedSimpleTotal = publishedSummary.simple;
+	const publishedCompoundTotal = publishedSummary.compound;
 	const publishedYtdReturn = parsePublishedReturn(position?.publishedYtdReturn);
 	const annualRate = parsePublishedReturn(position?.annualRate);
 	const accountRows = position ? [['CBU',position.cbu],['Alias',position.alias],['Número de cuenta',position.accountNumber],['Routing',position.routingNumber],['SWIFT',position.swift]].filter(([,value])=>value) : [];
