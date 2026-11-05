@@ -10,6 +10,7 @@ import { deletePortfolioSnapshot, registerReconciliationTransaction, savePortfol
 import PortfolioHistoryModal from '../components/PortfolioHistoryModal';
 import PortfolioAccountOverview from '../components/PortfolioAccountOverview';
 import { accountMovementType, accountMovementLabel, groupAccountEarnings, sortedAccountSnapshots } from '../utils/portfolioAccountActivity';
+import { formattedPublishedReturn, monthlyPublishedReturnEntries, parsePublishedReturn, publishedReturnTone } from '../utils/portfolioPublishedReturns';
 
 const money = (value, currency = 'USD') => new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(Number(value || 0));
 const asDate = (value) => value?.toDate ? value.toDate() : new Date(value);
@@ -78,13 +79,12 @@ export default function PortfolioDetail() {
 		[valuationHistory]
 	);
 	const monthLabels = { jan:'Ene', feb:'Feb', mar:'Mar', apr:'Abr', may:'May', jun:'Jun', jul:'Jul', aug:'Ago', sep:'Sep', oct:'Oct', nov:'Nov', dec:'Dic' };
-	const orderedMonths = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-	const publishedMonthlyReturns = position?.monthlyReturns || {};
-	const publishedMonthlyValues = orderedMonths
-		.map((month) => Number(publishedMonthlyReturns[month]))
-		.filter(Number.isFinite);
+	const publishedMonthlyEntries = monthlyPublishedReturnEntries(position?.monthlyReturns);
+	const publishedMonthlyValues = publishedMonthlyEntries.map(({ value }) => value);
 	const publishedSimpleTotal = publishedMonthlyValues.reduce((sum, value) => sum + value, 0);
 	const publishedCompoundTotal = (publishedMonthlyValues.reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100;
+	const publishedYtdReturn = parsePublishedReturn(position?.publishedYtdReturn);
+	const annualRate = parsePublishedReturn(position?.annualRate);
 	const accountRows = position ? [['CBU',position.cbu],['Alias',position.alias],['Número de cuenta',position.accountNumber],['Routing',position.routingNumber],['SWIFT',position.swift]].filter(([,value])=>value) : [];
 	const hasAccountDetails = position && (accountRows.length || position.accountHolder || position.accountType || position.bankName || position.bankAddress || position.depositInstructions);
 	const registerMonth = async (saved) => { if(!saved || pendingAction || saved.transactionId) return; setPendingAction(`register-${saved.month}`); try { const result=await registerReconciliationTransaction(user.uid,saved); toast.success(result.alreadyRegistered?'Este cierre ya estaba registrado':'Rendimiento registrado en Transacciones'); } catch(error) { console.error(error); toast.error(error.message || 'No se pudo registrar el rendimiento'); } finally { setPendingAction(''); } };
@@ -108,17 +108,17 @@ export default function PortfolioDetail() {
 					
 					{isRemunerated ? <PortfolioAccountOverview position={position} snapshots={history} /> : isFci ? (
 						<div className='grid grid-cols-2 md:grid-cols-4 gap-3 mt-5'>
-							<div><p className='text-xs text-gray-500'>Valuación actual</p><p className='text-xl font-bold'>{money(position.balance,position.currency)}</p></div>
-							<div><p className='text-xs text-gray-500'>Valor cuotaparte</p><p className='text-xl font-bold text-purple-500'>{Number(position.nav || 0) > 0 ? Number(position.nav).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</p><p className='text-xs text-gray-500'>{position.navDate || 'Sin fecha NAV'}</p></div>
-							<div><p className='text-xs text-gray-500'>Cuotapartes</p><p className='text-xl font-bold'>{Number(position.shares || 0) > 0 ? Number(position.shares).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</p></div>
-							<div><p className='text-xs text-gray-500'>YTD publicado</p><p className='text-xl font-bold text-green-500'>{position.publishedYtdReturn === '' || position.publishedYtdReturn == null ? '—' : `${Number(position.publishedYtdReturn).toFixed(2)}%`}</p></div>
+							<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Valuación actual</p><p className='text-xl font-bold tabular-nums break-words'>{money(position.balance,position.currency)}</p></div>
+							<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Valor cuotaparte</p><p className='text-xl font-bold text-violet-700 dark:text-violet-200 tabular-nums break-words'>{Number(position.nav || 0) > 0 ? Number(position.nav).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</p><p className='text-xs text-slate-600 dark:text-slate-300'>{position.navDate || 'Sin fecha NAV'}</p></div>
+							<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Cuotapartes</p><p className='text-xl font-bold tabular-nums break-words'>{Number(position.shares || 0) > 0 ? Number(position.shares).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</p></div>
+							<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>YTD publicado</p><p className={`text-xl font-bold tabular-nums ${publishedReturnTone(publishedYtdReturn)}`}>{formattedPublishedReturn(publishedYtdReturn)}</p></div>
 						</div>
 					) : (
 						<div className='grid grid-cols-2 md:grid-cols-4 gap-3 mt-5'>
-							<div><p className='text-xs text-gray-500'>Saldo</p><p className='text-xl font-bold'>{money(position.balance,position.currency)}</p></div>
-							<div><p className='text-xs text-gray-500'>Rendimiento cargado</p><p className='text-xl font-bold text-green-500'>{Number(position.annualRate||0).toFixed(2)}%</p></div>
-							<div><p className='text-xs text-gray-500'>Rendimiento confirmado</p><p className='text-xl font-bold'>{money(total,position.currency)}</p></div>
-							<div><p className='text-xs text-gray-500'>Verificaciones</p><p className='text-xl font-bold'>{history.length}</p></div>
+							<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Saldo</p><p className='text-xl font-bold tabular-nums break-words'>{money(position.balance,position.currency)}</p></div>
+							<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Rendimiento cargado</p><p className={`text-xl font-bold tabular-nums ${publishedReturnTone(annualRate)}`}>{formattedPublishedReturn(annualRate)}</p></div>
+							<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Rendimiento registrado</p><p className='text-xl font-bold tabular-nums break-words'>{money(total,position.currency)}</p></div>
+							<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Verificaciones</p><p className='text-xl font-bold tabular-nums'>{history.length}</p></div>
 						</div>
 					)}
 				</CollapsibleSection>
@@ -138,8 +138,8 @@ export default function PortfolioDetail() {
 										<div className='text-right'><p className='text-xs text-gray-500'>Valor cuotaparte</p><p className='font-bold text-lg'>{row.navValue.toLocaleString('es-AR',{maximumFractionDigits:6})}</p></div>
 									</div>
 									<div className='grid grid-cols-2 gap-3 mt-3'>
-										<div><p className='text-xs text-gray-500'>Variación NAV</p><p className={`font-semibold ${row.navChangePercent == null ? 'text-gray-400' : row.navChangePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>{row.navChangePercent == null ? 'Primera medición' : `${row.navChangePercent >= 0 ? '+' : ''}${row.navChangePercent.toFixed(3)}%`}</p></div>
-										<div><p className='text-xs text-gray-500'>Valuación</p><p className='font-semibold'>{money(row.balance,position.currency)}</p></div>
+										<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Variación NAV</p><p className={`font-semibold tabular-nums ${publishedReturnTone(row.navChangePercent)}`}>{row.navChangePercent == null ? 'Primera medición' : formattedPublishedReturn(row.navChangePercent, 3)}</p></div>
+										<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Valuación</p><p className='font-semibold tabular-nums break-words'>{money(row.balance,position.currency)}</p></div>
 									</div>
 								</div>
 							))}
@@ -189,22 +189,19 @@ export default function PortfolioDetail() {
 				>
 					{isFci ? (
 						<div className='mt-4'>
-							{publishedMonthlyValues.length === 0 ? (
-								<p className='text-gray-500'>Todavía no cargaste la rentabilidad mensual publicada por el fondo.</p>
+							{publishedMonthlyEntries.length === 0 ? (
+								<p className='text-slate-600 dark:text-slate-300'>Todavía no cargaste la rentabilidad mensual publicada por el fondo. Los meses sin datos no se consideran 0%.</p>
 							) : (
 								<>
 									<div className='grid grid-cols-3 sm:grid-cols-4 gap-2'>
-										{orderedMonths.map((month) => {
-											const value = Number(publishedMonthlyReturns[month]);
-											if (!Number.isFinite(value)) return null;
-											return <div key={month} className='rounded-xl border border-slate-200 dark:border-slate-700 p-3'><p className='text-xs text-gray-500'>{monthLabels[month]}</p><p className={`mt-1 font-bold ${value >= 0 ? 'text-green-500' : 'text-red-500'}`}>{value.toFixed(2)}%</p></div>;
-										})}
+										{publishedMonthlyEntries.map(({ month, value }) => <div key={month} className='min-w-0 rounded-xl border border-slate-200 dark:border-slate-700 p-3'><p className='text-xs text-slate-600 dark:text-slate-300'>{monthLabels[month]}</p><p className={`mt-1 font-bold tabular-nums break-words ${publishedReturnTone(value)}`}>{formattedPublishedReturn(value)}</p></div>)}
 									</div>
 									<div className='grid sm:grid-cols-3 gap-2 mt-4'>
-										<div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Suma simple</p><p className='font-bold'>{publishedSimpleTotal.toFixed(2)}%</p></div>
-										<div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>Acumulado compuesto</p><p className='font-bold text-green-500'>{publishedCompoundTotal.toFixed(2)}%</p></div>
-										<div className='rounded-xl bg-slate-50 dark:bg-slate-900/50 p-3'><p className='text-xs text-gray-500'>YTD publicado</p><p className='font-bold'>{position.publishedYtdReturn === '' || position.publishedYtdReturn == null ? '—' : `${Number(position.publishedYtdReturn).toFixed(2)}%`}</p></div>
+										<div className='min-w-0 rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3'><p className='text-xs text-slate-600 dark:text-slate-300'>Suma simple</p><p className={`font-bold tabular-nums ${publishedReturnTone(publishedSimpleTotal)}`}>{formattedPublishedReturn(publishedSimpleTotal)}</p></div>
+										<div className='min-w-0 rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3'><p className='text-xs text-slate-600 dark:text-slate-300'>Acumulado compuesto</p><p className={`font-bold tabular-nums ${publishedReturnTone(publishedCompoundTotal)}`}>{formattedPublishedReturn(publishedCompoundTotal)}</p></div>
+										<div className='min-w-0 rounded-xl bg-slate-50 dark:bg-slate-900/70 p-3'><p className='text-xs text-slate-600 dark:text-slate-300'>YTD publicado</p><p className={`font-bold tabular-nums ${publishedReturnTone(publishedYtdReturn)}`}>{formattedPublishedReturn(publishedYtdReturn)}</p></div>
 									</div>
+									<p className='mt-2 text-xs text-slate-600 dark:text-slate-300'>El acumulado se calcula solo sobre los meses cargados. No equivale a rentabilidad anual ni a ganancia realizada.</p>
 								</>
 							)}
 						</div>
@@ -228,10 +225,10 @@ export default function PortfolioDetail() {
 										<div className='flex shrink-0 gap-2'><button type='button' onClick={()=>openEditModal(row)} className={historyEditButtonClass} aria-label='Editar valuación'><FaPencilAlt /></button><button type='button' onClick={()=>openDeleteModal(row)} className={historyDeleteButtonClass} aria-label='Eliminar valuación'><FaTrashAlt /></button></div>
 									</div>
 									<div className='grid grid-cols-2 gap-x-4 gap-y-3 mt-4'>
-										<div><p className='text-xs text-gray-500'>Valor cuotaparte</p><p className='font-semibold'>{row.navValue > 0 ? row.navValue.toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</p></div>
-										<div><p className='text-xs text-gray-500'>Variación NAV</p><p className={`font-semibold ${row.navChangePercent == null ? 'text-gray-400' : row.navChangePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>{row.navChangePercent == null ? 'Inicial' : `${row.navChangePercent >= 0 ? '+' : ''}${row.navChangePercent.toFixed(3)}%`}</p></div>
-										<div><p className='text-xs text-gray-500'>Cuotapartes</p><p className='font-medium'>{Number(row.shares || position.shares || 0) > 0 ? Number(row.shares || position.shares).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</p></div>
-										<div><p className='text-xs text-gray-500'>Valuación</p><p className='font-medium whitespace-nowrap'>{money(row.balance,position.currency)}</p></div>
+										<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Valor cuotaparte</p><p className='font-semibold tabular-nums break-words'>{row.navValue > 0 ? row.navValue.toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</p></div>
+										<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Variación NAV</p><p className={`font-semibold tabular-nums ${publishedReturnTone(row.navChangePercent)}`}>{row.navChangePercent == null ? 'Inicial' : formattedPublishedReturn(row.navChangePercent, 3)}</p></div>
+										<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Cuotapartes</p><p className='font-medium tabular-nums break-words'>{Number(row.shares || position.shares || 0) > 0 ? Number(row.shares || position.shares).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</p></div>
+										<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Valuación</p><p className='font-medium tabular-nums break-words'>{money(row.balance,position.currency)}</p></div>
 									</div>
 									{row.note && <p className='mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-gray-500 break-words'>{row.note}</p>}
 								</article>)}
@@ -240,7 +237,7 @@ export default function PortfolioDetail() {
 							<div className='mt-4 hidden md:block overflow-x-auto'>
 								<table className='w-full min-w-[760px] text-sm'>
 									<thead><tr className='text-left text-gray-500'><th className='py-2 pr-4'>Fecha</th><th className='pr-4'>Cuotaparte</th><th className='pr-4'>Variación NAV</th><th className='pr-4'>Cuotapartes</th><th className='pr-4'>Valuación</th><th className='text-right'>Acciones</th></tr></thead>
-									<tbody>{[...valuationHistory].reverse().map((row)=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3 pr-4 whitespace-nowrap'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td className='pr-4 whitespace-nowrap'>{row.navValue > 0 ? row.navValue.toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</td><td className={`pr-4 whitespace-nowrap ${row.navChangePercent == null ? 'text-gray-400' : row.navChangePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>{row.navChangePercent == null ? 'Inicial' : `${row.navChangePercent >= 0 ? '+' : ''}${row.navChangePercent.toFixed(3)}%`}</td><td className='pr-4 whitespace-nowrap'>{Number(row.shares || position.shares || 0) > 0 ? Number(row.shares || position.shares).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</td><td className='pr-4 whitespace-nowrap'>{money(row.balance,position.currency)}</td><td><div className='flex justify-end gap-2'><button type='button' onClick={()=>openEditModal(row)} className={historyEditButtonClass} aria-label='Editar valuación'><FaPencilAlt /></button><button type='button' onClick={()=>openDeleteModal(row)} className={historyDeleteButtonClass} aria-label='Eliminar valuación'><FaTrashAlt /></button></div></td></tr>)}</tbody>
+									<tbody>{[...valuationHistory].reverse().map((row)=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3 pr-4 whitespace-nowrap'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td className='pr-4 whitespace-nowrap'>{row.navValue > 0 ? row.navValue.toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</td><td className={`pr-4 whitespace-nowrap ${publishedReturnTone(row.navChangePercent)}`}>{row.navChangePercent == null ? 'Inicial' : formattedPublishedReturn(row.navChangePercent, 3)}</td><td className='pr-4 whitespace-nowrap'>{Number(row.shares || position.shares || 0) > 0 ? Number(row.shares || position.shares).toLocaleString('es-AR',{maximumFractionDigits:6}) : '—'}</td><td className='pr-4 whitespace-nowrap'>{money(row.balance,position.currency)}</td><td><div className='flex justify-end gap-2'><button type='button' onClick={()=>openEditModal(row)} className={historyEditButtonClass} aria-label='Editar valuación'><FaPencilAlt /></button><button type='button' onClick={()=>openDeleteModal(row)} className={historyDeleteButtonClass} aria-label='Eliminar valuación'><FaTrashAlt /></button></div></td></tr>)}</tbody>
 								</table>
 							</div>
 						</>
@@ -255,7 +252,19 @@ export default function PortfolioDetail() {
 								))}
 							</div>
 							<div className='mt-2 text-xs text-slate-600 dark:text-slate-300'>Los importes de aportes y retiros son movimientos de capital, no resultados. Registros ordenados por fecha y hora.</div>
-							<div className='mt-4 space-y-3 md:hidden'>{[...filteredHistory].reverse().map(row=><article key={row.id} className={FINANCIAL_ITEM_SURFACE_STYLES}><div className='flex items-start justify-between gap-3'><div className='min-w-0'><p className='text-xs text-gray-500'>Fecha</p><p className='font-semibold text-sm mt-0.5'>{asDate(row.capturedAt).toLocaleString('es-AR')}</p></div><div className='flex shrink-0 gap-2'><button type='button' onClick={()=>openEditModal(row)} className={historyEditButtonClass} aria-label='Editar verificación'><FaPencilAlt /></button><button type='button' onClick={()=>openDeleteModal(row)} className={historyDeleteButtonClass} aria-label='Eliminar verificación'><FaTrashAlt /></button></div></div><div className='grid grid-cols-2 gap-x-4 gap-y-3 mt-4'><div><p className='text-xs text-gray-500'>Saldo</p><p className='font-semibold whitespace-nowrap'>{money(row.balance,position.currency)}</p></div><div><p className='text-xs text-gray-500'>Cambio</p><p className={`font-semibold tabular-nums ${movementTone(row)}`}>{movementValue(row,position.currency)}</p></div><div><p className='text-xs text-gray-500'>Tipo</p><p className='font-medium'>{accountMovementLabel(accountMovementType(row))}</p></div><div><p className='text-xs text-gray-500'>Esperado</p><p className='font-medium whitespace-nowrap'>{money(row.expectedEarning,position.currency)}</p></div></div>{row.note && <p className='mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-gray-500 break-words'>{row.note}</p>}</article>)}</div>
+							<div className='mt-4 space-y-3 md:hidden'>{[...filteredHistory].reverse().map(row=><article key={row.id} className={FINANCIAL_ITEM_SURFACE_STYLES}>
+								<div className='flex items-start justify-between gap-3'>
+									<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Fecha</p><p className='font-semibold text-sm mt-0.5'>{asDate(row.capturedAt).toLocaleString('es-AR')}</p></div>
+									<div className='flex shrink-0 gap-2'><button type='button' onClick={()=>openEditModal(row)} className={historyEditButtonClass} aria-label='Editar verificación'><FaPencilAlt /></button><button type='button' onClick={()=>openDeleteModal(row)} className={historyDeleteButtonClass} aria-label='Eliminar verificación'><FaTrashAlt /></button></div>
+								</div>
+								<div className='grid grid-cols-2 gap-x-4 gap-y-3 mt-4'>
+									<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Saldo</p><p className='font-semibold tabular-nums break-words'>{money(row.balance,position.currency)}</p></div>
+									<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Cambio</p><p className={`font-semibold tabular-nums break-words ${movementTone(row)}`}>{movementValue(row,position.currency)}</p></div>
+									<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Tipo</p><p className='font-medium break-words'>{accountMovementLabel(accountMovementType(row))}</p></div>
+									<div className='min-w-0'><p className='text-xs text-slate-600 dark:text-slate-300'>Esperado</p><p className='font-medium tabular-nums break-words'>{money(row.expectedEarning,position.currency)}</p></div>
+								</div>
+								{row.note && <p className='mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 break-words'>{row.note}</p>}
+							</article>)}</div>
 							<div className='mt-4 hidden md:block overflow-x-auto'><table className='w-full min-w-[760px] text-sm'><thead><tr className='text-left text-gray-500'><th className='py-2 pr-4'>Fecha</th><th className='pr-4'>Saldo</th><th className='pr-4'>Cambio</th><th className='pr-4'>Tipo</th><th className='pr-4'>Esperado</th><th className='text-right'>Acciones</th></tr></thead><tbody>{[...filteredHistory].reverse().map(row=><tr key={row.id} className='border-t dark:border-slate-700'><td className='py-3 pr-4 whitespace-nowrap'>{asDate(row.capturedAt).toLocaleString('es-AR')}</td><td className='pr-4 whitespace-nowrap'>{money(row.balance,position.currency)}</td><td className={`pr-4 whitespace-nowrap ${movementTone(row)}`}>{movementValue(row,position.currency)}</td><td className='pr-4 whitespace-nowrap'>{accountMovementLabel(accountMovementType(row))}</td><td className='pr-4 whitespace-nowrap'>{money(row.expectedEarning,position.currency)}</td><td><div className='flex justify-end gap-2'><button type='button' onClick={()=>openEditModal(row)} className={historyEditButtonClass} aria-label='Editar verificación'><FaPencilAlt /></button><button type='button' onClick={()=>openDeleteModal(row)} className={historyDeleteButtonClass} aria-label='Eliminar verificación'><FaTrashAlt /></button></div></td></tr>)}</tbody></table></div>
 						</>
 					)}

@@ -216,3 +216,69 @@ test('FCI still distinguishes NAV valuation from realized interest in the shared
   expect(screen.queryByRole('button',{name:'Capital'})).not.toBeInTheDocument();
   expect(deletePortfolioSnapshot).not.toHaveBeenCalled();
 });
+
+test('FCI hides blank published months, preserves real 0%, and shows negative returns in rose', async () => {
+  const { subscribePortfolioPositions } = require('../services/portfolioService');
+  subscribePortfolioPositions.mockImplementationOnce((uid, onData) => {
+    onData([{
+      id: 'position-1', name: 'FCI sintético', institution: 'Gestora QA',
+      category: 'FCI', trackingMode: 'NAV', currency: 'USD', balance: 25000,
+      nav: 250, shares: 100, publishedYtdReturn: -4.2,
+      monthlyReturns: { jan: '', feb: null, mar: ' ', apr: 0, may: '-1.25', jun: '1.5', jul: 'sin dato' },
+    }]);
+    return () => {};
+  });
+  render(<PortfolioDetail />);
+  expect(await screen.findByRole('heading', { name: 'FCI sintético', level: 1 })).toBeInTheDocument();
+  expect(screen.queryByText('Ene')).not.toBeInTheDocument();
+  expect(screen.queryByText('Feb')).not.toBeInTheDocument();
+  expect(screen.queryByText('Mar')).not.toBeInTheDocument();
+  expect(screen.queryByText('Jul')).not.toBeInTheDocument();
+  expect(screen.getByText('Abr')).toBeInTheDocument();
+  expect(screen.getByText('May')).toBeInTheDocument();
+  expect(screen.getByText('Jun')).toBeInTheDocument();
+  expect(screen.getByText('0.00%')).toHaveClass('text-slate-900', 'dark:text-slate-50');
+  expect(screen.getByText('-1.25%')).toHaveClass('text-rose-700', 'dark:text-rose-400');
+  expect(screen.getByText('+1.50%')).toHaveClass('text-emerald-700', 'dark:text-emerald-400');
+  expect(screen.getAllByText('-4.20%')).toHaveLength(2);
+  screen.getAllByText('-4.20%').forEach((value) => expect(value).toHaveClass('text-rose-700', 'dark:text-rose-400'));
+  expect(screen.getByText('+0.25%')).toBeInTheDocument();
+  expect(screen.getByText('+0.23%')).toBeInTheDocument();
+  expect(screen.getByText(/No equivale a rentabilidad anual ni a ganancia realizada/)).toBeInTheDocument();
+});
+
+test('FCI with only missing monthly returns shows the empty state instead of fabricated 0% data', async () => {
+  const { subscribePortfolioPositions } = require('../services/portfolioService');
+  subscribePortfolioPositions.mockImplementationOnce((uid, onData) => {
+    onData([{
+      id: 'position-1', name: 'FCI sin meses', institution: 'Gestora QA',
+      category: 'FCI', trackingMode: 'NAV', currency: 'ARS', balance: 45000,
+      publishedYtdReturn: '', monthlyReturns: { jan: '', feb: null, mar: ' ' },
+    }]);
+    return () => {};
+  });
+  render(<PortfolioDetail />);
+  expect(await screen.findByRole('heading', { name: 'FCI sin meses', level: 1 })).toBeInTheDocument();
+  expect(screen.getByText(/Los meses sin datos no se consideran 0%/)).toBeInTheDocument();
+  expect(screen.queryByText('Suma simple')).not.toBeInTheDocument();
+  expect(screen.queryByText('Acumulado compuesto')).not.toBeInTheDocument();
+  expect(screen.getByText('YTD publicado').nextSibling).toHaveTextContent('—');
+});
+
+test('a negative recorded annual rate is not shown as a green gain', async () => {
+  const { subscribePortfolioPositions } = require('../services/portfolioService');
+  subscribePortfolioPositions.mockImplementationOnce((uid, onData) => {
+    onData([{
+      id: 'position-1', name: 'Activo sintético', institution: 'Cuenta QA',
+      category: 'Otro', currency: 'USD', balance: 120000, annualRate: -2.75,
+    }]);
+    return () => {};
+  });
+  const { container } = render(<PortfolioDetail />);
+  expect(await screen.findByRole('heading', { name: 'Activo sintético', level: 1 })).toBeInTheDocument();
+  expect(screen.getByText('-2.75%')).toHaveClass('text-rose-700', 'dark:text-rose-400');
+  expect(screen.getByText('Rendimiento registrado')).toBeInTheDocument();
+  const mobileHistory = container.querySelector('[class*="md:hidden"]');
+  expect(mobileHistory).not.toBeNull();
+  expect(mobileHistory.querySelectorAll('.tabular-nums.break-words').length).toBeGreaterThanOrEqual(3);
+});

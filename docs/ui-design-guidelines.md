@@ -145,6 +145,17 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
 - Sensitive CBU, alias, account number, routing and SWIFT fields must not be present in the rendered DOM until individually revealed. The reveal and copy controls use explicit accessible labels, and closing the section remasks all values. Keep masking independent of the remembered section expansion state.
 - Asset-specific valuation math and financial labels are unchanged. See [Portfolio detail UX #228 phase 2](portfolio-issue-228-phase2.md).
 
+## Portfolio published returns, phase 3 (#228)
+
+- Published FCI return months with blank, whitespace, null or invalid values
+  are **missing**, not 0%; keep a genuinely reported numeric zero visible.
+- Use signed percentages with semantic slate/emerald/rose tones in light and
+  dark modes for annual, YTD, monthly and compounded returns. An unreported
+  percentage is `—`, never fabricated 0% or an unconditional green result.
+- Published monthly aggregates include *only recorded months* and are not
+  realized profit; native-currency balances and large mobile history amounts
+  must wrap without clipping. See [Portfolio phase 3](portfolio-issue-228-phase3.md).
+
 ## Banks imported PDF linking (issue #227, phase 3)
 Use the **real Transactions record surface / disclosure tokens** for pending statements. First scan shows document identity, period, close/due dates, masked ARS/USD totals and one 44px review action. Keep candidate selection and PDF line-items behind a disclosure. Use the existing shared GenericModal to confirm the exact target bank/card; don't write until confirmed, never optimistically create expenses or duplicate imported consumptions. Keep Firestore errors actionable without exposing backend details. See [Banks PDF linking](banks-issue-227-phase3.md).
 
