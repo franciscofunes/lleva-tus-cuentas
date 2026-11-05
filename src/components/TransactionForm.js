@@ -14,6 +14,7 @@ import {
 } from "../actionCreators/databaseActions";
 import InfoTooltip from "../components/InfoTooltip";
 import TransactionLocationField from "./TransactionLocationField";
+import ReceiptOcrImport from './ReceiptOcrImport';
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from "../shared/constants/tooltip-messages.const";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
 import { categoriesForNewTransactions, categoryLabel, getCategoryCurrency, categoryDescription } from "../utils/customCategories";
@@ -69,6 +70,8 @@ const TransactionForm = ({
   customDetails = {},
   setCustomDetails = () => {},
   hasSavedCustomDetails = false,
+  startWithReceiptScanner = false,
+  privacyHidden = false,
   setIsOpen,
 }) => {
   const dispatch = useDispatch();
@@ -76,6 +79,8 @@ const TransactionForm = ({
   const isDataFetching = useSelector((state) => state.database.isDataFetching);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMarkdown, setShowMarkdown] = useState(false);
+  const [showReceiptScanner, setShowReceiptScanner] = useState(Boolean(startWithReceiptScanner));
+  const [receiptCurrency, setReceiptCurrency] = useState(null);
   const [markdown, setMarkdown] = useState("");
   const [isParsingMarkdown, setIsParsingMarkdown] = useState(false);
   const [markdownMessage, setMarkdownMessage] = useState("");
@@ -161,6 +166,36 @@ const TransactionForm = ({
     }
   };
 
+  const applyReceipt = (fields) => {
+    // New entries derive the currency from the category. Never turn a USD
+    // receipt into an ARS expense or invent an FX transaction.
+    if (/(?:Compra|Venta|Ingreso) divisas|Resumen tarjeta/i.test(category || '')) {
+      setMarkdownMessage('El ticket representa un gasto individual, no una operación de divisas ni un resumen de tarjeta. Elegí una categoría de gasto.');
+      return;
+    }
+    const chosenCurrency = edit ? (transactionCurrency === 'USD' ? 'USD' : 'ARS') : getCategoryCurrency(category, categories);
+    if (fields.currency && category && chosenCurrency !== fields.currency) {
+      setMarkdownMessage(`La categoría elegida usa ${chosenCurrency}, pero el ticket indica ${fields.currency}. Elegí una categoría de esa moneda antes de aplicar.`);
+      return;
+    }
+    if (fields.merchant) {
+      setName(fields.merchant);
+      setValue('name', fields.merchant, {shouldValidate: true});
+    }
+    if (fields.amount != null) {
+      setAmount(fields.amount);
+      setValue('amount', fields.amount, {shouldValidate: true});
+    }
+    if (fields.date) {
+      setSelectedDate(fields.date);
+      setValue('selectedDate', fields.date, {shouldValidate: true});
+    }
+    if (!edit && fields.currency) setTransactionCurrency(fields.currency);
+    setReceiptCurrency(fields.currency || null);
+    setMarkdownMessage('Datos del ticket aplicados al borrador. Verificá el importe, la moneda y elegí una categoría antes de guardar.');
+    setShowReceiptScanner(false);
+  };
+
   const applyStatement = (statement) => {
     // Explicit button: never overwrite an existing card transaction silently.
     setName((statement.institution + " " + statement.cardBrand).slice(0, 30));
@@ -176,6 +211,9 @@ const TransactionForm = ({
     setIsSubmitting(true);
     setMarkdownMessage("");
     try {
+      if (receiptCurrency && effectiveCurrency !== receiptCurrency) {
+        throw new Error(`El ticket indica ${receiptCurrency}, pero la categoría seleccionada guarda en ${effectiveCurrency}. Corregí la categoría antes de continuar.`);
+      }
       if (isCreditCardCategory && statementBankId && !statementCardId) {
         throw new Error("Elegí una tarjeta o dejá el banco sin asignar.");
       }
@@ -218,6 +256,7 @@ const TransactionForm = ({
       setStatementBankId("");
       setStatementCardId("");
       setStatementDraft(null);
+      setReceiptCurrency(null);
       setDraftExpenseId(null);
       setName("");
       setAmount("");
@@ -254,6 +293,13 @@ const TransactionForm = ({
         <h1 className="font-Nunito font-semibold text-lg sm:text-xl dark:text-purple-500 underline">
           {edit ? "Editar transacción" : "Crear transacción"}
         </h1>
+        <div className='rounded-xl border border-violet-300 bg-violet-50 p-3 dark:border-violet-600/60 dark:bg-slate-800'>
+          <button type='button' aria-expanded={showReceiptScanner} onClick={() => setShowReceiptScanner((open) => !open)}
+            className='flex min-h-[44px] w-full items-center justify-between gap-2 rounded-lg text-left text-sm font-bold text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200'>
+            <span>Escanear ticket con cámara o foto</span><span aria-hidden='true'>{showReceiptScanner ? '−' : '+'}</span>
+          </button>
+          {showReceiptScanner && <div className='mt-3'><ReceiptOcrImport onApply={applyReceipt} privacyHidden={privacyHidden} disabled={isSubmitting}/></div>}
+        </div>
         <div className="rounded-lg border border-purple-500/50 bg-purple-500/5 p-2.5 sm:p-3">
           <button type="button" onClick={() => setShowMarkdown((value) => !value)} className="w-full flex items-center justify-between text-sm font-semibold text-purple-600 dark:text-purple-300">
             <span>{edit ? "Actualizar desde Markdown" : "Pre-rellenar desde Markdown"}</span><span>{showMarkdown ? "−" : "+"}</span>

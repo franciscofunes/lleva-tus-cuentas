@@ -35,6 +35,7 @@ import TransactionsHeaderActions from "../components/TransactionsHeaderActions";
 import { TRANSACTIONS_PAGE_COPY } from "../shared/constants/transactionsPageCopy";
 import FinancialOverviewPanel from "../components/FinancialOverviewPanel";
 import TransactionsExportReady from "../components/TransactionsExportReady";
+import ScreenshotImportShortcut from '../components/ScreenshotImportShortcut';
 import CategoryManager from "../components/CategoryManager";
 import { buildTransactionOverview, buildTransactionsLitaMarkdown, prepareTransactionsExport } from "../utils/transactionsExport";
 import { toast } from "react-toastify";
@@ -222,6 +223,7 @@ function Dashboard() {
   const [edit, setEdit] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
+  const [startWithReceiptScanner, setStartWithReceiptScanner] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
 
   const [expenseId, setExpenseId] = useState("");
@@ -503,6 +505,11 @@ function Dashboard() {
   };
 
   const openModal = () => {
+    setStartWithReceiptScanner(false);
+    setIsOpen(true);
+  };
+  const openReceiptScanner = () => {
+    setStartWithReceiptScanner(true);
     setIsOpen(true);
   };
 
@@ -582,6 +589,7 @@ function Dashboard() {
     setIsSellCurrenciesCategory(false);
     setIsCreditCardCategory(false);
     setIsCurrencyIncomeCategory(false);
+    setStartWithReceiptScanner(false);
     setIsOpen(false);
   };
 
@@ -682,6 +690,14 @@ function Dashboard() {
           onToggle={() => toggleDashboardSection("transactions")}
           className="min-w-0 lg:col-span-2 lg:row-span-2"
         >
+
+          <div className='mb-4'>
+            <ScreenshotImportShortcut title='Escanear ticket de compra'
+              description='Sacá una foto o elegí una imagen para detectar comercio, total y fecha sin subirla al servidor.'
+              actionLabel='Escanear ticket' onAction={openReceiptScanner}
+              disabled={!isDataVisible}
+              hint={!isDataVisible ? 'Mostrá los importes para escanear un ticket.' : 'Revisás y corregís los datos en el formulario antes de guardar.'}/>
+          </div>
 
 
             {isDataFetching ? (
@@ -862,6 +878,8 @@ function Dashboard() {
         {isOpen && (
           <GenericModal
             component={TransactionForm}
+            startWithReceiptScanner={startWithReceiptScanner}
+            privacyHidden={!isDataVisible}
             name={name}
             amount={amount}
             transactionCurrency={transactionCurrency}
