@@ -102,6 +102,10 @@ const modalPublishedRateTone = (value) => value == null || value === 0
 	? 'text-slate-100'
 	: value > 0 ? 'text-emerald-300' : 'text-rose-300';
 
+// Cash with no reported annual return is liquid principal, not a yield-bearing product.
+const isCashWithoutYield = (position) => position?.category === 'Cash'
+	&& Number(position.annualRate || 0) === 0;
+
 function Portfolio() {
 	const user = useSelector((state) => state.auth.user);
 	const isFetching = useSelector((state) => state.auth.isFetching);
@@ -823,8 +827,8 @@ function Portfolio() {
 									<div>
 										<p className='text-xs font-bold uppercase tracking-wider text-violet-700 dark:text-violet-200'>{position.institution}</p>
 										<div className='flex items-start gap-2 mt-1'>
-											<Link to={`/portfolio/${position.id}`} className='group flex items-center gap-2 min-w-0 rounded-lg -ml-2 px-2 py-1 hover:bg-purple-500/10 focus:outline-none focus:ring-2 focus:ring-purple-500' aria-label={`Ver detalle de ${position.name}`}>
-												<span className='min-w-0'><span className='block break-words text-lg font-bold leading-snug text-slate-900 group-hover:text-violet-700 dark:text-slate-50 dark:group-hover:text-violet-200 sm:text-xl'>{position.name}</span><span className='block mt-1 text-xs font-semibold text-purple-500'>Ver detalles <span aria-hidden='true'>›</span></span></span>
+											<Link to={`/portfolio/${position.id}`} className='group flex items-center gap-2 min-w-0 rounded-lg -ml-2 px-2 py-1 hover:bg-purple-500/10 focus:outline-none focus:ring-2 focus:ring-purple-500' aria-label={`Abrir ficha de ${position.name}`}>
+												<span className='min-w-0'><span className='block break-words text-lg font-bold leading-snug text-slate-900 group-hover:text-violet-700 dark:text-slate-50 dark:group-hover:text-violet-200 sm:text-xl'>{position.name}</span><span className='block mt-1 text-xs font-semibold text-violet-700 dark:text-violet-200'>Abrir ficha <span aria-hidden='true'>›</span></span></span>
 											</Link>
 											{position.notes && <InfoTooltip placement='top' content={position.notes} />}
 										</div>
@@ -832,6 +836,14 @@ function Portfolio() {
 										<p className='mt-3 break-words text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50 sm:text-3xl'>{privateMoney(position.balance, position.currency)}</p>
 									</div>
 									<div className='min-w-0 text-left sm:min-w-[14rem] sm:text-right'>
+										{isCashWithoutYield(position) ? (
+											<>
+												<p className='text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300'>Disponibilidad</p>
+												<p className='mt-1 break-words text-base font-semibold text-slate-900 dark:text-slate-50'>Efectivo sin rendimiento</p>
+												<p className='mt-1 text-sm text-slate-600 dark:text-slate-300'>{position.liquidity || 'Disponibilidad no informada'}</p>
+											</>
+										) : (
+											<>
 										<p className='text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300'>{position.category === 'FCI' || position.trackingMode === 'NAV' ? 'YTD publicado por el fondo' : 'Tasa anual informada'}</p>
 										<p className={`break-words text-xl font-bold tabular-nums sm:text-2xl ${reportedRateTone(position.category === 'FCI' || position.trackingMode === 'NAV' ? position.publishedYtdReturn : position.annualRate)}`}>
 											{privateReportedRate(position.category === 'FCI' || position.trackingMode === 'NAV' ? position.publishedYtdReturn : position.annualRate)}
@@ -844,6 +856,8 @@ function Portfolio() {
 											<p className='mt-1 break-words text-sm text-slate-600 dark:text-slate-300'>≈ {privateMoney(Number(position.balance || 0) * Number(position.annualRate) / 100 / 12, position.currency)} / mes estimado</p>
 										) : (
 											<p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>Sin proyección: tasa no informada</p>
+										)}
+											</>
 										)}
 										<button type='button' aria-expanded={Boolean(expandedPositionIds[position.id])}
 											aria-controls={'portfolio-position-details-' + position.id}
@@ -917,6 +931,7 @@ function Portfolio() {
 
 				</div>
 				</>}
+				<div className='mt-5' data-testid='portfolio-tools-spacing'>
 				<FinancialOverviewPanel
 						isLoading={loading}
 						id='portfolio-overview'
@@ -935,6 +950,7 @@ function Portfolio() {
 							{ id: 'earnings', icon: FaRegClock, label: 'Con ganancias', value: privateCount(positions.filter((item) => Number(item.realizedEarnings || 0) > 0).length) },
 						]}
 					/>
+				</div>
 
 			</div>
 
