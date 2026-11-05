@@ -38,6 +38,15 @@ test('authenticated financial movements never leak into a visual review fixture'
   expect(dashboard).not.toContain('fakeAuthenticatedUser');
 });
 
+test('receipt scanning is a discoverable transaction activity action with explicit privacy and review', () => {
+  const activity = dashboard.slice(dashboard.indexOf('id="transactions-list"'), dashboard.indexOf('id="transactions-charts"'));
+  expect(activity).toContain("title='Escanear ticket de compra'");
+  expect(activity).toContain('onAction={openReceiptScanner}');
+  expect(activity).toContain('disabled={!isDataVisible}');
+  expect(dashboard).toContain('startWithReceiptScanner={startWithReceiptScanner}');
+  expect(dashboard).toContain('privacyHidden={!isDataVisible}');
+});
+
 test('the unified period-and-search toolbar appears once before financial summaries', () => {
   const toolbar = dashboard.slice(dashboard.indexOf('id="transactions-scope"'), dashboard.indexOf('id="transactions-summary"'));
   expect(toolbar).toContain('<ExpenseFilter onPeriodChange={setSelectedPeriodInfo}');

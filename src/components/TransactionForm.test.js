@@ -102,6 +102,17 @@ test('the category picker offers a prominent action that opens the existing mana
   expect(picker).toHaveValue('Transporte 🚌');
 });
 
+test('a receipt scanner opens within the existing transaction form and has the same themed surface',()=>{
+  render(<TransactionHarness/>);
+  const trigger=screen.getByRole('button',{name:'Escanear ticket con cámara o foto'});
+  expect(trigger).toHaveAttribute('aria-expanded','false');
+  expect(trigger.closest('div')).toHaveClass('dark:bg-slate-800');
+  fireEvent.click(trigger);
+  expect(trigger).toHaveAttribute('aria-expanded','true');
+  expect(screen.getByRole('region',{name:'Escanear ticket con IA local'})).toBeInTheDocument();
+  expect(screen.getByRole('button',{name:'Abrir cámara para sacar foto'})).toBeInTheDocument();
+});
+
 test('a created personal category can be selected immediately after returning to the draft', () => {
   render(<TransactionHarness />);
   const picker = screen.getByRole('combobox', { name: 'Categoría' });

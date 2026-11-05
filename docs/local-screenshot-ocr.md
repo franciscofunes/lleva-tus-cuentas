@@ -1,10 +1,20 @@
-# Local screenshot OCR — Banks and Portfolio
+# Local screenshot OCR — Transactions, Banks and Portfolio
 
 ## Scope
 
 LTC can read **PNG, JPG, or WEBP screenshots** with [`runonweb/ocr`](https://github.com/midudev/runonweb.ai), using PP-OCRv6 Small (~31 MB), WebGPU where available and WebAssembly otherwise. The model downloads into the browser on demand after an explicit action; screenshot pixels and detected text are not sent to Lita, Firestore or another inference API. The browser may request public model weights from Hugging Face/CDN; it must not send the screenshot itself.
 
 `runonweb` and the `@browser-ai` AI SDK feasibility study are different projects. This PR uses only `runonweb/ocr`, not the Vercel AI SDK or a general-purpose in-browser LLM.
+
+## Transactions: camera and receipt review
+
+Open `/transacciones` → **Transacciones** → **Escanear ticket de compra** → **Escanear ticket**. The new transaction form opens with **Escanear ticket con cámara o foto** expanded. Alternatively, use **Agregar movimiento** and expand the same control.
+
+- Tap **Abrir cámara para sacar foto** to request browser camera permission **at that moment only**. Confirm the framing and tap **Tomar foto**; the video track stops immediately after capture or closing. On browsers without `getUserMedia`, the button opens the native photo capture picker (`capture="environment"`). The gallery picker always remains available, including on permission denial.
+- Read the photo locally. Android defaults to the **Tiny (~6 MB) / WASM** model, which uses less memory; users can explicitly switch to **Small (~31 MB)** for improved accuracy. Desktop defaults to Small. All OCR outputs may contain mistakes.
+- The receipt parser proposes only a plausible merchant, a **unique explicitly labeled total** (not subtotal, tax, change or several competing totals), and a recognizable issue date. Missing or ambiguous values stay empty. The category is **never inferred**; a bare `$` does not prove ARS vs USD. The user must choose the correct expense category and native currency.
+- Check detected values against the photo, choose fields, and click **Aplicar campos seleccionados**. This changes an **unsaved form draft only**. Confirm the exact ARS/USD currency, amount and date before clicking **Crear transacción**. If the chosen category currency contradicts the receipt, the form blocks application and requests another category. No Firestore schema/rules changes and no camera image or OCR transcript persists.
+- Hiding financial values removes photo and text from the review UI and stops the camera. The app does **not** request camera access on page load.
 
 ## Banks: existing review and financial contract
 
@@ -25,9 +35,13 @@ The **new/edit position** modal includes the same local screenshot reader above 
 
 The owner selects individual changes and clicks **Aplicar campos seleccionados** to update only the unsaved form draft; a separate **Guardar posición** persists the reviewed form. Balance changes never become earnings or withdrawals, no exchange rates are invented, and native currencies remain distinct. Privacy mode hides screenshot content and import proposals. No new Firestore fields or rules are required.
 
+For a **fixed-term deposit** screenshot, the OCR normalizer recognizes explicitly labeled **Moneda**, **Vencimiento** (including two-digit years), **Fecha de valor**, **Tasa de interés nominal** and **Tasa de interés efectiva**. It deliberately ignores **Intereses devengados** and **Intereses totales** as realized earnings or capital: accrued/projected interest is not a cash receipt or balance update. The owner still reviews every suggested field.
+
 ## Build compatibility
 
 `runonweb@0.1.0` publishes TypeScript sources in its ESM exports. This cannot be parsed directly by LTC's Create React App 5 / Webpack configuration. `npm run prepare:browser-ai` uses a pinned `esbuild` dev dependency to bundle **only `runonweb/ocr`** to ignored `src/generated/browser-ai/` artifacts. `prebuild` and `pretest` regenerate them. `LocalScreenshotOcr` imports the resulting module dynamically; it is not part of the initial dashboard bundle. The generated files should not be committed.
+
+**Android compatibility fix:** runonweb 0.1.0 hardcodes the ONNX Runtime WASM asset URL for **v1.30.0**, while its dependency range installs a newer JS runtime (e.g. **v1.31.1**). Mixed JS/WASM binaries can fail to initialize. The `esbuild` OCR-only loader substitutes the matching installed version during preparation, and fails visibly if upstream changes that contract. This fixes a concrete build/runtime mismatch; mobile hardware/download restrictions still require real-device verification. Error copy now separates model download, runtime initialization and image-reading problems.
 
 ## QA and boundaries
 

@@ -7,6 +7,8 @@ const esbuild = require('esbuild');
 
 async function main() {
   const outdir = path.join(__dirname, '../src/generated/browser-ai');
+  const ortDist = path.dirname(require.resolve('onnxruntime-web'));
+  const ortVersion = JSON.parse(fs.readFileSync(path.join(ortDist, '../package.json'), 'utf8')).version;
   await esbuild.build({
     entryPoints: [require.resolve('runonweb/ocr')],
     outdir,
@@ -21,10 +23,27 @@ async function main() {
     legalComments: 'none',
     banner: {js: '/* eslint-disable */'},
     minify: true,
+    plugins: [{
+      name: 'use-matching-onnx-wasm-version',
+      setup(build) {
+        // runonweb@0.1.0 hardcodes the 1.30.0 WASM CDN, although its
+        // dependency allows newer onnxruntime-web JS. ORT JS and WASM MUST
+        // be the same version, otherwise model initialization fails in browser.
+        build.onLoad({filter: /[/\\]runonweb[/\\]src[/\\]ocr[/\\]index\.ts$/}, (args) => {
+          const source = fs.readFileSync(args.path, 'utf8');
+          const original = "const ORT_WASM = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/'";
+          if (!source.includes(original)) throw new Error('runonweb OCR WASM URL changed; review version compatibility');
+          return {
+            contents: source.replace(original, `const ORT_WASM = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@${ortVersion}/dist/'`),
+            loader: 'ts',
+            resolveDir: path.dirname(args.path),
+          };
+        });
+      },
+    }],
   });
   // ONNX Runtime references its Web Worker through `new URL(..., import.meta.url)`.
   // Keep the worker sibling alongside the generated chunks for CRA's asset loader.
-  const ortDist = path.dirname(require.resolve('onnxruntime-web'));
   const workerSource = fs.readFileSync(path.join(ortDist, 'ort.bundle.min.mjs'), 'utf8')
     .replace(/\/\/# sourceMappingURL=ort\.bundle\.min\.mjs\.map\s*$/, '');
   fs.writeFileSync(path.join(outdir, 'ort.bundle.min.mjs'), '/* eslint-disable */\n' + workerSource);

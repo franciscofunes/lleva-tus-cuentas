@@ -44,3 +44,58 @@ test('unsupported files are rejected without loading a model',()=>{
   expect(screen.getByRole('button',{name:'Leer captura en este dispositivo'})).toBeDisabled();
   expect(OCR).not.toHaveBeenCalled();
 });
+
+test('camera permission is requested only when clicked and tracks are stopped on close',async()=>{
+  const stop = jest.fn();
+  const getUserMedia = jest.fn().mockResolvedValue({getTracks:()=>[{stop}]});
+  Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{getUserMedia}});
+  const play = jest.spyOn(HTMLMediaElement.prototype,'play').mockImplementation(()=>Promise.resolve());
+  const {unmount}=render(<LocalScreenshotOcr onRecognized={jest.fn()} allowCamera/>);
+  expect(getUserMedia).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'Abrir cámara para sacar foto'}));
+  await waitFor(()=>expect(screen.getByRole('button',{name:'Cerrar cámara'})).toBeInTheDocument());
+  expect(getUserMedia).toHaveBeenCalledWith({audio:false,video:{facingMode:{ideal:'environment'}}});
+  fireEvent.click(screen.getByRole('button',{name:'Cerrar cámara'}));
+  expect(stop).toHaveBeenCalledTimes(1);
+  unmount();
+  play.mockRestore();
+  delete navigator.mediaDevices;
+});
+
+test('denied camera permission leaves image picker available and no OCR starts',async()=>{
+  Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{getUserMedia:jest.fn().mockRejectedValue({name:'NotAllowedError'})}});
+  render(<LocalScreenshotOcr onRecognized={jest.fn()} allowCamera/>);
+  fireEvent.click(screen.getByRole('button',{name:'Abrir cámara para sacar foto'}));
+  expect(await screen.findByRole('alert')).toHaveTextContent(/No se autorizó la cámara/);
+  expect(screen.getByLabelText('Elegir captura para lectura local')).toBeInTheDocument();
+  expect(OCR).not.toHaveBeenCalled();
+  delete navigator.mediaDevices;
+});
+
+test('hiding financial values stops an active camera without retaining a photo',async()=>{
+  const stop = jest.fn();
+  Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{getUserMedia:jest.fn().mockResolvedValue({getTracks:()=>[{stop}]})}});
+  const play = jest.spyOn(HTMLMediaElement.prototype,'play').mockImplementation(()=>Promise.resolve());
+  const {rerender}=render(<LocalScreenshotOcr onRecognized={jest.fn()} allowCamera/>);
+  fireEvent.click(screen.getByRole('button',{name:'Abrir cámara para sacar foto'}));
+  await waitFor(()=>expect(screen.getByRole('button',{name:'Cerrar cámara'})).toBeInTheDocument());
+  rerender(<LocalScreenshotOcr onRecognized={jest.fn()} allowCamera privacyHidden/>);
+  await waitFor(()=>expect(stop).toHaveBeenCalledTimes(1));
+  expect(screen.queryByRole('button',{name:'Tomar foto'})).not.toBeInTheDocument();
+  play.mockRestore();
+  delete navigator.mediaDevices;
+});
+
+test('browser runtime error explains the retry without exposing technical or financial data',async()=>{
+  OCR.mockImplementation(()=>({
+    load:jest.fn().mockRejectedValue(new Error('no available backend found: wasm initialization failed')),
+    dispose:jest.fn().mockResolvedValue(undefined),
+  }));
+  render(<LocalScreenshotOcr onRecognized={jest.fn()}/>);
+  fireEvent.change(screen.getByLabelText('Elegir captura para lectura local'),{
+    target:{files:[new File(['test'],'card.png',{type:'image/png'})]},
+  });
+  fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
+  expect(await screen.findByRole('alert')).toHaveTextContent(/No se pudo iniciar el motor de lectura/);
+  expect(screen.getByRole('combobox',{name:'Precisión del modelo OCR'})).toBeInTheDocument();
+});

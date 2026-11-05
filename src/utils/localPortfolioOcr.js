@@ -7,13 +7,19 @@ const LABELS = [
   ['cuotapartes', 'Cuotapartes'],
   ['saldo actual', 'Capital actual'],
   ['capital actual', 'Capital actual'],
+  ['tasa de interés nominal', 'Tasa anual'],
+  ['tasa de interes nominal', 'Tasa anual'],
+  ['tasa de interés efectiva', 'Tasa efectiva'],
+  ['tasa de interes efectiva', 'Tasa efectiva'],
   ['tasa anual', 'Tasa anual'],
+  ['fecha de valor', 'Fecha inicio'],
+  ['moneda', 'Moneda'],
   ['total ytd publicado', 'Total YTD publicado'],
   ['vencimiento', 'Vencimiento'],
   ['saldo', 'Saldo'],
 ];
 const NUMBER = /^(?:(?:US\$|U\$S|ARS|USD|EUR|USDT|\$)\s*)?-?\d[\d.,]*(?:\s*%)?$/i;
-const DATE = /^(?:20\d{2}-\d{2}-\d{2}|\d{2}[/-]\d{2}[/-]20\d{2})$/;
+const DATE = /^(?:20\d{2}-\d{2}-\d{2}|\d{2}[/-]\d{2}[/-](?:20)?\d{2})$/;
 
 export function preparePortfolioOcrText(source) {
   const text = String(source || '');
@@ -28,7 +34,9 @@ export function preparePortfolioOcrText(source) {
       const adjacent = lower === label ? lines[index + 1] || '' : '';
       const inline = lower.startsWith(label + ' ') ? line.slice(label.length).trim().replace(/^[:=-]\s*/, '') : '';
       const value = (inline || adjacent).trim();
-      if (!value || !(NUMBER.test(value) || (field === 'Vencimiento' && DATE.test(value)))) continue;
+      const isDate = field === 'Vencimiento' || field === 'Fecha inicio';
+      const isCurrency = field === 'Moneda';
+      if (!value || !(isDate ? DATE.test(value) : isCurrency ? /^(ARS|USD|EUR|USDT)$/i.test(value) : NUMBER.test(value))) continue;
       extracted.push(`${field}: ${value}`);
       seen.add(field);
       break;
