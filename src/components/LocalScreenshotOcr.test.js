@@ -96,6 +96,23 @@ test('browser runtime error explains the retry without exposing technical or fin
     target:{files:[new File(['test'],'card.png',{type:'image/png'})]},
   });
   fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
-  expect(await screen.findByRole('alert')).toHaveTextContent(/No se pudo iniciar el motor de lectura/);
+  expect(await screen.findByRole('alert')).toHaveTextContent(/\[OCR-MOTOR\] No se pudo iniciar el lector local/);
   expect(screen.getByRole('combobox',{name:'Precisión del modelo OCR'})).toBeInTheDocument();
+});
+
+test('classifies a blocked model download without echoing the remote URL or financial content',async()=>{
+  OCR.mockImplementation(()=>({
+    load:jest.fn().mockRejectedValue(new Error('Could not load det.onnx (403) https://example.net/private-token')),
+    dispose:jest.fn().mockResolvedValue(undefined),
+  }));
+  render(<LocalScreenshotOcr onRecognized={jest.fn()}/>);
+  fireEvent.change(screen.getByLabelText('Elegir captura para lectura local'),{
+    target:{files:[new File(['test'],'plazo-fijo.png',{type:'image/png'})]},
+  });
+  fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
+  expect(await screen.findByRole('alert')).toHaveTextContent(/\[OCR-NET\]/);
+  expect(screen.getByRole('alert')).not.toHaveTextContent(/private-token|plazo-fijo/);
+  expect(screen.getByText(/Lector local v2/)).toBeInTheDocument();
+  // The original screenshot remains available to retry without re-uploading.
+  expect(screen.getByRole('button',{name:'Leer captura en este dispositivo'})).toBeEnabled();
 });
