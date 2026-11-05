@@ -161,6 +161,22 @@ const openManualCardCharges = async () => {
   expect(screen.getByText('Supermercado de prueba')).toBeInTheDocument();
 };
 
+test('OCR import is discoverable in Mis bancos before opening a bank or card', async () => {
+  arrange(manuallyRecordedBankCard);
+  mount();
+  const shortcut = await screen.findByRole('region', { name: 'Importar captura de consumos' });
+  const action = within(shortcut).getByRole('button', { name: 'Importar captura' });
+  expect(action).toHaveClass('min-h-[44px]');
+  expect(action).toBeEnabled();
+  expect(screen.queryByText('Supermercado de prueba')).not.toBeInTheDocument();
+  fireEvent.click(action);
+  const dialog = screen.getByRole('dialog', { name: 'Importar consumos desde capturas o Markdown' });
+  expect(within(dialog).getByText(/Mostrá los importes de Bancos/)).toBeInTheDocument();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Mostrar importes y continuar' }));
+  expect(within(dialog).getByLabelText('Elegir captura para lectura local')).toBeInTheDocument();
+  expect(banking.saveManualCardCharge).not.toHaveBeenCalled();
+});
+
 test('tapping a manual charge delete only opens a modal, cancellation makes no write', async () => {
   arrange(manuallyRecordedBankCard);
   mount();
