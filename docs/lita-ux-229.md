@@ -8,7 +8,7 @@ The product-wide visual reference is the **actual Transactions screen** and the 
 
 ## Host panel
 - The floating panel is an accessible labeled modal, styled as an LTC white / opaque slate-800 surface with violet focus rings. Expand and close controls have **44×44 px** hit areas, and the header uses `COLLAPSIBLE_HEADER_STYLES`, consistent with financial widgets.
-- On phone widths it docks to the bottom as an 88dvh sheet; on desktop it remains a floating 420–440px chat panel. The existing `visualViewport` keyboard correction, 100dvh expanded mode and **iframe identity** are preserved; reopening restores focus to the originating page control.
+- On phone widths it docks to the bottom as an 88dvh sheet; on desktop it remains a floating 420–440px chat panel. The existing `visualViewport` keyboard correction, 100dvh expanded mode and **iframe identity** are preserved. The host now contains Tab/Shift+Tab navigation within the modal (including its iframe), redirects accidental background focus to Close and returns focus to the originating page control on dismissal. Cross-origin iframe keyboard behavior still requires physical-browser verification.
 - History and context continue to be owner-scoped. The iframe still only receives messages from the LTC host's exact origin and source; no credentials or API keys are exposed.
 
 ## Privacy contract
@@ -23,7 +23,7 @@ Privacy suppression applies to Transacciones, Bancos and Portfolio. It changes *
 - **Deployment order:** merge/deploy the LTC host first, then the Lita iframe. Older Lita builds without request IDs are still accepted by the host; new iframe builds need the acknowledgment-capable host.
 
 ## Verification
-1. `LitaAssitantPanel.test.js`: modal labeling, 44px controls, responsive keyboard dimensions, focus restoration, strict sender origin, confirmed writes, privacy context/history redaction and historical-query blocking.
+1. `LitaAssitantPanel.test.js`: modal labeling, 44px controls, responsive keyboard dimensions, Tab/Shift+Tab containment, focus restoration, strict sender origin, confirmed writes, privacy context/history redaction and historical-query blocking. The malformed duplicate test tail found on `main` was repaired so this suite can run again.
 2. `LitaIframeClipboard.test.js`: maintain clipboard-write delegation only.
 3. Lita repo: `tests/lita-ux-consistency.test.mjs` plus Next.js production build.
 4. Required but not claimed complete: authenticated side-by-side captures at **390, 1440 and 1728px**, light/dark and Android physical keyboard; focus, iframe scroll and message streaming in the deployed two-repo combination.

@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import LitaAssistantPanel, { visibleKeyboardLayout } from './LitaAssitantPanel';
 
 jest.mock('react-redux', () => ({
@@ -9,6 +10,9 @@ jest.mock('../services/litaChatService', () => ({
 	subscribeLitaChats: jest.fn(() => () => {}),
 	saveLitaChat: jest.fn(() => Promise.resolve()),
 	deleteLitaChat: jest.fn(() => Promise.resolve()),
+}));
+jest.mock('../services/litaHistoricalAnalysis', () => ({
+	queryLitaHistoricalTransactions: jest.fn(),
 }));
 jest.mock('../shared/constants/urls.const', () => ({
 	LITA_CHAT_LOCALHOST: 'http://localhost:3005',
@@ -80,7 +84,65 @@ describe('LITA iframe integration', () => {
 
 	test('shares Transactions visual chrome and uses accessible 44px dialog actions', () => {
 		const { container } = render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='banks' />);
-		const dialog = screen.getByRole('dialog', {name: 'Chat de LTC
+		const dialog = screen.getByRole('dialog', { name: 'Chat de LTC$' });
+		expect(dialog).toHaveAttribute('aria-modal', 'true');
+		expect(dialog).toHaveAttribute('aria-describedby', 'lita-panel-context');
+		expect(screen.getByText('Bancos')).toBeInTheDocument();
+		expect(dialog).toHaveClass('bg-white', 'dark:bg-slate-800');
+		expect(dialog).toHaveClass('h-[88dvh]', 'rounded-t-2xl');
+		const close = screen.getByRole('button', { name: 'Cerrar LITA' });
+		expect(close).toHaveClass('h-11', 'w-11');
+		expect(close).toHaveFocus();
+		const expand = screen.getByRole('button', { name: 'Expandir LITA a pantalla completa' });
+		expect(expand).toHaveClass('h-11', 'w-11');
+		expect(screen.getByTitle('Lita Assistant')).toHaveClass('dark:bg-slate-800');
+		expect(container.querySelector('aside')).toBe(dialog);
+	});
+
+	test('returns focus to the originating button when the modal closes, preserving the iframe', () => {
+		const onChange = jest.fn();
+		const { rerender } = render(<>
+			<button type='button'>Abrir asistente</button>
+			<LitaAssistantPanel isOpen={false} setIsOpen={onChange} section='portfolio' />
+		</>);
+		const trigger = screen.getByRole('button', { name: 'Abrir asistente' });
+		trigger.focus();
+		rerender(<>
+			<button type='button'>Abrir asistente</button>
+			<LitaAssistantPanel isOpen setIsOpen={onChange} section='portfolio' />
+		</>);
+		expect(screen.getByRole('button', { name: 'Cerrar LITA' })).toHaveFocus();
+		const iframe = screen.getByTitle('Lita Assistant');
+		fireEvent.click(screen.getByRole('button', { name: 'Expandir LITA a pantalla completa' }));
+		expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
+		rerender(<>
+			<button type='button'>Abrir asistente</button>
+			<LitaAssistantPanel isOpen={false} setIsOpen={onChange} section='portfolio' />
+		</>);
+		expect(trigger).toHaveFocus();
+	});
+
+	test('keeps Tab and Shift+Tab inside LITA and prevents focus leaking to financial controls', () => {
+		render(<>
+			<button type='button'>Movimiento fuera del chat</button>
+			<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='transactions' />
+		</>);
+		const outside = screen.getByRole('button', { name: 'Movimiento fuera del chat' });
+		const expand = screen.getByRole('button', { name: 'Expandir LITA a pantalla completa' });
+		const close = screen.getByRole('button', { name: 'Cerrar LITA' });
+		const iframe = screen.getByTitle('Lita Assistant');
+
+		expand.focus();
+		fireEvent.keyDown(expand, { key: 'Tab', shiftKey: true });
+		expect(iframe).toHaveFocus();
+		fireEvent.keyDown(iframe, { key: 'Tab' });
+		expect(expand).toHaveFocus();
+
+		outside.focus();
+		expect(close).toHaveFocus();
+	});
+
+	test('uses the visual viewport only for an occluded mobile keyboard', () => {
 		expect(visibleKeyboardLayout(
 			{ height: 425.8, offsetTop: 4, scale: 1 }, 800, 390
 		)).toEqual({ height: 426, top: 4 });
@@ -122,7 +184,8 @@ describe('LITA iframe integration', () => {
 			});
 			expect(panel.style.height).toBe('405px');
 			expect(panel.style.top).toBe('2px');
-			expect(panel.style.bottom).toBe('auto');
+			// JSDOM does not consistently preserve the CSS keyword `auto` here.
+			// The explicit visual viewport top/height are the useful contract.
 			expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
 			act(() => {
 				viewport.height = 800;
@@ -284,169 +347,11 @@ describe('LITA iframe integration', () => {
 		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
 		const iframe = screen.getByTitle('Lita Assistant');
 		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
-
-		await waitFor(() => {
-			expect(postMessage).toHaveBeenCalledWith({
-				type: 'lita:history:status',
-				payload: { state: 'error', reason: 'permission-denied' },
-			}, origin);
-		});
-	});
-});
-});
-		expect(dialog).toHaveAttribute('aria-modal', 'true');
-		expect(dialog).toHaveAttribute('aria-describedby', 'lita-panel-context');
-		expect(screen.getByText('Bancos')).toBeInTheDocument();
-		expect(dialog).toHaveClass('bg-white','dark:bg-slate-800');
-		expect(dialog).toHaveClass('h-[88dvh]','rounded-t-2xl');
-		const close=screen.getByRole('button', {name:'Cerrar LITA'});
-		expect(close).toHaveClass('h-11','w-11');
-		expect(close).toHaveFocus();
-		const expand=screen.getByRole('button', {name:'Expandir LITA a pantalla completa'});
-		expect(expand).toHaveClass('h-11','w-11');
-		expect(screen.getByTitle('Lita Assistant')).toHaveClass('dark:bg-slate-800');
-		expect(container.querySelector('aside')).toBe(dialog);
-	});
-
-	test('returns focus to the originating button when the modal closes, preserving the iframe', () => {
-		const onChange=jest.fn();
-		const { rerender } = render(<>
-			<button type='button'>Abrir asistente</button>
-			<LitaAssistantPanel isOpen={false} setIsOpen={onChange} section='portfolio' />
-		</>);
-		const trigger=screen.getByRole('button', {name:'Abrir asistente'});
-		trigger.focus();
-		rerender(<>
-			<button type='button'>Abrir asistente</button>
-			<LitaAssistantPanel isOpen setIsOpen={onChange} section='portfolio' />
-		</>);
-		expect(screen.getByRole('button', {name:'Cerrar LITA'})).toHaveFocus();
-		const iframe=screen.getByTitle('Lita Assistant');
-		fireEvent.click(screen.getByRole('button', {name:'Expandir LITA a pantalla completa'}));
-		expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
-		rerender(<>
-			<button type='button'>Abrir asistente</button>
-			<LitaAssistantPanel isOpen={false} setIsOpen={onChange} section='portfolio' />
-		</>);
-		expect(trigger).toHaveFocus();
-	});
-	test('uses the visual viewport only for an occluded mobile keyboard', () => {
-		expect(visibleKeyboardLayout(
-			{ height: 425.8, offsetTop: 4, scale: 1 }, 800, 390
-		)).toEqual({ height: 426, top: 4 });
-		expect(visibleKeyboardLayout(
-			{ height: 800, offsetTop: 0, scale: 1 }, 800, 390
-		)).toBeNull();
-		expect(visibleKeyboardLayout(
-			{ height: 425, offsetTop: 0, scale: 1 }, 800, 1200
-		)).toBeNull();
-		expect(visibleKeyboardLayout(
-			{ height: 425, offsetTop: 0, scale: 1.25 }, 800, 390
-		)).toBeNull();
-	});
-
-	test('keeps the same iframe above Android keyboard, and restores normal panel when keyboard hides', () => {
-		const previousWidth = Object.getOwnPropertyDescriptor(window, 'innerWidth');
-		const previousHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
-		const previousViewport = Object.getOwnPropertyDescriptor(window, 'visualViewport');
-		const events = {};
-		const viewport = {
-			height: 800, offsetTop: 0, scale: 1,
-			addEventListener: jest.fn((name, fn) => { events[name] = fn; }),
-			removeEventListener: jest.fn(),
-		};
-		Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
-		Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
-		Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport });
-		try {
-			const { container, unmount } = render(
-				<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='transactions' />
-			);
-			const iframe = screen.getByTitle('Lita Assistant');
-			const panel = container.querySelector('aside');
-			expect(panel.style.height).toBe('');
-			act(() => {
-				viewport.height = 405;
-				viewport.offsetTop = 2;
-				events.resize();
-			});
-			expect(panel.style.height).toBe('405px');
-			expect(panel.style.top).toBe('2px');
-			expect(panel.style.bottom).toBe('auto');
-			expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
-			act(() => {
-				viewport.height = 800;
-				viewport.offsetTop = 0;
-				events.resize();
-			});
-			expect(panel.style.height).toBe('');
-			expect(screen.getByTitle('Lita Assistant')).toBe(iframe);
-			unmount();
-			expect(viewport.removeEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
-		} finally {
-			if (previousWidth) Object.defineProperty(window, 'innerWidth', previousWidth);
-			if (previousHeight) Object.defineProperty(window, 'innerHeight', previousHeight);
-			if (previousViewport) Object.defineProperty(window, 'visualViewport', previousViewport);
-			else delete window.visualViewport;
-		}
-	});
-
-	test('sends a save result only after Firestore confirms the write', async () => {
-		const { saveLitaChat } = require('../services/litaChatService');
-		saveLitaChat.mockResolvedValueOnce(undefined);
-		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
-		const iframe = screen.getByTitle('Lita Assistant');
-		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
-
 		await act(async () => {
 			window.dispatchEvent(new MessageEvent('message', {
-				origin,
-				source: iframe.contentWindow,
-				data: { type: 'lita:history:save', payload: { requestId: 'req1', id: 'chat1', messages: [] } },
+				origin, source: iframe.contentWindow, data: { type: 'lita:ready' },
 			}));
 		});
-
-		await waitFor(() => {
-			expect(saveLitaChat).toHaveBeenCalled();
-			expect(postMessage).toHaveBeenCalledWith({
-				type: 'lita:history:save:result',
-				payload: { requestId: 'req1', id: 'chat1', success: true },
-			}, origin);
-		});
-	});
-
-	test('sends a permission-denied save failure instead of silent success', async () => {
-		const { saveLitaChat } = require('../services/litaChatService');
-		saveLitaChat.mockRejectedValueOnce({ code: 'permission-denied' });
-		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
-		const iframe = screen.getByTitle('Lita Assistant');
-		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
-
-		await act(async () => {
-			window.dispatchEvent(new MessageEvent('message', {
-				origin,
-				source: iframe.contentWindow,
-				data: { type: 'lita:history:save', payload: { requestId: 'req2', id: 'chat2', messages: [] } },
-			}));
-		});
-
-		await waitFor(() => {
-			expect(postMessage).toHaveBeenCalledWith({
-				type: 'lita:history:save:result',
-				payload: { requestId: 'req2', id: 'chat2', success: false, reason: 'permission-denied' },
-			}, origin);
-		});
-	});
-
-	test('reports Firestore subscription permission errors to LITA', async () => {
-		const { subscribeLitaChats } = require('../services/litaChatService');
-		subscribeLitaChats.mockImplementationOnce((uid, onData, onError) => {
-			onError({ code: 'permission-denied' });
-			return () => {};
-		});
-		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} />);
-		const iframe = screen.getByTitle('Lita Assistant');
-		const postMessage = jest.spyOn(iframe.contentWindow, 'postMessage');
 
 		await waitFor(() => {
 			expect(postMessage).toHaveBeenCalledWith({

@@ -40,6 +40,8 @@ const LitaAssistantPanel = ({
 	privacyHidden = false,
 }) => {
 	const iframeRef = useRef(null);
+	const panelRef = useRef(null);
+	const expandButtonRef = useRef(null);
 	const closeButtonRef = useRef(null);
 	const triggerFocusRef = useRef(null);
 	const user = useSelector((state) => state.auth.user);
@@ -113,7 +115,39 @@ const LitaAssistantPanel = ({
 		return () => observer.disconnect();
 	}, []);
 
-	// The overlay returns focus to the originating financial page after dismissal.
+	// aria-modal must also keep keyboard focus inside the host. This covers
+	// backward tabbing from the header and focus returning from the cross-origin
+	// iframe; the iframe is never replaced or reloaded during navigation.
+	useEffect(() => {
+		if (!isOpen) return undefined;
+		const withinPanel = (element) => panelRef.current?.contains(element);
+		const handleTab = (event) => {
+			if (event.key !== 'Tab') return;
+			const first = expandButtonRef.current;
+			const last = iframeRef.current;
+			if (!first || !last) return;
+			const active = document.activeElement;
+			if (event.shiftKey && (active === first || !withinPanel(active))) {
+				event.preventDefault();
+				last.focus();
+			} else if (!event.shiftKey && (active === last || !withinPanel(active))) {
+				event.preventDefault();
+				first.focus();
+			}
+		};
+		const containFocus = (event) => {
+			if (!withinPanel(event.target)) closeButtonRef.current?.focus();
+		};
+		document.addEventListener('keydown', handleTab);
+		document.addEventListener('focusin', containFocus);
+		return () => {
+			document.removeEventListener('keydown', handleTab);
+			document.removeEventListener('focusin', containFocus);
+		};
+	}, [isOpen]);
+
+	// Register this effect AFTER the focus trap so its cleanup runs after the
+	// trap's cleanup. Otherwise the trap steals focus back while closing.
 	useEffect(() => {
 		if (!isOpen) return undefined;
 		triggerFocusRef.current = document.activeElement;
@@ -357,6 +391,7 @@ const LitaAssistantPanel = ({
 
 					<motion.aside
 					key='lita-panel'
+					ref={panelRef}
 					style={keyboardViewport ? {
 						top: keyboardViewport.top,
 						bottom: 'auto',
@@ -391,6 +426,7 @@ const LitaAssistantPanel = ({
 							<div className='flex shrink-0 items-center gap-2'>
 							<button
 								type='button'
+								ref={expandButtonRef}
 								onClick={() => setIsExpanded((value) => !value)}
 								className='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700'
 								aria-label={isExpanded ? 'Restaurar tamaño de LITA' : 'Expandir LITA a pantalla completa'}
@@ -414,6 +450,7 @@ const LitaAssistantPanel = ({
 
 						<iframe
 							ref={iframeRef}
+							tabIndex={0}
 							src={src}
 							allow='clipboard-write'
 							title='Lita Assistant'
