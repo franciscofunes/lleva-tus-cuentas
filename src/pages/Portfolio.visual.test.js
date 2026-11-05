@@ -47,7 +47,8 @@ const fixtures=[
   {id:'fci-1',institution:'Gestora sintética',name:'Fondo de prueba',
     category:'FCI',currency:'ARS',balance:20000,annualRate:0,rateType:'Variable',
     liquidity:'Rescate 24 h',trackingMode:'NAV',nav:20,shares:1000,ticker:'TEST-FCI',
-    monthlyReturns:{jan:1},performance1Y:4,realizedEarnings:0},
+    publishedYtdReturn:-4.2,monthlyReturns:{jan:'',feb:null,mar:'-2',apr:0},
+    performance1Y:-3,realizedEarnings:0},
 ];
 
 beforeEach(() => {
@@ -155,6 +156,47 @@ test('FCI and remunerated secondary metadata are independent, lazy disclosures w
   expect(screen.queryByText('Ticker: TEST-FCI')).not.toBeInTheDocument();
   expect(service.verifyPortfolioPosition).not.toHaveBeenCalled();
   expect(service.updatePortfolioPosition).not.toHaveBeenCalled();
+});
+
+test('FCI position card shows published negative YTD instead of a fabricated fixed monthly yield', async () => {
+  mount();
+  await getWorkspace();
+  const fciCard = screen.getByRole('link', {name:'Ver detalle de Fondo de prueba'}).closest('article');
+  expect(within(fciCard).getByText('YTD publicado por el fondo')).toBeInTheDocument();
+  expect(within(fciCard).getByText('-4.20%')).toHaveClass('text-rose-700', 'dark:text-rose-400');
+  expect(within(fciCard).queryByText(/mes estimado|mes proyectado/i)).not.toBeInTheDocument();
+  expect(within(fciCard).getByText(/no es ganancia realizada/i)).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button',{name:'Ver detalles de Fondo de prueba'}));
+  expect(within(fciCard).getByText(/Rend. 1A publicado: -3.00%/)).toHaveClass('text-rose-700', 'dark:text-rose-400');
+  expect(within(fciCard).getByText(/Compuesto \(meses cargados\): -2.00%/)).toHaveClass('text-rose-700', 'dark:text-rose-400');
+
+  fireEvent.click(screen.getByRole('button',{name:'Ocultar importes de la pantalla'}));
+  expect(within(fciCard).queryByText('-4.20%')).not.toBeInTheDocument();
+  expect(within(fciCard).getByText('••••')).toHaveClass('text-slate-900', 'dark:text-slate-50');
+  expect(service.updatePortfolioPosition).not.toHaveBeenCalled();
+});
+
+test('FCI editor only compounds recorded months and treats an explicit zero as real data', async () => {
+  mount();
+  await getWorkspace();
+  fireEvent.click(screen.getByRole('button',{name:'Agregar posición'}));
+  const dialog = screen.getByRole('dialog');
+  fireEvent.change(within(dialog).getByRole('combobox',{name:'Tipo de activo'}), {target:{value:'FCI'}});
+  expect(within(dialog).getByText('Sin rentabilidades mensuales cargadas.')).toBeInTheDocument();
+  expect(within(dialog).getByText('Suma simple').nextSibling).toHaveTextContent('—');
+  expect(within(dialog).getByText('Acumulado compuesto').nextSibling).toHaveTextContent('—');
+
+  fireEvent.change(within(dialog).getByLabelText('Ene'), {target:{value:'0'}});
+  expect(within(dialog).queryByText('Sin rentabilidades mensuales cargadas.')).not.toBeInTheDocument();
+  expect(within(dialog).getByText('Suma simple').nextSibling).toHaveTextContent('0.00%');
+  fireEvent.change(within(dialog).getByLabelText('Feb'), {target:{value:'-2'}});
+  expect(within(dialog).getByText('Suma simple').nextSibling).toHaveTextContent('-2.00%');
+  expect(within(dialog).getByText('Acumulado compuesto').nextSibling).toHaveTextContent('-2.00%');
+  expect(within(dialog).getByText('Acumulado compuesto').nextSibling).toHaveClass('text-rose-300');
+  fireEvent.change(within(dialog).getByLabelText('Feb'), {target:{value:''}});
+  expect(within(dialog).getByText('Suma simple').nextSibling).toHaveTextContent('0.00%');
+  expect(service.createPortfolioPosition).not.toHaveBeenCalled();
 });
 
 test('privacy toggles amounts without changing positions or converting ARS into USD', async () => {
