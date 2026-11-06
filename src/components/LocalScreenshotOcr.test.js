@@ -2,12 +2,16 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { OCR } from '../generated/browser-ai/ocr';
+import { recognizeWithCompatibleOcr } from '../utils/localOcrFallback';
 import LocalScreenshotOcr from './LocalScreenshotOcr';
 
 jest.mock('../generated/browser-ai/ocr',()=>({OCR:jest.fn()}));
+jest.mock('../utils/localOcrFallback',()=>({recognizeWithCompatibleOcr:jest.fn()}));
 
 beforeEach(()=>{
   OCR.mockReset();
+  recognizeWithCompatibleOcr.mockReset();
+  recognizeWithCompatibleOcr.mockResolvedValue({text:'Moneda\nUSD\nVencimiento\n25/11/26',lines:[]});
   OCR.mockImplementation(()=>({
     load:jest.fn().mockResolvedValue(undefined),
     read:jest.fn().mockResolvedValue({text:'Consumos ARS 100,00',lines:[]}),
@@ -112,7 +116,44 @@ test('classifies a blocked model download without echoing the remote URL or fina
   fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
   expect(await screen.findByRole('alert')).toHaveTextContent(/\[OCR-NET\]/);
   expect(screen.getByRole('alert')).not.toHaveTextContent(/private-token|plazo-fijo/);
-  expect(screen.getByText(/Lector local v2/)).toBeInTheDocument();
+  expect(screen.getByText(/Lector local v3/)).toBeInTheDocument();
   // The original screenshot remains available to retry without re-uploading.
   expect(screen.getByRole('button',{name:'Leer captura en este dispositivo'})).toBeEnabled();
+});
+
+test('Android defaults to independent compatible OCR and does not initialize broken ONNX runtime',async()=>{
+  const original = Object.getOwnPropertyDescriptor(navigator, 'userAgent');
+  Object.defineProperty(navigator, 'userAgent', {configurable:true,value:'Mozilla/5.0 (Linux; Android 14) Chrome/130.0'});
+  try {
+    const onRecognized=jest.fn();
+    render(<LocalScreenshotOcr onRecognized={onRecognized}/>);
+    expect(screen.getByRole('combobox',{name:'Modo de lectura OCR'})).toHaveValue('compatible');
+    expect(screen.queryByRole('combobox',{name:'Precisión del modelo OCR'})).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Elegir captura para lectura local'),{
+      target:{files:[new File(['image'],'itau.jpg',{type:'image/jpeg'})]},
+    });
+    fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
+    await waitFor(()=>expect(onRecognized).toHaveBeenCalledWith(expect.objectContaining({text:expect.stringContaining('25/11/26')})));
+    expect(recognizeWithCompatibleOcr).toHaveBeenCalledTimes(1);
+    expect(OCR).not.toHaveBeenCalled();
+  } finally {
+    if (original) Object.defineProperty(navigator, 'userAgent', original);
+    else delete navigator.userAgent;
+  }
+});
+
+test('compatible OCR failure is recoverable and keeps the original image available',async()=>{
+  recognizeWithCompatibleOcr.mockRejectedValue(new Error('Worker init failed https://example.net/token'));
+  const onRecognized=jest.fn();
+  render(<LocalScreenshotOcr onRecognized={onRecognized}/>);
+  fireEvent.change(screen.getByRole('combobox',{name:'Modo de lectura OCR'}),{target:{value:'compatible'}});
+  fireEvent.change(screen.getByLabelText('Elegir captura para lectura local'),{
+    target:{files:[new File(['image'],'itau.jpg',{type:'image/jpeg'})]},
+  });
+  fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
+  expect(await screen.findByRole('alert')).toHaveTextContent(/\[OCR-COMPAT\]/);
+  expect(screen.getByRole('alert')).not.toHaveTextContent(/token|itau/);
+  expect(screen.getByRole('button',{name:'Leer captura en este dispositivo'})).toBeEnabled();
+  fireEvent.change(screen.getByRole('combobox',{name:'Modo de lectura OCR'}),{target:{value:'advanced'}});
+  expect(screen.getByRole('combobox',{name:'Precisión del modelo OCR'})).toBeInTheDocument();
 });

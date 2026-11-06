@@ -16,3 +16,11 @@ test('local OCR ships matching WebAssembly binaries from the installed ONNX runt
   expect(entry).toContain('/ocr-runtime/');
   expect(entry).not.toContain('cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0');
 });
+
+test('Android compatibility OCR ships its worker, Spanish traineddata and supported wasm cores locally', () => {
+  const runtime = path.join(root, 'public/ocr-compatible');
+  const files = ['worker.min.js', 'lang/spa.traineddata.gz',
+    'core/tesseract-core-lstm.wasm.js', 'core/tesseract-core-lstm.wasm',
+    'core/tesseract-core-simd-lstm.wasm.js', 'core/tesseract-core-simd-lstm.wasm'];
+  files.forEach(name => expect(fs.statSync(path.join(runtime, name)).size).toBeGreaterThan(100000));
+});

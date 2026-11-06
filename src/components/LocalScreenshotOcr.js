@@ -21,6 +21,7 @@ function ocrFailureMessage(error, stage) {
 /** Explicitly opt-in, image-only OCR. No image or recognized text is sent to Lita or Firestore. */
 export default function LocalScreenshotOcr({ onRecognized, privacyHidden = false, disabled = false, allowCamera = false }) {
   const [file, setFile] = useState(null);
+  const [engine, setEngine] = useState(() => mobileBrowser() ? 'compatible' : 'advanced');
   const [modelSize, setModelSize] = useState(() => mobileBrowser() ? 'tiny' : 'small');
   const [status, setStatus] = useState('idle');
   const [progress, setProgress] = useState(0);
@@ -150,23 +151,38 @@ export default function LocalScreenshotOcr({ onRecognized, privacyHidden = false
     setError('');
     setProgress(0);
     try {
-      // Lazy-loading prevents the OCR runtime from inflating the normal financial dashboard bundle.
-      const { OCR } = await import('../generated/browser-ai/ocr');
-      reader = new OCR({
-        size: modelSize,
-        // Android WebGPU is not reliable across drivers; use single-threaded WASM.
-        device: mobileBrowser() ? 'wasm' : 'auto',
-        onProgress: (info) => {
-          if (mounted.current && !hiddenRef.current && typeof info.progress === 'number') {
-            setProgress(Math.min(100, Math.max(0, Math.round(info.progress))));
-          }
-        },
-      });
-      await reader.load();
-      if (!mounted.current || hiddenRef.current) return;
-      setStatus('reading');
-      stage = 'reading';
-      const result = await reader.read(file);
+      let result;
+      if (engine === 'compatible') {
+        // Tesseract is a separate browser worker, so a broken ONNX/WASM
+        // backend cannot prevent mobile users from reading a screenshot.
+        const {recognizeWithCompatibleOcr} = await import('../utils/localOcrFallback');
+        result = await recognizeWithCompatibleOcr(file, {
+          onProgress: (percent) => {
+            if (mounted.current && !hiddenRef.current) setProgress(percent);
+          },
+          onReading: () => {
+            stage = 'reading';
+            if (mounted.current && !hiddenRef.current) setStatus('reading');
+          },
+        });
+      } else {
+        // Keep runonweb available for users who explicitly choose advanced OCR.
+        const { OCR } = await import('../generated/browser-ai/ocr');
+        reader = new OCR({
+          size: modelSize,
+          device: mobileBrowser() ? 'wasm' : 'auto',
+          onProgress: (info) => {
+            if (mounted.current && !hiddenRef.current && typeof info.progress === 'number') {
+              setProgress(Math.min(100, Math.max(0, Math.round(info.progress))));
+            }
+          },
+        });
+        await reader.load();
+        if (!mounted.current || hiddenRef.current) return;
+        setStatus('reading');
+        stage = 'reading';
+        result = await reader.read(file);
+      }
       if (!mounted.current || hiddenRef.current) return;
       if (!result.text?.trim()) throw new Error('No pudimos leer texto de esta captura.');
       onRecognized({ text: result.text, lines: result.lines || [] });
@@ -176,7 +192,9 @@ export default function LocalScreenshotOcr({ onRecognized, privacyHidden = false
     } catch (caught) {
       if (mounted.current && !hiddenRef.current) {
         setStatus('error');
-        setError(ocrFailureMessage(caught, stage));
+        setError(engine === 'compatible' && !String(caught?.message || '').includes('No pudimos leer texto')
+          ? '[OCR-COMPAT] El lector compatible no pudo procesar esta foto. Probá nuevamente o elegí el motor avanzado.'
+          : ocrFailureMessage(caught, stage));
       }
     } finally {
       if (reader) await reader.dispose().catch(() => {});
@@ -187,7 +205,7 @@ export default function LocalScreenshotOcr({ onRecognized, privacyHidden = false
   return <section aria-label='Lectura local de capturas' className='space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-900 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-50'>
     <div className='flex items-start gap-2'>
       <FiShield aria-hidden='true' className='mt-0.5 shrink-0 text-emerald-700 dark:text-emerald-400'/>
-      <p className='text-xs text-slate-700 dark:text-slate-200'>Lector local v2 · El modelo se descarga una vez ({modelSize === 'tiny' ? 'aprox. 6 MB' : 'aprox. 31 MB'}). Tu imagen no se envía ni se guarda.</p>
+      <p className='text-xs text-slate-700 dark:text-slate-200'>Lector local v3 · {engine === 'compatible' ? 'Modo compatible con celulares: el motor y el idioma español se descargan la primera vez.' : `Modo avanzado: modelo ${modelSize === 'tiny' ? '6 MB' : '31 MB'}.`} Tu imagen no se envía ni se guarda.</p>
     </div>
     {privacyHidden ? (
       <p role='status' className='text-sm font-semibold text-amber-700 dark:text-amber-300'>Mostrá los importes para analizar y revisar una captura.</p>
@@ -213,20 +231,27 @@ export default function LocalScreenshotOcr({ onRecognized, privacyHidden = false
           className='mt-2 block min-h-[44px] w-full min-w-0 cursor-pointer text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-violet-100 file:px-3 file:py-2 file:font-semibold file:text-violet-800 dark:text-slate-200 dark:file:bg-slate-800 dark:file:text-violet-200'
           disabled={disabled || working}/>
       </label>
-      <label className='flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200'>Precisión del modelo
+      <label className='flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200'>Modo de lectura
+        <select aria-label='Modo de lectura OCR' value={engine} onChange={(event) => {setEngine(event.target.value); setStatus('idle'); setError(''); setProgress(0);}} disabled={working}
+          className='min-h-[44px] w-full max-w-full min-w-0 rounded-lg border border-slate-300 bg-white px-2 text-sm text-slate-900 sm:w-auto dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50'>
+          <option value='compatible'>Compatible con celulares · recomendado</option>
+          <option value='advanced'>Avanzado · ONNX experimental</option>
+        </select>
+      </label>
+      {engine === 'advanced' && <label className='flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200'>Precisión del modelo
         <select aria-label='Precisión del modelo OCR' value={modelSize} onChange={(event) => setModelSize(event.target.value)} disabled={working}
           className='min-h-[44px] rounded-lg border border-slate-300 bg-white px-2 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50'>
           <option value='tiny'>Liviano · 6 MB</option><option value='small'>Más precisión · 31 MB</option>
         </select>
-      </label>
+      </label>}
       {file && <p className='flex min-w-0 items-center gap-2 text-xs text-slate-600 dark:text-slate-300'><FiImage aria-hidden='true'/> <span className='min-w-0 break-all'>{file.name}</span></p>}
       <button type='button' onClick={recognize} disabled={!file || disabled || working} className={action}>
         {working ? <FiLoader aria-hidden='true' className='animate-spin motion-reduce:animate-none'/> : <FiUploadCloud aria-hidden='true'/>}
         {status === 'loading' ? 'Preparando modelo…' : status === 'reading' ? 'Leyendo captura…' : 'Leer captura en este dispositivo'}
       </button>
       {status === 'loading' && <div role='status' className='space-y-1 text-xs text-slate-600 dark:text-slate-300'>
-        <p>Descarga del modelo: {progress}%</p>
-        <progress aria-label='Progreso de descarga del modelo OCR' value={progress} max='100' className='h-2 w-full accent-violet-600'/>
+        <p>Preparación del lector: {progress}%</p>
+        <progress aria-label='Progreso de preparación del lector OCR' value={progress} max='100' className='h-2 w-full accent-violet-600'/>
       </div>}
       {status === 'reading' && <p role='status' className='text-xs text-slate-600 dark:text-slate-300'>Reconociendo texto. No cierres esta ventana todavía.</p>}
       {status === 'done' && <p role='status' className='text-xs font-semibold text-emerald-700 dark:text-emerald-400'>Texto detectado. Revisá cada cifra antes de aplicar cambios.</p>}

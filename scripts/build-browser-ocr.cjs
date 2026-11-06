@@ -8,6 +8,7 @@ const esbuild = require('esbuild');
 async function main() {
   const outdir = path.join(__dirname, '../src/generated/browser-ai');
   const publicRuntime = path.join(__dirname, '../public/ocr-runtime');
+  const compatibleRuntime = path.join(__dirname, '../public/ocr-compatible');
   const ortDist = path.dirname(require.resolve('onnxruntime-web'));
   // The browser must not depend on a third-party WASM CDN to start OCR.
   // Vercel/Netlify serve these assets from the same origin as the app.
@@ -57,6 +58,23 @@ async function main() {
   fs.writeFileSync(path.join(outdir, 'ort.bundle.min.mjs'), '/* eslint-disable */\n' + workerSource);
   // ORT also uses this sibling for its worker resolver in the emitted bundle.
   fs.copyFileSync(path.join(ortDist, 'ort-wasm-simd-threaded.jsep.wasm'), path.join(outdir, 'ort-wasm-simd-threaded.jsep.wasm'));
+
+  // Android/low-memory fallback: ship the independently maintained Tesseract
+  // worker, wasm loader and Spanish model from the installed npm packages.
+  // All worker/model requests stay on the application's own origin.
+  const workerDist = path.join(path.dirname(require.resolve('tesseract.js/package.json')), 'dist');
+  const coreDist = path.dirname(require.resolve('tesseract.js-core/package.json'));
+  const spanishData = path.join(path.dirname(require.resolve('@tesseract.js-data/spa/package.json')), '4.0.0_best_int', 'spa.traineddata.gz');
+  fs.mkdirSync(path.join(compatibleRuntime, 'core'), {recursive: true});
+  fs.mkdirSync(path.join(compatibleRuntime, 'lang'), {recursive: true});
+  fs.copyFileSync(path.join(workerDist, 'worker.min.js'), path.join(compatibleRuntime, 'worker.min.js'));
+  fs.copyFileSync(spanishData, path.join(compatibleRuntime, 'lang', 'spa.traineddata.gz'));
+  for (const flavor of ['', '-simd', '-lstm', '-simd-lstm']) {
+    for (const extension of ['.wasm.js', '.wasm']) {
+      const file = `tesseract-core${flavor}${extension}`;
+      fs.copyFileSync(path.join(coreDist, file), path.join(compatibleRuntime, 'core', file));
+    }
+  }
 }
 
 main().catch((error) => {
