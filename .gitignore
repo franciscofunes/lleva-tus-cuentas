@@ -31,3 +31,5 @@ yarn-error.log*
 /src/generated/browser-ai/
 # Same-origin OCR WASM binaries copied from the installed dependency at build time.
 /public/ocr-runtime/
+# Tesseract compatibility worker, core and Spanish traineddata (npm-derived).
+/public/ocr-compatible/
