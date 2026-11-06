@@ -180,6 +180,15 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
   (record disclosure); both remain accessible 44px actions. See
   [Portfolio phase 5](portfolio-issue-228-phase5.md).
 
+## Portfolio mobile position editor, phase 6 (#228)
+
+- `GenericModal` owns the position editor's vertical scrolling. Do not add
+  another fixed-height `overflow-y-auto` to the child form: nested scrollbars
+  made the Android importer difficult to use.
+- Keep the position save/cancel actions in a 44px minimum sticky footer, and
+  make expanded OCR review, comparison and published-return fields legible
+  in both light and dark modes. See [Portfolio phase 6](portfolio-issue-228-phase6.md).
+
 ## Banks imported PDF linking (issue #227, phase 3)
 Use the **real Transactions record surface / disclosure tokens** for pending statements. First scan shows document identity, period, close/due dates, masked ARS/USD totals and one 44px review action. Keep candidate selection and PDF line-items behind a disclosure. Use the existing shared GenericModal to confirm the exact target bank/card; don't write until confirmed, never optimistically create expenses or duplicate imported consumptions. Keep Firestore errors actionable without exposing backend details. See [Banks PDF linking](banks-issue-227-phase3.md).
 

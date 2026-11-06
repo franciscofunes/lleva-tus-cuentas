@@ -99,8 +99,8 @@ const money = (value, currency) =>
 	}).format(Number(value || 0));
 
 const modalPublishedRateTone = (value) => value == null || value === 0
-	? 'text-slate-100'
-	: value > 0 ? 'text-emerald-300' : 'text-rose-300';
+	? 'text-slate-700 dark:text-slate-100'
+	: value > 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300';
 
 // Cash with no reported annual return is liquid principal, not a yield-bearing product.
 const isCashWithoutYield = (position) => position?.category === 'Cash'
@@ -610,23 +610,23 @@ function Portfolio() {
 			: null;
 
 	const portfolioFormContent = (
-		<form onSubmit={submit} className='space-y-2 text-white max-h-[78dvh] overflow-y-auto pr-4 mr-1 [scrollbar-gutter:stable]'>
+		<form onSubmit={submit} data-testid='portfolio-position-form' className='min-w-0 space-y-3 text-slate-900 dark:text-slate-50'>
 										<h2 className='text-lg font-bold pr-10 mb-2'>{editingId ? 'Editar posición' : 'Nueva posición'}</h2>
 										<div className='mb-2'>
-											<button type='button' aria-expanded={showMarkdownImport} onClick={() => setShowMarkdownImport((value) => !value)} className='min-h-[44px] w-full rounded-xl border border-violet-500 bg-slate-800 px-3 py-2 text-sm font-semibold text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400'>{showMarkdownImport ? 'Ocultar importador' : editingId ? 'Enriquecer posición desde captura o Markdown' : 'Importar desde captura o Markdown'}</button>
-											{showMarkdownImport && <div className='mt-2 space-y-3 rounded-xl border border-slate-700 bg-slate-900/70 p-3'>
-												{hideValues ? <div className='space-y-2 rounded-lg border border-amber-700 p-3 text-sm text-amber-200'><p role='status'>Mostrá los importes del Portfolio para analizar una captura y comparar campos.</p><button type='button' onClick={()=>setHideValues(false)} className='min-h-[44px] rounded-xl border border-violet-500 px-3 py-2 text-sm font-semibold text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400'>Mostrar importes y continuar</button></div> : <>
+											<button type='button' aria-expanded={showMarkdownImport} onClick={() => setShowMarkdownImport((value) => !value)} className='min-h-[44px] w-full rounded-xl border border-violet-500 bg-violet-50 px-3 py-2 text-sm font-semibold text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 dark:bg-slate-800 dark:text-violet-200'>{showMarkdownImport ? 'Ocultar importador' : editingId ? 'Enriquecer posición desde captura o Markdown' : 'Importar desde captura o Markdown'}</button>
+											{showMarkdownImport && <div className='mt-2 min-w-0 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/70'>
+												{hideValues ? <div className='space-y-2 rounded-lg border border-amber-500 p-3 text-sm text-amber-800 dark:border-amber-700 dark:text-amber-200'><p role='status'>Mostrá los importes del Portfolio para analizar una captura y comparar campos.</p><button type='button' onClick={()=>setHideValues(false)} className='min-h-[44px] rounded-xl border border-violet-500 px-3 py-2 text-sm font-semibold text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 dark:text-violet-200'>Mostrar importes y continuar</button></div> : <>
 													<LocalScreenshotOcr onRecognized={({text})=>{setMarkdownImport(preparePortfolioOcrText(text));setImportPreview([]);}} privacyHidden={hideValues} disabled={pendingAction==='save'}/>
-													<label className='block text-sm font-semibold text-slate-100'>Texto reconocido o Markdown
+													<label className='block text-sm font-semibold text-slate-900 dark:text-slate-100'>Texto reconocido o Markdown
 														<textarea aria-label='Texto para enriquecer posición' className='portfolio-input mt-2 min-h-[120px] text-sm' value={markdownImport} onChange={(event) => { setMarkdownImport(event.target.value); setImportPreview([]); }} placeholder={'Podés leer una captura o pegar datos publicados.\n\nEjemplo FCI:\nRentabilidad mensual 2026:\n- Ene: 0,62%\n- Feb: 0,29%\n- Mar: 0,95%\nTotal YTD publicado: 3,75%'} />
 													</label>
-													<p className='text-xs text-slate-300'>Revisá los valores detectados y elegí qué campos aplicar. Los cambios de saldo no son ganancias.</p>
+													<p className='text-xs text-slate-600 dark:text-slate-300'>Revisá los valores detectados y elegí qué campos aplicar. Los cambios de saldo no son ganancias.</p>
 													<button type='button' disabled={!markdownImport.trim()} onClick={importMarkdown} className='min-h-[44px] w-full rounded-xl bg-secondary px-3 py-2 font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 disabled:opacity-40'>Comparar datos detectados</button>
 												</>}
 												{!hideValues && importPreview.length > 0 && <div className='mt-3 space-y-2'>
-													<div className='flex flex-wrap gap-2'><button type='button' onClick={() => selectImportFields('missing')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Solo faltantes</button><button type='button' onClick={() => selectImportFields('all')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Todos los cambios</button><button type='button' onClick={() => selectImportFields('none')} className='px-2 py-1 rounded border border-slate-600 text-xs'>Ninguno</button></div>
-													{importPreview.map((item) => <label key={item.field} className='flex gap-3 rounded-lg border border-slate-700 p-2 text-sm cursor-pointer'><input type='checkbox' checked={item.selected} onChange={() => toggleImportField(item.field)} /><span className='min-w-0'><strong>{item.field.startsWith('monthlyReturns.') ? `Rentabilidad ${monthLabelByKey[item.field.split('.')[1]] || item.field.split('.')[1].toUpperCase()}` : item.field}</strong>{item.missing && <span className='ml-2 text-green-400 text-xs'>FALTANTE</span>}<span className='block text-xs text-slate-400 break-all'>{String(item.current || '—')} → <span className='text-white'>{String(item.value)}</span></span></span></label>)}
-													<button type='button' onClick={applyImportFields} className='w-full py-2 rounded-lg bg-ltc-green text-white font-bold'>Aplicar campos seleccionados</button>
+													<div className='flex flex-wrap gap-2'>{[['missing','Solo faltantes'],['all','Todos los cambios'],['none','Ninguno']].map(([choice,label]) => <button key={choice} type='button' onClick={() => selectImportFields(choice)} className='min-h-[44px] rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600'>{label}</button>)}</div>
+													{importPreview.map((item) => <label key={item.field} className='flex min-h-[44px] cursor-pointer gap-3 rounded-lg border border-slate-300 p-2 text-sm dark:border-slate-700'><input type='checkbox' checked={item.selected} onChange={() => toggleImportField(item.field)} /><span className='min-w-0'><strong>{item.field.startsWith('monthlyReturns.') ? `Rentabilidad ${monthLabelByKey[item.field.split('.')[1]] || item.field.split('.')[1].toUpperCase()}` : item.field}</strong>{item.missing && <span className='ml-2 text-xs text-emerald-700 dark:text-emerald-400'>FALTANTE</span>}<span className='block break-all text-xs text-slate-600 dark:text-slate-400'>{String(item.current || '—')} → <span className='text-slate-900 dark:text-white'>{String(item.value)}</span></span></span></label>)}
+													<button type='button' onClick={applyImportFields} className='min-h-[44px] w-full rounded-lg bg-ltc-green px-3 py-2 font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500'>Aplicar campos seleccionados</button>
 												</div>}
 											</div>}
 										</div>
@@ -637,13 +637,13 @@ function Portfolio() {
 												<select aria-label='Tipo de activo' className='portfolio-input' name='category' value={form.category} onChange={onChange}>
 													{['Cuenta remunerada','Plazo fijo','FCI','ETF','Crypto / staking','Cash','Carry trade','Otro'].map((item) => <option key={item}>{item}</option>)}
 												</select>
-												<div className='grid grid-cols-2 gap-2'>
+												<div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
 													<select aria-label='Moneda de la posición' className='portfolio-input' name='currency' value={form.currency} onChange={onChange}>
 														<option>ARS</option><option>USD</option><option>EUR</option><option>USDT</option>
 													</select>
 													<input className='portfolio-input' type='number' step='0.01' min='0' name='balance' value={form.balance} onChange={onChange} placeholder='Capital actual' required />
 												</div>
-												<div className='grid grid-cols-2 gap-2'>
+												<div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
 													<input aria-label='Tasa anual informada' className='portfolio-input' type='number' step='0.01' min='0' name='annualRate' value={form.annualRate} onChange={onChange} placeholder='Tasa anual %' />
 													<select className='portfolio-input' name='rateType' value={form.rateType} onChange={onChange}><option>TNA</option><option>TEA</option><option>TIR</option><option>APY</option><option>Variable</option></select>
 												</div>
@@ -654,8 +654,8 @@ function Portfolio() {
 													<option value='MANUAL'>Manual</option>
 												</select>
 												{form.category === 'FCI' && (
-													<div className='space-y-2 rounded-lg border border-slate-700 p-2'>
-														<p className='text-xs font-semibold text-purple-300'>Datos específicos del FCI</p>
+													<div className='space-y-2 rounded-lg border border-slate-200 p-2 dark:border-slate-700'>
+														<p className='text-xs font-semibold text-violet-700 dark:text-purple-300'>Datos específicos del FCI</p>
 														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' name='ticker' value={form.ticker} onChange={onChange} placeholder='Ticker / clase' /><input className='portfolio-input' name='redemptionPeriod' value={form.redemptionPeriod} onChange={onChange} placeholder='Rescate (ej. 24h)' /></div>
 														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='number' step='any' min='0' name='shares' value={form.shares} onChange={onChange} placeholder='Cuotapartes' /><input className='portfolio-input' type='number' step='any' min='0' name='nav' value={form.nav} onChange={onChange} placeholder='Valor cuotaparte / NAV' /></div>
 														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='date' name='navDate' value={form.navDate} onChange={onChange} /><input className='portfolio-input' type='number' step='any' min='0' name='minimumInvestment' value={form.minimumInvestment} onChange={onChange} placeholder='Inversión mínima' /></div>
@@ -664,20 +664,20 @@ function Portfolio() {
 														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' name='fundType' value={form.fundType} onChange={onChange} placeholder='Tipo (ej. Renta fija)' /><input className='portfolio-input' name='investmentHorizon' value={form.investmentHorizon} onChange={onChange} placeholder='Horizonte' /></div>
 														<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' type='date' name='fundStartDate' value={form.fundStartDate} onChange={onChange} /><input className='portfolio-input' name='rating' value={form.rating} onChange={onChange} placeholder='Calificación' /></div>
 														<input className='portfolio-input' type='number' step='any' min='0' name='volatility21dAnnualized' value={form.volatility21dAnnualized} onChange={onChange} placeholder='Volatilidad 21d anualizada %' />
-										<div className='space-y-3 rounded-lg border border-slate-600 p-3'>
-											<div><p className='text-sm font-bold text-white'>Rentabilidad mensual</p><p className='text-xs text-slate-300'>Cargá porcentajes publicados por el fondo. Un mes vacío no equivale a 0%. Los acumulados usan solo los meses informados, no representan ganancias realizadas.</p></div>
-											<div className='grid grid-cols-3 gap-2'>{monthKeys.map(([key,label]) => <label key={key} className='text-xs font-semibold text-slate-200'>{label}<input className='portfolio-input mt-1' type='number' step='0.01' value={form.monthlyReturns?.[key] ?? ''} onChange={(event) => onMonthlyReturnChange(key, event.target.value)} placeholder='Sin dato' /></label>)}</div>
-											{monthlySummary.entries.length === 0 && <p className='text-xs text-slate-300' role='status'>Sin rentabilidades mensuales cargadas.</p>}
+														<div className='space-y-3 rounded-lg border border-slate-300 p-3 dark:border-slate-600'>
+															<div><p className='text-sm font-bold text-slate-900 dark:text-white'>Rentabilidad mensual</p><p className='text-xs text-slate-600 dark:text-slate-300'>Cargá porcentajes publicados por el fondo. Un mes vacío no equivale a 0%. Los acumulados usan solo los meses informados, no representan ganancias realizadas.</p></div>
+															<div className='grid grid-cols-2 gap-2 sm:grid-cols-3'>{monthKeys.map(([key,label]) => <label key={key} className='min-w-0 text-xs font-semibold text-slate-700 dark:text-slate-200'>{label}<input className='portfolio-input mt-1' type='number' step='0.01' value={form.monthlyReturns?.[key] ?? ''} onChange={(event) => onMonthlyReturnChange(key, event.target.value)} placeholder='Sin dato' /></label>)}</div>
+															{monthlySummary.entries.length === 0 && <p className='text-xs text-slate-600 dark:text-slate-300' role='status'>Sin rentabilidades mensuales cargadas.</p>}
 											<div className='grid grid-cols-2 gap-2'>
-												<div className='min-w-0 rounded-lg bg-slate-800 p-2'><p className='text-xs text-slate-300'>Suma simple</p><p className={`break-words font-bold tabular-nums ${hideValues ? 'text-slate-100' : modalPublishedRateTone(monthlySummary.simple)}`}>{privateReportedRate(monthlySummary.simple)}</p></div>
-												<div className='min-w-0 rounded-lg bg-slate-800 p-2'><p className='text-xs text-slate-300'>Acumulado compuesto</p><p className={`break-words font-bold tabular-nums ${hideValues ? 'text-slate-100' : modalPublishedRateTone(monthlySummary.compound)}`}>{privateReportedRate(monthlySummary.compound)}</p></div>
+																<div className='min-w-0 rounded-lg bg-slate-100 p-2 dark:bg-slate-800'><p className='text-xs text-slate-600 dark:text-slate-300'>Suma simple</p><p className={`break-words font-bold tabular-nums ${hideValues ? 'text-slate-900 dark:text-slate-100' : modalPublishedRateTone(monthlySummary.simple)}`}>{privateReportedRate(monthlySummary.simple)}</p></div>
+																<div className='min-w-0 rounded-lg bg-slate-100 p-2 dark:bg-slate-800'><p className='text-xs text-slate-600 dark:text-slate-300'>Acumulado compuesto</p><p className={`break-words font-bold tabular-nums ${hideValues ? 'text-slate-900 dark:text-slate-100' : modalPublishedRateTone(monthlySummary.compound)}`}>{privateReportedRate(monthlySummary.compound)}</p></div>
 											</div>
 											<input aria-label='YTD publicado por el fondo' className='portfolio-input' type='number' step='0.01' name='publishedYtdReturn' value={form.publishedYtdReturn ?? ''} onChange={onChange} placeholder='Total YTD publicado por el fondo %' />
 										</div>
 													</div>
 												)}
-												<div className='rounded-xl border border-slate-700 p-3 space-y-2'>
-													<p className='text-sm font-bold text-purple-300'>Datos para recibir transferencias</p>
+														<div className='rounded-xl border border-slate-200 p-3 space-y-2 dark:border-slate-700'>
+															<p className='text-sm font-bold text-violet-700 dark:text-purple-300'>Datos para recibir transferencias</p>
 													<input className='portfolio-input' name='accountHolder' value={form.accountHolder || ''} onChange={onChange} placeholder='Titular de la cuenta' />
 													<div className='grid grid-cols-2 gap-2'><input className='portfolio-input' name='accountNumber' value={form.accountNumber || ''} onChange={onChange} placeholder='Número de cuenta' /><input className='portfolio-input' name='accountType' value={form.accountType || ''} onChange={onChange} placeholder='Tipo de cuenta' /></div>
 													<input className='portfolio-input' name='cbu' value={form.cbu || ''} onChange={onChange} placeholder='CBU / cuenta destino' />
@@ -690,10 +690,10 @@ function Portfolio() {
 												<input className='portfolio-input' name='appUrl' value={form.appUrl || ''} onChange={onChange} placeholder='Acceso app / deep link (opcional)' />
 												<input className='portfolio-input' name='webUrl' value={form.webUrl || ''} onChange={onChange} placeholder='Web fallback oficial (opcional)' />
 												<input className='portfolio-input' type='url' name='infoUrl' value={form.infoUrl || ''} onChange={onChange} placeholder='Página oficial de información / rendimiento' />
-												<div className='rounded-lg border border-slate-700 p-3 space-y-2'>
-													<p className='text-xs font-semibold text-purple-300'>Fuente y verificación</p>
+														<div className='rounded-lg border border-slate-200 p-3 space-y-2 dark:border-slate-700'>
+															<p className='text-xs font-semibold text-violet-700 dark:text-purple-300'>Fuente y verificación</p>
 													<input className='portfolio-input' type='url' name='sourceUrl' value={form.sourceUrl || ''} onChange={onChange} placeholder='Fuente oficial usada para verificar' />
-													<div className='grid grid-cols-2 gap-2'><label className='text-xs text-gray-300'>Fuente consultada<input className='portfolio-input mt-1' type='date' name='sourceCheckedAt' value={form.sourceCheckedAt || ''} onChange={onChange} /></label><label className='text-xs text-gray-300'>Tasa verificada<input className='portfolio-input mt-1' type='date' name='rateVerifiedAt' value={form.rateVerifiedAt || ''} onChange={onChange} /></label></div>
+															<div className='grid grid-cols-1 gap-2 sm:grid-cols-2'><label className='text-xs text-slate-600 dark:text-slate-300'>Fuente consultada<input className='portfolio-input mt-1' type='date' name='sourceCheckedAt' value={form.sourceCheckedAt || ''} onChange={onChange} /></label><label className='text-xs text-slate-600 dark:text-slate-300'>Tasa verificada<input className='portfolio-input mt-1' type='date' name='rateVerifiedAt' value={form.rateVerifiedAt || ''} onChange={onChange} /></label></div>
 													<textarea className='portfolio-input' name='interestCalculationBasis' value={form.interestCalculationBasis || ''} onChange={onChange} placeholder='Base / metodología de cálculo' rows='2' />
 													<textarea className='portfolio-input' name='interestAccrual' value={form.interestAccrual || ''} onChange={onChange} placeholder='Devengamiento / acreditación' rows='2' />
 													<input className='portfolio-input' name='maxInterestBearingBalance' value={form.maxInterestBearingBalance || ''} onChange={onChange} placeholder='Saldo máximo remunerado (número o Sin tope)' />
@@ -706,11 +706,12 @@ function Portfolio() {
 												</div>
 												<textarea className='portfolio-input' name='notes' value={form.notes} onChange={onChange} placeholder='Notas' rows='2' />
 											</div>
-											<button
+										<div data-testid='portfolio-form-actions' className='sticky bottom-0 z-10 -mx-2 mt-4 space-y-2 rounded-xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-900/95'>
+										<button
 												type='submit'
 												disabled={pendingAction === 'save'}
 												aria-busy={pendingAction === 'save'}
-												className='w-full mt-2 py-2.5 rounded-lg bg-primary text-white font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-wait'
+												className='inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-wait disabled:opacity-60'
 											>
 												{pendingAction === 'save' && (
 													<span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' aria-hidden='true' />
@@ -723,7 +724,8 @@ function Portfolio() {
 														? 'Guardar cambios'
 														: 'Agregar al portfolio'}
 											</button>
-											{editingId && <button className='w-full mt-2 py-2 text-sm' type='button' onClick={reset}>Cancelar edición</button>}
+											{editingId && <button className='min-h-[44px] w-full rounded-lg py-2 text-sm font-semibold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-slate-200' type='button' onClick={reset}>Cancelar edición</button>}
+										</div>
 										</form>
 	);
 
