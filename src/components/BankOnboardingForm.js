@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
 import { exampleBankMarkdown, parseBankMarkdown } from '../utils/banksMarkdown';
 
 const input = 'mt-1 min-h-[44px] w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50';
-const secondary = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-500 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-100';
-const primary = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50';
+const secondary = 'inline-flex min-h-[44px] min-w-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-purple-400 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700';
+const primary = 'inline-flex min-h-[44px] min-w-0 items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-50 dark:focus-visible:ring-offset-slate-900';
 const blankAccount = () => ({
   name:'',type:'caja_ahorro',currency:'ARS',balance:'0',alias:'',cbu:'',
   accountNumber:'',holder:'',holderTaxId:'',branch:'',
@@ -40,6 +40,7 @@ export default function BankOnboardingForm({ onSave, onCancel, existingBanks = [
   const [parsed,setParsed]=useState(null);
   const [importMode,setImportMode]=useState(false);
   const [error,setError]=useState('');
+  const submittingRef=useRef(false);
   const change=(setRows,index,key,value)=>setRows(rows=>rows.map((row,i)=>i===index?{...row,[key]:value}:row));
   const remove=(setRows,index)=>setRows(rows=>rows.filter((row,i)=>i!==index));
   const preview=()=>{const result=parseBankMarkdown(markdown);setParsed(result);setError('');};
@@ -50,10 +51,12 @@ export default function BankOnboardingForm({ onSave, onCancel, existingBanks = [
   };
   const submit=async(event)=>{
     event.preventDefault();
+    if (busy || submittingRef.current) return;
     if (existingBanks.some((bank)=>bank.name?.trim().toLocaleLowerCase()===name.trim().toLocaleLowerCase())) {
       setError('Ya agregaste un banco con ese nombre. Editalo desde Mis bancos.');return;
     }
     setError('');
+    submittingRef.current=true;
     try { await onSave({name,accounts,cards}); }
     catch(e){
       const isFirestorePermissionError =
@@ -63,6 +66,7 @@ export default function BankOnboardingForm({ onSave, onCancel, existingBanks = [
         ? 'Firebase rechazó el guardado. Actualizá las reglas del módulo Bancos en Firestore Database → Rules y volvé a intentar. No se guardaron cuentas ni tarjetas porque la operación es atómica.'
         : e?.message || 'No se pudo guardar el banco.');
     }
+    finally { submittingRef.current=false; }
   };
   return <div className='min-w-0 space-y-4 pb-3'>
     <div className='pr-10'>
@@ -70,29 +74,31 @@ export default function BankOnboardingForm({ onSave, onCancel, existingBanks = [
       <h2 className='mt-1 text-xl font-extrabold sm:text-2xl'>Agregar banco</h2>
       <p className='mt-2 text-sm text-slate-600 dark:text-slate-300'>Elegí los datos que querés registrar. Solo el nombre es obligatorio si no cargás cuentas ni tarjetas.</p>
     </div>
-    <Area title='Rellenar desde Markdown' description='Usá el mismo flujo de LTC$: pegar, revisar una vista previa y aplicar al formulario. No se guarda hasta que confirmes.'>
-      <button type='button' className={secondary} aria-expanded={importMode} onClick={()=>setImportMode(x=>!x)}>
-        {importMode?'Ocultar importador':'Pegar Markdown'}
-      </button>
-      {importMode && <div className='space-y-3'>
-        <textarea aria-label='Markdown de bancos' rows={8} className={input+' resize-y font-mono text-xs'} value={markdown}
-          onChange={e=>{setMarkdown(e.target.value);setParsed(null);}}
-          placeholder={exampleBankMarkdown}/>
-        <button type='button' className={secondary} onClick={preview} disabled={!markdown.trim()||busy}>Comparar Markdown</button>
-        {parsed && <div role='status' className='rounded-xl border border-purple-500/40 p-3 text-sm'>
-          {parsed.errors.length ? <><p className='font-bold text-rose-600 dark:text-rose-300'>Corregí antes de continuar:</p>
-            {parsed.errors.map((e,i)=><p key={i} className='mt-1 text-rose-600 dark:text-rose-300'>{e}</p>)}</> :
-            <><p className='font-bold'>{parsed.name}</p>
-              <p className='mt-1 text-slate-600 dark:text-slate-300'>{parsed.accounts.length} cuentas y {parsed.cards.length} tarjetas detectadas.</p>
-              <p className='mt-1 text-xs'>Revisá saldos, monedas, fechas, últimos cuatro dígitos y cuentas antes de guardar. Las capturas no demuestran pagos o consumos conciliados.</p>
-              <button type='button' className={primary+' mt-3'} onClick={apply}>Aplicar al formulario</button></>}
-        </div>}
-      </div>}
-    </Area>
     <form onSubmit={submit} className='space-y-4'>
       <Area title='Banco' description='Los bancos se crean solo cuando lo confirmás, nunca automáticamente.'>
         <Field label='Nombre del banco' required minLength={2} maxLength={70} value={name} onChange={setName} placeholder='Ej.: Banco Ciudad'/>
       </Area>
+      <section className='space-y-3' aria-label='Importar banco desde Markdown'>
+        <button type='button' className={secondary} aria-expanded={importMode} aria-controls='bank-markdown-importer' onClick={()=>setImportMode(x=>!x)}>
+          {importMode?'Ocultar importador':'Pegar Markdown'}
+        </button>
+        {importMode && <div id='bank-markdown-importer'>
+          <Area title='Rellenar desde Markdown' description='Pegá tus datos, revisá la vista previa y aplicalos al formulario. No se guarda hasta que confirmes.'>
+            <textarea aria-label='Markdown de bancos' rows={8} className={input+' resize-y font-mono text-xs'} value={markdown}
+              onChange={e=>{setMarkdown(e.target.value);setParsed(null);}}
+              placeholder={exampleBankMarkdown}/>
+            <button type='button' className={secondary} onClick={preview} disabled={!markdown.trim()||busy}>Comparar Markdown</button>
+            {parsed && <div role='status' className='rounded-xl border border-purple-500/40 p-3 text-sm'>
+              {parsed.errors.length ? <><p className='font-bold text-rose-600 dark:text-rose-300'>Corregí antes de continuar:</p>
+                {parsed.errors.map((e,i)=><p key={i} className='mt-1 text-rose-600 dark:text-rose-300'>{e}</p>)}</> :
+                <><p className='font-bold'>{parsed.name}</p>
+                  <p className='mt-1 text-slate-600 dark:text-slate-300'>{parsed.accounts.length} cuentas y {parsed.cards.length} tarjetas detectadas.</p>
+                  <p className='mt-1 text-xs'>Revisá saldos, monedas, fechas, últimos cuatro dígitos y cuentas antes de guardar. Las capturas no demuestran pagos o consumos conciliados.</p>
+                  <button type='button' className={primary+' mt-3'} onClick={apply}>Aplicar al formulario</button></>}
+            </div>}
+          </Area>
+        </div>}
+      </section>
       <Area title='Cuentas bancarias (opcional)' description='Registrá una cuenta por moneda. El saldo manual no se transforma en ingreso de Transacciones.'>
         {accounts.map((a,i)=><div key={i} className='space-y-3 rounded-xl border border-slate-300 p-3 dark:border-slate-600'>
           <div className='flex items-center justify-between'><p className='font-bold'>Cuenta {i+1}</p>
@@ -149,7 +155,7 @@ export default function BankOnboardingForm({ onSave, onCancel, existingBanks = [
       </Area>
       {error && <p role='alert' className='rounded-xl bg-rose-500/10 p-3 text-sm text-rose-600 dark:text-rose-300'>{error}</p>}
       <p className='text-xs text-slate-600 dark:text-slate-300'>No ingreses claves, CVV ni los 16 dígitos de las tarjetas. La importación no registra pagos, consumos ni transferencias en Transacciones.</p>
-      <div className='grid grid-cols-2 gap-2'>
+      <div data-testid='bank-onboarding-actions' className='sticky bottom-0 z-10 -mx-4 grid grid-cols-2 gap-2 border-t border-slate-200 bg-white px-4 py-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900 sm:-mx-6 sm:px-6'>
         <button type='button' className={secondary} onClick={onCancel} disabled={busy}>Cancelar</button>
         <button className={primary} type='submit' disabled={busy||!name.trim()}>
           {busy?'Guardando…':'Guardar banco'}

@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import BankOnboardingForm from './BankOnboardingForm';
 
 test('bank creation only saves after confirmation, Markdown preview never writes', async () => {
@@ -62,4 +62,38 @@ test('Firebase permission denials show actionable guidance and preserve entered 
   expect(screen.getByRole('alert')).toHaveTextContent(/Firestore Database/);
   expect(screen.getByLabelText('Nombre del banco')).toHaveValue('Banco Ejemplo');
   expect(save).toHaveBeenCalledTimes(1);
+});
+
+test('mobile bank onboarding leads with the required name and keeps shared-theme actions visible', () => {
+  render(<BankOnboardingForm onSave={jest.fn()} onCancel={jest.fn()} existingBanks={[]} />);
+  const name = screen.getByLabelText('Nombre del banco');
+  const importButton = screen.getByRole('button', { name: 'Pegar Markdown' });
+  expect(name.compareDocumentPosition(importButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(importButton).toHaveAttribute('aria-expanded', 'false');
+  expect(importButton).toHaveAttribute('aria-controls', 'bank-markdown-importer');
+  expect(screen.queryByLabelText('Markdown de bancos')).not.toBeInTheDocument();
+
+  const actions = screen.getByTestId('bank-onboarding-actions');
+  expect(actions).toHaveClass('sticky', 'bottom-0', 'bg-white', 'dark:bg-slate-900');
+  expect(screen.getByRole('button', { name: 'Guardar banco' })).toHaveClass('min-h-[44px]', 'focus-visible:ring-2');
+  expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveClass('min-h-[44px]', 'dark:text-slate-200');
+  fireEvent.click(importButton);
+  expect(screen.getByRole('button', { name: 'Ocultar importador' })).toHaveAttribute('aria-expanded', 'true');
+  expect(screen.getByLabelText('Markdown de bancos')).toBeInTheDocument();
+});
+
+test('double tapping Guardar banco while a request is pending creates only one bank', async () => {
+  let rejectRequest;
+  const save = jest.fn().mockImplementation(() => new Promise((resolve, reject) => { rejectRequest = reject; }));
+  render(<BankOnboardingForm onSave={save} onCancel={jest.fn()} existingBanks={[]} />);
+  fireEvent.change(screen.getByLabelText('Nombre del banco'), { target: { value: 'Banco de prueba' } });
+  const saveButton = screen.getByRole('button', { name: 'Guardar banco' });
+  fireEvent.click(saveButton);
+  fireEvent.click(saveButton);
+  expect(save).toHaveBeenCalledTimes(1);
+  await act(async () => rejectRequest(new Error('Falló el guardado')));
+  expect(screen.getByRole('alert')).toHaveTextContent('Falló el guardado');
+  expect(screen.getByLabelText('Nombre del banco')).toHaveValue('Banco de prueba');
+  fireEvent.click(saveButton);
+  expect(save).toHaveBeenCalledTimes(2);
 });
