@@ -93,6 +93,26 @@ test('position form reuses local screenshot reader and the existing editable com
   expect(within(dialog).getByRole('button',{name:'Comparar datos detectados'})).toBeDisabled();
 });
 
+test('position editor has one modal-owned scroll region and sticky actions for narrow phones', async () => {
+  mount();
+  await getWorkspace();
+  fireEvent.click(screen.getByRole('button',{name:'Agregar posición'}));
+  const dialog=screen.getByRole('dialog');
+  const form=within(dialog).getByTestId('portfolio-position-form');
+  const actions=within(dialog).getByTestId('portfolio-form-actions');
+  expect(form).not.toHaveClass('overflow-y-auto');
+  expect(form.className).not.toMatch(/max-h-\[/);
+  expect(form).toHaveClass('text-slate-900','dark:text-slate-50');
+  expect(actions).toHaveClass('sticky','bottom-0','dark:bg-slate-900/95');
+  expect(within(actions).getByRole('button',{name:'Agregar al portfolio'})).toHaveClass('min-h-[44px]');
+  const importButton=within(dialog).getByRole('button',{name:'Importar desde captura o Markdown'});
+  expect(importButton).toHaveClass('bg-violet-50','dark:bg-slate-800');
+  fireEvent.click(importButton);
+  expect(form).toContainElement(within(dialog).getByLabelText('Elegir captura para lectura local'));
+  expect(form).toContainElement(actions);
+  expect(service.createPortfolioPosition).not.toHaveBeenCalled();
+});
+
 test('a visible Portfolio shortcut targets an existing position and opens OCR review without saving', async () => {
   mount();
   await getWorkspace();
@@ -193,7 +213,7 @@ test('FCI editor only compounds recorded months and treats an explicit zero as r
   fireEvent.change(within(dialog).getByLabelText('Feb'), {target:{value:'-2'}});
   expect(within(dialog).getByText('Suma simple').nextSibling).toHaveTextContent('-2.00%');
   expect(within(dialog).getByText('Acumulado compuesto').nextSibling).toHaveTextContent('-2.00%');
-  expect(within(dialog).getByText('Acumulado compuesto').nextSibling).toHaveClass('text-rose-300');
+  expect(within(dialog).getByText('Acumulado compuesto').nextSibling).toHaveClass('text-rose-700','dark:text-rose-300');
   fireEvent.change(within(dialog).getByLabelText('Feb'), {target:{value:''}});
   expect(within(dialog).getByText('Suma simple').nextSibling).toHaveTextContent('0.00%');
   expect(service.createPortfolioPosition).not.toHaveBeenCalled();
