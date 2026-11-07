@@ -50,6 +50,8 @@ export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, 
   const [documentNumber, setDocumentNumber] = useState('');
   const [note, setNote] = useState('');
   const [scanOpen, setScanOpen] = useState(false);
+  const [optionalDetailsOpen, setOptionalDetailsOpen] = useState(false);
+  const [ocrNotice, setOcrNotice] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const pendingRef = useRef(false);
@@ -75,9 +77,16 @@ export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, 
     if (fields.amount != null) setAmount(String(fields.amount));
     if (fields.date) setDate(fields.date);
     if (fields.currency) setCurrency(fields.currency);
-    if (fields.documentNumber) setDocumentNumber(fields.documentNumber);
+    if (fields.documentNumber) {
+      setDocumentNumber(fields.documentNumber);
+      setOptionalDetailsOpen(true);
+    }
     if (fields.documentType) setDocumentType(fields.documentType);
     setError('');
+    const missing = fields.ocrMissingFields || [];
+    setOcrNotice(missing.length
+      ? `Lectura parcial: completá ${missing.join(', ')} manualmente y revisá la moneda y los importes.`
+      : 'Datos detectados. Revisá el importe y la moneda antes de guardar.');
     setScanOpen(false);
   };
 
@@ -129,6 +138,7 @@ export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, 
       <span className='inline-flex items-center gap-2'><FiCamera aria-hidden='true'/> Leer ticket o cupón (opcional)</span><FiChevronDown aria-hidden='true' className={scanOpen ? 'rotate-180' : ''}/>
     </button>
     {scanOpen && <ReceiptOcrImport onApply={onOcrApply} disabled={isSubmitting}/>}
+    {ocrNotice && <p role='status' className='text-sm text-amber-800 dark:text-amber-200'>{ocrNotice}</p>}
 
     <form onSubmit={submit} className='space-y-3'>
       <label className={labelClass}>Medio de pago
@@ -162,20 +172,25 @@ export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, 
         </label>}
       </div>
 
-      <div className='grid gap-3 sm:grid-cols-2'>
-        <label className={labelClass}>Tipo de comprobante (opcional)
-          <select className={inputClass} value={documentType} onChange={(event) => setDocumentType(event.target.value)}>
-            {Object.entries(documentLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
+      <button type='button' aria-expanded={optionalDetailsOpen} onClick={() => setOptionalDetailsOpen((open) => !open)}
+        className='flex min-h-[44px] w-full items-center justify-between gap-2 rounded-lg border border-slate-300 px-3 py-2 text-left text-sm font-semibold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:text-slate-200'>
+        <span>Datos extra: comprobante y nota (opcional)</span><FiChevronDown aria-hidden='true' className={optionalDetailsOpen ? 'rotate-180' : ''}/>
+      </button>
+      {optionalDetailsOpen && <div className='space-y-3'>
+        <div className='grid gap-3 sm:grid-cols-2'>
+          <label className={labelClass}>Tipo de comprobante (opcional)
+            <select className={inputClass} value={documentType} onChange={(event) => setDocumentType(event.target.value)}>
+              {Object.entries(documentLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>
+          <label className={labelClass}>N.º de ticket, cupón o factura (opcional)
+            <input className={inputClass} value={documentNumber} onChange={(event) => setDocumentNumber(event.target.value)} maxLength={80} placeholder='Se puede dejar vacío'/>
+          </label>
+        </div>
+        <label className={labelClass}>Detalle (opcional)
+          <input className={inputClass} value={note} onChange={(event) => setNote(event.target.value)} maxLength={220} placeholder='Ej.: Verduras para la semana'/>
         </label>
-        <label className={labelClass}>N.º de ticket, cupón o factura (opcional)
-          <input className={inputClass} value={documentNumber} onChange={(event) => setDocumentNumber(event.target.value)} maxLength={80} placeholder='Se puede dejar vacío'/>
-        </label>
-      </div>
-      <p className='text-xs leading-relaxed text-slate-600 dark:text-slate-300'>Si tenés un comprobante, guardar su número puede facilitar la conciliación posterior. También podés dejarlo vacío.</p>
-      <label className={labelClass}>Detalle (opcional)
-        <input className={inputClass} value={note} onChange={(event) => setNote(event.target.value)} maxLength={220} placeholder='Ej.: Verduras para la semana'/>
-      </label>
+      </div>}
       <p className='flex items-start gap-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300'>
         {paymentMethod === 'credit' ? <FiCreditCard aria-hidden='true' className='mt-0.5 shrink-0'/> : <FiInfo aria-hidden='true' className='mt-0.5 shrink-0'/>}
         {paymentMethod === 'credit'

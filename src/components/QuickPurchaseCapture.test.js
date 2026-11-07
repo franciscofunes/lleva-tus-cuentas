@@ -28,6 +28,8 @@ test('accepts a credit purchase without uploading any receipt and does not write
   const onTransactionDraft = jest.fn();
   render(<QuickPurchaseCapture uid='alice' onClose={onClose} onTransactionDraft={onTransactionDraft}/>);
   expect(screen.getByText(/Ningún comprobante es obligatorio/)).toBeInTheDocument();
+  expect(screen.getByRole('button', {name:/Datos extra: comprobante y nota/})).toHaveAttribute('aria-expanded','false');
+  expect(screen.queryByLabelText('N.º de ticket, cupón o factura (opcional)')).not.toBeInTheDocument();
   expect(screen.getByRole('button', {name:/Leer ticket o cupón/})).toHaveClass('dark:bg-slate-800', 'focus-visible:ring-violet-500');
   expect(screen.getByLabelText('Comercio')).toHaveClass('dark:bg-slate-800', 'text-base');
   expect(screen.queryByRole('button', {name:'Aplicar lectura de prueba'})).not.toBeInTheDocument();
@@ -48,6 +50,7 @@ test('a card coupon number can be entered manually without a photo or invoice', 
   fireEvent.change(screen.getByLabelText('Tarjeta utilizada'), {target:{value:'card1'}});
   fireEvent.change(screen.getByLabelText('Comercio'), {target:{value:'Farmacia del Centro'}});
   fireEvent.change(screen.getByLabelText('Importe'), {target:{value:'2850,50'}});
+  fireEvent.click(screen.getByRole('button', {name:/Datos extra: comprobante y nota/}));
   fireEvent.change(screen.getByLabelText('Tipo de comprobante (opcional)'), {target:{value:'coupon'}});
   fireEvent.change(screen.getByLabelText('N.º de ticket, cupón o factura (opcional)'), {target:{value:'000482'}});
   fireEvent.click(screen.getByRole('button', {name:'Guardar consumo de tarjeta'}));
@@ -64,6 +67,7 @@ test('cash, debit and transfer only prepare a reviewed Transactions draft', asyn
   fireEvent.change(screen.getByLabelText('Medio de pago'), {target:{value:'cash'}});
   fireEvent.change(screen.getByLabelText('Comercio'), {target:{value:'Almacén'}});
   fireEvent.change(screen.getByLabelText('Importe'), {target:{value:'12975'}});
+  fireEvent.click(screen.getByRole('button', {name:/Datos extra: comprobante y nota/}));
   fireEvent.change(screen.getByLabelText('N.º de ticket, cupón o factura (opcional)'), {target:{value:'3-84'}});
   fireEvent.click(screen.getByRole('button', {name:'Continuar a Transacciones'}));
   await waitFor(() => expect(onTransactionDraft).toHaveBeenCalledWith(expect.objectContaining({

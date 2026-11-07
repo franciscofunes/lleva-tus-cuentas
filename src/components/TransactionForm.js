@@ -191,9 +191,18 @@ const TransactionForm = ({
       setSelectedDate(fields.date);
       setValue('selectedDate', fields.date, {shouldValidate: true});
     }
+    if (!edit && fields.documentNumber) {
+      const typeName = {coupon:'Cupón',invoice:'Factura',ticket:'Ticket'}[fields.documentType] || 'Comprobante';
+      const ref = `${typeName}: ${fields.documentNumber}`;
+      const nextComment = [comment, ref].filter(Boolean).join(' · ').slice(0, 70);
+      setComment(nextComment);
+      setValue('comment', nextComment, {shouldValidate: true});
+    }
     if (!edit && fields.currency) setTransactionCurrency(fields.currency);
     setReceiptCurrency(fields.currency || null);
-    setMarkdownMessage('Datos del ticket aplicados al borrador. Verificá el importe, la moneda y elegí una categoría antes de guardar.');
+    setMarkdownMessage(fields.ocrMissingFields?.length
+      ? `Lectura parcial: completá ${fields.ocrMissingFields.join(', ')} manualmente. Revisá moneda y categoría antes de guardar.`
+      : 'Datos detectados. Revisá el importe, la moneda y la categoría antes de guardar.');
     setShowReceiptScanner(false);
   };
 
