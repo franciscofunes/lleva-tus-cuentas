@@ -26,6 +26,12 @@ test('collapsed Transactions widgets use one grid gap rather than doubling spaci
   expect(workspace).toContain('id="transactions-charts"');
 });
 
+test('Transactions tools start one standard gap below the main grid', () => {
+  const overview = dashboard.slice(dashboard.indexOf('<FinancialOverviewPanel'), dashboard.indexOf('actions={[', dashboard.indexOf('<FinancialOverviewPanel')));
+  expect(overview).toContain('id="transactions-overview"');
+  expect(overview).toContain('className="mt-5"');
+});
+
 test('analytics charts default to collapsed only for fresh accounts and persisted choices override defaults', () => {
   expect(dashboard).toContain('charts: true');
   expect(dashboard).toContain('...(saved.collapsedSections || {})');

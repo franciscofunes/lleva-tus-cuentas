@@ -836,6 +836,7 @@ function Dashboard() {
           )}
           <FinancialOverviewPanel
               id="transactions-overview"
+              className="mt-5"
               collapsed={collapsedSections.overview}
               onToggle={() => toggleDashboardSection("overview")}
               title={TRANSACTIONS_PAGE_COPY.overview.title}

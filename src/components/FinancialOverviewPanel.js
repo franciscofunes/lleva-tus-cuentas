@@ -81,9 +81,9 @@ export function FinancialMetricCard({ metric, index = 0, reduceMotion = false, i
 }
 
 export default function FinancialOverviewPanel({
-  title, eyebrow = 'Herramientas y métricas', description,
+  title, eyebrow = 'Herramientas', description,
   metrics = [], actions = [], privacyHidden = false, isLoading = false,
-  id, collapsed = false, onToggle,
+  id, collapsed = false, onToggle, className = '',
 }) {
   const reduceMotion = useReducedMotion();
   const contentId = id ? `${id}-content` : undefined;
@@ -93,7 +93,7 @@ export default function FinancialOverviewPanel({
       id={id}
       aria-label={title}
       aria-busy={isLoading}
-      className={`mb-5 ${COLLAPSIBLE_SURFACE_STYLES.root}`}
+      className={`${COLLAPSIBLE_SURFACE_STYLES.root} ${className}`.trim()}
     >
       <button
         type='button'
