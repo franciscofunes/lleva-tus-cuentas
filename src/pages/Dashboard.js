@@ -669,7 +669,6 @@ function Dashboard() {
             title={TRANSACTIONS_PAGE_COPY.summary.title}
             collapsed={collapsedSections.summary}
             onToggle={() => toggleDashboardSection("summary")}
-            className="font-Nunito"
           >
             <BimonetarySummary
               docs={filteredDocs}
@@ -805,7 +804,7 @@ function Dashboard() {
 
             collapsed={collapsedSections.charts}
             onToggle={() => toggleDashboardSection("charts")}
-            className="mb-5 min-w-0 max-w-full overflow-hidden font-Nunito"
+            className="mb-5 min-w-0 max-w-full overflow-hidden"
             contentClassName="min-w-0 max-w-full"
           >
             {isDataFetching || !Array.isArray(categories) ? (

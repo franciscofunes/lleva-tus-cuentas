@@ -85,13 +85,17 @@ test('Portfolio and Transactions widgets use the same visible surface and conten
         collapsed={false} onToggle={() => {}}><p>Saldo</p></CollapsibleSection>
       <CollapsibleSection id='transactions-summary' title='Tu economía en ARS y USD'
         collapsed={false} onToggle={() => {}}><p>Flujos</p></CollapsibleSection>
+      <CollapsibleSection id='banks-accounts' title='Cuentas bancarias'
+        collapsed={false} onToggle={() => {}}><p>Cuentas</p></CollapsibleSection>
       <FinancialOverviewPanel id='portfolio-overview' title='Portfolio de un vistazo'
         collapsed={false} onToggle={() => {}} />
     </>
   );
-  for (const id of ['portfolio-summary', 'transactions-summary', 'portfolio-overview']) {
+  for (const id of ['portfolio-summary', 'transactions-summary', 'banks-accounts', 'portfolio-overview']) {
     const el = container.querySelector('#' + id);
     expect(el).toHaveClass(...COLLAPSIBLE_SURFACE_STYLES.root.split(' '));
+    expect(el).toHaveClass('font-sans', 'bg-white', 'dark:bg-slate-800');
+    expect(el).not.toHaveClass('font-Nunito', 'font-Roboto', 'font-Montserrat');
     expect(el.querySelector('button')).toHaveAttribute('aria-expanded', 'true');
   }
   expect(container.querySelector('#portfolio-summary-content')).toHaveClass('border-t','dark:border-slate-700');
@@ -107,6 +111,7 @@ test('nested visualizations use subdued shared surfaces and semantic h3 labels',
   );
   const root = container.querySelector('#portfolio-chart-allocation');
   expect(root).toHaveClass(...COLLAPSIBLE_SURFACE_STYLES.nested.split(' '));
+  expect(root).toHaveClass('font-sans', 'dark:bg-slate-900/60');
   expect(screen.getByRole('heading', { level:3, name:'Distribución por posición' })).toBeInTheDocument();
   expect(screen.getByRole('button', {name:/Distribución por posición/})).toHaveAttribute('aria-expanded','true');
   expect(screen.getByText('Lista por activo')).toBeInTheDocument();
