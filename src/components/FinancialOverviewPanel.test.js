@@ -168,3 +168,21 @@ test('collapsed overview keeps header accessible without rendering sensitive KPI
   expect(screen.getByRole('button', { name: 'Portfolio de un vistazo: expandir' })).toHaveAttribute('aria-expanded', 'false');
   expect(screen.queryByRole('status', { name: 'Actualizando Posiciones' })).not.toBeInTheDocument();
 });
+
+test('tools share the compact Transactions header and leave inter-widget spacing to each page', () => {
+  const { container, rerender } = render(
+    <FinancialOverviewPanel id='portfolio-overview' title='Métricas y exportaciones'
+      collapsed onToggle={jest.fn()} />
+  );
+  const panel = container.querySelector('#portfolio-overview');
+  expect(panel).not.toHaveClass('mb-5', 'mt-5');
+  expect(screen.getByText('Herramientas')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Métricas y exportaciones: expandir' }))
+    .toHaveAttribute('aria-expanded', 'false');
+  expect(screen.queryByText('Exportá tus activos o prepará un análisis para Lita.')).not.toBeInTheDocument();
+
+  rerender(<FinancialOverviewPanel id='transactions-overview' title='Métricas y exportaciones'
+    collapsed className='mt-5' onToggle={jest.fn()} />);
+  expect(container.querySelector('#transactions-overview')).toHaveClass('mt-5');
+  expect(container.querySelector('#transactions-overview')).not.toHaveClass('mb-5');
+});

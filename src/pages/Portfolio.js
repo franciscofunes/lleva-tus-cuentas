@@ -970,8 +970,8 @@ function Portfolio() {
 						id='portfolio-overview'
 						collapsed={collapsedSections.overview}
 						onToggle={() => togglePortfolioSection('overview')}
-						title='Herramientas y métricas'
-						description='Exportá tus activos o prepará un análisis para Lita.'
+						eyebrow='Herramientas'
+						title='Métricas y exportaciones'
 						privacyHidden={hideValues}
 						actions={[
 							{ id: 'excel', type: 'excel', label: 'Exportar archivos', onClick: openPortfolioExport, disabled: loading || !positions.length },

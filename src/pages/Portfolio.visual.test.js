@@ -306,8 +306,10 @@ test('Charts and tools have their own mobile gap and remain separate collapsible
   const toolsSpacing = screen.getByTestId('portfolio-tools-spacing');
   expect(toolsSpacing).toHaveClass('mt-5');
   expect(toolsSpacing).toContainElement(tools);
+  expect(tools).not.toHaveClass('mb-5');
   expect(charts.compareDocumentPosition(toolsSpacing) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(charts).toHaveClass('rounded-2xl','dark:bg-slate-800');
-  expect(tools).toHaveAttribute('aria-label','Herramientas y métricas');
+  expect(tools).toHaveAttribute('aria-label','Métricas y exportaciones');
+  expect(within(tools).getByRole('heading', { name: 'Métricas y exportaciones' })).toBeInTheDocument();
   expect(screen.getByRole('button',{name:/Gráficos/})).toHaveAttribute('aria-expanded');
 });

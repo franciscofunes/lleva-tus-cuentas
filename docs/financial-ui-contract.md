@@ -10,6 +10,7 @@
 | Primary/secondary actions | `FinancialHeaderActions` | Add movement + privacy + **Más** | Add bank + privacy + **Más**, identical DOM/styles |
 | Root widget | `CollapsibleSection` and `COLLAPSIBLE_SURFACE_STYLES.root` | Summary, activity, charts | Bank balance, banks activity, budgets, linked statements |
 | KPI values | `FinancialMetricCard` | Financial summaries | Two separate balance currencies |
+| Tools and exports | `FinancialOverviewPanel` | “Herramientas” / “Métricas y exportaciones”; page-owned `mt-5` | Portfolio uses the same collapsed header and 20px gap, with no panel-owned bottom margin |
 | Card surface | `FINANCIAL_ITEM_SURFACE_STYLES` | Transaction card | Bank account card and consumption card |
 | Per-record disclosure | `FINANCIAL_RECORD_DISCLOSURE_STYLES` | **Ver detalles / Ocultar detalles** | Bank account metadata `Ver detalles`; CBU still needs a second explicit reveal |
 | Destructive action | `GenericModal` + validated confirmation | DeleteTransactionDialog | DeleteBankChargeDialog |
@@ -26,6 +27,8 @@ flowchart TD
 ```
 
 At **390px mobile**, read top-to-bottom in that order. At **1440/1728px**, use a single `lg:grid-cols-3` dashboard: summary and tools in the narrow rail, activity in `lg:col-span-2 lg:row-span-2`. This is the existing `Dashboard.js` pattern, not a new Banks-specific composition.
+
+The collapsible tools/export panel has no inherent vertical margin: Transactions adds a single `mt-5` after its grid, and Portfolio supplies the same gap in its existing outer wrapper. Its collapsed heading uses the same eyebrow/title pair on both pages, without duplicate labels or Portfolio-only description lines that make the closed card taller. Content actions, metric data, export scope, and saved collapse preferences are unchanged.
 
 Banks must not put an oversized card-budget settings UI above the user's bank records. Bank account cards must first show title, currency, balance and type. Less-common account identity fields belong under the **same** progressive-disclosure surface as Transactions; sensitive CBU remains masked unless explicitly revealed. Never silently alter persisted records.
 
