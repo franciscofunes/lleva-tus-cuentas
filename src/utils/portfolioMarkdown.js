@@ -5,6 +5,7 @@ const CANONICAL_FIELDS = [
 	'ticker', 'shares', 'nav', 'navDate', 'redemptionPeriod', 'minimumInvestment',
 	'performance1D', 'performance1W', 'performance1M', 'performanceYTD', 'performance1Y',
 	'fundType', 'investmentHorizon', 'fundStartDate', 'rating', 'volatility21dAnnualized', 'publishedYtdReturn',
+	'depositAccruedInterest', 'depositTotalInterest', 'depositContractNumber', 'depositAutoRenewal',
 	'sourceUrl', 'sourceCheckedAt', 'rateVerifiedAt', 'interestCalculationBasis', 'interestAccrual', 'maxInterestBearingBalance',
 	'accountHolder', 'accountNumber', 'accountType', 'cbu', 'alias', 'routingNumber', 'swift', 'bankName', 'bankAddress', 'depositInstructions',
 ];
@@ -20,6 +21,11 @@ const FIELD_MAP = {
 	'ganancias realizadas': 'realizedEarnings', 'ultimo rendimiento': 'lastEarning', 'último rendimiento': 'lastEarning', 'tasa efectiva': 'effectiveRate',
 	'fecha inicio': 'startDate', 'fecha de inicio': 'startDate',
 	'vencimiento': 'maturityDate', 'fecha vencimiento': 'maturityDate',
+	'intereses devengados': 'depositAccruedInterest', 'intereses devengados a la fecha': 'depositAccruedInterest',
+	'intereses totales': 'depositTotalInterest', 'intereses totales previstos': 'depositTotalInterest',
+	'interés total previsto': 'depositTotalInterest', 'interes total previsto': 'depositTotalInterest',
+	'número de contrato': 'depositContractNumber', 'numero de contrato': 'depositContractNumber',
+	'renovación automática': 'depositAutoRenewal', 'renovacion automatica': 'depositAutoRenewal',
 	'notas': 'notes', 'acceso app/web': 'appUrl', 'acceso app': 'appUrl', 'app url': 'appUrl', 'deep link': 'appUrl', 'url': 'appUrl',
 	'web fallback': 'webUrl', 'web oficial': 'webUrl', 'web url': 'webUrl',
 	'info': 'infoUrl', 'informacion': 'infoUrl', 'información': 'infoUrl', 'pagina de informacion': 'infoUrl', 'página de información': 'infoUrl',
@@ -65,6 +71,7 @@ const NUMBER_FIELDS = [
 	'effectiveRate', 'shares', 'nav', 'minimumInvestment', 'performance1D',
 	'performance1W', 'performance1M', 'performanceYTD', 'performance1Y',
 	'volatility21dAnnualized', 'publishedYtdReturn', 'maxInterestBearingBalance',
+	'depositAccruedInterest', 'depositTotalInterest',
 ];
 
 const DATE_FIELDS = [
@@ -112,11 +119,20 @@ const assignField = (parsed, field, value) => {
 		return;
 	}
 
-	if (NUMBER_FIELDS.includes(field)) parsed[field] = normalizeNumber(value);
+	if (field === 'depositAccruedInterest' || field === 'depositTotalInterest') {
+		const amount = normalizeNumber(value);
+		// Screenshot OCR proposals must never persist NaN or negative interest.
+		if (/^\d+(?:\.\d+)?$/.test(amount) && Number.isFinite(Number(amount))) parsed[field] = amount;
+	}
+	else if (NUMBER_FIELDS.includes(field)) parsed[field] = normalizeNumber(value);
 	else if (DATE_FIELDS.includes(field)) parsed[field] = normalizeDate(value);
 	else if (field === 'currency') parsed[field] = strip(value).toUpperCase();
 	else if (field === 'rateType') parsed[field] = strip(value).toUpperCase();
 	else if (field === 'trackingMode') parsed[field] = strip(value).toUpperCase().replace(/[ -]+/g, '_');
+	else if (field === 'depositAutoRenewal') {
+		if (/^s[ií]$/i.test(strip(value))) parsed[field] = 'SI';
+		else if (/^no$/i.test(strip(value))) parsed[field] = 'NO';
+	}
 	else parsed[field] = strip(value);
 };
 

@@ -52,6 +52,10 @@ const emptyForm = {
 	realizedEarnings: '',
 	lastEarning: '',
 	effectiveRate: '',
+	depositAccruedInterest: '',
+	depositTotalInterest: '',
+	depositContractNumber: '',
+	depositAutoRenewal: '',
 	startDate: '',
 	maturityDate: '',
 	notes: '',
@@ -97,6 +101,14 @@ const money = (value, currency) =>
 		currency,
 		maximumFractionDigits: currency === 'ARS' ? 0 : 2,
 	}).format(Number(value || 0));
+
+const DEPOSIT_IMPORT_FIELDS = new Set(['depositAccruedInterest', 'depositTotalInterest', 'depositContractNumber', 'depositAutoRenewal']);
+const IMPORT_FIELD_LABELS = {
+	depositAccruedInterest: 'Intereses devengados (sin acreditar)',
+	depositTotalInterest: 'Intereses totales previstos al vencimiento',
+	depositContractNumber: 'Número de contrato',
+	depositAutoRenewal: 'Renovación automática',
+};
 
 const modalPublishedRateTone = (value) => value == null || value === 0
 	? 'text-slate-700 dark:text-slate-100'
@@ -378,14 +390,14 @@ function Portfolio() {
 				}
 				return Object.entries(value).map(([month, monthValue]) => [`monthlyReturns.${month}`, monthValue]);
 			});
-			const preview = flatEntries.map(([field, value]) => {
+			const preview = flatEntries.filter(([field]) => !DEPOSIT_IMPORT_FIELDS.has(field) || form.category === 'Plazo fijo').map(([field, value]) => {
 				const month = field.startsWith('monthlyReturns.') ? field.split('.')[1] : null;
 				const current = month ? form.monthlyReturns?.[month] : form[field];
 				const missing = current === '' || current == null;
 				return { field, value, current, missing, changed: String(current ?? '') !== String(value ?? ''), selected: missing };
 			}).filter((item) => item.changed);
 			setImportPreview(preview);
-			if (!preview.length) toast.info('El Markdown no contiene cambios para esta posición.');
+			if (!preview.length) toast.info('Los datos reconocidos ya coinciden con esta posición.');
 			else if (unknown.length) toast.info(`${preview.length} cambios detectados; ${unknown.length} campos no reconocidos.`);
 		} catch (error) {
 			toast.error(error.message || 'No se pudo interpretar el Markdown');
@@ -450,6 +462,8 @@ function Portfolio() {
 			realizedEarnings: String(position.realizedEarnings ?? ''),
 			lastEarning: String(position.lastEarning ?? ''),
 			effectiveRate: String(position.effectiveRate ?? ''),
+			depositAccruedInterest: String(position.depositAccruedInterest ?? ''),
+			depositTotalInterest: String(position.depositTotalInterest ?? ''),
 			shares: String(position.shares ?? ''),
 			nav: String(position.nav ?? ''),
 			minimumInvestment: String(position.minimumInvestment ?? ''),
@@ -625,7 +639,8 @@ function Portfolio() {
 												</>}
 												{!hideValues && importPreview.length > 0 && <div className='mt-3 space-y-2'>
 													<div className='flex flex-wrap gap-2'>{[['missing','Solo faltantes'],['all','Todos los cambios'],['none','Ninguno']].map(([choice,label]) => <button key={choice} type='button' onClick={() => selectImportFields(choice)} className='min-h-[44px] rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600'>{label}</button>)}</div>
-													{importPreview.map((item) => <label key={item.field} className='flex min-h-[44px] cursor-pointer gap-3 rounded-lg border border-slate-300 p-2 text-sm dark:border-slate-700'><input type='checkbox' checked={item.selected} onChange={() => toggleImportField(item.field)} /><span className='min-w-0'><strong>{item.field.startsWith('monthlyReturns.') ? `Rentabilidad ${monthLabelByKey[item.field.split('.')[1]] || item.field.split('.')[1].toUpperCase()}` : item.field}</strong>{item.missing && <span className='ml-2 text-xs text-emerald-700 dark:text-emerald-400'>FALTANTE</span>}<span className='block break-all text-xs text-slate-600 dark:text-slate-400'>{String(item.current || '—')} → <span className='text-slate-900 dark:text-white'>{String(item.value)}</span></span></span></label>)}
+																	{importPreview.map((item) => <label key={item.field} className='flex min-h-[44px] cursor-pointer gap-3 rounded-lg border border-slate-300 p-2 text-sm dark:border-slate-700'><input type='checkbox' checked={item.selected} onChange={() => toggleImportField(item.field)} /><span className='min-w-0'><strong>{item.field.startsWith('monthlyReturns.') ? `Rentabilidad ${monthLabelByKey[item.field.split('.')[1]] || item.field.split('.')[1].toUpperCase()}` : IMPORT_FIELD_LABELS[item.field] || item.field}</strong>{item.missing && <span className='ml-2 text-xs text-emerald-700 dark:text-emerald-400'>FALTANTE</span>}<span className='block break-all text-xs text-slate-600 dark:text-slate-400'>{String(item.current ?? '') || '—'} → <span className='text-slate-900 dark:text-white'>{String(item.value)}</span></span></span></label>)}
+																	{importPreview.some(item => DEPOSIT_IMPORT_FIELDS.has(item.field)) && <p className='text-xs text-slate-700 dark:text-slate-300'>Los intereses informados por el banco no aumentan el saldo ni las ganancias realizadas. Para reemplazar datos existentes, marcá sus casillas.</p>}
 													<button type='button' onClick={applyImportFields} className='min-h-[44px] w-full rounded-lg bg-ltc-green px-3 py-2 font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500'>Aplicar campos seleccionados</button>
 												</div>}
 											</div>}
@@ -704,6 +719,18 @@ function Portfolio() {
 													<input className='portfolio-input' type='date' name='startDate' value={form.startDate || ''} onChange={onChange} />
 													<input className='portfolio-input' type='date' name='maturityDate' value={form.maturityDate || ''} onChange={onChange} />
 												</div>
+																{form.category === 'Plazo fijo' && <section aria-label='Información del plazo fijo' className='space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/70'>
+																	<p className='text-sm font-semibold text-violet-700 dark:text-violet-200'>Información del plazo fijo</p>
+																	<p className='text-xs text-slate-700 dark:text-slate-300'>Intereses del contrato según el banco. Son informativos hasta su acreditación; no se suman al saldo ni a ganancias realizadas.</p>
+																	<div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
+																		<label className='text-xs text-slate-700 dark:text-slate-200'>Intereses devengados (sin acreditar)<input className='portfolio-input mt-1' type='number' min='0' step='0.01' name='depositAccruedInterest' value={form.depositAccruedInterest ?? ''} onChange={onChange}/></label>
+																		<label className='text-xs text-slate-700 dark:text-slate-200'>Intereses totales previstos<input className='portfolio-input mt-1' type='number' min='0' step='0.01' name='depositTotalInterest' value={form.depositTotalInterest ?? ''} onChange={onChange}/></label>
+																	</div>
+																	<div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
+																		<label className='text-xs text-slate-700 dark:text-slate-200'>Número de contrato<input className='portfolio-input mt-1' name='depositContractNumber' value={form.depositContractNumber || ''} onChange={onChange}/></label>
+																		<label className='text-xs text-slate-700 dark:text-slate-200'>Renovación automática<select className='portfolio-input mt-1' name='depositAutoRenewal' value={form.depositAutoRenewal || ''} onChange={onChange}><option value=''>Sin informar</option><option value='SI'>Sí</option><option value='NO'>No</option></select></label>
+																	</div>
+																</section>}
 												<textarea className='portfolio-input' name='notes' value={form.notes} onChange={onChange} placeholder='Notas' rows='2' />
 											</div>
 										<div data-testid='portfolio-form-actions' className='sticky bottom-0 z-10 -mx-2 mt-4 space-y-2 rounded-xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-900/95'>
@@ -874,6 +901,10 @@ function Portfolio() {
 												className='mt-2 min-w-0 space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-left text-sm dark:border-slate-700 dark:bg-slate-900/70'>
 										{position.trackingMode === 'DAILY_RATE' && parsePublishedReturn(position.annualRate) !== null && <p className='text-xs text-slate-600 dark:text-slate-300'>Esperado hoy: {privateMoney(Number(position.balance || 0) * Number(position.annualRate) / 100 / 365, position.currency)}</p>}
 										{position.trackingMode === 'MATURITY' && position.maturityDate && <p className='text-xs text-slate-600 dark:text-slate-300'>Seguimiento al vencimiento: {position.maturityDate}</p>}
+										{position.category === 'Plazo fijo' && position.depositAccruedInterest != null && <p className='text-xs text-slate-700 dark:text-slate-300'>Intereses devengados (sin acreditar): {privateMoney(position.depositAccruedInterest, position.currency)}</p>}
+										{position.category === 'Plazo fijo' && position.depositTotalInterest != null && <p className='text-xs text-slate-700 dark:text-slate-300'>Intereses totales previstos: {privateMoney(position.depositTotalInterest, position.currency)}</p>}
+										{position.category === 'Plazo fijo' && position.depositAutoRenewal && <p className='text-xs text-slate-700 dark:text-slate-300'>Renovación automática: {position.depositAutoRenewal === 'SI' ? 'Sí' : 'No'}</p>}
+										{position.category === 'Plazo fijo' && position.depositContractNumber && <p className='text-xs text-slate-700 dark:text-slate-300'>N.º de contrato: {hideValues ? '••••••' : position.depositContractNumber}</p>}
 										<p className='text-xs text-slate-600 dark:text-slate-300'>Tracking: {position.trackingMode || 'MANUAL'}</p>
 										{position.category === 'FCI' && position.ticker && <p className='text-xs text-slate-600 dark:text-slate-300'>Ticker: {position.ticker}</p>}
 										{position.category === 'FCI' && Number(position.nav || 0) > 0 && <p className='text-xs text-slate-600 dark:text-slate-300'>NAV: {hideValues ? '••••••' : Number(position.nav).toFixed(5)} {position.navDate ? `· ${position.navDate}` : ''}</p>}

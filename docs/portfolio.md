@@ -13,6 +13,16 @@ A position stores institution, display name, category, currency, current balance
 annual rate when applicable, accumulated/realized return, fees, start/end dates
 and notes.
 
+For **Plazo fijo** records, optional `depositAccruedInterest` (interest accrued
+but not credited), `depositTotalInterest` (bank-reported total expected at
+maturity), `depositContractNumber` (string, retaining leading zeroes) and
+`depositAutoRenewal` (`SI`, `NO`, or unset) can be reviewed and imported from
+bank screenshots. Neither interest amount changes `balance`, `principal`,
+`lastEarning` or `realizedEarnings`; the user must explicitly classify any
+actual future credit as earned via the existing reconciliation flow. These
+extra fields are permitted by the owner-scoped portfolio rule template but
+the user's deployed Firestore rules must be reviewed if they restrict keys.
+
 A snapshot stores a point-in-time valuation. Snapshots are the source for
 historical performance charts; projected interest must not be presented as
 realized profit.
