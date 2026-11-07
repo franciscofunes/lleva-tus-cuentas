@@ -51,6 +51,86 @@ function Field({ title, children }) {
 }
 function ErrorMessage({ error }) { return error ? <p role='alert' className='rounded-lg bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300'>{error}</p> : null; }
 
+const ACCOUNT_IDENTITY_FIELDS = ['alias', 'cbu', 'accountNumber', 'holder', 'holderTaxId', 'branch'];
+
+function BankAccountEditor({ draft, onChange, editingId, busy, onSave, onCancel }) {
+  const filledDetails = ACCOUNT_IDENTITY_FIELDS.filter((key) => String(draft[key] || '').trim()).length;
+  const [identityExpanded, setIdentityExpanded] = useState(filledDetails > 0);
+  return <form aria-label={editingId ? 'Editar cuenta bancaria' : 'Nueva cuenta bancaria'}
+    className={surface + ' grid min-w-0 gap-3 sm:grid-cols-2'} onSubmit={(event) => { event.preventDefault(); onSave(); }}>
+    <div className='min-w-0 sm:col-span-2'>
+      <h4 className='text-base font-bold text-slate-900 dark:text-slate-50'>{editingId ? 'Editar cuenta' : 'Nueva cuenta'}</h4>
+      <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>El saldo es una referencia manual; no se registra como ingreso.</p>
+    </div>
+    <div className='sm:col-span-2'><Field title='Nombre o apodo'><input className={inputClass} required maxLength={70} value={draft.name} onChange={(e)=>onChange({ ...draft, name:e.target.value })}/></Field></div>
+    <div className='grid min-w-0 grid-cols-2 gap-3 sm:col-span-2'>
+      <Field title='Tipo'><select className={inputClass} value={draft.type} onChange={(e)=>onChange({ ...draft, type:e.target.value })}><option value='caja_ahorro'>Caja de ahorro</option><option value='cuenta_corriente'>Cuenta corriente</option><option value='otra'>Otra</option></select></Field>
+      <Field title='Moneda'><select className={inputClass} value={draft.currency} onChange={(e)=>onChange({ ...draft, currency:e.target.value })}><option value='ARS'>Pesos (ARS)</option><option value='USD'>Dólares (USD)</option></select></Field>
+    </div>
+    <div className='sm:col-span-2'><Field title='Saldo actual (manual)'><input className={inputClass} required inputMode='decimal' value={draft.balance} onChange={(e)=>onChange({ ...draft, balance:e.target.value })}/></Field></div>
+    <details className='min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/70 sm:col-span-2'
+      open={identityExpanded} onToggle={(event) => setIdentityExpanded(event.currentTarget.open)}
+      onInvalidCapture={(event) => { event.currentTarget.open = true; setIdentityExpanded(true); }}>
+      <summary className={FINANCIAL_RECORD_DISCLOSURE_STYLES + ' cursor-pointer leading-snug'}>
+        Datos identificatorios (opcional){filledDetails > 0 ? ` · ${filledDetails} cargados` : ''}
+      </summary>
+      <div className='mt-3 grid min-w-0 gap-3 sm:grid-cols-2'>
+        <Field title='Alias (opcional)'><input className={inputClass} maxLength={80} value={draft.alias} onChange={(e)=>onChange({ ...draft, alias:e.target.value })}/></Field>
+        <Field title='CBU/CVU de 22 dígitos (opcional)'><input className={inputClass} inputMode='numeric' pattern='[0-9]{22}' autoComplete='off' placeholder='Solo si querés guardarlo' value={draft.cbu} onChange={(e)=>onChange({ ...draft, cbu:e.target.value })}/></Field>
+        <Field title='Número de cuenta'><input className={inputClass} maxLength={60} value={draft.accountNumber || ''} onChange={(e)=>onChange({ ...draft, accountNumber:e.target.value })}/></Field>
+        <Field title='Titular'><input className={inputClass} maxLength={100} value={draft.holder || ''} onChange={(e)=>onChange({ ...draft, holder:e.target.value })}/></Field>
+        <Field title='CUIT/CUIL titular'><input className={inputClass} maxLength={24} value={draft.holderTaxId || ''} onChange={(e)=>onChange({ ...draft, holderTaxId:e.target.value })}/></Field>
+        <Field title='Sucursal'><input className={inputClass} maxLength={70} value={draft.branch || ''} onChange={(e)=>onChange({ ...draft, branch:e.target.value })}/></Field>
+      </div>
+    </details>
+    <div className='grid min-w-0 grid-cols-2 gap-2 sm:col-span-2'>
+      <button className={buttonClass} disabled={busy}>Guardar cuenta</button>
+      <button type='button' className={secondary} onClick={onCancel} disabled={busy}>Cancelar</button>
+    </div>
+  </form>;
+}
+
+function BankCardEditor({ draft, onChange, editingId, busy, onSave, onCancel }) {
+  const snapshotFields = [
+    ['closingDate','Cierre mostrado','date'],['dueDate','Vencimiento mostrado','date'],['asOf','Fecha de consulta','date'],
+    ['lastStatementARS','Último resumen ARS'],['lastStatementUSD','Último resumen USD'],
+    ['minimumPaymentARS','Pago mínimo ARS'],['currentConsumptionARS','Consumos actuales ARS'],
+    ['currentConsumptionUSD','Consumos actuales USD'],['availableLimitARS','Límite disponible ARS'],
+  ];
+  const filledSnapshot = snapshotFields.filter(([key]) => String(draft[key] ?? '').trim()).length;
+  const [snapshotExpanded, setSnapshotExpanded] = useState(filledSnapshot > 0);
+  return <form aria-label={editingId ? 'Editar tarjeta bancaria' : 'Nueva tarjeta bancaria'}
+    className={surface + ' grid min-w-0 gap-3 sm:grid-cols-2'} onSubmit={(event) => { event.preventDefault(); onSave(); }}>
+    <h4 className='text-base font-bold text-slate-900 dark:text-slate-50 sm:col-span-2'>{editingId ? 'Editar tarjeta' : 'Nueva tarjeta'}</h4>
+    <div className='sm:col-span-2'><Field title='Nombre de la tarjeta'><input required className={inputClass} maxLength={70} placeholder='Visa Gold' value={draft.nickname} onChange={(e)=>onChange({ ...draft, nickname:e.target.value })}/></Field></div>
+    <div className='grid min-w-0 grid-cols-2 gap-3 sm:col-span-2'>
+      <Field title='Marca'><select className={inputClass} value={draft.brand} onChange={(e)=>onChange({ ...draft, brand:e.target.value })}>{['Visa','Mastercard','Amex','Otra'].map(v=><option key={v}>{v}</option>)}</select></Field>
+      <Field title='Últimos 4 dígitos (opcional)'><input className={inputClass} maxLength={4} inputMode='numeric' pattern='[0-9]{4}' value={draft.lastFour} onChange={(e)=>onChange({ ...draft, lastFour:e.target.value })}/></Field>
+    </div>
+    <div className='grid min-w-0 grid-cols-2 gap-3 sm:col-span-2'>
+      <Field title='Día habitual de cierre'><input required className={inputClass} type='number' min='1' max='31' value={draft.closingDay} onChange={(e)=>onChange({ ...draft, closingDay:e.target.value })}/></Field>
+      <Field title='Día habitual de vencimiento'><input required className={inputClass} type='number' min='1' max='31' value={draft.dueDay} onChange={(e)=>onChange({ ...draft, dueDay:e.target.value })}/></Field>
+    </div>
+    <p className='text-xs text-slate-600 dark:text-slate-300 sm:col-span-2'>Estos días son orientativos. Cada resumen PDF conserva sus fechas reales.</p>
+    <details className='min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/70 sm:col-span-2'
+      open={snapshotExpanded} onToggle={(event) => setSnapshotExpanded(event.currentTarget.open)}>
+      <summary className={FINANCIAL_RECORD_DISCLOSURE_STYLES + ' cursor-pointer leading-snug'}>
+        Referencia del home banking (opcional){filledSnapshot > 0 ? ` · ${filledSnapshot} cargados` : ''}
+      </summary>
+      <div className='mt-3 grid min-w-0 gap-3 sm:grid-cols-2'>
+        {snapshotFields.map(([key,label,type]) => (
+          <Field key={key} title={label}><input className={inputClass} type={type || 'text'} inputMode={type ? undefined : 'decimal'}
+            value={draft[key] ?? ''} onChange={(e)=>onChange({...draft,[key]:e.target.value})}/></Field>
+        ))}
+      </div>
+    </details>
+    <div className='grid min-w-0 grid-cols-2 gap-2 sm:col-span-2'>
+      <button className={buttonClass} disabled={busy}>Guardar tarjeta</button>
+      <button type='button' className={secondary} disabled={busy} onClick={onCancel}>Cancelar</button>
+    </div>
+  </form>;
+}
+
 export default function Banks() {
   const user = useSelector((state) => state.auth.user);
   // A new session remounts the entire state tree before rendering prior-user data.
@@ -320,6 +400,16 @@ function BanksWorkspace({ user }) {
         )}
         {banks.filter((bank) => bank.active).map((bank) => {
           const id = bank.code;
+          const accountEditor = accountDraft?.bankId === id && (
+            <BankAccountEditor draft={accountDraft} onChange={setAccountDraft} editingId={accountEditingId}
+              busy={busy} onCancel={() => setAccountDraft(null)}
+              onSave={() => run(async () => { await saveBankAccount(uid, accountDraft, accountEditingId); setAccountDraft(null); }, 'Cuenta guardada')} />
+          );
+          const cardEditor = cardDraft?.bankId === id && (
+            <BankCardEditor draft={cardDraft} onChange={setCardDraft} editingId={cardEditingId}
+              busy={busy} onCancel={() => setCardDraft(null)}
+              onSave={() => run(async () => { await saveBankCard(uid, cardDraft, cardEditingId); setCardDraft(null); }, 'Tarjeta guardada')} />
+          );
           return (
             <CollapsibleSection key={id} id={'bank-' + id} eyebrow='Banco' title={bank.name}
               variant='nested'
@@ -354,10 +444,12 @@ function BanksWorkspace({ user }) {
                     <h3 className='text-base font-extrabold'>Cuentas bancarias</h3>
                     <button type='button' className={secondary} disabled={busy} onClick={() => startAccount(id)}><FiPlus/> Añadir cuenta</button>
                   </div>
+                  {!accountEditingId && accountEditor}
                   {bankAccounts(id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>Todavía no agregaste cuentas.</p>}
                   <div className='grid gap-3 md:grid-cols-2'>
                     {bankAccounts(id).map((a) => (
-                      <article key={a.id} aria-label={'Cuenta: ' + a.name} className={surface}>
+                      <React.Fragment key={a.id}>
+                      <article aria-label={'Cuenta: ' + a.name} className={surface}>
                         <div className='flex min-w-0 flex-wrap items-start justify-between gap-2'>
                           <h4 className='min-w-0 break-words text-base font-bold text-slate-900 dark:text-slate-50'>{a.name}</h4>
                           <span className='shrink-0 rounded-full border border-violet-300 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-800 dark:border-violet-700 dark:bg-slate-900/70 dark:text-violet-200'>{a.currency}</span>
@@ -398,25 +490,10 @@ function BanksWorkspace({ user }) {
                           </section>
                         )}
                       </article>
+                      {accountEditingId === a.id && accountEditor && <div className='min-w-0 md:col-span-2'>{accountEditor}</div>}
+                      </React.Fragment>
                     ))}
                   </div>
-                  {accountDraft?.bankId === id && (
-                    <form className={surface + ' grid gap-3 sm:grid-cols-2'} onSubmit={(event) => { event.preventDefault();
-                      run(async () => { await saveBankAccount(uid, accountDraft, accountEditingId); setAccountDraft(null); }, 'Cuenta guardada'); }}>
-                      <h4 className='sm:col-span-2 font-bold'>{accountEditingId ? 'Editar cuenta' : 'Nueva cuenta'}</h4>
-                      <Field title='Nombre o apodo'><input className={inputClass} required maxLength={70} value={accountDraft.name} onChange={(e)=>setAccountDraft({ ...accountDraft, name:e.target.value })}/></Field>
-                      <Field title='Tipo'><select className={inputClass} value={accountDraft.type} onChange={(e)=>setAccountDraft({ ...accountDraft, type:e.target.value })}><option value='caja_ahorro'>Caja de ahorro</option><option value='cuenta_corriente'>Cuenta corriente</option><option value='otra'>Otra</option></select></Field>
-                      <Field title='Moneda'><select className={inputClass} value={accountDraft.currency} onChange={(e)=>setAccountDraft({ ...accountDraft, currency:e.target.value })}><option value='ARS'>Pesos (ARS)</option><option value='USD'>Dólares (USD)</option></select></Field>
-                      <Field title='Saldo actual (manual)'><input className={inputClass} required inputMode='decimal' value={accountDraft.balance} onChange={(e)=>setAccountDraft({ ...accountDraft, balance:e.target.value })}/></Field>
-                      <Field title='Alias (opcional)'><input className={inputClass} maxLength={80} value={accountDraft.alias} onChange={(e)=>setAccountDraft({ ...accountDraft, alias:e.target.value })}/></Field>
-                      <Field title='CBU/CVU de 22 dígitos (opcional)'><input className={inputClass} inputMode='numeric' pattern='[0-9]{22}' autoComplete='off' placeholder='Solo si querés guardarlo' value={accountDraft.cbu} onChange={(e)=>setAccountDraft({ ...accountDraft, cbu:e.target.value })}/></Field>
-                      <Field title='Número de cuenta'><input className={inputClass} maxLength={60} value={accountDraft.accountNumber || ''} onChange={(e)=>setAccountDraft({ ...accountDraft, accountNumber:e.target.value })}/></Field>
-                      <Field title='Titular'><input className={inputClass} maxLength={100} value={accountDraft.holder || ''} onChange={(e)=>setAccountDraft({ ...accountDraft, holder:e.target.value })}/></Field>
-                      <Field title='CUIT/CUIL titular'><input className={inputClass} maxLength={24} value={accountDraft.holderTaxId || ''} onChange={(e)=>setAccountDraft({ ...accountDraft, holderTaxId:e.target.value })}/></Field>
-                      <Field title='Sucursal'><input className={inputClass} maxLength={70} value={accountDraft.branch || ''} onChange={(e)=>setAccountDraft({ ...accountDraft, branch:e.target.value })}/></Field>
-                      <div className='sm:col-span-2 flex flex-wrap gap-2'><button className={buttonClass} disabled={busy}>Guardar cuenta</button><button type='button' className={secondary} onClick={() => setAccountDraft(null)}>Cancelar</button></div>
-                    </form>
-                  )}
                 </section>
 
                 <section className='space-y-3' aria-label={'Tarjetas de ' + bank.name}>
@@ -425,33 +502,7 @@ function BanksWorkspace({ user }) {
                     <button type='button' className={secondary} disabled={busy} onClick={() => startCard(id)}><FiPlus/> Añadir tarjeta</button>
                   </div>
                   {bankCards(id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>Agregá una tarjeta para registrar consumos e importar sus resúmenes.</p>}
-                  {cardDraft?.bankId === id && (
-                    <form className={surface + ' grid gap-3 sm:grid-cols-2'} onSubmit={(event) => { event.preventDefault();
-                      run(async () => { await saveBankCard(uid, cardDraft, cardEditingId); setCardDraft(null); }, 'Tarjeta guardada'); }}>
-                      <h4 className='font-bold sm:col-span-2'>{cardEditingId ? 'Editar tarjeta' : 'Nueva tarjeta'}</h4>
-                      <Field title='Nombre de la tarjeta'><input required className={inputClass} maxLength={70} placeholder='Visa Gold' value={cardDraft.nickname} onChange={(e)=>setCardDraft({ ...cardDraft, nickname:e.target.value })}/></Field>
-                      <Field title='Marca'><select className={inputClass} value={cardDraft.brand} onChange={(e)=>setCardDraft({ ...cardDraft, brand:e.target.value })}>{['Visa','Mastercard','Amex','Otra'].map(v=><option key={v}>{v}</option>)}</select></Field>
-                      <Field title='Últimos 4 dígitos (opcional)'><input className={inputClass} maxLength={4} inputMode='numeric' pattern='[0-9]{4}' value={cardDraft.lastFour} onChange={(e)=>setCardDraft({ ...cardDraft, lastFour:e.target.value })}/></Field>
-                      <Field title='Día habitual de cierre'><input required className={inputClass} type='number' min='1' max='31' value={cardDraft.closingDay} onChange={(e)=>setCardDraft({ ...cardDraft, closingDay:e.target.value })}/></Field>
-                      <Field title='Día habitual de vencimiento'><input required className={inputClass} type='number' min='1' max='31' value={cardDraft.dueDay} onChange={(e)=>setCardDraft({ ...cardDraft, dueDay:e.target.value })}/></Field>
-                      <p className='text-xs text-slate-600 dark:text-slate-300 sm:col-span-2'>Estos días son orientativos. Cada resumen PDF conserva sus fechas reales de cierre y vencimiento.</p>
-                      <details className='sm:col-span-2 rounded-xl border border-slate-300 p-3 dark:border-slate-600'>
-                        <summary className='cursor-pointer text-sm font-bold'>Referencia del home banking (opcional)</summary>
-                        <div className='mt-3 grid gap-3 sm:grid-cols-2'>
-                          {[
-                            ['closingDate','Cierre mostrado','date'],['dueDate','Vencimiento mostrado','date'],['asOf','Fecha de consulta','date'],
-                            ['lastStatementARS','Último resumen ARS'],['lastStatementUSD','Último resumen USD'],
-                            ['minimumPaymentARS','Pago mínimo ARS'],['currentConsumptionARS','Consumos actuales ARS'],
-                            ['currentConsumptionUSD','Consumos actuales USD'],['availableLimitARS','Límite disponible ARS'],
-                          ].map(([key,label,type]) => (
-                            <Field key={key} title={label}><input className={inputClass} type={type || 'text'} inputMode={type ? undefined : 'decimal'}
-                              value={cardDraft[key] ?? ''} onChange={(e)=>setCardDraft({...cardDraft,[key]:e.target.value})}/></Field>
-                          ))}
-                        </div>
-                      </details>
-                      <div className='sm:col-span-2 flex gap-2'><button className={buttonClass} disabled={busy}>Guardar tarjeta</button><button type='button' className={secondary} onClick={()=>setCardDraft(null)}>Cancelar</button></div>
-                    </form>
-                  )}
+                  {!cardEditingId && cardEditor}
                   {bankCards(id).map((card) => (
                     <CollapsibleSection key={card.id} id={'bank-card-' + card.id}
                       variant='nested'
@@ -462,6 +513,7 @@ function BanksWorkspace({ user }) {
                       onToggle={() => setOpenCard((value) => value === card.id ? null : card.id)}>
                       <div className='min-w-0 space-y-3'>
                         <button type='button' className={secondary} onClick={() => startCard(id, card)}>Editar tarjeta</button>
+                        {cardEditingId === card.id && cardEditor}
                          <div className='rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs dark:border-slate-700 dark:bg-slate-900/50'>
                            <p className='font-bold'>Próximo cierre: {cardCycleDates(card).closingDate || 'Sin fecha'}</p>
                            <p className='mt-1'>Próximo vencimiento: {cardCycleDates(card).dueDate || 'Sin fecha'}</p>

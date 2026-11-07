@@ -235,6 +235,82 @@ test('existing bank accounts and cards keep their data behind the shared nested 
   expect(screen.getByRole('button', { name: /Importar resumen PDF/ })).toBeInTheDocument();
 });
 
+test('account editor opens next to the selected account and preserves optional identity data', async () => {
+  arrange({
+    subscribeBanks: [{ id:'bank-1',code:'bank-1',name:'Banco de prueba',active:true }],
+    subscribeBankAccounts: [
+      {id:'acc-1',bankId:'bank-1',name:'Caja ARS',type:'caja_ahorro',currency:'ARS',balance:1200,alias:'alias.prueba',cbu:'1234567890123456789012'},
+      {id:'acc-2',bankId:'bank-1',name:'Caja USD',type:'caja_ahorro',currency:'USD',balance:25},
+    ],
+  });
+  banking.saveBankAccount.mockResolvedValue(undefined);
+  mount();
+  await screen.findByRole('heading',{name:'Mis bancos'});
+  fireEvent.click(screen.getByRole('button',{name:/Banco de prueba/}));
+  const first = screen.getByRole('article',{name:'Cuenta: Caja ARS'});
+  const second = screen.getByRole('article',{name:'Cuenta: Caja USD'});
+  fireEvent.click(within(first).getByRole('button',{name:'Editar cuenta o saldo'}));
+  const editor = screen.getByRole('form',{name:'Editar cuenta bancaria'});
+  expect(first.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(editor.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(editor).toHaveClass('ltc-transaction-card','dark:bg-slate-800');
+  const identity = within(editor).getByText(/Datos identificatorios \(opcional\)/).closest('details');
+  expect(identity).toHaveAttribute('open');
+  expect(identity).toHaveClass('dark:bg-slate-900/70');
+  expect(within(editor).getByLabelText('Alias (opcional)')).toHaveValue('alias.prueba');
+  fireEvent.change(within(editor).getByLabelText('Saldo actual (manual)'),{target:{value:'1300.50'}});
+  fireEvent.click(within(editor).getByRole('button',{name:'Guardar cuenta'}));
+  await waitFor(()=>expect(banking.saveBankAccount).toHaveBeenCalledWith('test-private-user',
+    expect.objectContaining({name:'Caja ARS',currency:'ARS',balance:'1300.50',alias:'alias.prueba',cbu:'1234567890123456789012'}),'acc-1'));
+});
+
+test('new account is placed by Añadir cuenta, has compact optional details and keeps fields when collapsed', async () => {
+  arrange({subscribeBanks:[{id:'bank-1',code:'bank-1',name:'Banco de prueba',active:true}]});
+  banking.saveBankAccount.mockResolvedValue(undefined);
+  mount();
+  await screen.findByRole('heading',{name:'Mis bancos'});
+  fireEvent.click(screen.getByRole('button',{name:/Banco de prueba/}));
+  fireEvent.click(screen.getByRole('button',{name:'Añadir cuenta'}));
+  const editor = screen.getByRole('form',{name:'Nueva cuenta bancaria'});
+  const identity = within(editor).getByText(/Datos identificatorios \(opcional\)/).closest('details');
+  expect(identity).not.toHaveAttribute('open');
+  expect(within(editor).getByRole('button',{name:'Guardar cuenta'})).toHaveClass('min-h-[44px]');
+  fireEvent.click(within(editor).getByText(/Datos identificatorios \(opcional\)/));
+  fireEvent.change(within(editor).getByLabelText('Alias (opcional)'),{target:{value:'alias.caja'}});
+  fireEvent.click(within(editor).getByText(/Datos identificatorios \(opcional\)/));
+  fireEvent.change(within(editor).getByLabelText('Nombre o apodo'),{target:{value:'Nueva caja'}});
+  fireEvent.click(within(editor).getByRole('button',{name:'Guardar cuenta'}));
+  await waitFor(()=>expect(banking.saveBankAccount).toHaveBeenCalledWith('test-private-user',
+    expect.objectContaining({name:'Nueva caja',alias:'alias.caja'}),null));
+});
+
+test('card editing remains inside the selected card, while actual PDF dates and snapshots are preserved', async () => {
+  arrange({
+    subscribeBanks:[{id:'bank-1',code:'bank-1',name:'Banco de prueba',active:true}],
+    subscribeBankCards:[{
+      id:'card-1',bankId:'bank-1',nickname:'Visa Prueba',brand:'Visa',lastFour:'4242',closingDay:25,dueDay:10,
+      statementSnapshot:{closingDate:'2026-11-02',dueDate:'2026-11-15',lastStatementARS:1000},
+    }],
+  });
+  banking.saveBankCard.mockResolvedValue(undefined);
+  mount();
+  await screen.findByRole('heading',{name:'Mis bancos'});
+  fireEvent.click(screen.getByRole('button',{name:/Banco de prueba/}));
+  fireEvent.click(screen.getByRole('button',{name:/Visa Prueba/}));
+  const section = document.getElementById('bank-card-card-1');
+  fireEvent.click(within(section).getByRole('button',{name:'Editar tarjeta'}));
+  const editor = within(section).getByRole('form',{name:'Editar tarjeta bancaria'});
+  expect(editor).toHaveClass('dark:bg-slate-800');
+  const summary = within(editor).getByText(/Referencia del home banking \(opcional\)/).closest('details');
+  expect(summary).toHaveAttribute('open');
+  expect(summary).toHaveClass('dark:bg-slate-900/70');
+  expect(within(editor).getByLabelText('Cierre mostrado')).toHaveValue('2026-11-02');
+  fireEvent.change(within(editor).getByLabelText('Día habitual de vencimiento'),{target:{value:'12'}});
+  fireEvent.click(within(editor).getByRole('button',{name:'Guardar tarjeta'}));
+  await waitFor(()=>expect(banking.saveBankCard).toHaveBeenCalledWith('test-private-user',
+    expect.objectContaining({dueDay:'12',closingDate:'2026-11-02',dueDate:'2026-11-15',lastStatementARS:1000}),'card-1'));
+});
+
 test('privacy toggle masks both currencies and uses the existing shared KPI design', async () => {
   arrange({ subscribeBankAccounts: [{ id:'a',bankId:'b',currency:'ARS',balance:1234.5 }] });
   mount();
