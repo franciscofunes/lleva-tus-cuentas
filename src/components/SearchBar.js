@@ -90,7 +90,7 @@ function SearchBar({
                   event.currentTarget.blur();
                 }
               }}
-              placeholder='Nombre, descripción, categoría, importe…'
+              placeholder='Nombre, categoría o importe'
               disabled={disabled}
               className={fieldClass + ' pl-10 pr-11'}
               aria-describedby='transactions-search-hint transactions-search-count'

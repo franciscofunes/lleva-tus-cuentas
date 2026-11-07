@@ -669,7 +669,7 @@ function Dashboard() {
             title={TRANSACTIONS_PAGE_COPY.summary.title}
             collapsed={collapsedSections.summary}
             onToggle={() => toggleDashboardSection("summary")}
-            className="mb-5 font-Nunito"
+            className="font-Nunito"
           >
             <BimonetarySummary
               docs={filteredDocs}

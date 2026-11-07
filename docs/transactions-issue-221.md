@@ -39,6 +39,9 @@ The established slate/violet LTC design system, icons, all existing financial ca
 
 ### Authenticated visual evidence — outstanding
 
+**Collapsed mobile spacing follow-up (2026-11-07):** A user-provided Android dark-mode screenshot showed about twice the usual gap between the closed *Resumen ARS y USD* and *Transacciones* panels. Source inspection confirms the Transactions grid applies `gap-5`, while the summary also had `mb-5`. Removed only the redundant summary margin. The activity-to-charts spacing, chart-to-tools spacing, shared panel surfaces and all collapse preferences remain unchanged. A `Dashboard.ux.test.js` regression guards the single grid-gap contract. The same screenshot showed the search placeholder cut off mid-word on Android; its hint is now concise while the accessible field label and search behavior remain intact, covered by `SearchBar.test.js`. The supplied screenshot shows the original defects, not post-change visual QA.
+
+
 Better Design's source and copy review is **not** a measurement of authenticated screen geometry. A live screenshot at 390/1440/1728 px and light/dark is still required for strict issue acceptance. Current tools do not expose an authenticated session or a trusted browser capture of user-owned records. Do **not** claim screenshot approval, runtime browser behavior or production release based only on code and unit tests. If someone with preview access captures the six states, perform Better Design's measured DOM spacing pass, inspect currency wrapping, chart/record locations, focus, preview deployment SHA and PDF drilldown, then close #221.
 
 ### CI / browser smoke checklist
