@@ -11,6 +11,17 @@ const LABELS = [
   ['tasa de interes nominal', 'Tasa anual'],
   ['tasa de interés efectiva', 'Tasa efectiva'],
   ['tasa de interes efectiva', 'Tasa efectiva'],
+  ['intereses devengados a la fecha', 'Intereses devengados'],
+  ['intereses devengados', 'Intereses devengados'],
+  ['intereses totales previstos', 'Intereses totales previstos'],
+  ['intereses totales', 'Intereses totales previstos'],
+  ['interés total previsto', 'Intereses totales previstos'],
+  ['interes total previsto', 'Intereses totales previstos'],
+  ['número de contrato', 'Número de contrato'],
+  ['numero de contrato', 'Número de contrato'],
+  ['nro de contrato', 'Número de contrato'],
+  ['renovación automática', 'Renovación automática'],
+  ['renovacion automatica', 'Renovación automática'],
   ['tasa anual', 'Tasa anual'],
   ['fecha de valor', 'Fecha inicio'],
   ['moneda', 'Moneda'],
@@ -32,11 +43,17 @@ export function preparePortfolioOcrText(source) {
       if (seen.has(field)) continue;
       // Require an exact field label and one adjacent amount/date. No unlabeled assumptions.
       const adjacent = lower === label ? lines[index + 1] || '' : '';
-      const inline = lower.startsWith(label + ' ') ? line.slice(label.length).trim().replace(/^[:=-]\s*/, '') : '';
+      const inline = lower.startsWith(label) && /^[:=\s-]/.test(lower.slice(label.length))
+        ? line.slice(label.length).trim().replace(/^[:=-]\s*/, '') : '';
       const value = (inline || adjacent).trim();
       const isDate = field === 'Vencimiento' || field === 'Fecha inicio';
       const isCurrency = field === 'Moneda';
-      if (!value || !(isDate ? DATE.test(value) : isCurrency ? /^(ARS|USD|EUR|USDT)$/i.test(value) : NUMBER.test(value))) continue;
+      const isRenewal = field === 'Renovación automática';
+      const isContract = field === 'Número de contrato';
+      if (!value || !(isDate ? DATE.test(value)
+        : isCurrency ? /^(ARS|USD|EUR|USDT)$/i.test(value)
+          : isRenewal ? /^(sí|si|no)$/i.test(value)
+            : isContract ? /^\d{3,24}$/.test(value) : NUMBER.test(value))) continue;
       extracted.push(`${field}: ${value}`);
       seen.add(field);
       break;

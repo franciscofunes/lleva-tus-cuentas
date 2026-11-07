@@ -52,6 +52,10 @@ const normalize = (data) => ({
 	principal: Number(data.principal || data.balance || 0),
 	annualRate: Number(data.annualRate || 0),
 	effectiveRate: Number(data.effectiveRate || 0),
+	// Bank-reported interest is informational until actually credited. Never
+	// merge these values into balance, realizedEarnings or snapshot earnings.
+	depositAccruedInterest: data.depositAccruedInterest == null || data.depositAccruedInterest === '' ? null : Number(data.depositAccruedInterest),
+	depositTotalInterest: data.depositTotalInterest == null || data.depositTotalInterest === '' ? null : Number(data.depositTotalInterest),
 	fees: Number(data.fees || 0),
 	realizedEarnings: Number(data.realizedEarnings || 0),
 	lastEarning: Number(data.lastEarning || 0),

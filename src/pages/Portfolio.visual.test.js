@@ -130,6 +130,42 @@ test('a visible Portfolio shortcut targets an existing position and opens OCR re
   expect(service.updatePortfolioPosition).not.toHaveBeenCalled();
 });
 
+test('fixed deposit screenshot enriches an existing position even when its rates and dates are unchanged', async () => {
+  const fixedDeposit={id:'deposit-1',institution:'Banco de prueba',name:'Plazo fijo USD',
+    category:'Plazo fijo',currency:'USD',balance:10000,principal:10000,annualRate:2.5,
+    effectiveRate:2.55,startDate:'2026-05-28',maturityDate:'2026-11-25',
+    rateType:'TNA',trackingMode:'MATURITY',realizedEarnings:0};
+  service.subscribePortfolioPositions.mockImplementation((uid,onData)=>{onData([...fixtures,fixedDeposit]);return jest.fn();});
+  mount();
+  await getWorkspace();
+  const shortcut=screen.getByRole('region',{name:'Importar captura de inversión'});
+  fireEvent.change(within(shortcut).getByLabelText('Posición para importar captura'),{target:{value:'deposit-1'}});
+  fireEvent.click(within(shortcut).getByRole('button',{name:'Importar captura'}));
+  const dialog=screen.getByRole('dialog');
+  fireEvent.change(within(dialog).getByLabelText('Texto para enriquecer posición'),{target:{value:[
+    'Moneda: USD','Vencimiento: 25/11/26','Fecha inicio: 28/05/26',
+    'Tasa anual: 2,5','Tasa efectiva: 2,55',
+    'Intereses devengados: 445,62','Intereses totales previstos: 501,02',
+    'Número de contrato: 941955','Renovación automática: No',
+  ].join('\n')}});
+  fireEvent.click(within(dialog).getByRole('button',{name:'Comparar datos detectados'}));
+  expect(within(dialog).getByRole('button',{name:'Aplicar campos seleccionados'})).toBeInTheDocument();
+  expect(within(dialog).getAllByText('Intereses devengados (sin acreditar)').length).toBeGreaterThan(0);
+  expect(within(dialog).getByText(/no aumentan el saldo ni las ganancias realizadas/i)).toBeInTheDocument();
+  expect(service.updatePortfolioPosition).not.toHaveBeenCalled();
+  fireEvent.click(within(dialog).getByRole('button',{name:'Aplicar campos seleccionados'}));
+  expect(within(dialog).getByLabelText('Intereses devengados (sin acreditar)')).toHaveValue(445.62);
+  expect(within(dialog).getByLabelText('Intereses totales previstos')).toHaveValue(501.02);
+  expect(within(dialog).getByLabelText('Número de contrato')).toHaveValue('941955');
+  expect(within(dialog).getByLabelText('Renovación automática')).toHaveValue('NO');
+  expect(service.updatePortfolioPosition).not.toHaveBeenCalled();
+  fireEvent.click(within(dialog).getByRole('button',{name:'Guardar cambios'}));
+  await waitFor(()=>expect(service.updatePortfolioPosition).toHaveBeenCalledWith(mockUid,'deposit-1',expect.objectContaining({
+    balance:'10000',realizedEarnings:'0',depositAccruedInterest:'445.62',
+    depositTotalInterest:'501.02',depositContractNumber:'941955',depositAutoRenewal:'NO',
+  })));
+});
+
 test('Portfolio shortcut can begin a new position with the screenshot reader already open', async () => {
   mount();
   await getWorkspace();

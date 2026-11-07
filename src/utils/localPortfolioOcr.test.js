@@ -16,10 +16,23 @@ test('does not convert unlabeled amounts into financial fields',()=>{
 });
 
 test('recognizes clearly labeled fixed-term deposit fields from a mobile banking screenshot',()=>{
-  const text=preparePortfolioOcrText('Depósito a plazo fijo\nMoneda\nUSD\nVencimiento\n25/11/26\nFecha de valor\n28/05/26\nTasa de interés nominal\n2,5\nTasa de interés efectiva\n2,55\nIntereses devengados a la fecha\n445,62\nIntereses totales\n501,02');
+  const text=preparePortfolioOcrText('Depósito a plazo fijo\nMoneda\nUSD\nVencimiento\n25/11/26\nFecha de valor\n28/05/26\nNúmero de contrato\n941955\nTasa de interés nominal\n2,5\nTasa de interés efectiva\n2,55\nIntereses devengados a la fecha\n445,62\nIntereses totales\n501,02\nRenovación automática\nNo');
   const {parsed}=parsePortfolioMarkdown(text);
-  expect(parsed).toMatchObject({currency:'USD', annualRate:'2.5', effectiveRate:'2.55', maturityDate:'2026-11-25', startDate:'2026-05-28'});
+  expect(parsed).toMatchObject({currency:'USD', annualRate:'2.5', effectiveRate:'2.55', maturityDate:'2026-11-25', startDate:'2026-05-28', depositAccruedInterest:'445.62', depositTotalInterest:'501.02', depositContractNumber:'941955', depositAutoRenewal:'NO'});
   expect(parsed).not.toHaveProperty('realizedEarnings');
   expect(parsed).not.toHaveProperty('lastEarning');
   expect(parsed).not.toHaveProperty('balance');
+});
+
+test('recognizes same-line fixed-deposit OCR values and preserves a contract identifier as text',()=>{
+  const ocr='Intereses devengados a la fecha 445,62\nIntereses totales 501,02\nNúmero de contrato: 00941955\nRenovación automática No';
+  const {parsed}=parsePortfolioMarkdown(preparePortfolioOcrText(ocr));
+  expect(parsed).toMatchObject({depositAccruedInterest:'445.62',depositTotalInterest:'501.02',depositContractNumber:'00941955',depositAutoRenewal:'NO'});
+  expect(parsed).not.toHaveProperty('realizedEarnings');
+});
+
+test('rejects unreadable or negative accrued-interest suggestions rather than inventing earnings',()=>{
+  expect(()=>parsePortfolioMarkdown('Intereses devengados: no legible')).toThrow('No se reconocieron campos');
+  expect(()=>parsePortfolioMarkdown('Intereses devengados: -445,62')).toThrow('No se reconocieron campos');
+  expect(()=>parsePortfolioMarkdown('Renovación automática: quizás')).toThrow('No se reconocieron campos');
 });
