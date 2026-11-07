@@ -311,6 +311,87 @@ test('card editing remains inside the selected card, while actual PDF dates and 
     expect.objectContaining({dueDay:'12',closingDate:'2026-11-02',dueDate:'2026-11-15',lastStatementARS:1000}),'card-1'));
 });
 
+test('failed account saves keep the edited amount, focus a local error, and allow retry without a duplicate write', async () => {
+  arrange({
+    subscribeBanks:[{id:'bank-1',code:'bank-1',name:'Banco de prueba',active:true}],
+    subscribeBankAccounts:[{id:'acc-1',bankId:'bank-1',name:'Caja USD',type:'caja_ahorro',currency:'USD',balance:500}],
+  });
+  banking.saveBankAccount.mockRejectedValueOnce({code:'permission-denied'}).mockResolvedValueOnce(undefined);
+  mount();
+  await screen.findByRole('heading',{name:'Mis bancos'});
+  fireEvent.click(screen.getByRole('button',{name:/Banco de prueba/}));
+  const editTrigger = within(screen.getByRole('article',{name:'Cuenta: Caja USD'})).getByRole('button',{name:'Editar cuenta o saldo'});
+  fireEvent.click(editTrigger);
+  let editor = screen.getByRole('form',{name:'Editar cuenta bancaria'});
+  fireEvent.change(within(editor).getByLabelText('Saldo actual (manual)'),{target:{value:'777.25'}});
+  fireEvent.click(within(editor).getByRole('button',{name:'Guardar cuenta'}));
+  const localError = await within(editor).findByRole('alert');
+  expect(localError).toHaveTextContent('problema de permisos');
+  expect(localError).toHaveTextContent('Tus cambios siguen acá');
+  expect(localError).toHaveClass('dark:bg-rose-950/40','dark:text-rose-200');
+  await waitFor(()=>expect(localError).toHaveFocus());
+  expect(within(editor).getByLabelText('Saldo actual (manual)')).toHaveValue('777.25');
+  expect(screen.getAllByRole('alert')).toHaveLength(1);
+  expect(banking.saveBankAccount).toHaveBeenCalledTimes(1);
+
+  fireEvent.click(within(editor).getByRole('button',{name:'Guardar cuenta'}));
+  await waitFor(()=>expect(screen.queryByRole('form',{name:'Editar cuenta bancaria'})).not.toBeInTheDocument());
+  expect(banking.saveBankAccount).toHaveBeenCalledTimes(2);
+  expect(banking.saveBankAccount).toHaveBeenLastCalledWith('test-private-user',expect.objectContaining({balance:'777.25'}),'acc-1');
+  expect(editTrigger).toHaveFocus();
+});
+
+test('failed card saves stay within the card and clear their inline error when the draft changes', async () => {
+  arrange({
+    subscribeBanks:[{id:'bank-1',code:'bank-1',name:'Banco de prueba',active:true}],
+    subscribeBankCards:[{id:'card-1',bankId:'bank-1',nickname:'Visa Prueba',brand:'Visa',lastFour:'4242',closingDay:25,dueDay:10}],
+  });
+  banking.saveBankCard.mockRejectedValueOnce({code:'unavailable'}).mockResolvedValueOnce(undefined);
+  mount();
+  await screen.findByRole('heading',{name:'Mis bancos'});
+  fireEvent.click(screen.getByRole('button',{name:/Banco de prueba/}));
+  fireEvent.click(screen.getByRole('button',{name:/Visa Prueba/}));
+  const section = document.getElementById('bank-card-card-1');
+  const editTrigger = within(section).getByRole('button',{name:'Editar tarjeta'});
+  fireEvent.click(editTrigger);
+  const editor = within(section).getByRole('form',{name:'Editar tarjeta bancaria'});
+  fireEvent.change(within(editor).getByLabelText('Día habitual de vencimiento'),{target:{value:'12'}});
+  fireEvent.click(within(editor).getByRole('button',{name:'Guardar tarjeta'}));
+  const error = await within(editor).findByRole('alert');
+  expect(error).toHaveTextContent('problema de conexión');
+  await waitFor(()=>expect(error).toHaveFocus());
+  expect(within(editor).getByLabelText('Día habitual de vencimiento')).toHaveValue(12);
+  expect(banking.saveBankCard).toHaveBeenCalledTimes(1);
+  fireEvent.change(within(editor).getByLabelText('Día habitual de vencimiento'),{target:{value:'13'}});
+  expect(within(editor).queryByRole('alert')).not.toBeInTheDocument();
+  fireEvent.click(within(editor).getByRole('button',{name:'Guardar tarjeta'}));
+  await waitFor(()=>expect(within(section).queryByRole('form',{name:'Editar tarjeta bancaria'})).not.toBeInTheDocument());
+  expect(banking.saveBankCard).toHaveBeenCalledTimes(2);
+  expect(banking.saveBankCard).toHaveBeenLastCalledWith('test-private-user',expect.objectContaining({dueDay:'13'}),'card-1');
+  expect(editTrigger).toHaveFocus();
+});
+
+test('canceling a new account and existing card editor returns keyboard focus to their opening action', async () => {
+  arrange({
+    subscribeBanks:[{id:'bank-1',code:'bank-1',name:'Banco de prueba',active:true}],
+    subscribeBankCards:[{id:'card-1',bankId:'bank-1',nickname:'Visa Prueba',brand:'Visa',lastFour:'4242',closingDay:25,dueDay:10}],
+  });
+  mount();
+  await screen.findByRole('heading',{name:'Mis bancos'});
+  fireEvent.click(screen.getByRole('button',{name:/Banco de prueba/}));
+  const addAccount = screen.getByRole('button',{name:'Añadir cuenta'});
+  fireEvent.click(addAccount);
+  fireEvent.click(within(screen.getByRole('form',{name:'Nueva cuenta bancaria'})).getByRole('button',{name:'Cancelar'}));
+  expect(addAccount).toHaveFocus();
+  expect(banking.saveBankAccount).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:/Visa Prueba/}));
+  const editCard = screen.getByRole('button',{name:'Editar tarjeta'});
+  fireEvent.click(editCard);
+  fireEvent.click(within(screen.getByRole('form',{name:'Editar tarjeta bancaria'})).getByRole('button',{name:'Cancelar'}));
+  expect(editCard).toHaveFocus();
+  expect(banking.saveBankCard).not.toHaveBeenCalled();
+});
+
 test('privacy toggle masks both currencies and uses the existing shared KPI design', async () => {
   arrange({ subscribeBankAccounts: [{ id:'a',bankId:'b',currency:'ARS',balance:1234.5 }] });
   mount();

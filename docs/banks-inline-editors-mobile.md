@@ -25,4 +25,12 @@ This is a source-grounded design improvement following the mobile bank-onboardin
 
 ## Follow-up
 
-Inspect inline save failures at deep scroll positions and confirm whether a local error message and focus restoration would improve recovery without duplicating the page-wide error system.
+### Inline save failure recovery (next pass)
+
+- **Account/card save failures stay in context.** Each inline editor shows its own accessible `role="alert"` error directly above Save/Cancel. The error receives keyboard focus after the failed asynchronous write, bringing the message into the mobile scroll viewport rather than leaving it at the top of the Banks page.
+- **No lost work or confusing duplication.** Draft values remain unchanged after a failed write. Correcting any editor field clears the stale error; retrying the same form uses the existing bank service exactly once per submission. Account/card errors do not also appear in the unrelated page-wide error banner. Other actions continue to use their existing global error system.
+- **Safe, plain Spanish copy.** Permissions and offline/service failures have distinct guidance; unexpected errors never expose backend details. No error code or sensitive bank identity is printed in the message.
+- **Keyboard return path.** Cancel and successful save restore focus to the exact Add/Edit action that opened the editor (when that element remains mounted). The same behavior applies to new and existing accounts/cards.
+- **Focused regression coverage** exercises permission-denied and network failures, error focus, data retention and retry, clearing errors after edits, no duplicate writes and Cancel/Save focus restoration.
+
+Screenshot verification remains open: authenticate a synthetic QA account and inspect 390/1440/1728px light/dark states, including a failed save deep in a long bank list. This is source-level behavior verification, not a completed screenshot audit.

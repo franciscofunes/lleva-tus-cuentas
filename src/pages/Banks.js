@@ -53,21 +53,49 @@ function ErrorMessage({ error }) { return error ? <p role='alert' className='rou
 
 const ACCOUNT_IDENTITY_FIELDS = ['alias', 'cbu', 'accountNumber', 'holder', 'holderTaxId', 'branch'];
 
+function bankEditorSaveMessage(error, resource) {
+  if (error?.code === 'permission-denied') return `No pudimos guardar la ${resource} por un problema de permisos. Tus cambios siguen acá; revisá tu sesión e intentá nuevamente.`;
+  if (['unavailable', 'deadline-exceeded', 'network-request-failed'].includes(error?.code)) return `No pudimos guardar la ${resource} por un problema de conexión. Tus cambios siguen acá; intentá nuevamente.`;
+  return `No pudimos guardar la ${resource}. Tus cambios siguen acá; intentá nuevamente.`;
+}
+
+function useBankEditorSave(onSave, onChange, resource) {
+  const [saveError, setSaveError] = useState('');
+  const errorRef = useRef(null);
+  useEffect(() => { if (saveError) errorRef.current?.focus(); }, [saveError]);
+  const submit = async (event) => {
+    event.preventDefault();
+    setSaveError('');
+    try { await onSave(); }
+    catch (error) { setSaveError(bankEditorSaveMessage(error, resource)); }
+  };
+  const updateDraft = (draft) => { setSaveError(''); onChange(draft); };
+  return { saveError, errorRef, submit, updateDraft };
+}
+
+function InlineBankSaveError({ message, errorRef }) {
+  return message ? <p role='alert' tabIndex={-1} ref={errorRef}
+    className='rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm leading-relaxed text-rose-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:border-rose-700 dark:bg-rose-950/40 dark:text-rose-200 sm:col-span-2'>
+    {message}
+  </p> : null;
+}
+
 function BankAccountEditor({ draft, onChange, editingId, busy, onSave, onCancel }) {
   const filledDetails = ACCOUNT_IDENTITY_FIELDS.filter((key) => String(draft[key] || '').trim()).length;
   const [identityExpanded, setIdentityExpanded] = useState(filledDetails > 0);
+  const { saveError, errorRef, submit, updateDraft } = useBankEditorSave(onSave, onChange, 'cuenta');
   return <form aria-label={editingId ? 'Editar cuenta bancaria' : 'Nueva cuenta bancaria'}
-    className={surface + ' grid min-w-0 gap-3 sm:grid-cols-2'} onSubmit={(event) => { event.preventDefault(); onSave(); }}>
+    className={surface + ' grid min-w-0 gap-3 sm:grid-cols-2'} onSubmit={submit}>
     <div className='min-w-0 sm:col-span-2'>
       <h4 className='text-base font-bold text-slate-900 dark:text-slate-50'>{editingId ? 'Editar cuenta' : 'Nueva cuenta'}</h4>
       <p className='mt-1 text-xs text-slate-600 dark:text-slate-300'>El saldo es una referencia manual; no se registra como ingreso.</p>
     </div>
-    <div className='sm:col-span-2'><Field title='Nombre o apodo'><input className={inputClass} required maxLength={70} value={draft.name} onChange={(e)=>onChange({ ...draft, name:e.target.value })}/></Field></div>
+    <div className='sm:col-span-2'><Field title='Nombre o apodo'><input className={inputClass} required maxLength={70} value={draft.name} onChange={(e)=>updateDraft({ ...draft, name:e.target.value })}/></Field></div>
     <div className='grid min-w-0 grid-cols-2 gap-3 sm:col-span-2'>
-      <Field title='Tipo'><select className={inputClass} value={draft.type} onChange={(e)=>onChange({ ...draft, type:e.target.value })}><option value='caja_ahorro'>Caja de ahorro</option><option value='cuenta_corriente'>Cuenta corriente</option><option value='otra'>Otra</option></select></Field>
-      <Field title='Moneda'><select className={inputClass} value={draft.currency} onChange={(e)=>onChange({ ...draft, currency:e.target.value })}><option value='ARS'>Pesos (ARS)</option><option value='USD'>Dólares (USD)</option></select></Field>
+      <Field title='Tipo'><select className={inputClass} value={draft.type} onChange={(e)=>updateDraft({ ...draft, type:e.target.value })}><option value='caja_ahorro'>Caja de ahorro</option><option value='cuenta_corriente'>Cuenta corriente</option><option value='otra'>Otra</option></select></Field>
+      <Field title='Moneda'><select className={inputClass} value={draft.currency} onChange={(e)=>updateDraft({ ...draft, currency:e.target.value })}><option value='ARS'>Pesos (ARS)</option><option value='USD'>Dólares (USD)</option></select></Field>
     </div>
-    <div className='sm:col-span-2'><Field title='Saldo actual (manual)'><input className={inputClass} required inputMode='decimal' value={draft.balance} onChange={(e)=>onChange({ ...draft, balance:e.target.value })}/></Field></div>
+    <div className='sm:col-span-2'><Field title='Saldo actual (manual)'><input className={inputClass} required inputMode='decimal' value={draft.balance} onChange={(e)=>updateDraft({ ...draft, balance:e.target.value })}/></Field></div>
     <details className='min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/70 sm:col-span-2'
       open={identityExpanded} onToggle={(event) => setIdentityExpanded(event.currentTarget.open)}
       onInvalidCapture={(event) => { event.currentTarget.open = true; setIdentityExpanded(true); }}>
@@ -75,14 +103,15 @@ function BankAccountEditor({ draft, onChange, editingId, busy, onSave, onCancel 
         Datos identificatorios (opcional){filledDetails > 0 ? ` · ${filledDetails} cargados` : ''}
       </summary>
       <div className='mt-3 grid min-w-0 gap-3 sm:grid-cols-2'>
-        <Field title='Alias (opcional)'><input className={inputClass} maxLength={80} value={draft.alias} onChange={(e)=>onChange({ ...draft, alias:e.target.value })}/></Field>
-        <Field title='CBU/CVU de 22 dígitos (opcional)'><input className={inputClass} inputMode='numeric' pattern='[0-9]{22}' autoComplete='off' placeholder='Solo si querés guardarlo' value={draft.cbu} onChange={(e)=>onChange({ ...draft, cbu:e.target.value })}/></Field>
-        <Field title='Número de cuenta'><input className={inputClass} maxLength={60} value={draft.accountNumber || ''} onChange={(e)=>onChange({ ...draft, accountNumber:e.target.value })}/></Field>
-        <Field title='Titular'><input className={inputClass} maxLength={100} value={draft.holder || ''} onChange={(e)=>onChange({ ...draft, holder:e.target.value })}/></Field>
-        <Field title='CUIT/CUIL titular'><input className={inputClass} maxLength={24} value={draft.holderTaxId || ''} onChange={(e)=>onChange({ ...draft, holderTaxId:e.target.value })}/></Field>
-        <Field title='Sucursal'><input className={inputClass} maxLength={70} value={draft.branch || ''} onChange={(e)=>onChange({ ...draft, branch:e.target.value })}/></Field>
+        <Field title='Alias (opcional)'><input className={inputClass} maxLength={80} value={draft.alias} onChange={(e)=>updateDraft({ ...draft, alias:e.target.value })}/></Field>
+        <Field title='CBU/CVU de 22 dígitos (opcional)'><input className={inputClass} inputMode='numeric' pattern='[0-9]{22}' autoComplete='off' placeholder='Solo si querés guardarlo' value={draft.cbu} onChange={(e)=>updateDraft({ ...draft, cbu:e.target.value })}/></Field>
+        <Field title='Número de cuenta'><input className={inputClass} maxLength={60} value={draft.accountNumber || ''} onChange={(e)=>updateDraft({ ...draft, accountNumber:e.target.value })}/></Field>
+        <Field title='Titular'><input className={inputClass} maxLength={100} value={draft.holder || ''} onChange={(e)=>updateDraft({ ...draft, holder:e.target.value })}/></Field>
+        <Field title='CUIT/CUIL titular'><input className={inputClass} maxLength={24} value={draft.holderTaxId || ''} onChange={(e)=>updateDraft({ ...draft, holderTaxId:e.target.value })}/></Field>
+        <Field title='Sucursal'><input className={inputClass} maxLength={70} value={draft.branch || ''} onChange={(e)=>updateDraft({ ...draft, branch:e.target.value })}/></Field>
       </div>
     </details>
+    <InlineBankSaveError message={saveError} errorRef={errorRef}/>
     <div className='grid min-w-0 grid-cols-2 gap-2 sm:col-span-2'>
       <button className={buttonClass} disabled={busy}>Guardar cuenta</button>
       <button type='button' className={secondary} onClick={onCancel} disabled={busy}>Cancelar</button>
@@ -91,6 +120,7 @@ function BankAccountEditor({ draft, onChange, editingId, busy, onSave, onCancel 
 }
 
 function BankCardEditor({ draft, onChange, editingId, busy, onSave, onCancel }) {
+  const { saveError, errorRef, submit, updateDraft } = useBankEditorSave(onSave, onChange, 'tarjeta');
   const snapshotFields = [
     ['closingDate','Cierre mostrado','date'],['dueDate','Vencimiento mostrado','date'],['asOf','Fecha de consulta','date'],
     ['lastStatementARS','Último resumen ARS'],['lastStatementUSD','Último resumen USD'],
@@ -100,16 +130,16 @@ function BankCardEditor({ draft, onChange, editingId, busy, onSave, onCancel }) 
   const filledSnapshot = snapshotFields.filter(([key]) => String(draft[key] ?? '').trim()).length;
   const [snapshotExpanded, setSnapshotExpanded] = useState(filledSnapshot > 0);
   return <form aria-label={editingId ? 'Editar tarjeta bancaria' : 'Nueva tarjeta bancaria'}
-    className={surface + ' grid min-w-0 gap-3 sm:grid-cols-2'} onSubmit={(event) => { event.preventDefault(); onSave(); }}>
+    className={surface + ' grid min-w-0 gap-3 sm:grid-cols-2'} onSubmit={submit}>
     <h4 className='text-base font-bold text-slate-900 dark:text-slate-50 sm:col-span-2'>{editingId ? 'Editar tarjeta' : 'Nueva tarjeta'}</h4>
-    <div className='sm:col-span-2'><Field title='Nombre de la tarjeta'><input required className={inputClass} maxLength={70} placeholder='Visa Gold' value={draft.nickname} onChange={(e)=>onChange({ ...draft, nickname:e.target.value })}/></Field></div>
+    <div className='sm:col-span-2'><Field title='Nombre de la tarjeta'><input required className={inputClass} maxLength={70} placeholder='Visa Gold' value={draft.nickname} onChange={(e)=>updateDraft({ ...draft, nickname:e.target.value })}/></Field></div>
     <div className='grid min-w-0 grid-cols-2 gap-3 sm:col-span-2'>
-      <Field title='Marca'><select className={inputClass} value={draft.brand} onChange={(e)=>onChange({ ...draft, brand:e.target.value })}>{['Visa','Mastercard','Amex','Otra'].map(v=><option key={v}>{v}</option>)}</select></Field>
-      <Field title='Últimos 4 dígitos (opcional)'><input className={inputClass} maxLength={4} inputMode='numeric' pattern='[0-9]{4}' value={draft.lastFour} onChange={(e)=>onChange({ ...draft, lastFour:e.target.value })}/></Field>
+      <Field title='Marca'><select className={inputClass} value={draft.brand} onChange={(e)=>updateDraft({ ...draft, brand:e.target.value })}>{['Visa','Mastercard','Amex','Otra'].map(v=><option key={v}>{v}</option>)}</select></Field>
+      <Field title='Últimos 4 dígitos (opcional)'><input className={inputClass} maxLength={4} inputMode='numeric' pattern='[0-9]{4}' value={draft.lastFour} onChange={(e)=>updateDraft({ ...draft, lastFour:e.target.value })}/></Field>
     </div>
     <div className='grid min-w-0 grid-cols-2 gap-3 sm:col-span-2'>
-      <Field title='Día habitual de cierre'><input required className={inputClass} type='number' min='1' max='31' value={draft.closingDay} onChange={(e)=>onChange({ ...draft, closingDay:e.target.value })}/></Field>
-      <Field title='Día habitual de vencimiento'><input required className={inputClass} type='number' min='1' max='31' value={draft.dueDay} onChange={(e)=>onChange({ ...draft, dueDay:e.target.value })}/></Field>
+      <Field title='Día habitual de cierre'><input required className={inputClass} type='number' min='1' max='31' value={draft.closingDay} onChange={(e)=>updateDraft({ ...draft, closingDay:e.target.value })}/></Field>
+      <Field title='Día habitual de vencimiento'><input required className={inputClass} type='number' min='1' max='31' value={draft.dueDay} onChange={(e)=>updateDraft({ ...draft, dueDay:e.target.value })}/></Field>
     </div>
     <p className='text-xs text-slate-600 dark:text-slate-300 sm:col-span-2'>Estos días son orientativos. Cada resumen PDF conserva sus fechas reales.</p>
     <details className='min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/70 sm:col-span-2'
@@ -120,10 +150,11 @@ function BankCardEditor({ draft, onChange, editingId, busy, onSave, onCancel }) 
       <div className='mt-3 grid min-w-0 gap-3 sm:grid-cols-2'>
         {snapshotFields.map(([key,label,type]) => (
           <Field key={key} title={label}><input className={inputClass} type={type || 'text'} inputMode={type ? undefined : 'decimal'}
-            value={draft[key] ?? ''} onChange={(e)=>onChange({...draft,[key]:e.target.value})}/></Field>
+            value={draft[key] ?? ''} onChange={(e)=>updateDraft({...draft,[key]:e.target.value})}/></Field>
         ))}
       </div>
     </details>
+    <InlineBankSaveError message={saveError} errorRef={errorRef}/>
     <div className='grid min-w-0 grid-cols-2 gap-2 sm:col-span-2'>
       <button className={buttonClass} disabled={busy}>Guardar tarjeta</button>
       <button type='button' className={secondary} disabled={busy} onClick={onCancel}>Cancelar</button>
@@ -181,6 +212,8 @@ function BanksWorkspace({ user }) {
   const [accountEditingId, setAccountEditingId] = useState(null);
   const [cardDraft, setCardDraft] = useState(null);
   const [cardEditingId, setCardEditingId] = useState(null);
+  const accountReturnFocusRef = useRef(null);
+  const cardReturnFocusRef = useRef(null);
   const [chargeDraft, setChargeDraft] = useState(null);
   const [deleteChargeTarget, setDeleteChargeTarget] = useState(null);
   const [revealedAccount, setRevealedAccount] = useState(null);
@@ -249,14 +282,21 @@ function BanksWorkspace({ user }) {
       throw err; // The modal owns actionable form feedback.
     } finally { setBusy(false); }
   };
-  const run = async (fn, success) => {
+  const run = async (fn, success, { rethrowOnFailure = false } = {}) => {
     if (busy) return;
     setBusy(true); setError('');
     try { await fn(); if (success) toast.success(success); }
-    catch (e) { setError(e?.message || 'No se pudo guardar el cambio.'); }
+    catch (e) {
+      if (rethrowOnFailure) throw e; // Inline editors own the error and keep the draft mounted.
+      setError(e?.message || 'No se pudo guardar el cambio.');
+    }
     finally { setBusy(false); }
   };
-  const startAccount = (bankId, account) => {
+  const restoreEditorFocus = (ref) => { if (ref.current?.isConnected) ref.current.focus(); };
+  const closeAccountEditor = () => { setAccountDraft(null); restoreEditorFocus(accountReturnFocusRef); };
+  const closeCardEditor = () => { setCardDraft(null); restoreEditorFocus(cardReturnFocusRef); };
+  const startAccount = (bankId, account, trigger) => {
+    accountReturnFocusRef.current = trigger;
     setAccountDraft(account ? {
       bankId: account.bankId, name: account.name, type: account.type, currency: account.currency,
       balance: String(account.balance), alias: account.alias || '', cbu: account.cbu || '',
@@ -265,7 +305,8 @@ function BanksWorkspace({ user }) {
     setAccountEditingId(account?.id || null);
     setCardDraft(null); setChargeDraft(null);
   };
-  const startCard = (bankId, card) => {
+  const startCard = (bankId, card, trigger) => {
+    cardReturnFocusRef.current = trigger;
     setCardDraft(card ? {
       bankId: card.bankId, nickname: card.nickname, brand: card.brand, lastFour: card.lastFour || '',
       closingDay: String(card.closingDay), dueDay: String(card.dueDay),
@@ -402,13 +443,13 @@ function BanksWorkspace({ user }) {
           const id = bank.code;
           const accountEditor = accountDraft?.bankId === id && (
             <BankAccountEditor draft={accountDraft} onChange={setAccountDraft} editingId={accountEditingId}
-              busy={busy} onCancel={() => setAccountDraft(null)}
-              onSave={() => run(async () => { await saveBankAccount(uid, accountDraft, accountEditingId); setAccountDraft(null); }, 'Cuenta guardada')} />
+              busy={busy} onCancel={closeAccountEditor}
+              onSave={() => run(async () => { await saveBankAccount(uid, accountDraft, accountEditingId); closeAccountEditor(); }, 'Cuenta guardada', { rethrowOnFailure: true })} />
           );
           const cardEditor = cardDraft?.bankId === id && (
             <BankCardEditor draft={cardDraft} onChange={setCardDraft} editingId={cardEditingId}
-              busy={busy} onCancel={() => setCardDraft(null)}
-              onSave={() => run(async () => { await saveBankCard(uid, cardDraft, cardEditingId); setCardDraft(null); }, 'Tarjeta guardada')} />
+              busy={busy} onCancel={closeCardEditor}
+              onSave={() => run(async () => { await saveBankCard(uid, cardDraft, cardEditingId); closeCardEditor(); }, 'Tarjeta guardada', { rethrowOnFailure: true })} />
           );
           return (
             <CollapsibleSection key={id} id={'bank-' + id} eyebrow='Banco' title={bank.name}
@@ -442,7 +483,7 @@ function BanksWorkspace({ user }) {
                 <section className='space-y-3' aria-label={'Cuentas de ' + bank.name}>
                   <div className='flex flex-wrap items-center justify-between gap-2'>
                     <h3 className='text-base font-extrabold'>Cuentas bancarias</h3>
-                    <button type='button' className={secondary} disabled={busy} onClick={() => startAccount(id)}><FiPlus/> Añadir cuenta</button>
+                    <button type='button' className={secondary} disabled={busy} onClick={(event) => startAccount(id, null, event.currentTarget)}><FiPlus/> Añadir cuenta</button>
                   </div>
                   {!accountEditingId && accountEditor}
                   {bankAccounts(id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>Todavía no agregaste cuentas.</p>}
@@ -471,7 +512,7 @@ function BanksWorkspace({ user }) {
                               {expandedAccounts[a.id] ? 'Ocultar detalles' : 'Ver detalles'}
                             </button>
                           ) : <span aria-hidden='true' />}
-                          <button type='button' className={secondary} onClick={() => startAccount(id, a)}>Editar cuenta o saldo</button>
+                          <button type='button' className={secondary} onClick={(event) => startAccount(id, a, event.currentTarget)}>Editar cuenta o saldo</button>
                         </div>
                         {Boolean(expandedAccounts[a.id]) && (
                           <section id={'bank-account-details-' + a.id} aria-label={'Detalles de cuenta ' + a.name}
@@ -499,7 +540,7 @@ function BanksWorkspace({ user }) {
                 <section className='space-y-3' aria-label={'Tarjetas de ' + bank.name}>
                   <div className='flex flex-wrap items-center justify-between gap-2'>
                     <h3 className='text-base font-extrabold'>Tarjetas de crédito</h3>
-                    <button type='button' className={secondary} disabled={busy} onClick={() => startCard(id)}><FiPlus/> Añadir tarjeta</button>
+                    <button type='button' className={secondary} disabled={busy} onClick={(event) => startCard(id, null, event.currentTarget)}><FiPlus/> Añadir tarjeta</button>
                   </div>
                   {bankCards(id).length === 0 && <p className='text-sm text-slate-600 dark:text-slate-300'>Agregá una tarjeta para registrar consumos e importar sus resúmenes.</p>}
                   {!cardEditingId && cardEditor}
@@ -512,7 +553,7 @@ function BanksWorkspace({ user }) {
                       collapsed={openCard !== card.id}
                       onToggle={() => setOpenCard((value) => value === card.id ? null : card.id)}>
                       <div className='min-w-0 space-y-3'>
-                        <button type='button' className={secondary} onClick={() => startCard(id, card)}>Editar tarjeta</button>
+                        <button type='button' className={secondary} onClick={(event) => startCard(id, card, event.currentTarget)}>Editar tarjeta</button>
                         {cardEditingId === card.id && cardEditor}
                          <div className='rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs dark:border-slate-700 dark:bg-slate-900/50'>
                            <p className='font-bold'>Próximo cierre: {cardCycleDates(card).closingDate || 'Sin fecha'}</p>
