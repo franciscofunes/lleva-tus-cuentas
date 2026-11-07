@@ -37,7 +37,7 @@ const initialCategories = [
     extraFieldIds: ['reference', 'paymentMethod'], origin: 'custom', isCustom: true },
 ];
 
-function TransactionHarness({ initialCategory = 'Transporte 🚌', onCategoryFlags = {} }) {
+function TransactionHarness({ initialCategory = 'Transporte 🚌', initialReceiptCurrency = null, onCategoryFlags = {} }) {
   const [category, setCategory] = useState(initialCategory);
   const [customDetails, setCustomDetails] = useState({});
   const [expiration, setExpiration] = useState('');
@@ -48,6 +48,7 @@ function TransactionHarness({ initialCategory = 'Transporte 🚌', onCategoryFla
   return (
     <>
       <TransactionForm
+        initialReceiptCurrency={initialReceiptCurrency}
         name={name} setName={setName}
         amount='2500' setAmount={noop}
         comment='Viaje' setComment={noop}
@@ -111,6 +112,12 @@ test('a receipt scanner opens within the existing transaction form and has the s
   expect(trigger).toHaveAttribute('aria-expanded','true');
   expect(screen.getByRole('region',{name:'Escanear ticket con IA local'})).toBeInTheDocument();
   expect(screen.getByRole('button',{name:'Abrir cámara para sacar foto'})).toBeInTheDocument();
+});
+
+test('a quick-captured USD purchase cannot be silently submitted as an ARS expense', async () => {
+  render(<TransactionHarness initialReceiptCurrency='USD' />);
+  fireEvent.click(screen.getByRole('button', {name:'Añadir'}));
+  expect(await screen.findByText(/El ticket indica USD, pero la categoría seleccionada guarda en ARS/)).toBeInTheDocument();
 });
 
 test('a created personal category can be selected immediately after returning to the draft', () => {

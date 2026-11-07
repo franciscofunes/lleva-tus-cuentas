@@ -2,24 +2,24 @@ import React, { useState } from 'react';
 import LocalScreenshotOcr from './LocalScreenshotOcr';
 import { parseReceiptOcrText } from '../utils/receiptOcr';
 
-const fieldLabels = {merchant: 'Comercio', amount: 'Total del ticket', date: 'Fecha'};
-const fieldKeys = ['merchant', 'amount', 'date'];
+const fieldLabels = {merchant: 'Comercio', amount: 'Total del ticket', date: 'Fecha', documentNumber: 'N.º de ticket, cupón u operación'};
+const fieldKeys = ['merchant', 'amount', 'date', 'documentNumber'];
 
 /** Financial review boundary for receipts. OCR never writes or chooses a category. */
 export default function ReceiptOcrImport({ onApply, privacyHidden = false, disabled = false }) {
   const [suggestion, setSuggestion] = useState(null);
-  const [selected, setSelected] = useState({merchant: true, amount: true, date: true});
+  const [selected, setSelected] = useState({merchant: true, amount: true, date: true, documentNumber: true});
 
   const recognized = ({text}) => {
     setSuggestion(parseReceiptOcrText(text));
-    setSelected({merchant: true, amount: true, date: true});
+    setSelected({merchant: true, amount: true, date: true, documentNumber: true});
   };
 
   const apply = () => {
     if (!suggestion || privacyHidden || disabled) return;
     const fields = Object.fromEntries(fieldKeys.filter((key) => selected[key] && suggestion[key] !== null && suggestion[key] !== '').map((key) => [key, suggestion[key]]));
     if (!Object.keys(fields).length) return;
-    onApply({...fields, currency: suggestion.currency});
+    onApply({...fields, currency: suggestion.currency, ...(fields.documentNumber ? {documentType: suggestion.documentType} : {})});
     setSuggestion(null);
   };
 

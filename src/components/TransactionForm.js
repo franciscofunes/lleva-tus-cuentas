@@ -71,6 +71,7 @@ const TransactionForm = ({
   setCustomDetails = () => {},
   hasSavedCustomDetails = false,
   startWithReceiptScanner = false,
+  initialReceiptCurrency = null,
   privacyHidden = false,
   setIsOpen,
 }) => {
@@ -80,7 +81,7 @@ const TransactionForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMarkdown, setShowMarkdown] = useState(false);
   const [showReceiptScanner, setShowReceiptScanner] = useState(Boolean(startWithReceiptScanner));
-  const [receiptCurrency, setReceiptCurrency] = useState(null);
+  const [receiptCurrency, setReceiptCurrency] = useState(initialReceiptCurrency);
   const [markdown, setMarkdown] = useState("");
   const [isParsingMarkdown, setIsParsingMarkdown] = useState(false);
   const [markdownMessage, setMarkdownMessage] = useState("");

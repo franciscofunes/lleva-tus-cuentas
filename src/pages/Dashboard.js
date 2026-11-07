@@ -29,6 +29,7 @@ import { getTransactionCurrency } from "../utils/customCategories";
 import { TRANSACTION_PAGE_SIZE } from "../utils/transactionsPagination";
 import { selectScopedTransactions, selectTransactionCards } from "../utils/transactionsPageView";
 import TransactionForm from "../components/TransactionForm";
+import QuickPurchaseCapture from "../components/QuickPurchaseCapture";
 import AdvertisementContainer from "../components/AdvertisementContainer";
 import QuickAccessCard from "../components/QuickAccessCard";
 import TransactionsHeaderActions from "../components/TransactionsHeaderActions";
@@ -224,6 +225,7 @@ function Dashboard() {
 
   const [showModal, setShowModal] = useState(false);
   const [startWithReceiptScanner, setStartWithReceiptScanner] = useState(false);
+  const [quickDraftCurrency, setQuickDraftCurrency] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
 
   const [expenseId, setExpenseId] = useState("");
@@ -257,6 +259,7 @@ function Dashboard() {
   const [currencySellRate, setCurrencySellRate] = useState();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
 
   const [selectedChart, setSelectedChart] = useState("expenses");
@@ -506,10 +509,33 @@ function Dashboard() {
 
   const openModal = () => {
     setStartWithReceiptScanner(false);
+    setQuickDraftCurrency(null);
     setIsOpen(true);
   };
   const openReceiptScanner = () => {
-    setStartWithReceiptScanner(true);
+    setQuickCaptureOpen(true);
+  };
+  const continueQuickCaptureAsTransaction = (draft) => {
+    setQuickCaptureOpen(false);
+    setEdit(false);
+    setStartWithReceiptScanner(false);
+    setQuickDraftCurrency(draft.currency);
+    setCategory('');
+    setCustomDetails({});
+    setTransactionLocation(null);
+    setSelectedCloseDate('');
+    setSelectedExpirationDate('');
+    setCurrencyQuantity('');
+    setCurrencyExchangeRate('');
+    setIsCreditCardCategory(false);
+    setIsBuyCurrenciesCategory(false);
+    setIsCurrencyIncomeCategory(false);
+    setIsSellCurrenciesCategory(false);
+    setName(draft.merchant);
+    setAmount(draft.amount);
+    setSelectedDate(draft.date);
+    setTransactionCurrency(draft.currency);
+    setComment(draft.comment);
     setIsOpen(true);
   };
 
@@ -572,6 +598,7 @@ function Dashboard() {
 
   const closeModal = () => {
     setEdit(false);
+    setQuickDraftCurrency(null);
     setName("");
     setAmount("");
     setTransactionCurrency("ARS");
@@ -691,11 +718,11 @@ function Dashboard() {
         >
 
           <div className='mb-4'>
-            <ScreenshotImportShortcut title='Escanear ticket de compra'
-              description='Sacá una foto o elegí una imagen para detectar comercio, total y fecha sin subirla al servidor.'
-              actionLabel='Escanear ticket' onAction={openReceiptScanner}
+            <ScreenshotImportShortcut title='Registrar compra o escanear ticket'
+              description='Registrá un consumo con tarjeta o un gasto en efectivo, débito o transferencia. La foto es opcional.'
+              actionLabel='Registrar compra' onAction={openReceiptScanner}
               disabled={!isDataVisible}
-              hint={!isDataVisible ? 'Mostrá los importes para escanear un ticket.' : 'Revisás y corregís los datos en el formulario antes de guardar.'}/>
+              hint={!isDataVisible ? 'Mostrá los importes para registrar una compra.' : 'Podés usar foto de ticket, cupón, factura o ingresar los datos a mano.'}/>
           </div>
 
 
@@ -864,7 +891,7 @@ function Dashboard() {
         <FloatingMenu
           openTransactionModal={openModal}
           openLitaModal={handleFloatingButtonClick}
-          isModalOpen={isOpen || showModal || Boolean(pendingDelete)}
+          isModalOpen={isOpen || quickCaptureOpen || showModal || Boolean(pendingDelete)}
         />
 
         {pendingDelete && (
@@ -875,10 +902,27 @@ function Dashboard() {
           />
         )}
 
+        {quickCaptureOpen && (
+          <GenericModal
+            show={quickCaptureOpen}
+            dialogLabel='Registrar compra con o sin comprobante'
+            component={QuickPurchaseCapture}
+            uid={user.uid}
+            privacyHidden={!isDataVisible}
+            onTransactionDraft={continueQuickCaptureAsTransaction}
+            onClose={(message) => {
+              setQuickCaptureOpen(false);
+              if (message) toast.success(message);
+            }}
+            closeModal={() => setQuickCaptureOpen(false)}
+          />
+        )}
+
         {isOpen && (
           <GenericModal
             component={TransactionForm}
             startWithReceiptScanner={startWithReceiptScanner}
+            initialReceiptCurrency={quickDraftCurrency}
             privacyHidden={!isDataVisible}
             name={name}
             amount={amount}
