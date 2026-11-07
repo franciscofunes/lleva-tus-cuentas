@@ -16,6 +16,16 @@ test('the page DOM prioritizes period summary and transactions before optional c
   expect(overview).toBeGreaterThan(charts);
 });
 
+test('collapsed Transactions widgets use one grid gap rather than doubling spacing after the summary', () => {
+  const workspace = dashboard.slice(dashboard.indexOf('id="transactions-scope"'), dashboard.indexOf('id="transactions-overview"'));
+  const summary = workspace.slice(workspace.indexOf('id="transactions-summary"'), workspace.indexOf('</CollapsibleSection>'));
+  expect(workspace).toContain('className="grid min-w-0 grid-cols-1 gap-5 items-start lg:grid-cols-3"');
+  expect(summary).toContain('className="font-Nunito"');
+  expect(summary).not.toMatch(/className="[^"]*\b(?:mb|mt|my)-\d+/);
+  expect(workspace).toContain('id="transactions-list"');
+  expect(workspace).toContain('id="transactions-charts"');
+});
+
 test('analytics charts default to collapsed only for fresh accounts and persisted choices override defaults', () => {
   expect(dashboard).toContain('charts: true');
   expect(dashboard).toContain('...(saved.collapsedSections || {})');

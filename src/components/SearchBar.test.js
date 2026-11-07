@@ -35,7 +35,7 @@ describe('Transactions live search interface', () => {
   it('searches while typing without a submit and clears only the text', () => {
     render(<TestSearchBar />);
     const search = screen.getByRole('searchbox', { name: 'Buscar movimientos' });
-    expect(search).toHaveAttribute('placeholder', expect.stringContaining('Nombre'));
+    expect(search).toHaveAttribute('placeholder', 'Nombre, categoría o importe');
     fireEvent.change(search, { target: { value: 'Ciudad' } });
     expect(search).toHaveValue('Ciudad');
     fireEvent.click(screen.getByRole('button', { name: 'Borrar texto de búsqueda' }));
