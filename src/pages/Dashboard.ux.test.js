@@ -20,10 +20,18 @@ test('collapsed Transactions widgets use one grid gap rather than doubling spaci
   const workspace = dashboard.slice(dashboard.indexOf('id="transactions-scope"'), dashboard.indexOf('id="transactions-overview"'));
   const summary = workspace.slice(workspace.indexOf('id="transactions-summary"'), workspace.indexOf('</CollapsibleSection>'));
   expect(workspace).toContain('className="grid min-w-0 grid-cols-1 gap-5 items-start lg:grid-cols-3"');
-  expect(summary).toContain('className="font-Nunito"');
+  expect(summary).not.toContain('font-Nunito');
   expect(summary).not.toMatch(/className="[^"]*\b(?:mb|mt|my)-\d+/);
   expect(workspace).toContain('id="transactions-list"');
   expect(workspace).toContain('id="transactions-charts"');
+});
+
+test('Transactions summary and charts inherit the shared financial font rather than local Nunito overrides', () => {
+  const workspace = dashboard.slice(dashboard.indexOf('id="transactions-summary"'), dashboard.indexOf('<FinancialOverviewPanel'));
+  expect(workspace).toContain('id="transactions-charts"');
+  expect(workspace).not.toContain('font-Nunito');
+  expect(workspace).not.toContain('font-Roboto');
+  expect(workspace).not.toContain('font-Montserrat');
 });
 
 test('Transactions tools start one standard gap below the main grid', () => {
