@@ -62,12 +62,13 @@ test('authenticated financial movements never leak into a visual review fixture'
   expect(dashboard).not.toContain('fakeAuthenticatedUser');
 });
 
-test('receipt scanning is a discoverable transaction activity action with explicit privacy and review', () => {
+test('optional receipt capture is discoverable in Transactions without creating an expense automatically', () => {
   const activity = dashboard.slice(dashboard.indexOf('id="transactions-list"'), dashboard.indexOf('id="transactions-charts"'));
-  expect(activity).toContain("title='Escanear ticket de compra'");
+  expect(activity).toContain("title='Registrar compra o escanear ticket'");
   expect(activity).toContain('onAction={openReceiptScanner}');
   expect(activity).toContain('disabled={!isDataVisible}');
-  expect(dashboard).toContain('startWithReceiptScanner={startWithReceiptScanner}');
+  expect(dashboard).toContain('component={QuickPurchaseCapture}');
+  expect(dashboard).toContain('onTransactionDraft={continueQuickCaptureAsTransaction}');
   expect(dashboard).toContain('privacyHidden={!isDataVisible}');
 });
 
