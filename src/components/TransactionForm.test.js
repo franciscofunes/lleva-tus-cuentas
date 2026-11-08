@@ -114,6 +114,14 @@ test('a receipt scanner opens within the existing transaction form and has the s
   expect(screen.getByRole('button',{name:'Abrir cámara para sacar foto'})).toBeInTheDocument();
 });
 
+test('the add button follows the complete form instead of covering amount fields on narrow screens', () => {
+  render(<TransactionHarness />);
+  const submit = screen.getByRole('button', {name:'Añadir'});
+  expect(submit).not.toHaveClass('sticky');
+  expect(submit).toHaveClass('min-h-[44px]');
+  expect(submit.closest('form').lastElementChild).toBe(submit);
+});
+
 test('a quick-captured USD purchase cannot be silently submitted as an ARS expense', async () => {
   render(<TransactionHarness initialReceiptCurrency='USD' />);
   fireEvent.click(screen.getByRole('button', {name:'Añadir'}));

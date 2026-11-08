@@ -926,7 +926,7 @@ const TransactionForm = ({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="sticky bottom-0 z-10 mt-2 w-full py-3 disabled:opacity-60 disabled:cursor-wait border border-transparent shadow-lg bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md "
+          className="mt-3 min-h-[44px] w-full py-3 disabled:opacity-60 disabled:cursor-wait border border-transparent shadow-lg bg-primary hover:opacity-95 font-Roboto font-medium text-white text-center text-lg rounded-lg focus:ring-2 focus:outline-none focus:ring-offset-2 focus:ring-indigo-600 hover:shadow-md"
         >
           {isSubmitting ? (<span className="inline-flex items-center justify-center gap-2"><span className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />{edit ? "Guardando…" : "Añadiendo…"}</span>) : (edit ? "Guardar" : "Añadir")}
         </button>
