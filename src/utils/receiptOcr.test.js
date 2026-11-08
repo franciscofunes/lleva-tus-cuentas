@@ -47,3 +47,10 @@ test('bare voucher reference, installment count or quantity are not misread as m
   expect(receipt.amount).toBeNull();
   expect(receipt.merchant).toBeNull();
 });
+
+test('noisy thermal OCR does not suggest the non-fiscal heading or invent a missing total', () => {
+  const parsed = parseReceiptOcrText('x\nDOCUMENTO NO FISCAL\nCARNES DEL NORTE\nDireccion - Telefono - Fax\nFeroe eNeyGoe\nNº Operacion: 3-84 Copia: 1\nVendedor: Vendedor B\nTOTAL borroso\nGracias por su compra');
+  expect(parsed).toEqual(expect.objectContaining({
+    merchant: 'CARNES DEL NORTE', amount: null, date: null, documentNumber:'3-84',
+  }));
+});

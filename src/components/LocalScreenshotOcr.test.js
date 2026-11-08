@@ -142,6 +142,26 @@ test('Android defaults to independent compatible OCR and does not initialize bro
   }
 });
 
+test('optional receipt fast mode reads immediately and hides the advanced reader settings',async()=>{
+  const original = Object.getOwnPropertyDescriptor(navigator, 'userAgent');
+  Object.defineProperty(navigator, 'userAgent', {configurable:true,value:'Mozilla/5.0 (Linux; Android 14) Chrome/130.0'});
+  try {
+    const onRecognized=jest.fn();
+    render(<LocalScreenshotOcr onRecognized={onRecognized} autoRead compact receiptMode/>);
+    expect(screen.queryByRole('button',{name:'Leer captura en este dispositivo'})).not.toBeInTheDocument();
+    expect(screen.getByText(/Opciones del lector \(opcional\)/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Elegir captura para lectura local'),{
+      target:{files:[new File(['image'],'ticket.jpg',{type:'image/jpeg'})]},
+    });
+    await waitFor(()=>expect(onRecognized).toHaveBeenCalledTimes(1));
+    expect(recognizeWithCompatibleOcr).toHaveBeenCalledWith(expect.any(File),expect.objectContaining({receiptMode:true}));
+    expect(screen.queryByRole('button',{name:'Leer captura en este dispositivo'})).not.toBeInTheDocument();
+  } finally {
+    if (original) Object.defineProperty(navigator, 'userAgent', original);
+    else delete navigator.userAgent;
+  }
+});
+
 test('compatible OCR failure is recoverable and keeps the original image available',async()=>{
   recognizeWithCompatibleOcr.mockRejectedValue(new Error('Worker init failed https://example.net/token'));
   const onRecognized=jest.fn();
