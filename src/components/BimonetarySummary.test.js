@@ -3,16 +3,24 @@ import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import BimonetarySummary from './BimonetarySummary';
+import { subscribePortfolioPositions } from '../services/portfolioService';
 
 jest.mock('../services/portfolioService', () => ({
-  subscribePortfolioPositions: jest.fn((uid, onData) => {
+  subscribePortfolioPositions: jest.fn(),
+}));
+
+beforeEach(() => {
+  localStorage.clear();
+  // Create React App resets Jest mock implementations between tests.
+  // Reinstall this isolated Firestore snapshot fixture for every case.
+  subscribePortfolioPositions.mockImplementation((uid, onData) => {
     onData([
       { currency: 'USD', balance: 2500 },
       { currency: 'ARS', balance: 35000 },
     ]);
     return () => {};
-  }),
-}));
+  });
+});
 
 const docs = [
   { category: 'Ingreso divisas', currencyQuantity: 1000 },
@@ -32,8 +40,6 @@ const mount = (props = {}) =>
         isLoading={false} hideValues={false} {...props} />
     </MemoryRouter>
   );
-
-beforeEach(() => localStorage.clear());
 
 describe('Compact ARS/USD summary', () => {
   it('uses three matching skeleton cards instead of loading text during a period change', () => {
@@ -79,6 +85,7 @@ describe('Compact ARS/USD summary', () => {
 
   it('shows only three main values by default and all details are collapsed', async () => {
     mount();
+    expect(subscribePortfolioPositions).toHaveBeenCalledWith('test-user', expect.any(Function), expect.any(Function));
     const ars = screen.getByRole('region', { name: 'Flujo de pesos argentinos' });
     const usd = screen.getByRole('region', { name: 'Movimiento de dólares' });
     const portfolio = screen.getByRole('region', { name: 'Patrimonio en Portfolio' });

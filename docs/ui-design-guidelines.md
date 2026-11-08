@@ -197,3 +197,9 @@ Use the real shared Transactions `FINANCIAL_ITEM_SURFACE_STYLES` and `FINANCIAL_
 
 ## Banks PDF privacy guard (#227 phase 6)
 When the global Bancos privacy control is hidden, the PDF import review must not render source filenames, monetary amounts, merchant text, dates or the per-consumption category editor. Keep the draft intact in memory for review after the user explicitly reveals values; block `Guardar resumen revisado y vincular` until the user can actually inspect the amounts. Use shared record-disclosure tokens, 44px buttons and category select targets. Never use AI to bypass review or financial validation. See [Browser AI feasibility](browser-ai-sdk-ltc-feasibility.md) for future optional local proposals (no runtime dependency in this PR).
+
+## Transactions financial details and chart rhythm
+
+- Treat a paid-service `paidAt` stored as `YYYY-MM-DD` as a calendar date, not a UTC timestamp. Preserve real Firestore timestamp instants. The transaction card must never display a payment one day early because of the viewer's time zone.
+- `TransactionChartSurface` provides the gap between its heading and content; category charts must not add a second top margin. Long native-currency amounts remain visible and unchanged.
+- Portfolio links, explanatory disclosures and chart expand/collapse controls maintain at least 44px touch targets with the shared violet focus treatment. ARS and USD totals remain separate, and hidden values stay masked.

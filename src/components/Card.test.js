@@ -95,6 +95,16 @@ test('services with configured due dates preserve their due-date label and paid 
   expect(screen.getByText('12/10/2026')).toBeInTheDocument();
 });
 
+test('Firestore payment timestamps still show their actual local calendar day', () => {
+  const paymentDate = new Date(2026, 9, 12, 12);
+  render(<Card {...basicProps} category='Servicio de Internet' selectedDate='2026-10-13'
+    categories={[{ name: 'Servicio de Internet', isExpense: true, dateBehavior: 'due-date' }]}
+    paymentStatus='paid' paidDueDate='2026-10-13'
+    paidAt={{ toDate: () => paymentDate }} />);
+  openDetails();
+  expect(screen.getByText('12/10/2026')).toBeInTheDocument();
+});
+
 test('custom category metadata remains visible and readable for long entries', () => {
   render(<Card {...basicProps} category='Mi categoría personalizada' comment='Una descripción larga sin truncamiento'
     customDetails={{ reference: 'REFERENCIA-CON-IDENTIFICADOR-LARGO-123456', paymentMethod: 'transferencia' }}
