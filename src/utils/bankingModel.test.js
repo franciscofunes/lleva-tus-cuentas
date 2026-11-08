@@ -66,6 +66,17 @@ test('statement details link to the card through existing expenseId without re-c
   expect(isStatementCategory('Venta divisas')).toBe(false);
 });
 
+test('credit purchases preserve optional invoice and category without creating cash-flow expenses', () => {
+  const charge = validateBankCharge({
+    bankId:'ciudad',cardId:'card-abc',merchant:'CARNESANGUS',amount:'18034',
+    currency:'ARS',purchaseDate:'2026-11-07',installments:1,note:'',category:'Alimentación',
+    receiptDetails:{documents:[{type:'non_fiscal',operationNumber:'1-72'}],items:[{description:'MILA CARNE OFERTA'}]},
+  });
+  expect(charge.category).toBe('Alimentación');
+  expect(charge.receiptDetails.items[0].description).toBe('MILA CARNE OFERTA');
+  expect(charge.countedInCashFlow).toBe(false);
+});
+
 test('optional banking identifiers remain typed and snapshot values are reference-only', () => {
   const account=validateBankAccount({
     bankId:'private',name:'Caja ahorro',type:'caja_ahorro',currency:'ARS',

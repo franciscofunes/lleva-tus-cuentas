@@ -24,8 +24,21 @@ test('ambiguous totals, unlabeled balances and invalid dates cannot create sugge
 test('synthetic thermal shop receipt recognizes abbreviated November date and ignores non-fiscal heading', () => {
   const receipt = parseReceiptOcrText('DOCUMENTO NO FISCAL\nCARNES DEL SUR\nFecha: 07/Nov/2026\nHora: 12:41:44\nNº Operacion: 3-84\n(301) PRODUCTO EN OFERTA\n2.015kg 8000$/kg = 16120\nARTICULOS: 1\nTOTAL\n$16120');
   expect(receipt).toEqual(expect.objectContaining({
-    merchant: 'CARNES DEL SUR', date: '2026-11-07', amount: 16120, currency: null, documentNumber:'3-84', documentType:'ticket',
+    merchant: 'CARNES DEL SUR', date: '2026-11-07', amount: 16120, currency: null, documentNumber:'3-84', documentType:'non_fiscal',
   }));
+});
+
+test('realistic Carnesangus thermal receipt maps total, operation and purchased product', () => {
+  const text = `DOCUMENTO NO FISCAL\nCARNESANGUS\nFecha: 07/Nov/2026\nHora: 12:41:44\nNº Operacion: 1-72 Copia: 1\n(C.PLU) - Descripcion:\nCantidad x Precio Unit = Importe\n(301) - MILA CARNE OFERTA\n2.015kg 8950$/kg =\n18034$\nARTICULOS: 1\nTOTAL\n$18034`;
+  expect(parseReceiptOcrText(text)).toEqual(expect.objectContaining({
+    merchant: 'CARNESANGUS', amount: 18034, date: '2026-11-07',
+    documentType: 'non_fiscal', documentNumber: '1-72', operationNumber: '1-72',
+    items: expect.arrayContaining([expect.objectContaining({description: 'MILA CARNE OFERTA', quantity: 2.015, unitPrice: 8950, total: 18034})]),
+  }));
+});
+
+test('handles thousand-separated Argentine TOTAL without fabricating cents', () => {
+  expect(parseReceiptOcrText('CARNESANGUS\nFecha 07/11/2026\nTOTAL $18.034').amount).toBe(18034);
 });
 
 test('card voucher can propose a labeled purchase amount but not infer payment currency', () => {

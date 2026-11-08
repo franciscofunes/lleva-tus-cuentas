@@ -26,6 +26,8 @@ import SearchBar from "../components/SearchBar";
 import { isTransactionSortKey } from "../utils/transactionSort";
 import { categoryContains } from "../utils/categoryContains";
 import { getTransactionCurrency } from "../utils/customCategories";
+import { usesSelectedDateAsDueDate } from '../utils/transactionDueDates';
+import { receiptCategorySuggestions } from '../utils/receiptCategoryMapping';
 import { TRANSACTION_PAGE_SIZE } from "../utils/transactionsPagination";
 import { selectScopedTransactions, selectTransactionCards } from "../utils/transactionsPageView";
 import TransactionForm from "../components/TransactionForm";
@@ -235,6 +237,7 @@ function Dashboard() {
   const [comment, setComment] = useState("");
   const [category, setCategory] = useState("");
   const [customDetails, setCustomDetails] = useState({});
+  const [receiptDetails, setReceiptDetails] = useState(null);
   const [transactionLocation, setTransactionLocation] = useState(null);
   const [hasSavedCustomDetails, setHasSavedCustomDetails] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
@@ -471,6 +474,7 @@ function Dashboard() {
     setComment(transaction.comment || "");
     setCategory(transaction.category || "");
     setCustomDetails(transaction.customDetails || {});
+    setReceiptDetails(transaction.receiptDetails || null);
     setTransactionLocation(transaction.location || null);
     setHasSavedCustomDetails(Boolean(Object.keys(transaction.customDetails || {}).length));
     setSelectedDate(transaction.selectedDate || "");
@@ -520,8 +524,9 @@ function Dashboard() {
     setEdit(false);
     setStartWithReceiptScanner(false);
     setQuickDraftCurrency(draft.currency);
-    setCategory('');
-    setCustomDetails({});
+    setCategory(draft.category || '');
+    setCustomDetails(receiptCategorySuggestions(categories?.find((item) => item.name === draft.category), draft.receiptDetails, draft.merchant, draft.date, draft.paymentMethod));
+    setReceiptDetails(draft.receiptDetails || null);
     setTransactionLocation(null);
     setSelectedCloseDate('');
     setSelectedExpirationDate('');
@@ -533,7 +538,7 @@ function Dashboard() {
     setIsSellCurrenciesCategory(false);
     setName(draft.merchant);
     setAmount(draft.amount);
-    setSelectedDate(draft.date);
+    setSelectedDate(usesSelectedDateAsDueDate(draft.category, categories) ? '' : draft.date);
     setTransactionCurrency(draft.currency);
     setComment(draft.comment);
     setIsOpen(true);
@@ -605,6 +610,7 @@ function Dashboard() {
     setComment("");
     setCategory("");
     setCustomDetails({});
+    setReceiptDetails(null);
     setTransactionLocation(null);
     setHasSavedCustomDetails(false);
     setSelectedDate("");
@@ -768,9 +774,11 @@ function Dashboard() {
                     comment={doc.comment}
                     category={doc.category}
                     customDetails={doc.customDetails || {}}
+                    receiptDetails={doc.receiptDetails || null}
                     location={doc.location || null}
                     setTransactionLocation={setTransactionLocation}
                     setCustomDetails={setCustomDetails}
+                    setReceiptDetails={setReceiptDetails}
                     setHasSavedCustomDetails={setHasSavedCustomDetails}
                     selectedDate={doc.selectedDate}
                     selectedExpirationDate={doc.selectedExpirationDate}
@@ -908,6 +916,7 @@ function Dashboard() {
             dialogLabel='Registrar compra con o sin comprobante'
             component={QuickPurchaseCapture}
             uid={user.uid}
+            categories={categories || []}
             privacyHidden={!isDataVisible}
             onTransactionDraft={continueQuickCaptureAsTransaction}
             onClose={(message) => {
@@ -933,6 +942,8 @@ function Dashboard() {
             category={category}
             customDetails={customDetails}
             setCustomDetails={setCustomDetails}
+            receiptDetails={receiptDetails}
+            setReceiptDetails={setReceiptDetails}
             transactionLocation={transactionLocation}
             setTransactionLocation={setTransactionLocation}
             hasSavedCustomDetails={hasSavedCustomDetails}

@@ -10,6 +10,8 @@ import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
 import { usesSelectedDateAsDueDate, usesSeparateDueDate } from '../utils/transactionDueDates';
 import { displayTransactionCustomDetails } from '../utils/categoryExtraFields';
 import CardStatementDetails from './CardStatementDetails';
+import ReceiptDetailsView from './ReceiptDetailsView';
+import { sanitizeReceiptDetails } from '../utils/receiptDetails';
 
 function Card({
 	id,
@@ -29,9 +31,11 @@ function Card({
 	comment,
 	category,
 	customDetails = {},
+	receiptDetails = null,
 	location = null,
 	setTransactionLocation = () => {},
 	setCustomDetails = () => {},
+	setReceiptDetails = () => {},
 	setHasSavedCustomDetails = () => {},
 	name,
 	setName,
@@ -80,6 +84,7 @@ function Card({
 		setComment(comment);
 		setCategory(safeCategory);
 		setCustomDetails(customDetails);
+		setReceiptDetails(receiptDetails);
 		setTransactionLocation(location);
 		setHasSavedCustomDetails(Boolean(Object.keys(customDetails || {}).length));
 		setSelectedDate(selectedDate);
@@ -101,8 +106,10 @@ function Card({
   const isCurrencyPurchase = safeCategory.includes('Compra divisas');
   const hasValidPaidAt = Boolean(paidAtMoment?.isValid());
   const extraDetails = displayTransactionCustomDetails(customDetails);
+  const hasReceiptDetails = Boolean(sanitizeReceiptDetails(receiptDetails));
   const hasSecondaryDetails = Boolean(
     comment || isCardSummary || isCurrencyPurchase
+    || (!hideValues && hasReceiptDetails)
     || (!hideValues && extraDetails.length > 0)
     || (isPaidBill && (paidDueDate || hasValidPaidAt))
   );
@@ -192,6 +199,7 @@ function Card({
                 <span className='font-semibold text-violet-700 dark:text-violet-200'>Descripción: </span>{comment}
               </p>
             )}
+            <ReceiptDetailsView value={receiptDetails} hidden={hideValues} currency={transactionCurrency}/>
             {isCardSummary && selectedCloseDate && (
               <p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
                 <span className='font-semibold text-violet-700 dark:text-violet-200'>Fecha de Cierre: </span>

@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { firestore } from '../shared/config/firebase/firebase.config';
 import { mergeCategories } from '../utils/customCategories';
 import { sanitizeTransactionCustomDetails } from '../utils/categoryExtraFields';
+import { sanitizeReceiptDetails } from '../utils/receiptDetails';
 import { normalizeTransactionLocation } from '../utils/transactionLocation';
 import { getNotificationSettings, resolveTransactionDueDate } from '../utils/transactionDueDates';
 import {
@@ -89,6 +90,7 @@ export const storeDataAction = (data) => {
 				transactionCurrency: data.transactionCurrency === 'USD' ? 'USD' : 'ARS',
 				...(normalizeTransactionLocation(data.location) ? {location:normalizeTransactionLocation(data.location)} : {}),
 				...(Object.keys(safeCustomDetails(data)).length ? { customDetails: safeCustomDetails(data) } : {}),
+				...(sanitizeReceiptDetails(data.receiptDetails) ? { receiptDetails: sanitizeReceiptDetails(data.receiptDetails) } : {}),
 				...(data?.amount !== undefined && data?.amount !== null && data?.amount !== '' && {
 					amount: data?.amount,
 				}),
@@ -146,6 +148,9 @@ export const updateDataAction = (data, docId) => {
 				...(Object.keys(safeCustomDetails(data)).length
 					? { customDetails: safeCustomDetails(data) }
 					: data.clearCustomDetails ? { customDetails: {} } : {}),
+				...(sanitizeReceiptDetails(data.receiptDetails)
+					? { receiptDetails: sanitizeReceiptDetails(data.receiptDetails) }
+					: data.clearReceiptDetails ? { receiptDetails: firebase.firestore.FieldValue.delete() } : {}),
 				...(data?.amount !== undefined && data?.amount !== null && data?.amount !== '' && {
 					amount: data?.amount,
 				}),

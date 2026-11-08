@@ -1,0 +1,18 @@
+// LTC: ADDITIVE SNIPPET for the EXISTING /users/{uid}/expenses/{expenseId} match.
+// Add 'receiptDetails' to any strict keys().hasOnly(...) allowlist, and append
+//   && ltcValidExpenseReceiptDetails()
+// to the existing allow create/update expression, retaining all existing owner
+// checks, category rules, currencies, due dates and payment guards.
+// DO NOT create a second match for expenses or deploy this as a standalone ruleset.
+// Photos, bank card numbers and raw OCR text are never saved in this field.
+
+function ltcValidExpenseReceiptDetails() {
+  let d = request.resource.data;
+  return !('receiptDetails' in d) || (
+    d.receiptDetails is map
+    && d.receiptDetails.keys().hasAll(['documents', 'items'])
+    && d.receiptDetails.keys().hasOnly(['documents', 'items'])
+    && d.receiptDetails.documents is list && d.receiptDetails.documents.size() <= 3
+    && d.receiptDetails.items is list && d.receiptDetails.items.size() <= 30
+  );
+}

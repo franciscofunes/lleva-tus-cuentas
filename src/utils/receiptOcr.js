@@ -14,14 +14,51 @@ function toMoney(raw) {
   let numeric = value;
   if (separators.length > 0) {
     const last = Math.max(value.lastIndexOf('.'), value.lastIndexOf(','));
-    // A single group of exactly three trailing digits may be 1.000 or 1.000 USD.
-    if (value.length - last - 1 === 3 && separators.length === 1) return null;
-    if (value.length - last - 1 === 2) numeric = value.slice(0, last).replace(/[.,]/g, '') + '.' + value.slice(last + 1);
+    // Within a labeled TOTAL, 18.034 is the common Argentine thousands notation.
+    // Decimal values with three fractional digits are not valid receipt totals.
+    if (value.length - last - 1 === 3 && separators.length === 1) numeric = value.replace(/[.,]/g, '');
+    else if (value.length - last - 1 === 2) numeric = value.slice(0, last).replace(/[.,]/g, '') + '.' + value.slice(last + 1);
     else if (separators.length > 1) numeric = value.replace(/[.,]/g, '');
     else return null;
   }
   const result = Number(numeric);
   return Number.isSafeInteger(Math.round(result * 100)) && result > 0 ? Math.round(result * 100) / 100 : null;
+}
+
+const itemMeta = /\b(?:TOTAL|SUBTOTAL|FACTURA|CUIT|C[. ]?U[. ]?I[. ]?T|IVA|ART[IÍ]CULOS|DESCUENTO|IMPORTE|FECHA|HORA|OPERACI[ÓO]N|GRACIAS|EFECTIVO|PAGO|VENDEDOR|CAJERO|RECIB[IÍ]|COPIA|AUTORIZACI[ÓO]N|NRO|DIRECCI[ÓO]N|TEL[EÉ]FONO)\b/i;
+const quantityPattern = /(\d{1,5}(?:[.,]\d{1,3})?)\s*(kg|kgr|gr|g|u|un|unidad(?:es)?)\b/i;
+
+function extractItems(lines) {
+  // Only read the item block, never treat authorization codes or totals as products.
+  const itemHeader = lines.findIndex((line) => /\b(?:DESCRIPCI[ÓO]N|DETALLE\s+DE\s+(?:COMPRA|PRODUCTOS))\b/i.test(line));
+  const firstTotal = lines.findIndex((line) => /^\s*(?:TOTAL|IMPORTE\s+TOTAL)\b/i.test(line));
+  if (itemHeader < 0 && firstTotal < 0) return [];
+  const end = firstTotal < 0 ? lines.length : firstTotal;
+  const start = itemHeader >= 0 ? itemHeader + 1 : Math.max(0, end - 22);
+  const items = [];
+  for (let i = start; i < end && items.length < 30; i += 1) {
+    const line = lines[i].replace(/^\s*\(?\d{1,6}\)?\s*[-–]\s*/, '').trim();
+    if (!line || itemMeta.test(line) || /^(?:cantidad|precio\s+unit|importe|\d+[.,]?\d*\s*\$?)$/i.test(line)) continue;
+    const hasLetters = /[A-Za-zÁÉÍÓÚÑáéíóúñ]{3}/.test(line);
+    if (!hasLetters) continue;
+    const quantity = line.match(quantityPattern) || lines[i + 1]?.match(quantityPattern);
+    const namePart = line.split(quantityPattern)[0].trim().replace(/\s*[-=]\s*$/, '');
+    // Ordinary headers like DOCUMENTO NO FISCAL aren't products.
+    if (!namePart || /\b(?:DOCUMENTO|FISCAL|COMERCIO|PRODUCTOS|CANTIDAD|PRECIO)\b/i.test(namePart)) continue;
+    if (!quantity && !/\b(?:OFERTA|\d{2,}[.,]\d{2})\b/.test(line)) continue;
+    const unitPrice = (quantity && `${line} ${lines[i + 1] || ''}`.match(/(\d{2,}(?:[.,]\d{2})?)\s*\$?\s*\/\s*(?:kg|kgr|u|un)/i)) || null;
+    const amountLine = `${line} ${lines[i + 1] || ''} ${lines[i + 2] || ''}`;
+    const afterEquals = amountLine.match(/=\s*\$?\s*(\d[\d.,]*)\s*\$?/);
+    const parsedTotal = afterEquals ? toMoney(afterEquals[1]) : null;
+    items.push({
+      description: namePart.slice(0, 120),
+      ...(quantity ? {quantity: Number(quantity[1].replace(',', '.'))} : {}),
+      ...(unitPrice && toMoney(unitPrice[1]) !== null ? {unitPrice: toMoney(unitPrice[1])} : {}),
+      ...(parsedTotal !== null ? {total: parsedTotal} : {}),
+    });
+    if (quantity && quantity.index === 0 && i + 1 < end) i += 1;
+  }
+  return items;
 }
 
 function isoDate(value) {
@@ -74,15 +111,20 @@ export function parseReceiptOcrText(text) {
   const merchant = header?.trim().slice(0, 30) || null;
   // A reference is optional. Never mistake CUIT, card number or authorization
   // codes for the receipt number unless the document names the reference.
-  const documentLine = lines.find((line) => /\b(?:CUP[ÓO]N|FACTURA|OPERACI[ÓO]N|TICKET)\b[^\d\n]{0,18}\d[\d/-]{1,35}\b/i.test(line));
-  const documentMatch = documentLine?.match(/\b(CUP[ÓO]N|FACTURA|OPERACI[ÓO]N|TICKET)\b[^\d\n]{0,18}(\d[\d/-]{1,35})\b/i);
+  const documentLine = lines.find((line) => /\b(?:CUP[ÓO]N|FACTURA|OPERACI[ÓO]N|TICKET|RECIBO)\b[^\d\n]{0,22}\d[\d/-]{1,35}\b/i.test(line));
+  const documentMatch = documentLine?.match(/\b(CUP[ÓO]N|FACTURA|OPERACI[ÓO]N|TICKET|RECIBO)\b[^\d\n]{0,22}(\d[\d/-]{1,35})\b/i);
   const documentNumber = documentMatch?.[2] || null;
-  const documentType = documentMatch?.[1]
-    ? /CUP[ÓO]N/i.test(documentMatch[1]) ? 'coupon' : /FACTURA/i.test(documentMatch[1]) ? 'invoice' : 'ticket'
-    : null;
+  const documentType = /DOCUMENTO\s+NO\s+FISCAL/i.test(lines.join(' ')) ? 'non_fiscal'
+    : documentMatch?.[1]
+      ? /CUP[ÓO]N/i.test(documentMatch[1]) ? 'coupon' : /FACTURA/i.test(documentMatch[1]) ? 'invoice'
+        : /RECIBO/i.test(documentMatch[1]) ? 'receipt' : 'ticket'
+      : null;
+  const operationNumber = lines.map((line) => line.match(/\bOPERACI[ÓO]N\s*(?:N[º°o.]?\s*)?[:#-]?\s*(\d[\d/-]{1,35})\b/i)?.[1]).find(Boolean) || null;
+  const authorizationCode = lines.map((line) => line.match(/\bAUTORIZACI[ÓO]N\s*(?:N[º°o.]?\s*)?[:#-]?\s*(\d[\d/-]{1,35})\b/i)?.[1]).find(Boolean) || null;
+  const items = extractItems(lines);
   const warnings = [];
   if (amount === null) warnings.push(amounts.length > 1 ? 'Se encontraron totales distintos. Elegí el correcto manualmente.' : 'No se detectó un total inequívoco. Ingresá el importe manualmente.');
   if (!currency) warnings.push('La moneda no se pudo confirmar. Revisá ARS/USD según la categoría.');
   if (!date) warnings.push('Revisá e ingresá la fecha del ticket.');
-  return {merchant, amount, currency, date, documentNumber, documentType, warnings, sourceText: lines.join('\n')};
+  return {merchant, amount, currency, date, documentNumber, documentType, operationNumber, authorizationCode, items, warnings, sourceText: lines.join('\n')};
 }

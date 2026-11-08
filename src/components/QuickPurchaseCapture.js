@@ -3,11 +3,14 @@ import { FiCamera, FiChevronDown, FiCreditCard, FiInfo } from 'react-icons/fi';
 import ReceiptOcrImport from './ReceiptOcrImport';
 import { saveManualCardCharge, subscribeBankCards, subscribeBanks } from '../services/bankingService';
 import { validDate } from '../utils/bankingModel';
+import { mergeReceiptDetails, sanitizeReceiptDetails, RECEIPT_LABELS } from '../utils/receiptDetails';
+import ReceiptDetailsView from './ReceiptDetailsView';
+import { categoriesForNewTransactions, getCategoryCurrency } from '../utils/customCategories';
 
 const inputClass = 'min-h-[44px] w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50 sm:text-sm';
 const labelClass = 'block space-y-1 text-sm font-semibold text-slate-800 dark:text-slate-100';
 const paymentLabels = {credit: 'Tarjeta de crédito', debit: 'Tarjeta de débito', transfer: 'Transferencia', cash: 'Efectivo'};
-const documentLabels = {ticket: 'Ticket', coupon: 'Cupón', invoice: 'Factura'};
+const documentLabels = RECEIPT_LABELS;
 
 function todayLocal() {
   const today = new Date();
@@ -28,15 +31,14 @@ export function normalizePurchaseAmount(value) {
   return normalized;
 }
 
-function buildNote(note, documentType, documentNumber, paymentMethod) {
+function buildNote(note, paymentMethod) {
   const parts = [String(note || '').trim()];
-  if (String(documentNumber || '').trim()) parts.push(`${documentLabels[documentType]}: ${documentNumber.trim()}`);
   if (paymentMethod !== 'credit') parts.push(`Pago: ${paymentLabels[paymentMethod]}`);
   return parts.filter(Boolean).join(' · ');
 }
 
 /** Optional first capture step, shared between credit purchases and cash-flow drafts. */
-export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, privacyHidden = false}) {
+export default function QuickPurchaseCapture({uid, categories = [], onTransactionDraft, onClose, privacyHidden = false}) {
   const [paymentMethod, setPaymentMethod] = useState('credit');
   const [cards, setCards] = useState([]);
   const [banks, setBanks] = useState([]);
@@ -48,6 +50,8 @@ export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, 
   const [installments, setInstallments] = useState('1');
   const [documentType, setDocumentType] = useState('ticket');
   const [documentNumber, setDocumentNumber] = useState('');
+  const [receiptDetails, setReceiptDetails] = useState(null);
+  const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
   const [scanOpen, setScanOpen] = useState(false);
   const [optionalDetailsOpen, setOptionalDetailsOpen] = useState(false);
@@ -81,6 +85,10 @@ export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, 
       setDocumentNumber(fields.documentNumber);
       setOptionalDetailsOpen(true);
     }
+    if (fields.receiptDetails) {
+      setReceiptDetails((previous) => mergeReceiptDetails(previous, fields.receiptDetails));
+      setOptionalDetailsOpen(true);
+    }
     if (fields.documentType) setDocumentType(fields.documentType);
     setError('');
     const missing = fields.ocrMissingFields || [];
@@ -98,9 +106,19 @@ export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, 
     setError('');
     try {
       const normalizedAmount = normalizePurchaseAmount(amount);
+      if (category && getCategoryCurrency(category, categories) !== currency)
+        throw new Error('La categoría elegida utiliza otra moneda. Elegí una categoría compatible.');
       if (merchant.trim().length < 2 || merchant.trim().length > 100) throw new Error('Ingresá el comercio (2 a 100 caracteres).');
       if (!validDate(date)) throw new Error('Revisá la fecha de compra.');
-      const combinedNote = buildNote(note, documentType, documentNumber, paymentMethod);
+      const primary = receiptDetails?.documents?.[0] || {};
+      const reference = sanitizeReceiptDetails({
+        documents: [{...primary, type: documentType,
+          number: documentType === 'non_fiscal' ? '' : documentNumber.trim(),
+          operationNumber: documentType === 'non_fiscal' ? documentNumber.trim() || primary.operationNumber : primary.operationNumber,
+        }, ...(receiptDetails?.documents || []).slice(1)],
+        items: receiptDetails?.items || [],
+      });
+      const combinedNote = buildNote(note, paymentMethod);
       if (combinedNote.length > (paymentMethod === 'credit' ? 300 : 70)) throw new Error('Acortá la descripción o el número de comprobante.');
       if (paymentMethod === 'credit') {
         const chosenCard = cards.find((item) => item.id === cardId);
@@ -109,6 +127,7 @@ export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, 
           bankId: chosenCard.bankId, cardId: chosenCard.id,
           merchant: merchant.trim(), purchaseDate: date, currency,
           amount: normalizedAmount, installments: Number(installments), note: combinedNote,
+          category, receiptDetails: reference,
         });
         try { window.localStorage.setItem(`ltc:quick-capture:last-card:${uid}`, cardId); } catch { /* optional */ }
         onClose('Consumo registrado en tu tarjeta. No se agregó a Transacciones.');
@@ -116,6 +135,7 @@ export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, 
         onTransactionDraft({
           merchant: merchant.trim().slice(0, 30), amount: normalizedAmount,
           date, currency, comment: (combinedNote || `Compra en ${merchant.trim()}`).slice(0, 70),
+          category, receiptDetails: reference,
         });
       }
     } catch (caught) {
@@ -172,6 +192,14 @@ export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, 
         </label>}
       </div>
 
+      <label className={labelClass}>Categoría (opcional)
+        <select className={inputClass} value={category} onChange={(event) => setCategory(event.target.value)}>
+          <option value=''>Elegir después</option>
+          {categoriesForNewTransactions(categories, category).filter((item) => item.isExpense && !item.name.includes('Resumen tarjeta') && getCategoryCurrency(item.name, categories) === currency)
+            .map((item) => <option key={item.id || item.name} value={item.name}>{item.displayName || item.name}</option>)}
+        </select>
+      </label>
+
       <button type='button' aria-expanded={optionalDetailsOpen} onClick={() => setOptionalDetailsOpen((open) => !open)}
         className='flex min-h-[44px] w-full items-center justify-between gap-2 rounded-lg border border-slate-300 px-3 py-2 text-left text-sm font-semibold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:text-slate-200'>
         <span>Datos extra: comprobante y nota (opcional)</span><FiChevronDown aria-hidden='true' className={optionalDetailsOpen ? 'rotate-180' : ''}/>
@@ -187,6 +215,7 @@ export default function QuickPurchaseCapture({uid, onTransactionDraft, onClose, 
             <input className={inputClass} value={documentNumber} onChange={(event) => setDocumentNumber(event.target.value)} maxLength={80} placeholder='Se puede dejar vacío'/>
           </label>
         </div>
+        <ReceiptDetailsView value={receiptDetails} currency={currency}/>
         <label className={labelClass}>Detalle (opcional)
           <input className={inputClass} value={note} onChange={(event) => setNote(event.target.value)} maxLength={220} placeholder='Ej.: Verduras para la semana'/>
         </label>

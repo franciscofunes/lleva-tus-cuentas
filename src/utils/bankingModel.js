@@ -1,5 +1,6 @@
 // Domain validation stays independent of React/Firebase for auditability.
 // Bank identities are owner-created Firestore document IDs, not a fixed catalog.
+import { sanitizeReceiptDetails } from './receiptDetails';
 export const validBankId = (id) => typeof id === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(id);
 export const validateBankName = (value) => {
   const name = typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
@@ -66,9 +67,13 @@ export const validateBankCharge = (item) => {
   if (!Number.isInteger(Number(item.installments)) || Number(item.installments) < 1 || Number(item.installments) > 60)
     throw new Error('Cantidad de cuotas inválida.');
   if ((item.note || '').length > 300) throw new Error('Nota demasiado larga.');
+  if (item.category !== undefined && (typeof item.category !== 'string' || item.category.length > 80))
+    throw new Error('Categoría inválida.');
   return { bankId: item.bankId, cardId: item.cardId, merchant: item.merchant.trim(),
     purchaseDate: item.purchaseDate, currency: item.currency, amount: parseAmount(item.amount),
     installments: Number(item.installments), note: (item.note || '').trim(),
+    ...(item.category ? { category: item.category.trim() } : {}),
+    ...(sanitizeReceiptDetails(item.receiptDetails) ? {receiptDetails: sanitizeReceiptDetails(item.receiptDetails)} : {}),
     source: 'manual', countedInCashFlow: false };
 };
 export const isStatementCategory = (category) => /Resumen tarjeta/i.test(String(category || ''));

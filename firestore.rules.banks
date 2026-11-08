@@ -26,6 +26,17 @@ function ltcIsoDate(value) {
   return value is string && value.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$');
 }
 
+// Optional, bounded evidence. Never store a photo or the full raw OCR transcript.
+function ltcValidBankReceiptDetails(d) {
+  return !('receiptDetails' in d) || (
+    d.receiptDetails is map
+    && d.receiptDetails.keys().hasOnly(['documents', 'items'])
+    && d.receiptDetails.keys().hasAll(['documents', 'items'])
+    && d.receiptDetails.documents is list && d.receiptDetails.documents.size() <= 3
+    && d.receiptDetails.items is list && d.receiptDetails.items.size() <= 30
+  );
+}
+
 // A bank created in the SAME atomic batch is visible via existsAfter().
 // This also returns true for an existing bank that remains after the write.
 function ltcBankExistsAfter(uid, bankId) {
@@ -151,7 +162,8 @@ match /users/{uid}/bankCardCharges/{chargeId} {
       ])
       && d.keys().hasOnly([
         'bankId', 'cardId', 'merchant', 'purchaseDate', 'currency', 'amount',
-        'installments', 'note', 'source', 'countedInCashFlow', 'createdAt', 'updatedAt'
+        'installments', 'note', 'source', 'countedInCashFlow', 'createdAt', 'updatedAt',
+        'category', 'receiptDetails'
       ])
       && ltcBankId(d.bankId)
       && d.cardId is string && d.cardId.size() >= 1 && d.cardId.size() <= 128
@@ -163,6 +175,8 @@ match /users/{uid}/bankCardCharges/{chargeId} {
       && ltcValidMoneyOut(d.amount)
       && d.installments is int && d.installments >= 1 && d.installments <= 60
       && d.note is string && d.note.size() <= 300
+      && (!('category' in d) || (d.category is string && d.category.size() <= 80))
+      && ltcValidBankReceiptDetails(d)
       && d.source == 'manual' && d.countedInCashFlow == false
       && d.createdAt is timestamp && d.updatedAt is timestamp;
   }
