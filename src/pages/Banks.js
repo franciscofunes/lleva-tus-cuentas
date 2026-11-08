@@ -22,6 +22,7 @@ import PageDataSkeleton from '../components/PageDataSkeleton';
 import { FinancialMetricCard } from '../components/FinancialOverviewPanel';
 import { FINANCIAL_ITEM_SURFACE_STYLES, FINANCIAL_RECORD_DISCLOSURE_STYLES, COLLAPSIBLE_SURFACE_STYLES, CollapsibleHeading } from '../components/CollapsibleHeading';
 import LinkedStatementCard from '../components/LinkedStatementCard';
+import ReceiptDetailsView from '../components/ReceiptDetailsView';
 import CardStatementPdfReview from '../components/CardStatementPdfReview';
 import { getCategoriesDataAction, storeDataAction } from '../actionCreators/databaseActions';
 import { getImportedStatement, saveReviewedStatement, verifyStatementDraft } from '../services/cardStatementService';
@@ -586,12 +587,14 @@ function BanksWorkspace({ user }) {
                           <div className='min-w-0 flex-1'>
                             <p className='break-words font-semibold text-slate-900 dark:text-slate-50'>{charge.merchant}</p>
                             <p className='text-xs text-slate-600 dark:text-slate-300'>{charge.purchaseDate} · {charge.installments} cuota(s)</p>
+                            {charge.category && <p className='break-words text-xs text-violet-700 dark:text-violet-200'>{charge.category}</p>}
                           </div>
                           <span className='min-w-0 break-all text-base font-extrabold tabular-nums text-slate-900 dark:text-slate-50'>{displayMoney(charge.amount, charge.currency)}</span>
                           <button type='button' disabled={busy}
                             aria-label={'Eliminar consumo de ' + charge.merchant}
                             className='inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-xl border border-rose-300 px-3 text-sm font-semibold text-rose-700 hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-50 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-950/40'
                             onClick={() => setDeleteChargeTarget(charge)}>Eliminar</button>
+                          {showValues && charge.receiptDetails && <div className='w-full'><ReceiptDetailsView value={charge.receiptDetails}/></div>}
                         </article>)}
                         {chargeDraft?.cardId === card.id && (
                           <form className='grid gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700 sm:grid-cols-2'

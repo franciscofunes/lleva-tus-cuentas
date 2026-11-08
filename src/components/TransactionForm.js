@@ -15,6 +15,9 @@ import {
 import InfoTooltip from "../components/InfoTooltip";
 import TransactionLocationField from "./TransactionLocationField";
 import ReceiptOcrImport from './ReceiptOcrImport';
+import ReceiptDetailsEditor from './ReceiptDetailsEditor';
+import { mergeReceiptDetails, sanitizeReceiptDetails } from '../utils/receiptDetails';
+import { receiptCategorySuggestions } from '../utils/receiptCategoryMapping';
 import { CATEGORY_INFO_TOOLTIP_MESSAGE } from "../shared/constants/tooltip-messages.const";
 import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
 import { categoriesForNewTransactions, categoryLabel, getCategoryCurrency, categoryDescription } from "../utils/customCategories";
@@ -69,6 +72,8 @@ const TransactionForm = ({
   setTransactionLocation = () => {},
   customDetails = {},
   setCustomDetails = () => {},
+  receiptDetails = null,
+  setReceiptDetails = () => {},
   hasSavedCustomDetails = false,
   startWithReceiptScanner = false,
   initialReceiptCurrency = null,
@@ -183,24 +188,31 @@ const TransactionForm = ({
       setName(fields.merchant);
       setValue('name', fields.merchant, {shouldValidate: true});
     }
+    if (!comment.trim()) {
+      const items = fields.receiptDetails?.items || [];
+      const description = (items.length
+        ? `Compra: ${items.map((item) => item.description).join(', ')}`
+        : `Compra en ${fields.merchant || 'comercio'}`).slice(0, 70);
+      setComment(description);
+      setValue('comment', description, {shouldValidate: true});
+    }
     if (fields.amount != null) {
       setAmount(fields.amount);
       setValue('amount', fields.amount, {shouldValidate: true});
     }
-    if (fields.date) {
+    if (fields.date && !selectedDateIsDueDate) {
       setSelectedDate(fields.date);
       setValue('selectedDate', fields.date, {shouldValidate: true});
     }
-    if (!edit && fields.documentNumber) {
-      const typeName = {coupon:'Cupón',invoice:'Factura',ticket:'Ticket'}[fields.documentType] || 'Comprobante';
-      const ref = `${typeName}: ${fields.documentNumber}`;
-      const nextComment = [comment, ref].filter(Boolean).join(' · ').slice(0, 70);
-      setComment(nextComment);
-      setValue('comment', nextComment, {shouldValidate: true});
-    }
+    const nextReceiptDetails = mergeReceiptDetails(receiptDetails, fields.receiptDetails);
+    if (nextReceiptDetails) setReceiptDetails(nextReceiptDetails);
+    const extraSuggestions = receiptCategorySuggestions(categoryDefinition, nextReceiptDetails, fields.merchant, fields.date);
+    if (Object.keys(extraSuggestions).length) setCustomDetails((previous) => ({...extraSuggestions, ...previous}));
     if (!edit && fields.currency) setTransactionCurrency(fields.currency);
     setReceiptCurrency(fields.currency || null);
-    setMarkdownMessage(fields.ocrMissingFields?.length
+    setMarkdownMessage(selectedDateIsDueDate && fields.date
+      ? 'La fecha del ticket quedó asociada al comprobante: esta categoría usa Fecha como vencimiento. Revisá los datos antes de guardar.'
+      : fields.ocrMissingFields?.length
       ? `Lectura parcial: completá ${fields.ocrMissingFields.join(', ')} manualmente. Revisá moneda y categoría antes de guardar.`
       : 'Datos detectados. Revisá el importe, la moneda y la categoría antes de guardar.');
     setShowReceiptScanner(false);
@@ -240,6 +252,8 @@ const TransactionForm = ({
       const data = {
         userId: user?.uid,
         customDetails: safeDetails,
+        receiptDetails: sanitizeReceiptDetails(receiptDetails),
+        clearReceiptDetails: edit && !sanitizeReceiptDetails(receiptDetails),
         clearCustomDetails: edit && hasSavedCustomDetails && !Object.keys(safeDetails).length,
         name, amount, comment, category, selectedDate,
         location: transactionLocation,
@@ -273,6 +287,7 @@ const TransactionForm = ({
       setComment("");
       setCategory("");
       setCustomDetails({});
+      setReceiptDetails(null);
       setSelectedDate("");
       setSelectedExpirationDate("");
       setSelectedCloseDate("");
@@ -383,7 +398,15 @@ const TransactionForm = ({
               }
               setCategory(e.target.value);
               setTransactionCurrency(getCategoryCurrency(e.target.value, categories));
-              setCustomDetails({});
+              const nextCategory = categories?.find((entry) => entry.name === e.target.value);
+              setCustomDetails(receiptCategorySuggestions(nextCategory, receiptDetails, name, selectedDate));
+              // A scanned purchase date must never silently become the legacy
+              // category's payment deadline when the category changes later.
+              if (!edit && usesSelectedDateAsDueDate(e.target.value, categories)
+                && receiptDetails?.documents?.some((document) => document.issuedAt === selectedDate)) {
+                setSelectedDate('');
+                setValue('selectedDate', '');
+              }
               // Avoid leaking a different category's expiration date.
               setSelectedExpirationDate("");
               setValue("selectedExpirationDate", "");
@@ -872,6 +895,7 @@ const TransactionForm = ({
         )}
 
         <TransactionLocationField value={transactionLocation} onChange={setTransactionLocation}/>
+        <ReceiptDetailsEditor value={receiptDetails} onChange={setReceiptDetails} disabled={isSubmitting}/>
         <label
           htmlFor="comment"
           className="block text-sm font-medium text-gray-700 dark:text-white"

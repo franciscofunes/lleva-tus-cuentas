@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import LocalScreenshotOcr from './LocalScreenshotOcr';
 import { parseReceiptOcrText } from '../utils/receiptOcr';
+import { sanitizeReceiptDetails } from '../utils/receiptDetails';
 
 const fieldKeys = ['merchant', 'amount', 'date', 'documentNumber'];
 
@@ -13,7 +14,19 @@ export default function ReceiptOcrImport({ onApply, privacyHidden = false, disab
     const suggestion = parseReceiptOcrText(text);
     const fields = Object.fromEntries(fieldKeys.filter((key) => suggestion[key] != null && suggestion[key] !== '')
       .map((key) => [key, suggestion[key]]));
-    if (!Object.keys(fields).length) {
+    const receiptDetails = sanitizeReceiptDetails({
+      documents: [{
+        type: suggestion.documentType || 'unknown',
+        number: suggestion.documentType === 'non_fiscal' ? '' : suggestion.documentNumber || '',
+        operationNumber: suggestion.operationNumber || (suggestion.documentType === 'non_fiscal' ? suggestion.documentNumber : '') || '',
+        authorizationCode: suggestion.authorizationCode || '',
+        issuedAt: suggestion.date || '',
+      }],
+      items: suggestion.items,
+    });
+    const hasReceiptEvidence = Boolean(receiptDetails?.items?.length || receiptDetails?.documents?.some((document) =>
+      document.number || document.operationNumber || document.authorizationCode || document.issuedAt));
+    if (!Object.keys(fields).length && !hasReceiptEvidence) {
       setUnreadable(suggestion.sourceText);
       return;
     }
@@ -21,7 +34,8 @@ export default function ReceiptOcrImport({ onApply, privacyHidden = false, disab
     onApply({
       ...fields,
       currency: suggestion.currency,
-      ...(fields.documentNumber ? {documentType: suggestion.documentType} : {}),
+      documentType: suggestion.documentType,
+      receiptDetails,
       ocrMissingFields: [!fields.merchant && 'comercio', fields.amount == null && 'importe', !fields.date && 'fecha']
         .filter(Boolean),
     });

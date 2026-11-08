@@ -51,6 +51,20 @@ test('only approved nonempty metadata keys are written on existing transaction e
   expect(saved.amount).toBe('2500');
 });
 
+test('expense edits persist structured receipt references and products without mixing money or category', async () => {
+  await updateDataAction({
+    ...base,
+    receiptDetails: {documents:[{type:'non_fiscal',operationNumber:'1-72'}],items:[{description:'MILA CARNE OFERTA',quantity:2.015}]},
+  }, 'expense-1')(jest.fn());
+  const saved = update.mock.calls[0][0];
+  expect(saved.receiptDetails).toEqual(expect.objectContaining({
+    documents:[expect.objectContaining({type:'non_fiscal',operationNumber:'1-72'})],
+    items:[expect.objectContaining({description:'MILA CARNE OFERTA',quantity:2.015})],
+  }));
+  expect(saved.amount).toBe('2500');
+  expect(saved.category).toBe('Transporte 🚌');
+});
+
 test('a credit-card summary with ARS 0 keeps the exact zero amount instead of leaving stale expense values', async () => {
   await updateDataAction({ ...base, amount: 0, category: 'Resumen tarjeta 💳' }, 'expense-1')(jest.fn());
   const saved = update.mock.calls[0][0];

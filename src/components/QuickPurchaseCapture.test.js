@@ -55,7 +55,9 @@ test('a card coupon number can be entered manually without a photo or invoice', 
   fireEvent.change(screen.getByLabelText('N.º de ticket, cupón o factura (opcional)'), {target:{value:'000482'}});
   fireEvent.click(screen.getByRole('button', {name:'Guardar consumo de tarjeta'}));
   await waitFor(() => expect(saveManualCardCharge).toHaveBeenCalledWith('alice', expect.objectContaining({
-    amount:'2850.50',note:'Cupón: 000482',
+    amount:'2850.50',note:'',receiptDetails:expect.objectContaining({
+      documents: [expect.objectContaining({type:'coupon',number:'000482'})],
+    }),
   })));
   await waitFor(() => expect(onClose).toHaveBeenCalled());
   expect(screen.queryByRole('button', {name:'Aplicar lectura de prueba'})).not.toBeInTheDocument();
@@ -71,7 +73,8 @@ test('cash, debit and transfer only prepare a reviewed Transactions draft', asyn
   fireEvent.change(screen.getByLabelText('N.º de ticket, cupón o factura (opcional)'), {target:{value:'3-84'}});
   fireEvent.click(screen.getByRole('button', {name:'Continuar a Transacciones'}));
   await waitFor(() => expect(onTransactionDraft).toHaveBeenCalledWith(expect.objectContaining({
-    merchant:'Almacén',amount:'12975',currency:'ARS',comment:expect.stringMatching(/Ticket: 3-84.*Pago: Efectivo/),
+    merchant:'Almacén',amount:'12975',currency:'ARS',comment:expect.stringMatching(/Pago: Efectivo/),
+    receiptDetails:expect.objectContaining({documents:[expect.objectContaining({type:'ticket',number:'3-84'})]}),
   })));
   expect(saveManualCardCharge).not.toHaveBeenCalled();
 });

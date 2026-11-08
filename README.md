@@ -2,7 +2,7 @@
 
 **Personal finance, transactions, investments, and AI-assisted analysis — one account, separate currencies.**
 
-[Open the app](https://llevatuscuentas.vercel.app/) · [Architecture](docs/architecture.md) · [Development](docs/development.md) · [Portfolio guide](docs/portfolio.md) · [Card statement import](docs/card-statement-pdf.md)
+[Open the app](https://llevatuscuentas.vercel.app/) · [Architecture](docs/architecture.md) · [Development](docs/development.md) · [Portfolio guide](docs/portfolio.md) · [Card statement import](docs/card-statement-pdf.md) · [Receipt capture](docs/receipt-capture-data-model.md)
 
 LTC is a responsive **React 18** single-page application hosted on **Vercel**. Users authenticate with **Firebase Authentication** and manage private financial records in **Cloud Firestore**. The companion **[Lita](https://github.com/franciscofunes/lita-assitant)** Next.js application, hosted on Vercel, provides contextual financial chat and server-side PDF statement analysis.
 
