@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  FiAlertCircle, FiBell, FiCheckCircle, FiFileText, FiInfo,
+  FiAlertCircle, FiBell, FiCheckCircle, FiEye, FiFileText, FiInfo,
   FiTrendingDown, FiTrendingUp, FiZap,
 } from 'react-icons/fi';
 import { statementMonthExtremes, historicalPeakStatus } from '../utils/cardSpendingInsights';
@@ -9,7 +9,7 @@ import { cardBudgetProgress } from '../utils/cardBudgetProgress';
 const fmt = (n, currency) => new Intl.NumberFormat('es-AR', {
   style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2,
 }).format(n);
-const input = 'mt-1 min-h-[44px] w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-950 dark:text-white focus-visible:ring-2 focus-visible:ring-purple-500';
+const input = 'mt-1 min-h-[44px] w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-50';
 const smallBtn = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500/50 px-3 py-2 text-sm font-bold text-purple-700 dark:text-purple-300 focus-visible:ring-2 focus-visible:ring-purple-500';
 
 const riskStyles = {
@@ -123,7 +123,7 @@ function HistoricalReference({peak,currency,visible}) {
 
 export default function CardSpendingControls({
   budgets=[],statuses=[],history=[],spent={ARS:0,USD:0},
-  onSave,onAskLita,onImportMarkdown,canShowValues=true,
+  onSave,onAskLita,onImportMarkdown,onRevealValues,canShowValues=true,
 }) {
   const [draft,setDraft]=useState({});
   const [saving,setSaving]=useState('');
@@ -156,7 +156,25 @@ export default function CardSpendingControls({
       </p>
     </div>
     <div className='grid gap-4 xl:grid-cols-2'>
+      {!canShowValues && <div role='status'
+        className='flex min-w-0 flex-col gap-3 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-slate-800 dark:border-violet-800 dark:bg-slate-900/70 dark:text-slate-200 sm:flex-row sm:items-center sm:justify-between xl:col-span-2'>
+        <p>Los topes, consumos y porcentajes están ocultos. Mostrá los importes para revisar o editar tus límites.</p>
+        {onRevealValues && <button type='button' onClick={onRevealValues}
+          className='inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-700 px-4 py-2 text-sm font-bold text-white hover:bg-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-violet-50 dark:bg-violet-600 dark:hover:bg-violet-500 dark:focus-visible:ring-offset-slate-900'>
+          <FiEye aria-hidden='true'/> Mostrar importes de Bancos
+        </button>}
+      </div>}
       {['ARS','USD'].map(currency=>{
+        // Hide the complete financial subtree, including form values, ARIA percentages,
+        // progress widths and risk-colored states; CSS masking cannot protect the DOM.
+        if (!canShowValues) return <section key={currency}
+          aria-label={'Control de tarjetas · '+currency}
+          className='min-w-0 space-y-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800'>
+          <h3 className='text-base font-extrabold text-slate-900 dark:text-slate-50'>Control de tarjetas · {currency}</h3>
+          <p className='rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-600 dark:bg-slate-900/70 dark:text-slate-300'>
+            Valores ocultos por privacidad
+          </p>
+        </section>;
         const data=draft[currency]||{limit:'',warnPercent:'80',enabled:true};
         const saved=budgets.find(b=>b.currency===currency);
         const status=statuses.find(s=>s.currency===currency);

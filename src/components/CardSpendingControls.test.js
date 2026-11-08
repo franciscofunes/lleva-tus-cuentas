@@ -42,11 +42,41 @@ test('changing a draft does not save it and previews exact exceeded amount in ro
   await waitFor(()=>expect(onSave).toHaveBeenCalledWith('ARS',
     expect.objectContaining({limit:'1250000',warnPercent:80})));
 });
-test('missing or invalid limit has no false available money; hide values respects privacy',()=>{
-  view({budgets:[],canShowValues:false});
+test('missing or invalid limit has no false available money',()=>{
+  view({budgets:[]});
   expect(screen.getAllByText(/Definí un tope mayor que cero/)).toHaveLength(2);
   expect(screen.queryByText(/75.066,07/)).not.toBeInTheDocument();
   expect(screen.getByLabelText('Comparación con máximo histórico en ARS')).toBeInTheDocument();
+});
+test('privacy hides budget inputs, progress geometry, ARIA percentages, and spending-risk labels',()=>{
+  const onRevealValues=jest.fn();
+  const {container}=view({canShowValues:false,onRevealValues,
+    statuses:[{currency:'ARS',level:'exceeded'}]});
+  expect(screen.getAllByText('Valores ocultos por privacidad')).toHaveLength(2);
+  expect(screen.getByRole('status')).toHaveTextContent('topes, consumos y porcentajes están ocultos');
+  expect(screen.queryByLabelText('Tope mensual ARS')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Aviso previo USD')).not.toBeInTheDocument();
+  expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Te queda poco margen/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Superaste el tope/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/1.367.794/)).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Comparación con máximo histórico en ARS')).not.toBeInTheDocument();
+  expect(container.querySelector('[aria-valuenow]')).toBeNull();
+  expect(container.querySelector('[style*="width"]')).toBeNull();
+  fireEvent.click(screen.getByRole('button',{name:'Mostrar importes de Bancos'}));
+  expect(onRevealValues).toHaveBeenCalledTimes(1);
+});
+test('hiding and revealing amounts preserves unsaved draft limits without writing',()=>{
+  const onSave=jest.fn();
+  const common={budgets,history,spent,statuses:[],onSave,onAskLita:jest.fn(),onImportMarkdown:jest.fn()};
+  const {rerender}=render(<CardSpendingControls {...common} canShowValues/>);
+  fireEvent.change(screen.getByLabelText('Tope mensual ARS'),{target:{value:'1250000'}});
+  expect(screen.getByLabelText('Tope mensual ARS')).toHaveValue(1250000);
+  rerender(<CardSpendingControls {...common} canShowValues={false}/>);
+  expect(screen.queryByLabelText('Tope mensual ARS')).not.toBeInTheDocument();
+  rerender(<CardSpendingControls {...common} canShowValues/>);
+  expect(screen.getByLabelText('Tope mensual ARS')).toHaveValue(1250000);
+  expect(onSave).not.toHaveBeenCalled();
 });
 test('imports and Lita buttons invoke existing authorized flows',()=>{
   const onAskLita=jest.fn(),onImportMarkdown=jest.fn();

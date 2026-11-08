@@ -77,6 +77,10 @@ Mobile contract: use breakable amounts and tabular digits; ARS and USD separate;
 
 All future push/email/SMS copy must avoid disclosing exact amounts on shared device lock screens by default.
 
+### Budget privacy is a structural state
+
+When Bancos privacy is hidden, `CardSpendingControls` replaces the ARS/USD budget content with neutral, non-financial placeholders and one shared reveal action. It must not mount saved/draft limit inputs, spending totals, history amounts, risk categories, visual progress widths, or `aria-valuenow` percentages; visually masked text alone would leave values in the DOM and accessibility tree. Revealing the data restores the existing unsaved local drafts without persistence. This uses the parent page's privacy toggle and does not change ARS/USD calculations, budget records, or notification settings.
+
 ## Public landing: editorial and human-first (October 2026)
 
 Scope: src/pages/Home.js only. Authenticated product screens keep their existing styles.

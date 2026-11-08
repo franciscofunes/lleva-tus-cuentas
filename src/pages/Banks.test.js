@@ -397,10 +397,26 @@ test('privacy toggle masks both currencies and uses the existing shared KPI desi
   mount();
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Saldos bancarios' })).toBeInTheDocument());
   expect(screen.getAllByText('••••').length).toBeGreaterThan(0);
-  fireEvent.click(screen.getByRole('button', { name:/Mostrar importes/ }));
+  fireEvent.click(screen.getByRole('button', { name:'Mostrar importes de la pantalla' }));
   await waitFor(() => expect(screen.getByText(/1\.234/)).toBeInTheDocument());
-  fireEvent.click(screen.getByRole('button', { name:/Ocultar importes/ }));
+  fireEvent.click(screen.getByRole('button', { name:'Ocultar importes de la pantalla' }));
   expect(screen.queryByText(/1\.234/)).not.toBeInTheDocument();
+});
+
+test('the bank privacy toggle also hides budget form values and progress percentages', async () => {
+  require('../services/bankBudgetService').subscribeBankBudgets.mockImplementation((uid,onData)=>{
+    onData([{currency:'ARS',limit:333333,warnPercent:80,enabled:true}]);
+    return jest.fn();
+  });
+  mount();
+  await screen.findByRole('heading',{name:'Topes y consumos de tarjetas'});
+  expect(screen.queryByLabelText('Tope mensual ARS')).not.toBeInTheDocument();
+  expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Mostrar importes de Bancos'}));
+  expect(screen.getByLabelText('Tope mensual ARS')).toHaveValue(333333);
+  fireEvent.click(screen.getByRole('button',{name:/Ocultar importes de la pantalla/}));
+  expect(screen.queryByLabelText('Tope mensual ARS')).not.toBeInTheDocument();
+  expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
 });
 
 test('floating plus offers the same Add bank modal as the header', async () => {
