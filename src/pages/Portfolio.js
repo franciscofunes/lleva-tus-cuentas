@@ -95,6 +95,20 @@ const emptyForm = {
 	sourceUrl: '', sourceCheckedAt: '', rateVerifiedAt: '', interestCalculationBasis: '', interestAccrual: '', maxInterestBearingBalance: '',
 };
 
+// Quick-action dialogs use the same light/dark language as Transactions.
+// GenericModal supplies the surface; its children must not force white text in light mode.
+const portfolioDialog = {
+	content: 'min-w-0 pr-8 font-sans text-slate-900 dark:text-slate-50',
+	description: 'mt-2 break-words text-sm leading-relaxed text-slate-700 dark:text-slate-200',
+	muted: 'text-xs leading-relaxed text-slate-600 dark:text-slate-300',
+	label: 'block text-sm font-semibold text-slate-700 dark:text-slate-200',
+	field: 'portfolio-input min-h-[44px] text-base sm:text-sm',
+	cancel: 'min-h-[44px] rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
+	cancelDestructive: 'min-h-[44px] rounded-xl bg-violet-600 px-3 py-2.5 text-sm font-bold text-white transition hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-60',
+	save: 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-60',
+	danger: 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-rose-500 px-3 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/70 dark:text-rose-300 dark:hover:bg-rose-950/30',
+};
+
 const money = (value, currency) =>
 	new Intl.NumberFormat('es-AR', {
 		style: 'currency',
@@ -995,10 +1009,11 @@ function Portfolio() {
 
 			<GenericModal
 				show={Boolean(verifyTarget)}
+				dialogLabel={isNavVerification ? 'Actualizar cuotaparte' : 'Confirmar saldo'}
 				component={(
-					<div className='text-white pr-8'>
+					<div className={portfolioDialog.content}>
 						<h2 className='text-xl font-bold'>{isNavVerification ? 'Actualizar cuotaparte' : 'Confirmar saldo'}</h2>
-						<p className='mt-2 text-sm text-gray-300'>
+						<p className={portfolioDialog.description}>
 							{isNavVerification
 								? <>Ingresá el <strong>valor de la cuotaparte</strong> actual de <strong>{verifyTarget?.name}</strong>. LTC guardará una valuación NAV, no un rendimiento realizado.</>
 								: <>Ingresá el saldo actual de <strong>{verifyTarget?.name}</strong>. Al confirmar también se guardará un snapshot para el histórico.</>}
@@ -1008,77 +1023,105 @@ function Portfolio() {
 							<div className='mt-4 space-y-3'>
 								<div className='rounded-xl border border-purple-500/30 bg-purple-500/10 p-3'>
 									<div className='grid grid-cols-2 gap-3 text-sm'>
-										<div><p className='text-xs text-gray-400'>Cuotapartes</p><p className='font-bold'>{verifyShares > 0 ? verifyShares.toLocaleString('es-AR', { maximumFractionDigits: 6 }) : 'No cargadas'}</p></div>
-										<div><p className='text-xs text-gray-400'>NAV anterior</p><p className='font-bold'>{currentNav > 0 ? currentNav.toLocaleString('es-AR', { maximumFractionDigits: 6 }) : 'Sin dato'}</p></div>
+										<div className='min-w-0'><p className={portfolioDialog.muted}>Cuotapartes</p><p className='break-words font-bold tabular-nums'>{verifyShares > 0 ? verifyShares.toLocaleString('es-AR', { maximumFractionDigits: 6 }) : 'No cargadas'}</p></div>
+										<div className='min-w-0'><p className={portfolioDialog.muted}>NAV anterior</p><p className='break-words font-bold tabular-nums'>{currentNav > 0 ? currentNav.toLocaleString('es-AR', { maximumFractionDigits: 6 }) : 'Sin dato'}</p></div>
 									</div>
 								</div>
-								<label className='block text-sm font-semibold text-gray-200'>
+								<label className={portfolioDialog.label}>
 									Valor cuotaparte / NAV actual
-									<input autoFocus className='portfolio-input mt-1' type='number' step='0.000001' min='0' value={verifyNav} onChange={(event) => setVerifyNav(event.target.value)} placeholder='Ej. 1.168245' />
+									<input autoFocus className={portfolioDialog.field + ' mt-1'} type='number' step='0.000001' min='0' value={verifyNav} onChange={(event) => setVerifyNav(event.target.value)} placeholder='Ej. 1.168245' />
 								</label>
 								{verifyShares > 0 ? (
-									<div className='rounded-xl border border-slate-700 bg-slate-900/50 p-3'>
-										<p className='text-xs text-gray-400'>Valuación calculada · cuotapartes × NAV</p>
-										<p className='mt-1 text-xl font-bold'>{calculatedNavBalance == null ? '—' : money(calculatedNavBalance, verifyTarget?.currency)}</p>
-										{navVariationPercent != null && <p className={`mt-1 text-sm font-semibold ${navVariationPercent >= 0 ? 'text-green-400' : 'text-red-400'}`}>Variación NAV: {navVariationPercent >= 0 ? '+' : ''}{navVariationPercent.toFixed(3)}%</p>}
+									<div className='min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/70'>
+										<p className={portfolioDialog.muted}>Valuación calculada · cuotapartes × NAV</p>
+										<p className='mt-1 break-words text-xl font-bold tabular-nums'>{calculatedNavBalance == null ? '—' : money(calculatedNavBalance, verifyTarget?.currency)}</p>
+										{navVariationPercent != null && <p className={`mt-1 text-sm font-semibold ${navVariationPercent >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>Variación NAV: {navVariationPercent >= 0 ? '+' : ''}{navVariationPercent.toFixed(3)}%</p>}
 									</div>
 								) : (
-									<label className='block text-sm font-semibold text-gray-200'>
-										Valuación total
-										<input className='portfolio-input mt-1' type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo / valuación actual' />
-										<span className='mt-1 block text-xs font-normal text-amber-300'>Cargá las cuotapartes en la posición para que LTC calcule automáticamente la valuación desde el NAV.</span>
-									</label>
+									<div>
+										<label htmlFor='portfolio-verify-valuation' className={portfolioDialog.label}>Valuación total</label>
+										<input id='portfolio-verify-valuation' aria-describedby='portfolio-verify-valuation-help' className={portfolioDialog.field + ' mt-1'} type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo / valuación actual' />
+										<p id='portfolio-verify-valuation-help' className='mt-1 text-xs text-amber-800 dark:text-amber-300'>Cargá las cuotapartes en la posición para que LTC calcule automáticamente la valuación desde el NAV.</p>
+									</div>
 								)}
-								<label className='block text-sm font-semibold text-gray-200'>
-									Ganado informado acumulado
+								<div>
+									<label htmlFor='portfolio-verify-earnings' className={portfolioDialog.label}>Ganado informado acumulado</label>
 									<input
-										className='portfolio-input mt-1'
+										id='portfolio-verify-earnings'
+										aria-describedby='portfolio-verify-earnings-help'
+										className={portfolioDialog.field + ' mt-1'}
 										type='number'
 										step='0.01'
 										value={verifyReportedEarnings}
 										onChange={(event) => setVerifyReportedEarnings(event.target.value)}
 										placeholder='Ej. 70.00'
 									/>
-									<span className='mt-1 block text-xs font-normal text-gray-400'>
+									<p id='portfolio-verify-earnings-help' className={'mt-1 ' + portfolioDialog.muted}>
 										Este valor actualiza “Ganado” de la posición. Es independiente de la variación del NAV y no crea una transacción.
-									</span>
-								</label>
-								<div className='rounded-lg border border-blue-400/30 bg-blue-500/10 p-3 text-xs text-blue-100'>La suba o baja de la cuotaparte se registra como <strong>variación de valuación</strong>. El campo “Ganado informado” se guarda por separado.</div>
+									</p>
+								</div>
+								<div className='rounded-lg border border-blue-300 bg-blue-50 p-3 text-xs text-blue-900 dark:border-blue-400/30 dark:bg-blue-500/10 dark:text-blue-100'>La suba o baja de la cuotaparte se registra como <strong>variación de valuación</strong>. El campo “Ganado informado” se guarda por separado.</div>
 							</div>
 						) : (
 							<>
-								<input autoFocus className='portfolio-input mt-4' type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo actual' />
-								<label className='block mt-3 text-sm text-gray-300'>¿Qué explica el cambio de saldo?<select className='portfolio-input mt-1' value={verifyChangeType} onChange={(event) => setVerifyChangeType(event.target.value)}><option value='unclassified'>Sin clasificar (no se suma a ganancias)</option><option value='earning'>Rendimiento acreditado</option><option value='deposit'>Aporte</option><option value='withdrawal'>Retiro</option><option value='adjustment'>Ajuste</option></select></label>
+								<label className={portfolioDialog.label + ' mt-4'}>Saldo actual
+									<input autoFocus className={portfolioDialog.field + ' mt-1'} type='number' step='0.01' min='0' value={verifyBalance} onChange={(event) => setVerifyBalance(event.target.value)} placeholder='Saldo actual' />
+								</label>
+								<label className={portfolioDialog.label + ' mt-3'}>¿Qué explica el cambio de saldo?<select className={portfolioDialog.field + ' mt-1'} value={verifyChangeType} onChange={(event) => setVerifyChangeType(event.target.value)}><option value='unclassified'>Sin clasificar (no se suma a ganancias)</option><option value='earning'>Rendimiento acreditado</option><option value='deposit'>Aporte</option><option value='withdrawal'>Retiro</option><option value='adjustment'>Ajuste</option></select></label>
 							</>
 						)}
 
-						<textarea className='portfolio-input mt-3' rows='2' value={verifyNote} onChange={(event) => setVerifyNote(event.target.value)} placeholder={isNavVerification ? 'Nota opcional sobre esta valuación' : 'Nota opcional sobre esta verificación'} />
-						{!isNavVerification && <p className='mt-2 text-xs text-gray-400'>El saldo puede cambiar por transferencias sin que cambie la tasa. Elegí el motivo real: sin clasificar no suma ganancias. Si hubo aportes y rendimiento juntos, no atribuyas toda la diferencia a intereses.</p>}
+						<label className={portfolioDialog.label + ' mt-3'}>Nota opcional
+							<textarea className={portfolioDialog.field + ' mt-1'} rows='2' value={verifyNote} onChange={(event) => setVerifyNote(event.target.value)} placeholder={isNavVerification ? 'Nota opcional sobre esta valuación' : 'Nota opcional sobre esta verificación'} />
+						</label>
+						{!isNavVerification && <p className={'mt-2 ' + portfolioDialog.muted}>El saldo puede cambiar por transferencias sin que cambie la tasa. Elegí el motivo real: sin clasificar no suma ganancias. Si hubo aportes y rendimiento juntos, no atribuyas toda la diferencia a intereses.</p>}
 						<div className='grid grid-cols-2 gap-2 mt-5'>
-							<button type='button' onClick={() => { setVerifyTarget(null); setVerifyReportedEarnings(''); }} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
-							<button type='button' disabled={(isNavVerification ? (verifyNav === '' || (verifyShares <= 0 && verifyBalance === '')) : verifyBalance === '') || pendingAction === 'verify'} onClick={verify} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'verify' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'verify' ? (isNavVerification ? 'Actualizando…' : 'Verificando…') : (isNavVerification ? 'Guardar cuotaparte' : 'Confirmar saldo')}</button>
+							<button type='button' disabled={pendingAction === 'verify'} onClick={() => { setVerifyTarget(null); setVerifyReportedEarnings(''); }} className={portfolioDialog.cancel}>Cancelar</button>
+							<button type='button' disabled={(isNavVerification ? (verifyNav === '' || (verifyShares <= 0 && verifyBalance === '')) : verifyBalance === '') || pendingAction === 'verify'} onClick={verify} className={portfolioDialog.save}>{pendingAction === 'verify' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'verify' ? (isNavVerification ? 'Actualizando…' : 'Verificando…') : (isNavVerification ? 'Guardar cuotaparte' : 'Confirmar saldo')}</button>
 						</div>
 					</div>
 				)}
-				closeModal={() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); setVerifyTarget(null); setVerifyReportedEarnings(''); }}
+				closeModal={() => { if (pendingAction === 'verify') return; if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); setVerifyTarget(null); setVerifyReportedEarnings(''); }}
 			/>
 
-			<GenericModal show={Boolean(rateTarget)} component={() => (<div className='text-white pr-8'><div className='w-12 h-12 rounded-full bg-green-500/15 text-green-400 flex items-center justify-center mb-4'><FaPercent /></div><h2 className='text-xl font-bold'>Actualizar tasa</h2><p className='mt-2 text-sm text-gray-300'><strong>{rateTarget?.institution}</strong> · {rateTarget?.name}</p><p className='mt-1 text-xs text-gray-400'>Actualizá solamente la tasa. El resto de la posición no cambia.</p><div className='relative mt-4'><input autoFocus className='portfolio-input pr-10 text-xl font-bold' type='number' step='0.01' min='0' value={quickRate} onChange={(event) => setQuickRate(event.target.value)} placeholder='Tasa anual' /><span className='absolute right-3 top-2.5 font-bold text-gray-400'>%</span></div><div className='grid grid-cols-2 gap-2 mt-5'><button type='button' onClick={() => setRateTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button><button type='button' disabled={quickRate === '' || pendingAction === 'rate'} onClick={saveQuickRate} className='py-2.5 rounded-lg bg-ltc-green disabled:opacity-40 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'rate' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'rate' ? 'Guardando…' : 'Guardar tasa'}</button></div></div>)} closeModal={() => setRateTarget(null)} />
+			<GenericModal
+				show={Boolean(rateTarget)}
+				dialogLabel='Actualizar tasa'
+				component={() => (
+					<div className={portfolioDialog.content}>
+						<div aria-hidden='true' className='mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'><FaPercent /></div>
+						<h2 className='text-xl font-bold'>Actualizar tasa</h2>
+						<p className={portfolioDialog.description}><strong>{rateTarget?.institution}</strong> · {rateTarget?.name}</p>
+						<p className={'mt-1 ' + portfolioDialog.muted}>Actualizá solamente la tasa. El resto de la posición no cambia.</p>
+						<label htmlFor='portfolio-quick-rate' className={portfolioDialog.label + ' mt-4'}>Tasa anual (%)</label>
+						<div className='relative mt-1'>
+							<input id='portfolio-quick-rate' autoFocus className={portfolioDialog.field + ' pr-10 font-bold tabular-nums'} type='number' step='0.01' min='0' value={quickRate} onChange={(event) => setQuickRate(event.target.value)} placeholder='Ej. 2,5' />
+							<span aria-hidden='true' className='pointer-events-none absolute right-3 top-3 font-bold text-slate-600 dark:text-slate-300'>%</span>
+						</div>
+						<div className='mt-5 grid grid-cols-2 gap-2'>
+							<button type='button' disabled={pendingAction === 'rate'} onClick={() => setRateTarget(null)} className={portfolioDialog.cancel}>Cancelar</button>
+							<button type='button' disabled={quickRate === '' || pendingAction === 'rate'} onClick={saveQuickRate} className={portfolioDialog.save}>{pendingAction === 'rate' && <span className='h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white' />}{pendingAction === 'rate' ? 'Guardando…' : 'Guardar tasa'}</button>
+						</div>
+					</div>
+				)}
+				closeModal={() => { if (pendingAction !== 'rate') setRateTarget(null); }}
+			/>
 
 			<GenericModal
 				show={Boolean(deleteTarget)}
+				dialogLabel='Eliminar posición'
 				component={() => (
-					<div className='text-white pr-8'>
-						<div className='w-12 h-12 rounded-full bg-red-500/15 text-red-400 flex items-center justify-center mb-4'><FaTrashAlt /></div>
+					<div className={portfolioDialog.content}>
+						<div aria-hidden='true' className='mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'><FaTrashAlt /></div>
 						<h2 className='text-xl font-bold'>Eliminar posición</h2>
-						<p className='mt-2 text-sm text-gray-300'>¿Seguro que querés eliminar <strong>{deleteTarget?.name}</strong> de {deleteTarget?.institution}? Esta acción no se puede deshacer.</p>
+						<p className={portfolioDialog.description}>¿Seguro que querés eliminar <strong>{deleteTarget?.name}</strong> de {deleteTarget?.institution}? Esta acción no se puede deshacer.</p>
 						<div className='grid grid-cols-2 gap-2 mt-5'>
-							<button type='button' onClick={() => setDeleteTarget(null)} className='py-2.5 rounded-lg border border-slate-600 font-semibold'>Cancelar</button>
-							<button type='button' disabled={pendingAction === 'delete'} onClick={remove} className='py-2.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold inline-flex items-center justify-center gap-2'>{pendingAction === 'delete' && <span className='w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin' />}{pendingAction === 'delete' ? 'Eliminando…' : 'Eliminar'}</button>
+							<button type='button' disabled={pendingAction === 'delete'} onClick={() => setDeleteTarget(null)} className={portfolioDialog.cancelDestructive}>Cancelar</button>
+							<button type='button' disabled={pendingAction === 'delete'} onClick={remove} className={portfolioDialog.danger}>{pendingAction === 'delete' && <span className='w-4 h-4 rounded-full border-2 border-rose-500/40 border-t-rose-600 animate-spin' />}{pendingAction === 'delete' ? 'Eliminando…' : 'Eliminar'}</button>
 						</div>
 					</div>
 				)}
-				closeModal={() => setDeleteTarget(null)}
+				closeModal={() => { if (pendingAction !== 'delete') setDeleteTarget(null); }}
 			/>
 
 			{!loading && (
