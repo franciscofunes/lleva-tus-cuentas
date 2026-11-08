@@ -215,7 +215,7 @@ export default function QuickPurchaseCapture({uid, categories = [], onTransactio
             <input className={inputClass} value={documentNumber} onChange={(event) => setDocumentNumber(event.target.value)} maxLength={80} placeholder='Se puede dejar vacío'/>
           </label>
         </div>
-        <ReceiptDetailsView value={receiptDetails}/>
+        <ReceiptDetailsView value={receiptDetails} currency={currency}/>
         <label className={labelClass}>Detalle (opcional)
           <input className={inputClass} value={note} onChange={(event) => setNote(event.target.value)} maxLength={220} placeholder='Ej.: Verduras para la semana'/>
         </label>

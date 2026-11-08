@@ -594,7 +594,7 @@ function BanksWorkspace({ user }) {
                             aria-label={'Eliminar consumo de ' + charge.merchant}
                             className='inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-xl border border-rose-300 px-3 text-sm font-semibold text-rose-700 hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-50 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-950/40'
                             onClick={() => setDeleteChargeTarget(charge)}>Eliminar</button>
-                          {showValues && charge.receiptDetails && <div className='w-full'><ReceiptDetailsView value={charge.receiptDetails}/></div>}
+                          {showValues && charge.receiptDetails && <div className='w-full'><ReceiptDetailsView value={charge.receiptDetails} currency={charge.currency}/></div>}
                         </article>)}
                         {chargeDraft?.cardId === card.id && (
                           <form className='grid gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700 sm:grid-cols-2'

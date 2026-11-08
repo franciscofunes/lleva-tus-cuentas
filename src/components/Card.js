@@ -199,7 +199,7 @@ function Card({
                 <span className='font-semibold text-violet-700 dark:text-violet-200'>Descripción: </span>{comment}
               </p>
             )}
-            <ReceiptDetailsView value={receiptDetails} hidden={hideValues}/>
+            <ReceiptDetailsView value={receiptDetails} hidden={hideValues} currency={transactionCurrency}/>
             {isCardSummary && selectedCloseDate && (
               <p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
                 <span className='font-semibold text-violet-700 dark:text-violet-200'>Fecha de Cierre: </span>
