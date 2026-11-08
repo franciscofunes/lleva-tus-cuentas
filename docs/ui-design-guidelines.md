@@ -189,6 +189,12 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
   make expanded OCR review, comparison and published-return fields legible
   in both light and dark modes. See [Portfolio phase 6](portfolio-issue-228-phase6.md).
 
+## Portfolio quick-action dialogs — light/dark consistency
+
+- Verification, NAV update, quick-rate change and deletion use `GenericModal`'s actual white/slate-900 surface. Children must use the same light/dark text roles as Transactions, never hard-coded white text that disappears in light mode.
+- Give dialogs explicit accessible names and persistent labels for financial inputs; keep explanatory text separate and linked with `aria-describedby` when it clarifies a value. Inputs use at least 16px text on narrow screens, and action targets remain at least 44px high.
+- Destructive confirmation follows Transactions: violet **Cancelar** is the prominent safe action; deletion is a secondary outlined rose action. Keep both disabled during an in-flight delete so the user cannot dismiss the progress state accidentally. Do not change any monetary calculations or persistence semantics during visual updates.
+
 ## Banks imported PDF linking (issue #227, phase 3)
 Use the **real Transactions record surface / disclosure tokens** for pending statements. First scan shows document identity, period, close/due dates, masked ARS/USD totals and one 44px review action. Keep candidate selection and PDF line-items behind a disclosure. Use the existing shared GenericModal to confirm the exact target bank/card; don't write until confirmed, never optimistically create expenses or duplicate imported consumptions. Keep Firestore errors actionable without exposing backend details. See [Banks PDF linking](banks-issue-227-phase3.md).
 

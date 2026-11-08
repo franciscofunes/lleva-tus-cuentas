@@ -24,7 +24,14 @@ jest.mock('../components/FinancialOverviewPanel', () => ({
 jest.mock('../components/LitaAssitantPanel', () => () => null);
 jest.mock('../components/FloatingMenu', () => () => null);
 jest.mock('../components/InfoTooltip', () => () => null);
-jest.mock('../components/GenericModal', () => ({show,component}) => show ? <div role='dialog'>{component}</div> : null);
+jest.mock('../components/GenericModal', () => {
+  const React = require('react');
+  return ({show,component,dialogLabel}) => show ? (
+    <div role='dialog' aria-label={dialogLabel}>
+      {React.isValidElement(component) ? component : React.createElement(component)}
+    </div>
+  ) : null;
+});
 jest.mock('../components/PortfolioExportReady', () => () => null);
 // The export implementation initializes TextEncoder at import time, unrelated to UI tests.
 jest.mock('../utils/portfolioExport', () => ({
@@ -275,6 +282,51 @@ test('each position retains explicit verify and edit controls and accessible 44p
   expect(screen.getByRole('button',{name:'Actualizar cuotaparte'})).toBeInTheDocument();
   expect(screen.getByRole('button',{name:'Verificar saldo'})).toBeInTheDocument();
   expect(screen.getAllByRole('button',{name:'Eliminar posición'})).toHaveLength(2);
+});
+
+test('Portfolio quick-action dialogs have readable light/dark typography and accessible form controls', async () => {
+  mount();
+  await getWorkspace();
+
+  fireEvent.click(screen.getByRole('button',{name:'Verificar saldo'}));
+  let dialog=screen.getByRole('dialog',{name:'Confirmar saldo'});
+  expect(within(dialog).getByRole('heading',{name:'Confirmar saldo'}).parentElement)
+    .toHaveClass('font-sans','text-slate-900','dark:text-slate-50');
+  expect(within(dialog).getByLabelText('Saldo actual')).toHaveClass('min-h-[44px]','text-base');
+  expect(within(dialog).getByLabelText('Nota opcional')).toBeInTheDocument();
+  expect(within(dialog).getByRole('button',{name:'Cancelar'})).toHaveClass('min-h-[44px]','focus-visible:ring-2');
+  expect(within(dialog).getByRole('button',{name:'Confirmar saldo'})).toHaveClass('bg-emerald-700');
+  fireEvent.click(within(dialog).getByRole('button',{name:'Cancelar'}));
+
+  fireEvent.click(screen.getByRole('button',{name:'Actualizar tasa rápidamente'}));
+  dialog=screen.getByRole('dialog',{name:'Actualizar tasa'});
+  expect(within(dialog).getByLabelText('Tasa anual (%)')).toHaveClass('min-h-[44px]','text-base');
+  expect(within(dialog).getByRole('button',{name:'Guardar tasa'})).toHaveClass('min-h-[44px]');
+  fireEvent.click(within(dialog).getByRole('button',{name:'Cancelar'}));
+
+  fireEvent.click(screen.getAllByRole('button',{name:'Eliminar posición'})[0]);
+  dialog=screen.getByRole('dialog',{name:'Eliminar posición'});
+  expect(within(dialog).getByText(/Esta acción no se puede deshacer/)).toHaveClass('text-slate-700','dark:text-slate-200');
+  expect(within(dialog).getByRole('button',{name:'Cancelar'})).toHaveClass('bg-violet-600','min-h-[44px]');
+  expect(within(dialog).getByRole('button',{name:'Eliminar'})).toHaveClass('border-rose-500','dark:text-rose-300');
+  fireEvent.click(within(dialog).getByRole('button',{name:'Cancelar'}));
+
+  expect(service.verifyPortfolioPosition).not.toHaveBeenCalled();
+  expect(service.updatePortfolioPosition).not.toHaveBeenCalled();
+  expect(service.deletePortfolioPosition).not.toHaveBeenCalled();
+});
+
+test('FCI valuation dialog uses native currency and readable surfaces in both themes', async () => {
+  mount();
+  await getWorkspace();
+  fireEvent.click(screen.getByRole('button',{name:'Actualizar cuotaparte'}));
+  const dialog=screen.getByRole('dialog',{name:'Actualizar cuotaparte'});
+  expect(within(dialog).getByLabelText('Valor cuotaparte / NAV actual')).toHaveClass('text-base');
+  expect(within(dialog).getByLabelText('Ganado informado acumulado')).toBeInTheDocument();
+  const valuation=within(dialog).getByText('Valuación calculada · cuotapartes × NAV').parentElement;
+  expect(valuation).toHaveClass('bg-slate-50','dark:bg-slate-900/70');
+  expect(within(dialog).getByText(/se guarda por separado/)).toHaveClass('bg-blue-50','dark:bg-blue-500/10');
+  expect(service.verifyPortfolioPosition).not.toHaveBeenCalled();
 });
 
 test('Cash with 0% stored is presented as liquid principal, not a monthly yield', async () => {
