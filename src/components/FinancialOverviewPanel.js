@@ -106,17 +106,19 @@ export default function FinancialOverviewPanel({
         <CollapsibleHeading eyebrow={eyebrow} title={title} description={description} />
         <CollapsibleChevron expanded={!collapsed} />
       </button>
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.div
-            id={contentId}
-            key='overview-content'
-            initial={reduceMotion ? false : { height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={reduceMotion ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.18, ease: 'easeOut' }}
-            className='min-w-0 overflow-hidden'
-          >
+      {/* The stable container stays addressable by aria-controls while the
+          animated KPI/export subtree remains lazy and unmounted on collapse. */}
+      <div id={contentId} aria-hidden={collapsed}>
+        <AnimatePresence initial={false}>
+          {!collapsed && (
+            <motion.div
+              key='overview-content'
+              initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={reduceMotion ? { opacity: 0, transition: { duration: 0 } } : { height: 0, opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.18, ease: 'easeOut' }}
+              className='min-w-0 overflow-hidden'
+            >
             <div className='border-t border-slate-200 px-4 pb-4 pt-4 sm:px-5 dark:border-slate-700/80'>
               <div className='grid grid-cols-2 gap-2 sm:max-w-md'>
                 {actions.map((action, index) => {
@@ -159,9 +161,10 @@ export default function FinancialOverviewPanel({
                 />
               ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </section>
   );
 }

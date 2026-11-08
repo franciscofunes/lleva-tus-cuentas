@@ -33,6 +33,8 @@ The collapsible tools/export panel has no inherent vertical margin: Transactions
 
 Financial widget roots (including nested collapsibles and the shared metrics/export panel) explicitly use Tailwind's `font-sans` family. Do not add one-off `font-Nunito`, `font-Roboto`, or `font-Montserrat` classes to individual widget wrappers: those override the inherited family and cause unequal heading glyphs and content density across pages. Branding on the public landing and form-specific typography remain unchanged.
 
+All financial collapsible triggers keep `aria-expanded` and `aria-controls` synchronized. The referenced `*-content` element must remain in the DOM **even while closed**, so assistive technology always has a valid disclosure target; the financial child content stays unmounted while collapsed. `CollapsibleSection` uses an empty `hidden` container with an explicit `display: none` override because page-specific `grid` classes can otherwise defeat the browser's default `[hidden]` styling and leave a collapsed panel with extra padding. The animated `FinancialOverviewPanel` retains an empty/`aria-hidden` container outside `AnimatePresence`. This preserves the shared collapsed spacing rhythm without changing persisted preferences or financial privacy.
+
 Banks must not put an oversized card-budget settings UI above the user's bank records. Bank account cards must first show title, currency, balance and type. Less-common account identity fields belong under the **same** progressive-disclosure surface as Transactions; sensitive CBU remains masked unless explicitly revealed. Never silently alter persisted records.
 
 ## Page-specific semantics stay page-specific

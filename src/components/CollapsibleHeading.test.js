@@ -120,3 +120,38 @@ test('nested visualizations use subdued shared surfaces and semantic h3 labels',
   expect(screen.getByRole('button', {name:/Distribución por posición/})).toHaveAttribute('aria-expanded','false');
   expect(screen.queryByText('Lista por activo')).not.toBeInTheDocument();
 });
+
+test('collapsed Transactions, Portfolio and Banks panels retain their accessible disclosure target', () => {
+  const panels = [
+    ['transactions-summary', 'Resumen ARS y USD'],
+    ['portfolio-summary', 'Resumen por moneda'],
+    ['bank-balances', 'Saldos bancarios'],
+  ];
+  const view = (collapsed) => panels.map(([id, title]) => (
+    <CollapsibleSection key={id} id={id} title={title} collapsed={collapsed}
+      contentClassName={id === 'portfolio-summary' ? 'grid min-w-0 gap-3' : ''} onToggle={() => {}}>
+      <span>Contenido privado de {title}</span>
+    </CollapsibleSection>
+  ));
+
+  const { container, rerender } = render(<>{view(true)}</>);
+  for (const [id, title] of panels) {
+    const toggle = screen.getByRole('button', { name: title });
+    const target = container.querySelector(`#${id}-content`);
+    expect(toggle).toHaveAttribute('aria-controls', target.id);
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(target).toHaveAttribute('hidden');
+    expect(target).toHaveStyle('display: none');
+    expect(target).toBeEmptyDOMElement();
+    expect(screen.queryByText(`Contenido privado de ${title}`)).not.toBeInTheDocument();
+  }
+
+  rerender(<>{view(false)}</>);
+  for (const [id, title] of panels) {
+    const target = container.querySelector(`#${id}-content`);
+    expect(target).not.toHaveAttribute('hidden');
+    expect(target).not.toHaveStyle('display: none');
+    expect(screen.getByRole('button', { name: title })).toHaveAttribute('aria-controls', target.id);
+    expect(screen.getByText(`Contenido privado de ${title}`)).toBeInTheDocument();
+  }
+});

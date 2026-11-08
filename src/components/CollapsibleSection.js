@@ -35,11 +35,13 @@ function CollapsibleSection({
         {action && <div className="shrink-0 self-center pr-4 sm:pr-5">{action}</div>}
       </div>
 
-      {!collapsed && (
-        <div id={contentId} className={`${COLLAPSIBLE_SURFACE_STYLES.content} ${contentClassName}`}>
-          {children}
-        </div>
-      )}
+      {/* A Tailwind contentClassName such as `grid` can override the browser's
+          [hidden] display rule. Inline display:none keeps collapsed spacing at
+          zero while preserving aria-controls and lazy financial content. */}
+      <div id={contentId} hidden={collapsed} style={collapsed ? { display: 'none' } : undefined}
+        className={`${COLLAPSIBLE_SURFACE_STYLES.content} ${contentClassName}`}>
+        {!collapsed && children}
+      </div>
     </section>
   );
 }

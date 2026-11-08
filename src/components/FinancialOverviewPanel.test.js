@@ -78,15 +78,21 @@ test('collapses actions and KPIs while leaving the title and chevron toggle acce
 });
 
 test('starts collapsed when restored from user view preferences and expands via keyboard', () => {
-  render(<CollapsibleFixture initialCollapsed />);
+  const { container } = render(<CollapsibleFixture initialCollapsed />);
   const toggle = screen.getByRole('button', { name: 'Portfolio de un vistazo: expandir' });
   expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  const target = container.querySelector('#portfolio-overview-content');
+  expect(toggle).toHaveAttribute('aria-controls', target.id);
+  expect(target).toHaveAttribute('aria-hidden', 'true');
+  expect(target).toBeEmptyDOMElement();
   expect(screen.queryByText('Posiciones')).not.toBeInTheDocument();
   toggle.focus();
   fireEvent.keyDown(toggle, { key: 'Enter' });
   fireEvent.click(toggle);
   expect(screen.getByRole('button', { name: 'Portfolio de un vistazo: contraer' }))
     .toHaveAttribute('aria-expanded', 'true');
+  expect(target).toHaveAttribute('aria-hidden', 'false');
+  expect(target.querySelector('[role="status"]')).not.toBeInTheDocument();
   expect(screen.getByText('Posiciones')).toBeInTheDocument();
 });
 
@@ -161,11 +167,15 @@ test('privacy controls never show unmasked KPI values when loading ends or numbe
 });
 
 test('collapsed overview keeps header accessible without rendering sensitive KPI placeholders', () => {
-  render(
+  const { container } = render(
     <FinancialOverviewPanel id='portfolio-overview' title='Portfolio de un vistazo'
       collapsed isLoading metrics={[{ id: 'count', label: 'Posiciones', value: 123, icon: FaWallet }]} />
   );
-  expect(screen.getByRole('button', { name: 'Portfolio de un vistazo: expandir' })).toHaveAttribute('aria-expanded', 'false');
+  const toggle = screen.getByRole('button', { name: 'Portfolio de un vistazo: expandir' });
+  expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  expect(toggle).toHaveAttribute('aria-controls', 'portfolio-overview-content');
+  expect(container.querySelector('#portfolio-overview-content')).toHaveAttribute('aria-hidden', 'true');
+  expect(container.querySelector('#portfolio-overview-content')).toBeEmptyDOMElement();
   expect(screen.queryByRole('status', { name: 'Actualizando Posiciones' })).not.toBeInTheDocument();
 });
 
