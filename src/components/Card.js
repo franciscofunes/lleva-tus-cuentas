@@ -61,12 +61,11 @@ function Card({
 	const selectedDateIsDueDate = usesSelectedDateAsDueDate(safeCategory, safeCategories);
 	const hasSeparateDueDate = usesSeparateDueDate(safeCategory, safeCategories);
 	const isPaidBill = paymentStatus === 'paid';
-	const paidAtDate =
-		paidAt && typeof paidAt.toDate === 'function'
-			? paidAt.toDate()
-			: paidAt
-				? new Date(paidAt)
-				: null;
+	// A YYYY-MM-DD payment date is a local calendar day, not a UTC instant.
+	// new Date('YYYY-MM-DD') shifts it to the previous day west of UTC.
+	// Preserve Firestore timestamps as instants while parsing date-only strings locally.
+	const paidAtValue = paidAt && typeof paidAt.toDate === 'function' ? paidAt.toDate() : paidAt;
+	const paidAtMoment = paidAtValue ? moment(paidAtValue) : null;
 
   const handleDelete = () => {
     // The page owns the destructive confirmation; never delete on first tap.
@@ -100,7 +99,7 @@ function Card({
   const detailsId = useId();
   const isCardSummary = safeCategory.includes('Resumen tarjeta');
   const isCurrencyPurchase = safeCategory.includes('Compra divisas');
-  const hasValidPaidAt = paidAtDate && !Number.isNaN(paidAtDate.getTime());
+  const hasValidPaidAt = Boolean(paidAtMoment?.isValid());
   const extraDetails = displayTransactionCustomDetails(customDetails);
   const hasSecondaryDetails = Boolean(
     comment || isCardSummary || isCurrencyPurchase
@@ -230,7 +229,7 @@ function Card({
                 {hasValidPaidAt && (
                   <p className='break-words text-sm text-slate-700 dark:text-slate-200'>
                     <span className='font-semibold text-violet-700 dark:text-violet-200'>Pagado </span>
-                    {moment(paidAtDate).format('DD/MM/YYYY')}
+                    {paidAtMoment.format('DD/MM/YYYY')}
                   </p>
                 )}
               </>

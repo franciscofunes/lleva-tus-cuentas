@@ -31,7 +31,7 @@ export default function CategoryBreakdownChart({ data = [], title, currency = 'A
         <TransactionChartEmpty>No hay movimientos registrados para este gráfico en el período.</TransactionChartEmpty>
       ) : (
         <>
-          <ol className='mt-5 min-w-0 space-y-4'>
+          <ol className='min-w-0 space-y-4'>
             {rows.map((row, i) => {
               const safeValue = Number(row.value) || 0;
               const width = maxValue > 0 ? Math.min(100, Math.max(0, safeValue / maxValue * 100)) : 0;
@@ -51,7 +51,7 @@ export default function CategoryBreakdownChart({ data = [], title, currency = 'A
           {data.length > 5 && (
             <button type='button' onClick={() => setExpanded((value) => !value)}
               aria-expanded={expanded}
-              className='mt-5 flex min-h-[42px] w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-4 text-sm font-bold text-purple-700 hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-600 dark:bg-slate-800 dark:text-purple-300 dark:hover:bg-slate-700'>
+              className='mt-5 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-4 text-sm font-bold text-purple-700 hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-slate-600 dark:bg-slate-800 dark:text-purple-300 dark:hover:bg-slate-700'>
               {expanded ? 'Mostrar menos' : 'Ver todas las categorías (' + data.length + ')'}
               <FiChevronDown aria-hidden='true' className={expanded ? 'rotate-180' : ''} />
             </button>

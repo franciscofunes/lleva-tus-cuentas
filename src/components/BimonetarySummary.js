@@ -201,7 +201,7 @@ export default function BimonetarySummary({ docs, categories, userId, hideValues
             </>
           )}
           <Link to='/portfolio'
-            className='mt-3 inline-flex min-h-[40px] items-center rounded-lg border border-purple-400 px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:text-purple-300 dark:hover:bg-slate-800'>
+            className='mt-3 inline-flex min-h-[44px] items-center rounded-lg border border-purple-400 px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:text-purple-300 dark:hover:bg-slate-800'>
             Ver Portfolio →
           </Link>
         </SummaryCard>
@@ -216,7 +216,7 @@ export default function BimonetarySummary({ docs, categories, userId, hideValues
       <div className='text-xs'>
         <button type='button' onClick={() => setShowExplanation((current) => !current)}
           aria-expanded={showExplanation} aria-controls='bimonetary-help'
-          className='inline-flex min-h-[36px] items-center gap-2 font-semibold text-slate-600 underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:text-slate-300'>
+          className='inline-flex min-h-[44px] items-center gap-2 font-semibold text-slate-600 underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:text-slate-300'>
           <FiHelpCircle aria-hidden='true' /> ¿Qué significa este resumen?
           <FiChevronDown aria-hidden='true' className={showExplanation ? 'rotate-180' : ''} />
         </button>
