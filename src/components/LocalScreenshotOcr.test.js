@@ -171,9 +171,21 @@ test('compatible OCR failure is recoverable and keeps the original image availab
     target:{files:[new File(['image'],'itau.jpg',{type:'image/jpeg'})]},
   });
   fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
-  expect(await screen.findByRole('alert')).toHaveTextContent(/\[OCR-COMPAT\]/);
+  expect(await screen.findByRole('alert')).toHaveTextContent(/\[OCR-NET\]/);
   expect(screen.getByRole('alert')).not.toHaveTextContent(/token|itau/);
   expect(screen.getByRole('button',{name:'Leer captura en este dispositivo'})).toBeEnabled();
   fireEvent.change(screen.getByRole('combobox',{name:'Modo de lectura OCR'}),{target:{value:'advanced'}});
   expect(screen.getByRole('combobox',{name:'Precisión del modelo OCR'})).toBeInTheDocument();
+});
+
+test('compatible OCR explains memory failures without exposing the receipt name or contents',async()=>{
+  recognizeWithCompatibleOcr.mockRejectedValue(new Error('out of memory reading private-ticket.jpg'));
+  render(<LocalScreenshotOcr onRecognized={jest.fn()}/>);
+  fireEvent.change(screen.getByRole('combobox',{name:'Modo de lectura OCR'}),{target:{value:'compatible'}});
+  fireEvent.change(screen.getByLabelText('Elegir captura para lectura local'),{
+    target:{files:[new File(['image'],'private-ticket.jpg',{type:'image/jpeg'})]},
+  });
+  fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
+  expect(await screen.findByRole('alert')).toHaveTextContent(/\[OCR-MEM\]/);
+  expect(screen.getByRole('alert')).not.toHaveTextContent(/private-ticket/);
 });

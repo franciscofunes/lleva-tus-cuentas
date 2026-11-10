@@ -197,9 +197,12 @@ export default function LocalScreenshotOcr({ onRecognized, privacyHidden = false
     } catch (caught) {
       if (mounted.current && !hiddenRef.current) {
         setStatus('error');
-        setError(engine === 'compatible' && !String(caught?.message || '').includes('No pudimos leer texto')
-          ? '[OCR-COMPAT] El lector compatible no pudo procesar esta foto. Probá nuevamente o elegí el motor avanzado.'
-          : ocrFailureMessage(caught, stage));
+        const diagnostic = ocrFailureMessage(caught, stage);
+        // Preserve actionable categories for memory/model/download failures.
+        // Only unknown compatible-worker errors use the generic privacy-safe code.
+        setError(engine === 'compatible' && /^\[OCR-(?:IMG|INIT)\]/.test(diagnostic)
+          ? '[OCR-COMPAT] No se pudo completar la lectura local. Probá una foto más liviana o elegí otro modo de lectura.'
+          : diagnostic);
       }
     } finally {
       if (reader) await reader.dispose().catch(() => {});
