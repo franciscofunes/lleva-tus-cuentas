@@ -42,6 +42,17 @@ test('legacy non-string category does not crash rendering', () => {
   expect(screen.getByText('Sin categoría')).toBeInTheDocument();
 });
 
+test('malformed optional receipt totals never break a saved transaction card', () => {
+  render(<Card {...basicProps} receiptDetails={{
+    documents: [{type:'invoice',number:'A-123'}],
+    items: [{description:'Producto',total:Object.create(null)}],
+  }} />);
+  expect(screen.getByRole('article')).toBeInTheDocument();
+  openDetails();
+  expect(screen.getByText('Producto')).toBeInTheDocument();
+  expect(screen.getByText(/N.º A-123/)).toBeInTheDocument();
+});
+
 test('normal card still renders its expense sign when the category exists', () => {
   render(<Card {...basicProps} category='Salud' categories={[{ name: 'Salud', isExpense: true }]} />);
   expect(screen.getByText(/-1,?250/)).toBeInTheDocument();

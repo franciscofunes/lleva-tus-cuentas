@@ -13,6 +13,10 @@ const safeText = (value, maxLength) => {
 
 const safeNumber = (value) => {
   if (value === undefined || value === null || value === '') return undefined;
+  // Optional receipt metadata may contain a legacy Firestore map instead of a
+  // scalar. Number(Object.create(null)) throws a TypeError during Card render.
+  // Only persist and display primitive numeric values; never coerce objects.
+  if (typeof value !== 'number' && typeof value !== 'string') return undefined;
   const number = Number(value);
   return Number.isFinite(number) && number >= 0 && number < 1e12
     ? Math.round(number * 1000) / 1000 : undefined;
