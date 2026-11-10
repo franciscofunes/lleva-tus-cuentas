@@ -644,6 +644,7 @@ function BanksWorkspace({ user }) {
               </p>}
               <CardSpendingControls budgets={budgets} statuses={budgetStatuses} history={history}
                 spent={manualSpend} canShowValues={showValues}
+                onRevealValues={toggleVisibility}
                 onSave={(currency,values)=>saveBankBudget(uid,currency,values)}
                 onAskLita={()=>setShowLita(true)}
                 onImportMarkdown={()=>setShowConsumptionImporter(true)}/>
