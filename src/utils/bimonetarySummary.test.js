@@ -90,3 +90,16 @@ test('old expenses stay ARS even after their category default currency is edited
   expect(summary.knownArsNet).toBe(-1100);
   expect(summary.knownUsdMovement).toBe(-15);
 });
+
+test('malformed persisted money fields remain unknown instead of crashing or changing totals', () => {
+  const bad = Object.create(null);
+  const summary = summarizeBimonetaryFlows([
+    {category:'Alquiler', amount:bad},
+    {category:'Alquiler', amount:500},
+    {category:'Venta divisas', amount:bad, currencyQuantity:bad},
+  ], categories);
+  expect(summary.spentArs).toBe(500);
+  expect(summary.unexplainedArsCount).toBe(2);
+  expect(summary.missingUsdCount).toBe(1);
+  expect(summary.knownArsNet).toBe(-500);
+});

@@ -1,4 +1,5 @@
 import { getTransactionCurrency } from './customCategories';
+import { finiteTransactionNumber, transactionText } from './transactionScalar';
 
 /**
  * Category totals use the SAME filtered transaction rows as the Dashboard.
@@ -8,7 +9,7 @@ import { getTransactionCurrency } from './customCategories';
 export const summarizeSpendingByCategory = (docs = [], categories = []) => {
   const expenses = new Set(
     categories.filter((item) => item?.isExpense === true)
-      .map((item) => String(item.name || '').trim())
+      .map((item) => transactionText(item.name).trim())
       .filter(Boolean)
   );
   const totals = new Map();
@@ -17,7 +18,7 @@ export const summarizeSpendingByCategory = (docs = [], categories = []) => {
   const usdTotals = new Map();
 
   for (const transaction of docs) {
-    const category = String(transaction?.category || '').trim();
+    const category = transactionText(transaction?.category).trim();
     if (!expenses.has(category)) continue;
 
     const raw = transaction?.amount;
@@ -25,8 +26,8 @@ export const summarizeSpendingByCategory = (docs = [], categories = []) => {
       invalidAmountCount += 1;
       continue;
     }
-    const amount = Number(raw);
-    if (!Number.isFinite(amount) || amount <= 0) {
+    const amount = finiteTransactionNumber(raw);
+    if (amount === null || amount <= 0) {
       invalidAmountCount += 1;
       continue;
     }

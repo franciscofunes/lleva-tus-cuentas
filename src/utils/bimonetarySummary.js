@@ -1,17 +1,17 @@
 import { getTransactionCurrency } from './customCategories';
 import { INGRESO_DIVISAS_CATEGORY } from '../shared/constants/category.const';
+import { finiteTransactionNumber, transactionText } from './transactionScalar';
 
 // Transactions are persisted in two different units:
 // - amount: actual transactionCurrency (ARS or USD) for ordinary movements, ARS for FX conversions
 // - currencyQuantity: dollars (USD) for Ingreso/Compra/Venta divisas
 // These flows are NOT portfolio balances or financial profit.
 const safeAmount = (value) => {
-  if (value === '' || value === null || value === undefined) return null;
-  const n = Number(value);
+  const n = finiteTransactionNumber(value);
   return Number.isFinite(n) && n >= 0 ? n : null;
 };
 const hasCategory = (category, needle) =>
-  String(category || '').toLocaleLowerCase('es-AR').includes(needle.toLocaleLowerCase('es-AR'));
+  transactionText(category).toLocaleLowerCase('es-AR').includes(needle.toLocaleLowerCase('es-AR'));
 
 export const summarizeBimonetaryFlows = (docs = [], categories = []) => {
   const expenses = new Set(
@@ -37,7 +37,7 @@ export const summarizeBimonetaryFlows = (docs = [], categories = []) => {
   };
 
   (docs || []).forEach((doc) => {
-    const cat = String(doc?.category || '');
+    const cat = transactionText(doc?.category);
     const isIngresoUsd = hasCategory(cat, INGRESO_DIVISAS_CATEGORY);
     const isCompraUsd = hasCategory(cat, 'Compra divisas');
     const isVentaUsd = hasCategory(cat, 'Venta divisas');
@@ -93,7 +93,7 @@ export const summarizeBimonetaryFlows = (docs = [], categories = []) => {
 // Reject invalid balances rather than silently introducing NaN/negative totals.
 export const sumPortfolioCurrencies = (positions = []) =>
   (positions || []).reduce((totals, position) => {
-    const currency = String(position?.currency || 'ARS').toUpperCase(); // same default as Portfolio totals
+    const currency = (transactionText(position?.currency) || 'ARS').toUpperCase(); // same default as Portfolio totals
     if (currency !== 'USD' && currency !== 'ARS') return totals;
     const balance = safeAmount(position?.balance);
     if (balance === null) return totals;

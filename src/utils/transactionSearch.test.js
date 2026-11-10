@@ -77,3 +77,13 @@ it('finds transactions by edited category labels while preserving original filte
   expect(filterTransactions(transactions,{categories:withAlias,category:'Mascotas',type:'expense'}).map(x=>x.id))
     .toEqual(['pet-1']);
 });
+
+test('legacy non-scalar amounts and dates cannot crash transaction search', () => {
+  const malformed = Object.create(null);
+  const records = [
+    { id:'legacy', expenseName:'Movimiento legado', category:'Alimentación', amount:malformed, selectedDate:malformed },
+    { id:'valid', expenseName:'Compra nueva', category:'Alimentación', amount:'2500.50', selectedDate:'2026-11-10' },
+  ];
+  expect(filterTransactions(records, { query:'compra', categories }).map((row) => row.id)).toEqual(['valid']);
+  expect(filterTransactions(records, { query:'legado', categories }).map((row) => row.id)).toEqual(['legacy']);
+});

@@ -1,4 +1,5 @@
 import { getTransactionCurrency } from './customCategories';
+import { finiteTransactionNumber, transactionText } from './transactionScalar';
 /**
  * Presentation-only ordering for Transactions.
  * Firestore records, filtered KPIs, exports and cross-currency values are untouched.
@@ -19,14 +20,14 @@ export const isTransactionSortKey = (key) => validKeys.has(key);
 const collator = new Intl.Collator('es-AR', { sensitivity: 'base', numeric: true });
 
 const numericValue = (value) => {
-  if (value === null || value === undefined || String(value).trim() === '') return null;
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
+  return finiteTransactionNumber(value);
 };
 
 const dateValue = (value) => {
   if (value === null || value === undefined || value === '') return null;
-  if (typeof value?.toDate === 'function') return dateValue(value.toDate());
+  if (typeof value?.toDate === 'function') {
+    try { return dateValue(value.toDate()); } catch { return null; }
+  }
   if (value instanceof Date) {
     const time = value.getTime();
     return Number.isFinite(time) ? time : null;
@@ -52,7 +53,7 @@ const dateValue = (value) => {
 };
 
 const textValue = (value) => {
-  const text = typeof value === 'string' ? value.trim() : '';
+  const text = transactionText(value).trim();
   return text || null;
 };
 

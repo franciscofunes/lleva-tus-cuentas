@@ -6,8 +6,20 @@ import { Link } from 'react-router-dom';
 const screenName = () => window.location.pathname === '/transacciones'
   ? 'transacciones' : window.location.pathname.startsWith('/portfolio') ? 'portfolio' : 'otra';
 const componentNames = (stack = '') => String(stack).split('\n')
-  .map((line) => line.match(/^\s*at ([A-Za-z_$][\w$]*)/))
-  .filter(Boolean).slice(0, 5).map((match) => match[1]);
+  .map((line) => line.match(/^\s*at ([A-Za-z_$][\w$]*)(?:\s|\(|$)/))
+  .filter(Boolean).map((match) => match[1])
+  .filter((name) => !['div', 'span', 'section'].includes(name)).slice(0, 5);
+
+// Never copy exception messages: they can contain merchant names, account
+// references or other private data. Emit only an allowlisted error family.
+export const renderErrorCode = (error) => {
+  const message = typeof error?.message === 'string' ? error.message : '';
+  if (/Cannot convert object to primitive value/i.test(message)) return 'NON_SCALAR_FIELD';
+  if (/Cannot read properties of (undefined|null)/i.test(message)) return 'MISSING_FIELD';
+  if (/is not a function/i.test(message)) return 'INVALID_METHOD';
+  if (/Invalid time value/i.test(message)) return 'INVALID_DATE';
+  return 'UNCLASSIFIED';
+};
 
 /** Keep the navigation usable if a malformed transaction causes a render error. */
 export default class RouteErrorBoundary extends React.Component {
@@ -21,9 +33,10 @@ export default class RouteErrorBoundary extends React.Component {
     const diagnostic = {
       screen: screenName(),
       type: /^[A-Za-z]+Error$/.test(error?.name || '') ? error.name : 'Error',
+      code: renderErrorCode(error),
       components: componentNames(info?.componentStack),
     };
-    // Local browser console only. Netlify build logs cannot see client exceptions.
+    // Local browser console only. Vercel build/server logs cannot see client exceptions.
     // The user may copy this sanitized diagnostic to report a problem.
     console.error('[ltc-route] render failure', diagnostic);
     this.setState({ diagnostic });

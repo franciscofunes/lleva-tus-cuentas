@@ -63,3 +63,13 @@ test('sort ARS and USD amounts separately and leave opposite-currency values las
   expect(ids(sortTransactions(rows,'amount','desc'))).toEqual(['ars','legacy','usd-small','usd-large']);
   expect(ids(sortTransactions(rows,'usdAmount','desc'))).toEqual(['usd-large','usd-small','ars','legacy']);
 });
+
+test('invalid legacy timestamps and non-scalar sort fields cannot crash transactions', () => {
+  const invalid = Object.create(null);
+  const rows = [
+    { id: 'valid', selectedDate: '2026-10-13', amount: 100 },
+    { id: 'bad', selectedDate: { toDate: () => { throw new TypeError('bad timestamp'); } }, amount: invalid },
+  ];
+  expect(ids(sortTransactions(rows, 'date', 'desc'))).toEqual(['valid', 'bad']);
+  expect(ids(sortTransactions(rows, 'amount', 'desc'))).toEqual(['valid', 'bad']);
+});

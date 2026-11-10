@@ -15,6 +15,7 @@ import {
 } from "../actionCreators/databaseActions";
 import BarChartWrapper from "../components/BarChartWrapper";
 import Card from "../components/Card";
+import FinancialWidgetBoundary from "../components/FinancialWidgetBoundary";
 import TransactionCardBoundary from "../components/TransactionCardBoundary";
 import ExpenseFilter, { describeSelectedPeriod } from "../components/ExpenseFilter";
 import BimonetarySummary from "../components/BimonetarySummary";
@@ -27,6 +28,7 @@ import SearchBar from "../components/SearchBar";
 import { isTransactionSortKey } from "../utils/transactionSort";
 import { categoryContains } from "../utils/categoryContains";
 import { getTransactionCurrency } from "../utils/customCategories";
+import { finiteTransactionNumber, transactionText } from "../utils/transactionScalar";
 import { usesSelectedDateAsDueDate } from '../utils/transactionDueDates';
 import { receiptCategorySuggestions } from '../utils/receiptCategoryMapping';
 import { TRANSACTION_PAGE_SIZE } from "../utils/transactionsPagination";
@@ -377,17 +379,17 @@ function Dashboard() {
     setIncome(0);
 
     if (docs && categories) {
-      const expensesCategories = categories
-        ?.filter((category) => category.isExpense)
-        ?.map((category) => category.name);
+      const expensesCategories = (Array.isArray(categories) ? categories : [])
+        .filter((category) => category?.isExpense)
+        .map((category) => category.name);
 
       const expenses = filteredDocs
         .filter((doc) => expensesCategories?.includes(doc?.category) && getTransactionCurrency(doc) === 'ARS')
-        .map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
+        .map((doc) => finiteTransactionNumber(doc?.amount) ?? 0);
 
       const incomes = filteredDocs
         .filter((doc) => !expensesCategories?.includes(doc?.category) && getTransactionCurrency(doc) === 'ARS')
-        .map((doc) => !isNaN(doc?.amount) && parseFloat(doc?.amount));
+        .map((doc) => finiteTransactionNumber(doc?.amount) ?? 0);
 
       const currencyIncome = filteredDocs
         .filter(
@@ -396,15 +398,13 @@ function Dashboard() {
             categoryContains(doc, INGRESO_DIVISAS_CATEGORY)
         )
         .map((doc) => {
-          const currencyQuantity = parseFloat(doc?.currencyQuantity);
-          return isNaN(currencyQuantity) ? 0 : currencyQuantity;
+          return finiteTransactionNumber(doc?.currencyQuantity) ?? 0;
         });
 
       const currencySale = filteredDocs
         .filter((doc) => categoryContains(doc, "Venta divisas"))
         .map((doc) => {
-          const currencyQuantity = parseFloat(doc?.currencyQuantity);
-          return isNaN(currencyQuantity) ? 0 : currencyQuantity;
+          return finiteTransactionNumber(doc?.currencyQuantity) ?? 0;
         });
 
       setExpense(
@@ -440,7 +440,7 @@ function Dashboard() {
     () => ({
       scope: "current-view",
       spendingByCategory: summarizeSpendingByCategory(filteredDocs, categories || []),
-      categories: (categories || []).filter((entry) => entry.active !== false)
+      categories: (Array.isArray(categories) ? categories : []).filter((entry) => entry && entry.active !== false)
         .map(({ name, isExpense, currency }) => ({ name, isExpense: Boolean(isExpense), currency: currency === 'USD' ? 'USD' : 'ARS' })),
       summary: {
         incomeArs: Number(income || 0),
@@ -449,14 +449,14 @@ function Dashboard() {
         investmentUsd: Number(currencyIncome || 0),
       },
       transactions: filteredDocs.slice(0, 50).map((doc) => ({
-        name: doc.expenseName || "",
-        category: doc.category || "",
-        amount: Number(doc.amount || 0),
+        name: transactionText(doc.expenseName),
+        category: transactionText(doc.category),
+        amount: finiteTransactionNumber(doc.amount) ?? 0,
         transactionCurrency: getTransactionCurrency(doc),
-        selectedDate: doc.selectedDate || "",
-        comment: doc.comment || "",
-        currencyQuantity: Number(doc.currencyQuantity || 0),
-        currencyExchangeRate: Number(doc.currencyExchangeRate || 0),
+        selectedDate: transactionText(doc.selectedDate),
+        comment: transactionText(doc.comment),
+        currencyQuantity: finiteTransactionNumber(doc.currencyQuantity) ?? 0,
+        currencyExchangeRate: finiteTransactionNumber(doc.currencyExchangeRate) ?? 0,
       })),
     }),
     [categories, currencyIncome, filteredDocs, expense, income, total]
@@ -658,9 +658,12 @@ function Dashboard() {
             </div>
             <div className="grid min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(245px,0.9fr)_minmax(0,1.7fr)]">
               <div className="min-w-0">
-                <ExpenseFilter onPeriodChange={setSelectedPeriodInfo} />
+                <FinancialWidgetBoundary area='transactions-period' label='el período'>
+                  <ExpenseFilter onPeriodChange={setSelectedPeriodInfo} />
+                </FinancialWidgetBoundary>
               </div>
               <div className="min-w-0">
+            <FinancialWidgetBoundary area='transactions-search' label='los filtros'>
             <SearchBar
               query={searchQuery}
               onQueryChange={setSearchQuery}
@@ -686,6 +689,7 @@ function Dashboard() {
               onViewAll={viewAllTransactions}
               disabled={isDataFetching || isFilterChanging}
             />
+            </FinancialWidgetBoundary>
               </div>
             </div>
           </section>
@@ -704,6 +708,7 @@ function Dashboard() {
             collapsed={collapsedSections.summary}
             onToggle={() => toggleDashboardSection("summary")}
           >
+            <FinancialWidgetBoundary area='transactions-summary' label='el resumen'>
             <BimonetarySummary
               docs={filteredDocs}
               categories={categories}
@@ -711,6 +716,7 @@ function Dashboard() {
               isLoading={isDataFetching}
               hideValues={!isDataVisible}
             />
+            </FinancialWidgetBoundary>
           </CollapsibleSection>
         </div>
 
@@ -850,6 +856,7 @@ function Dashboard() {
             ) : (
               docs && (
                 <>
+                  <FinancialWidgetBoundary area='transactions-charts' label='los gráficos'>
                   <ChartViewer
                     selectedChart={selectedChart}
                     onSelect={handleChartToggle}
@@ -858,6 +865,7 @@ function Dashboard() {
                     categories={categories}
                     hideValues={!isDataVisible}
                   />
+                  </FinancialWidgetBoundary>
                 </>
               )
             )}
@@ -871,6 +879,7 @@ function Dashboard() {
 
           </div>
           )}
+          <FinancialWidgetBoundary area='transactions-tools' label='las herramientas'>
           <FinancialOverviewPanel
               id="transactions-overview"
               className="mt-5"
@@ -890,6 +899,7 @@ function Dashboard() {
                 { id: "due", icon: FaRegCalendarCheck, label: TRANSACTIONS_PAGE_COPY.metrics.due, value: isDataVisible ? overview.dueCount : "••" },
               ]}
             />
+          </FinancialWidgetBoundary>
         </div>
       </div>
 

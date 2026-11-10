@@ -42,6 +42,18 @@ test('legacy non-string category does not crash rendering', () => {
   expect(screen.getByText('Sin categoría')).toBeInTheDocument();
 });
 
+test('malformed historical fields display safe placeholders without blanking the card', () => {
+  const bad = Object.create(null);
+  render(<Card {...basicProps} name={bad} amount={bad} selectedDate={bad}
+    currencyQuantity={bad} paidAt={{toDate: () => { throw new TypeError('invalid timestamp'); }}}
+    comment={bad} category='Compra divisas' />);
+  expect(screen.getByRole('article', {name:'Movimiento: Sin nombre'})).toBeInTheDocument();
+  expect(screen.getByText('$AR N/D')).toBeInTheDocument();
+  expect(screen.getByText('Fecha no disponible')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', {name:'Ver detalles de Sin nombre'}));
+  expect(screen.getByText('$USD N/D')).toBeInTheDocument();
+});
+
 test('malformed optional receipt totals never break a saved transaction card', () => {
   render(<Card {...basicProps} receiptDetails={{
     documents: [{type:'invoice',number:'A-123'}],
