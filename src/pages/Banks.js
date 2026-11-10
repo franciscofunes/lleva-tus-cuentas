@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import { FiCreditCard, FiPlus, FiRefreshCw, FiShield, FiUploadCloud, FiEye, FiEyeOff, FiEdit2, FiChevronDown } from 'react-icons/fi';
 import GenericModal from '../components/GenericModal';
 import BankOnboardingForm from '../components/BankOnboardingForm';
+import { BANK_FORM_STYLES } from '../components/BankFormStyles';
 import DeleteBankChargeDialog from '../components/DeleteBankChargeDialog';
 import StatementLinkEditor from '../components/StatementLinkEditor';
 import PendingStatementLinkCard from '../components/PendingStatementLinkCard';
@@ -41,14 +42,14 @@ const initialAccount = { bankId: '', name: 'Caja de ahorro', type: 'caja_ahorro'
 const initialCard = { bankId: '', nickname: '', brand: 'Visa', lastFour: '', closingDay: '25', dueDay: '10' };
 const initialCharge = { cardId: '', bankId: '', merchant: '', amount: '', currency: 'ARS', purchaseDate: new Date().toISOString().slice(0, 10), installments: '1', note: '' };
 
-const inputClass = 'min-h-[44px] w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100';
-const buttonClass = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-700 disabled:opacity-50';
-const secondary = 'inline-flex min-h-[44px] min-w-0 items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-purple-400 hover:bg-purple-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:text-slate-200';
+const inputClass = BANK_FORM_STYLES.input;
+const buttonClass = BANK_FORM_STYLES.primary;
+const secondary = BANK_FORM_STYLES.secondary;
 const surface = FINANCIAL_ITEM_SURFACE_STYLES;
 const money = (value, currency) => new Intl.NumberFormat('es-AR', { style: 'currency', currency, maximumFractionDigits: 2 }).format(Number(value || 0));
 const maskCbu = (cbu) => cbu ? '•••• •••• •••• •••• ' + String(cbu).slice(-4) : 'No informado';
 function Field({ title, children }) {
-  return <label className='block min-w-0 space-y-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300'><span>{title}</span>{children}</label>;
+  return <label className={BANK_FORM_STYLES.label}><span>{title}</span>{children}</label>;
 }
 function ErrorMessage({ error }) { return error ? <p role='alert' className='rounded-lg bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300'>{error}</p> : null; }
 
@@ -114,8 +115,8 @@ function BankAccountEditor({ draft, onChange, editingId, busy, onSave, onCancel 
     </details>
     <InlineBankSaveError message={saveError} errorRef={errorRef}/>
     <div className='grid min-w-0 grid-cols-2 gap-2 sm:col-span-2'>
-      <button className={buttonClass} disabled={busy}>Guardar cuenta</button>
       <button type='button' className={secondary} onClick={onCancel} disabled={busy}>Cancelar</button>
+      <button className={buttonClass} disabled={busy}>Guardar cuenta</button>
     </div>
   </form>;
 }
@@ -157,8 +158,8 @@ function BankCardEditor({ draft, onChange, editingId, busy, onSave, onCancel }) 
     </details>
     <InlineBankSaveError message={saveError} errorRef={errorRef}/>
     <div className='grid min-w-0 grid-cols-2 gap-2 sm:col-span-2'>
-      <button className={buttonClass} disabled={busy}>Guardar tarjeta</button>
       <button type='button' className={secondary} disabled={busy} onClick={onCancel}>Cancelar</button>
+      <button className={buttonClass} disabled={busy}>Guardar tarjeta</button>
     </div>
   </form>;
 }

@@ -275,6 +275,11 @@ test('new account is placed by Añadir cuenta, has compact optional details and 
   const identity = within(editor).getByText(/Datos identificatorios \(opcional\)/).closest('details');
   expect(identity).not.toHaveAttribute('open');
   expect(within(editor).getByRole('button',{name:'Guardar cuenta'})).toHaveClass('min-h-[44px]');
+  expect(within(editor).getByLabelText('Nombre o apodo')).toHaveClass('text-base','dark:bg-slate-900','focus-visible:ring-2');
+  expect(within(editor).getByLabelText('Nombre o apodo').closest('label')).toHaveClass('text-sm','dark:text-slate-200');
+  const editorActions=within(editor).getAllByRole('button').filter(button=>/^(Cancelar|Guardar cuenta)$/.test(button.textContent));
+  expect(editorActions.map(button=>button.textContent)).toEqual(['Cancelar','Guardar cuenta']);
+  expect(editorActions[1]).toHaveClass('bg-violet-600','focus-visible:ring-2');
   fireEvent.click(within(editor).getByText(/Datos identificatorios \(opcional\)/));
   fireEvent.change(within(editor).getByLabelText('Alias (opcional)'),{target:{value:'alias.caja'}});
   fireEvent.click(within(editor).getByText(/Datos identificatorios \(opcional\)/));
@@ -300,6 +305,9 @@ test('card editing remains inside the selected card, while actual PDF dates and 
   const section = document.getElementById('bank-card-card-1');
   fireEvent.click(within(section).getByRole('button',{name:'Editar tarjeta'}));
   const editor = within(section).getByRole('form',{name:'Editar tarjeta bancaria'});
+  expect(within(editor).getByLabelText('Día habitual de vencimiento')).toHaveClass('text-base','dark:bg-slate-900');
+  const cardActions=within(editor).getAllByRole('button').filter(button=>/^(Cancelar|Guardar tarjeta)$/.test(button.textContent));
+  expect(cardActions.map(button=>button.textContent)).toEqual(['Cancelar','Guardar tarjeta']);
   expect(editor).toHaveClass('dark:bg-slate-800');
   const summary = within(editor).getByText(/Referencia del home banking \(opcional\)/).closest('details');
   expect(summary).toHaveAttribute('open');

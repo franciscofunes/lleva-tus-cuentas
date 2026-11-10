@@ -127,6 +127,12 @@ Before merge verify Home.test.js, CRA build, mobile 390px and desktop 1440px, bo
 - Deleting a manual consumption always requires an accessible confirmation modal, shows a masked amount when privacy is enabled, and must never unlink the corresponding PDF statement or delete a Transactions record.
 - Every actionable reveal/delete/editor control requires a 44px target, `aria-expanded` or `aria-pressed` where meaningful, and visible focus. See [Bancos #227 phase 1](banks-issue-227-part1.md).
 
+### Banks forms — shared control contract
+
+- `BANK_FORM_STYLES` is the single input, label, primary and secondary action source for the bank onboarding modal and inline bank/account/card editors. Controls use 16px text on mobile, a visible violet keyboard-focus ring, light/dark slate surfaces, and 44px minimum targets. The Markdown editor is deliberately monospace but keeps the same minimum font size.
+- Forms put **Cancelar** before the primary **Guardar** action, matching the modal's bottom action row. Existing ARS/USD fields, balances, PDF dates, and optional identity/snapshot details are not changed.
+- A failed bank creation focuses a local plain-language error, keeps the draft for retry, and clears the stale error after an edit. The Markdown disclosure retains its `aria-controls` target even while closed; optional card snapshot fields use the standard Transactions disclosure control.
+
 ## Cross-page consistency mandate — Transactions as reference
 - The approved reference for all signed-in financial pages is **`/transacciones`**, with shared `QuickAccessCard`, `FinancialHeaderActions`, `CollapsibleSection`, `FinancialMetricCard`, `FINANCIAL_ITEM_SURFACE_STYLES` and `FINANCIAL_RECORD_DISCLOSURE_STYLES`.
 - Page reading order: hero + one prominent action → summary → primary activity → secondary tools; desktop main activity spans 2 of 3 columns. Use the same colors, typography, shadows, borders, padding, 44px targets and first-scan progressive disclosure.

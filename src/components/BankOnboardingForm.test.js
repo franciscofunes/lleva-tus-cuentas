@@ -51,15 +51,17 @@ test('invalid imported Markdown does not offer Apply and bank name duplicates ar
   expect(save).not.toHaveBeenCalled();
 });
 
-test('Firebase permission denials show actionable guidance and preserve entered bank values', async () => {
+test('permission denials focus a local, understandable error and preserve entered bank values', async () => {
   const save = jest.fn().mockRejectedValue({
     code: 'permission-denied', message: 'Missing or insufficient permissions.',
   });
   render(<BankOnboardingForm onSave={save} onCancel={jest.fn()} existingBanks={[]} />);
   fireEvent.change(screen.getByLabelText('Nombre del banco'), { target: { value: 'Banco Ejemplo' } });
   fireEvent.click(screen.getByRole('button', { name: 'Guardar banco' }));
-  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/Firebase rechazó el guardado/));
-  expect(screen.getByRole('alert')).toHaveTextContent(/Firestore Database/);
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/problema de permisos/));
+  expect(screen.getByRole('alert')).toHaveTextContent(/Tus datos siguen acá/);
+  expect(screen.getByRole('alert')).not.toHaveTextContent(/Firebase|Firestore/);
+  await waitFor(()=>expect(screen.getByRole('alert')).toHaveFocus());
   expect(screen.getByLabelText('Nombre del banco')).toHaveValue('Banco Ejemplo');
   expect(save).toHaveBeenCalledTimes(1);
 });
@@ -71,6 +73,9 @@ test('mobile bank onboarding leads with the required name and keeps shared-theme
   expect(name.compareDocumentPosition(importButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(importButton).toHaveAttribute('aria-expanded', 'false');
   expect(importButton).toHaveAttribute('aria-controls', 'bank-markdown-importer');
+  expect(document.getElementById('bank-markdown-importer')).toHaveAttribute('hidden');
+  expect(name).toHaveClass('text-base','dark:bg-slate-900','focus-visible:ring-2');
+  expect(name.closest('label')).toHaveClass('text-sm','dark:text-slate-200');
   expect(screen.queryByLabelText('Markdown de bancos')).not.toBeInTheDocument();
 
   const actions = screen.getByTestId('bank-onboarding-actions');
@@ -80,6 +85,24 @@ test('mobile bank onboarding leads with the required name and keeps shared-theme
   fireEvent.click(importButton);
   expect(screen.getByRole('button', { name: 'Ocultar importador' })).toHaveAttribute('aria-expanded', 'true');
   expect(screen.getByLabelText('Markdown de bancos')).toBeInTheDocument();
+  expect(document.getElementById('bank-markdown-importer')).not.toHaveAttribute('hidden');
+  expect(screen.getByLabelText('Markdown de bancos')).toHaveClass('text-base','!font-mono');
+});
+
+test('new bank account/card controls share 16px inputs and 44px disclosure/actions',()=>{
+  render(<BankOnboardingForm onSave={jest.fn()} onCancel={jest.fn()} />);
+  fireEvent.click(screen.getByRole('button',{name:'Agregar cuenta'}));
+  fireEvent.click(screen.getByRole('button',{name:'Agregar tarjeta'}));
+  for(const label of ['Nombre de la cuenta','Saldo manual','Tipo','Moneda','Nombre de la tarjeta','Marca','Día habitual de vencimiento']){
+    const control=screen.getByLabelText(label);
+    expect(control).toHaveClass('text-base','min-h-[44px]','dark:bg-slate-900','focus-visible:ring-2');
+  }
+  const disclosure=screen.getByText(/Datos del último resumen y período actual/).closest('summary');
+  expect(disclosure).toHaveClass('min-h-[44px]','text-violet-700','dark:text-violet-200');
+  const actions=screen.getByTestId('bank-onboarding-actions');
+  expect(actions.querySelectorAll('button')[0]).toHaveTextContent('Cancelar');
+  expect(actions.querySelectorAll('button')[1]).toHaveTextContent('Guardar banco');
+  expect(actions.querySelectorAll('button')[1]).toHaveClass('bg-violet-600','focus-visible:ring-2');
 });
 
 test('double tapping Guardar banco while a request is pending creates only one bank', async () => {
@@ -92,8 +115,22 @@ test('double tapping Guardar banco while a request is pending creates only one b
   fireEvent.click(saveButton);
   expect(save).toHaveBeenCalledTimes(1);
   await act(async () => rejectRequest(new Error('Falló el guardado')));
-  expect(screen.getByRole('alert')).toHaveTextContent('Falló el guardado');
+  expect(screen.getByRole('alert')).toHaveTextContent('No pudimos guardar el banco');
+  expect(screen.getByRole('alert')).not.toHaveTextContent('Falló el guardado');
   expect(screen.getByLabelText('Nombre del banco')).toHaveValue('Banco de prueba');
+  await waitFor(()=>expect(screen.getByRole('alert')).toHaveFocus());
   fireEvent.click(saveButton);
   expect(save).toHaveBeenCalledTimes(2);
+});
+
+test('duplicate-name error is focused, clears on edit and does not write a bank',async()=>{
+  const save=jest.fn();
+  render(<BankOnboardingForm onSave={save} onCancel={jest.fn()} existingBanks={[{name:'Banco Ciudad'}]} />);
+  const name=screen.getByLabelText('Nombre del banco');
+  fireEvent.change(name,{target:{value:'Banco Ciudad'}});
+  fireEvent.click(screen.getByRole('button',{name:'Guardar banco'}));
+  await waitFor(()=>expect(screen.getByRole('alert')).toHaveFocus());
+  expect(save).not.toHaveBeenCalled();
+  fireEvent.change(name,{target:{value:'Banco Nación'}});
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
