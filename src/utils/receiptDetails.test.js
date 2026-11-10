@@ -12,6 +12,21 @@ test('keeps optional invoice references and bounded purchased items independent 
   expect(sanitizeReceiptDetails({documents:[],items:Array.from({length:35},()=>({description:'Producto'}))}).items).toHaveLength(30);
 });
 
+test('malformed numeric receipt fields cannot crash a historical transaction render', () => {
+  const invalidScalar = Object.create(null);
+  const result = sanitizeReceiptDetails({
+    documents: [],
+    items: [
+      {description:'Producto antiguo', total:invalidScalar, quantity:2},
+      {description:'Otro producto', unitPrice:Symbol('invalid')},
+    ],
+  });
+  expect(result.items).toEqual([
+    {description:'Producto antiguo', quantity:2},
+    {description:'Otro producto'},
+  ]);
+});
+
 test('multiple photographs for one purchase keep unique documents without duplicating products', () => {
   const first = {documents:[{type:'non_fiscal',operationNumber:'1-72'}],items:[{description:'MILA CARNE OFERTA'}]};
   const second = {documents:[{type:'coupon',number:'000482',authorizationCode:'9988'}],items:[]};

@@ -15,6 +15,7 @@ import {
 } from "../actionCreators/databaseActions";
 import BarChartWrapper from "../components/BarChartWrapper";
 import Card from "../components/Card";
+import TransactionCardBoundary from "../components/TransactionCardBoundary";
 import ExpenseFilter, { describeSelectedPeriod } from "../components/ExpenseFilter";
 import BimonetarySummary from "../components/BimonetarySummary";
 import FloatingMenu from "../components/FloatingMenu";
@@ -763,6 +764,7 @@ function Dashboard() {
             {!isDataFetching && visibleTransactions.map((doc) => {
               return (
                 <div key={doc.id}>
+                  <TransactionCardBoundary>
                   <Card
                     id={doc.id}
                     hideValues={!isDataVisible}
@@ -812,6 +814,7 @@ function Dashboard() {
                     openModal={openModal}
                     onRequestDelete={setPendingDelete}
                   />
+                  </TransactionCardBoundary>
                 </div>
               );
             })}
