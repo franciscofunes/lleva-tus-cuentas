@@ -12,6 +12,7 @@ import DeleteBankChargeDialog from '../components/DeleteBankChargeDialog';
 import StatementLinkEditor from '../components/StatementLinkEditor';
 import PendingStatementLinkCard from '../components/PendingStatementLinkCard';
 import CardSpendingControls from '../components/CardSpendingControls';
+import CardPaymentPlanner from '../components/CardPaymentPlanner';
 import CardConsumptionMarkdownImporter from '../components/CardConsumptionMarkdownImporter';
 import FloatingMenu from '../components/FloatingMenu';
 import LitaAssistantPanel from '../components/LitaAssitantPanel';
@@ -184,6 +185,7 @@ function BanksWorkspace({ user }) {
   const [budgets, setBudgets] = useState([]);
   const [budgetError, setBudgetError] = useState(false);
   const [budgetCollapsed,setBudgetCollapsed] = useState(false);
+  const [paymentPlannerCollapsed, setPaymentPlannerCollapsed] = useState(true);
   const [showConsumptionImporter,setShowConsumptionImporter] = useState(false);
   const [pending, setPending] = useState(true);
   const [error, setError] = useState('');
@@ -652,6 +654,13 @@ function BanksWorkspace({ user }) {
             </CollapsibleSection>
 
           </div>
+        <CollapsibleSection id='bank-payment-planner' eyebrow='Tarjetas · planificación'
+          title='Planificar pago de tarjetas'
+          description='Calculá cuánto vender en USD para pagar varios resúmenes usando tus saldos en pesos.'
+          collapsed={paymentPlannerCollapsed} onToggle={() => setPaymentPlannerCollapsed((value) => !value)}>
+          <CardPaymentPlanner banks={banks} accounts={accounts} cards={cards} statements={statements} links={links}
+            privacyHidden={!showValues} onRevealValues={toggleVisibility}/>
+        </CollapsibleSection>
         {pdfCardId && selectedPdfCard && (
           <section className={`${COLLAPSIBLE_SURFACE_STYLES.root} p-4 sm:p-5`}>
             <div className='flex flex-wrap items-start justify-between gap-3'>

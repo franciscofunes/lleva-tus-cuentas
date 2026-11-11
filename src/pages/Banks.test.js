@@ -99,6 +99,19 @@ test('Bancos reuses the financial header, grouped metrics and collapsible manage
   expect(screen.getByText('Saldos registrados · USD')).toBeInTheDocument();
 });
 
+test('Bancos exposes the multi-card payment planner with privacy-first disclosure', async () => {
+  mount();
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Planificar pago de tarjetas' })).toBeInTheDocument());
+  const trigger = screen.getByRole('button', { name: /Planificar pago de tarjetas/ });
+  expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  fireEvent.click(trigger);
+  expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  expect(screen.queryByLabelText('Cotización de venta (ARS por 1 USD)')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Mostrar importes' }));
+  expect(screen.getByLabelText('Cotización de venta (ARS por 1 USD)')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Agregar manualmente' })).toBeInTheDocument();
+});
+
 
 test('primary bank action is visibly labeled on narrow mobile; secondary shortcuts have 44px hit targets', async () => {
   mount();
