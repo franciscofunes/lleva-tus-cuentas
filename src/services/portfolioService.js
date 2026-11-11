@@ -214,7 +214,7 @@ export const subscribePortfolioReconciliations = (userId, onData, onError) =>
 // Cierres y registros corresponden a meses finalizados. Un mes en curso
 // todavía puede recibir nuevas verificaciones de rendimiento.
 export const isCompletedPortfolioMonth = (month, today = new Date()) => {
-	if (!/^\\d{4}-(0[1-9]|1[0-2])$/.test(String(month))) return false;
+	if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(month))) return false;
 	const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 	return month < currentMonth;
 };
