@@ -211,27 +211,81 @@ export const subscribePortfolioReconciliations = (userId, onData, onError) =>
 		onError
 	);
 
+// Cierres y registros corresponden a meses finalizados. Un mes en curso
+// todavía puede recibir nuevas verificaciones de rendimiento.
+export const isCompletedPortfolioMonth = (month, today = new Date()) => {
+	if (!/^\\d{4}-(0[1-9]|1[0-2])$/.test(String(month))) return false;
+	const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+	return month < currentMonth;
+};
+
 export const savePortfolioReconciliation = (userId, position, month, snapshotRows) => {
+	if (!isCompletedPortfolioMonth(month)) throw new Error('Esperá a que termine el mes para cerrarlo.');
 	const earningRows = snapshotRows.filter((row) => row.changeType === 'earning');
 	const amount = earningRows.reduce((sum, row) => sum + Number(row.confirmedEarning ?? row.observedEarning ?? 0), 0);
 	const snapshotIds = earningRows.map((row) => row.id).sort();
 	const id = `${position.id}_${month}`;
-	return reconciliations(userId).doc(id).set({
-		positionId: position.id,
-		institution: position.institution,
-		name: position.name,
-		currency: position.currency,
-		month,
-		amount,
-		snapshotIds,
-		verificationCount: earningRows.length,
-		status: 'pending_transaction',
-		transactionId: null,
-		updatedAt: new Date(),
-		createdAt: new Date(),
-	}, { merge: true });
+	const reconciliationRef = reconciliations(userId).doc(id);
+	return firestore.runTransaction(async (transaction) => {
+		const existing = await transaction.get(reconciliationRef);
+		const previous = existing.exists ? existing.data() : null;
+		if (previous?.transactionId) {
+			throw new Error('Este mes ya está registrado. Primero reabrí el cierre para corregirlo.');
+		}
+		transaction.set(reconciliationRef, {
+			positionId: position.id,
+			institution: position.institution,
+			name: position.name,
+			currency: position.currency,
+			month,
+			amount,
+			snapshotIds,
+			verificationCount: earningRows.length,
+			status: 'pending_transaction',
+			transactionId: null,
+			registeredAt: null,
+			updatedAt: new Date(),
+			createdAt: previous?.createdAt || new Date(),
+		}, { merge: true });
+	});
 };
 
+// Revertir el cierre no elimina verificaciones ni modifica el saldo de Portfolio.
+// Firestore revierte de manera atómica el ingreso automático y la conciliación;
+// nunca se elimina una transacción manual o vinculada a otro cierre.
+export const reopenPortfolioReconciliation = (userId, reconciliation) => {
+	if (!userId || !reconciliation?.id) throw new Error('No se encontró el cierre a reabrir.');
+	const reconciliationRef = reconciliations(userId).doc(reconciliation.id);
+	return firestore.runTransaction(async (transaction) => {
+		const current = await transaction.get(reconciliationRef);
+		if (!current.exists) return { alreadyReopened: true, removedTransaction: false };
+		const data = current.data();
+		if (data.positionId !== reconciliation.positionId || data.month !== reconciliation.month) {
+			throw new Error('El cierre cambió. Actualizá la página antes de reabrirlo.');
+		}
+		let expenseRef = null;
+		let expenseExists = false;
+		if (data.transactionId) {
+			expenseRef = firestore.collection('users').doc(userId).collection('expenses').doc(data.transactionId);
+			const expense = await transaction.get(expenseRef);
+			if (expense.exists) {
+				const linked = expense.data();
+				if (linked.importSource !== 'portfolio-reconciliation' ||
+					linked.portfolioReconciliationId !== reconciliation.id ||
+					linked.portfolioPositionId !== data.positionId ||
+					linked.portfolioPeriod !== data.month ||
+					linked.category !== 'Ingreso divisas' ||
+					Number(linked.currencyQuantity) !== Number(data.amount)) {
+					throw new Error('El ingreso vinculado fue modificado. Revisalo en Transacciones antes de reabrir.');
+				}
+				expenseExists = true;
+			}
+		}
+		if (expenseExists) transaction.delete(expenseRef);
+		transaction.delete(reconciliationRef);
+		return { alreadyReopened: false, removedTransaction: expenseExists };
+	});
+};
 
 export const registerReconciliationTransaction = async (userId, reconciliation) => {
 	const reconciliationRef = reconciliations(userId).doc(reconciliation.id);
@@ -240,6 +294,7 @@ export const registerReconciliationTransaction = async (userId, reconciliation) 
 		if (!fresh.exists) throw new Error('El cierre mensual ya no existe.');
 		const data = fresh.data();
 		if (data.transactionId) return { transactionId: data.transactionId, alreadyRegistered: true };
+		if (!isCompletedPortfolioMonth(data.month)) throw new Error('Esperá a que termine el mes para registrar su rendimiento.');
 		if (!Number.isFinite(Number(data.amount)) || Number(data.amount) <= 0) throw new Error('El cierre no tiene un rendimiento positivo para registrar.');
 		const expenseRef = firestore.collection('users').doc(userId).collection('expenses').doc();
 		const selectedDate = `${data.month}-01`;
