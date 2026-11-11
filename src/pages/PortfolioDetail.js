@@ -6,8 +6,9 @@ import { FaCopy, FaPencilAlt, FaTrashAlt } from 'react-icons/fa';
 import { FINANCIAL_ITEM_SURFACE_STYLES, FINANCIAL_RECORD_DISCLOSURE_STYLES } from '../components/CollapsibleHeading';
 import CollapsibleSection from '../components/CollapsibleSection';
 import QuickAccessCard from '../components/QuickAccessCard';
-import { deletePortfolioSnapshot, registerReconciliationTransaction, savePortfolioReconciliation, subscribePortfolioPositions, subscribePortfolioReconciliations, subscribePortfolioSnapshots, updatePortfolioSnapshot } from '../services/portfolioService';
+import { deletePortfolioSnapshot, isCompletedPortfolioMonth, registerReconciliationTransaction, reopenPortfolioReconciliation, savePortfolioReconciliation, subscribePortfolioPositions, subscribePortfolioReconciliations, subscribePortfolioSnapshots, updatePortfolioSnapshot } from '../services/portfolioService';
 import PortfolioHistoryModal from '../components/PortfolioHistoryModal';
+import PortfolioReopenDialog from '../components/PortfolioReopenDialog';
 import PortfolioAccountOverview from '../components/PortfolioAccountOverview';
 import { accountMovementType, accountMovementLabel, groupAccountEarnings, sortedAccountSnapshots } from '../utils/portfolioAccountActivity';
 import { formattedPublishedReturn, parsePublishedReturn, publishedReturnTone, summarizePublishedReturns } from '../utils/portfolioPublishedReturns';
@@ -43,7 +44,7 @@ export default function PortfolioDetail() {
 	const [historyFilter,setHistoryFilter]=useState('all');
 	const [revealedAccountFields,setRevealedAccountFields]=useState({});
 	useEffect(()=>setRevealedAccountFields({}),[positionId]);
-	const [editing,setEditing]=useState(null); const [deleting,setDeleting]=useState(null); const [pendingAction,setPendingAction]=useState('');
+	const [editing,setEditing]=useState(null); const [deleting,setDeleting]=useState(null); const [reopening,setReopening]=useState(null); const [pendingAction,setPendingAction]=useState('');
 	const openEditModal = (row) => { if (pendingAction) return; setDeleting(null); setEditing({...row}); };
 	const openDeleteModal = (row) => { if (pendingAction) return; setEditing(null); setDeleting(row); };
 	const closeHistoryModal = useCallback(() => { if (pendingAction) return; setEditing(null); setDeleting(null); }, [pendingAction]);
@@ -89,6 +90,19 @@ export default function PortfolioDetail() {
 	const hasAccountDetails = position && (accountRows.length || position.accountHolder || position.accountType || position.bankName || position.bankAddress || position.depositInstructions);
 	const registerMonth = async (saved) => { if(!saved || pendingAction || saved.transactionId) return; setPendingAction(`register-${saved.month}`); try { const result=await registerReconciliationTransaction(user.uid,saved); toast.success(result.alreadyRegistered?'Este cierre ya estaba registrado':'Rendimiento registrado en Transacciones'); } catch(error) { console.error(error); toast.error(error.message || 'No se pudo registrar el rendimiento'); } finally { setPendingAction(''); } };
 	const closeMonth = async (item) => { if(pendingAction) return; setPendingAction(`month-${item.month}`); try { await savePortfolioReconciliation(user.uid, position, item.month, item.rows); toast.success('Cierre mensual guardado'); } catch(error) { console.error(error); toast.error('No se pudo guardar el cierre mensual'); } finally { setPendingAction(''); } };
+	const reopenMonth = async (saved) => {
+		if (pendingAction) return;
+		setPendingAction(`reopen-${saved.month}`);
+		try {
+			await reopenPortfolioReconciliation(user.uid, saved);
+			toast.success('Mes reabierto. El registro automático fue deshecho.');
+		} catch (error) {
+			console.error(error);
+			throw error;
+		} finally {
+			setPendingAction('');
+		}
+	};
 	const saveVerification = async () => { if(!editing || pendingAction) return; setPendingAction('save'); try { await updatePortfolioSnapshot(user.uid, editing.id, editing); toast.success('Verificación actualizada'); setEditing(null); } catch(error) { console.error(error); toast.error('No se pudo actualizar la verificación'); } finally { setPendingAction(''); } };
 	const removeVerification = async () => { if(!deleting || pendingAction) return; setPendingAction('delete'); try { await deletePortfolioSnapshot(user.uid, deleting.id); toast.success('Verificación eliminada'); setDeleting(null); } catch(error) { console.error(error); toast.error('No se pudo eliminar la verificación'); } finally { setPendingAction(''); } };
 	const copyValue = async (label,value) => { try { await navigator.clipboard.writeText(String(value)); toast.success(`${label} copiado`); } catch (error) { toast.error(`No se pudo copiar ${label.toLowerCase()}`); } };
@@ -206,7 +220,32 @@ export default function PortfolioDetail() {
 							)}
 						</div>
 					) : (
-						<div className='mt-4 space-y-3'>{monthly.length===0?<p className='text-gray-500'>Todavía no hay meses para conciliar.</p>:monthly.map(item=>{const saved=reconciliations.find(r=>r.positionId===positionId&&r.month===item.month); const busy=pendingAction===`month-${item.month}`; return <div key={item.month} className='rounded-xl border dark:border-slate-700 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3'><div><p className='font-bold'>{new Date(`${item.month}-01T12:00:00`).toLocaleDateString('es-AR',{month:'long',year:'numeric'})}</p><p className='text-sm text-gray-500'>{money(item.amount,position.currency)} confirmados · {item.rows.filter(r=>r.changeType==='earning').length} rendimiento(s)</p><p className={`text-xs mt-1 ${saved?'text-green-500':'text-amber-500'}`}>{saved?.transactionId?'Registrado en Transacciones':saved?'Cierre guardado · pendiente de registrar en Transacciones':'Pendiente de cierre'}</p></div><div className='flex flex-col sm:flex-row gap-2'><button type='button' onClick={()=>closeMonth(item)} disabled={Boolean(pendingAction) || Boolean(saved?.transactionId)} className='inline-flex min-h-[44px] min-w-[130px] items-center justify-center rounded-xl border border-violet-500 bg-white px-3 py-2.5 font-semibold text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50 dark:bg-slate-900 dark:text-violet-200'>{busy?<span className='inline-block w-5 h-5 rounded-full border-2 border-purple-300 border-t-purple-600 animate-spin'/>:(saved?.transactionId?'Cierre registrado':saved?'Actualizar cierre':'Cerrar mes')}</button>{saved && <button type='button' onClick={()=>registerMonth(saved)} disabled={Boolean(pendingAction) || Boolean(saved.transactionId)} className='inline-flex min-h-[44px] min-w-[170px] items-center justify-center rounded-xl bg-violet-600 px-3 py-2.5 font-semibold text-white hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50'>{pendingAction===`register-${item.month}`?<span className='inline-block w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin'/>:(saved.transactionId?'Registrado ✓':'Registrar en Transacciones')}</button>}</div></div>})}</div>
+						<div className='mt-4 space-y-3'>
+							{monthly.length === 0 ? <p className='text-slate-600 dark:text-slate-300'>Todavía no hay meses para conciliar.</p> : monthly.map(item => {
+								const saved = reconciliations.find(r => r.positionId === positionId && r.month === item.month);
+								const completed = isCompletedPortfolioMonth(item.month);
+								const busy = pendingAction === `month-${item.month}`;
+								return <div key={item.month} className='flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/70 sm:flex-row sm:items-center'>
+									<div className='min-w-0'>
+										<p className='font-bold text-slate-900 dark:text-slate-50'>{new Date(`${item.month}-01T12:00:00`).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}</p>
+										<p className='mt-1 text-sm text-slate-700 dark:text-slate-200'>{money(item.amount, position.currency)} confirmados · {item.rows.filter(r => r.changeType === 'earning').length} rendimiento(s)</p>
+										<p className={`mt-1 text-xs ${saved ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`}>{saved?.transactionId ? 'Registrado en Transacciones' : saved ? 'Cierre guardado · pendiente de registrar en Transacciones' : 'Pendiente de cierre'}</p>
+										{!completed && <p className='mt-1 text-xs text-amber-700 dark:text-amber-300'>Mes en curso: podés seguir verificando; el cierre se habilita al finalizar el mes.</p>}
+									</div>
+									<div className='flex w-full flex-col gap-2 sm:w-auto sm:min-w-[180px]'>
+										{saved?.transactionId ? (
+											<p className='flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 bg-slate-100 px-3 py-2.5 text-center text-sm font-semibold text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200'>Cierre registrado ✓</p>
+										) : (
+											<>
+												<button type='button' onClick={() => closeMonth(item)} disabled={Boolean(pendingAction) || !completed} className='inline-flex min-h-[44px] items-center justify-center rounded-xl border border-violet-500 bg-white px-3 py-2.5 text-sm font-semibold text-violet-700 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-900 dark:text-violet-200 dark:hover:bg-slate-800'>{busy ? 'Guardando…' : saved ? 'Actualizar cierre' : 'Cerrar mes'}</button>
+												{saved && <button type='button' onClick={() => registerMonth(saved)} disabled={Boolean(pendingAction) || !completed} className='inline-flex min-h-[44px] items-center justify-center rounded-xl bg-violet-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-50'>{pendingAction === `register-${item.month}` ? 'Registrando…' : 'Registrar en Transacciones'}</button>}
+											</>
+										)}
+										{saved && <button type='button' onClick={() => setReopening(saved)} disabled={Boolean(pendingAction)} className='inline-flex min-h-[44px] items-center justify-center rounded-xl border border-amber-500 bg-white px-3 py-2.5 text-sm font-semibold text-amber-800 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-50 dark:bg-slate-900 dark:text-amber-200 dark:hover:bg-slate-800'>Reabrir mes</button>}
+									</div>
+								</div>;
+							})}
+						</div>
 					)}
 				</CollapsibleSection>
 				<CollapsibleSection
@@ -272,6 +311,11 @@ export default function PortfolioDetail() {
 				<p className='mt-4 text-xs text-amber-600 dark:text-amber-400'>{isFci ? 'En FCI, la variación del valor de cuotaparte modifica la valuación de la posición, pero no se considera ganancia realizada hasta que exista un rescate/venta.' : 'Las verificaciones nuevas separan rendimiento, aporte, retiro y ajuste. Los snapshots históricos sin clasificación no se suman como rendimiento confirmado ni se envían a Transacciones.'}</p>
 			</div>
 		</main>
+		{reopening && <PortfolioReopenDialog
+			reconciliation={reopening}
+			onClose={() => { if (!pendingAction) setReopening(null); }}
+			onConfirm={reopenMonth}
+		/>}
 		{(editing || deleting) && (
 			<PortfolioHistoryModal
 				mode={editing ? 'edit' : 'delete'}
