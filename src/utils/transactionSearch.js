@@ -1,7 +1,8 @@
 import { displayCategoryName } from './customCategories';
+import { finiteTransactionNumber, transactionText } from './transactionScalar';
 
 const normalize = (value) =>
-  String(value ?? '')
+  transactionText(value)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase('es-AR')
@@ -12,7 +13,7 @@ const dateSearchText = (value) => {
   if (!value) return '';
   let date = value;
   if (typeof value.toDate === 'function') {
-    date = value.toDate();
+    try { date = value.toDate(); } catch { return ''; }
   }
   if (date instanceof Date) {
     if (Number.isNaN(date.getTime())) return '';
@@ -21,16 +22,16 @@ const dateSearchText = (value) => {
     const year = date.getFullYear();
     return [day + '/' + month + '/' + year, year + '-' + month + '-' + day].join(' ');
   }
-  const text = String(date);
+  const text = transactionText(date);
   const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
   return iso ? text + ' ' + iso[3] + '/' + iso[2] + '/' + iso[1] : text;
 };
 
 const amountSearchText = (value) => {
   if (value === undefined || value === null || value === '') return '';
-  const raw = String(value);
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return raw;
+  const raw = transactionText(value);
+  const numeric = finiteTransactionNumber(value);
+  if (numeric === null) return raw;
 
   // Display both source and locale formats without changing transaction values.
   return raw + ' ' + numeric.toLocaleString('es-AR', {
@@ -53,14 +54,16 @@ export const filterTransactions = (transactions = [], options = {}) => {
   } = options;
   const terms = normalize(query).split(' ').filter(Boolean);
   const selectedCategory = normalize(category);
+  const safeCategories = Array.isArray(categories) ? categories : [];
   const expenses = new Set(
-    categories.filter((item) => item?.isExpense === true).map((item) => normalize(item.name))
+    safeCategories.filter((item) => item?.isExpense === true).map((item) => normalize(item.name))
   );
   const incomes = new Set(
-    categories.filter((item) => item?.isExpense === false).map((item) => normalize(item.name))
+    safeCategories.filter((item) => item?.isExpense === false).map((item) => normalize(item.name))
   );
 
-  return (transactions || []).filter((item) => {
+  return (Array.isArray(transactions) ? transactions : []).filter((item) => {
+    if (!item || typeof item !== 'object') return false;
     const transactionCategory = normalize(item.category);
     if (selectedCategory && transactionCategory !== selectedCategory) return false;
     if (type === 'expense' && !expenses.has(transactionCategory)) return false;
@@ -72,7 +75,7 @@ export const filterTransactions = (transactions = [], options = {}) => {
       item.expenseName,
       item.name,
       item.category,
-      displayCategoryName(item.category, categories),
+      displayCategoryName(transactionText(item.category), safeCategories),
       item.comment,
       item.importInstitution,
       item.importSource,
@@ -83,7 +86,7 @@ export const filterTransactions = (transactions = [], options = {}) => {
       amountSearchText(item.amount),
       amountSearchText(item.currencyQuantity),
       amountSearchText(item.currencyExchangeRate),
-    ].join(' '));
+    ].map(transactionText).join(' '));
 
     return terms.every((term) => searchable.includes(term));
   });

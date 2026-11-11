@@ -50,3 +50,13 @@ test('ARS and USD expenses are distinct category aggregations without guessed FX
   expect(result.categories[0].totalArs).toBe(1499);
   expect(result.categoriesUsd[0].totalUsd).toBe(34.99);
 });
+
+test('a legacy malformed amount does not crash the whole Transactions dashboard', () => {
+  const bad = Object.create(null);
+  const result = summarizeSpendingByCategory([
+    {category:'Alimentos',amount:bad},
+    {category:'Alimentos',amount:1250.75},
+  ],[{name:'Alimentos',isExpense:true}]);
+  expect(result.invalidAmountCount).toBe(1);
+  expect(result.totalArs).toBe(1250.75);
+});

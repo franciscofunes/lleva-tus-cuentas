@@ -55,3 +55,11 @@ npm run build
 - Confirm keyboard Tab/Shift+Tab/Escape through nested category modal and preservation of unsaved transaction form state.
 - Verify statement imports, ARS/USD isolation, all filter periods, Lita context, PDF/XLSX/CSV exports and mobile results.
 - Confirm protected production route `/transacciones` is visible only after user authentication. Never seed real user records for test screenshots.
+
+### Runtime TypeError follow-up (2026-11-10)
+
+After the first per-card containment PR, the owner still reported an inaccessible Transactions page. A production Vercel deployment of that commit was confirmed, but its server-side logs do not capture the browser-side React exception; the owner has not yet supplied a new post-deploy stack or a sanitized real-data fixture. **Do not represent this follow-up as an authenticated reproduction or a verified production repair.**
+
+Regression tests reproduce `TypeError: Cannot convert object to primitive value` when malformed historical/imported numeric or date fields enter Transactions search, ARS/USD summaries, or Lita context before individual cards mount. These view-only readers now reject unsupported object values, keep invalid amounts out of totals and avoid inventing dates. Per-widget boundaries keep other sections available if a child renderer fails. Route diagnostics expose only a fixed error family, never original error messages or financial data. No persisted expenses, category classification, FX semantics or Firestore rules are rewritten.
+
+After deployment, test with the owner's authenticated Android session: fresh load, period filtering, summary expansion, individual records, chart expansion, and the error screen's sanitized `code` if any failure remains. A green CI build alone is insufficient.

@@ -1,11 +1,11 @@
 import { displayCategoryName, getTransactionCurrency } from './customCategories';
 import { exportWorkbookXlsx, buildWorkbookXlsxBytes } from './portfolioExport';
 import { exportCsvRows } from './exportCsvRows';
+import { finiteTransactionNumber, transactionText } from './transactionScalar';
 
-const safeText = (value) => String(value ?? '').replace(/[\r\n|]+/g, ' ').trim();
-const validMoney = (value) => value !== null && value !== undefined && value !== '' &&
-  Number.isFinite(Number(value)) && Number(value) > 0;
-const currencyOperation = (category) => /(?:Compra|Venta|Ingreso) divisas/i.test(category || '');
+const safeText = (value) => transactionText(value).replace(/[\r\n|]+/g, ' ').trim();
+const validMoney = (value) => (finiteTransactionNumber(value) ?? 0) > 0;
+const currencyOperation = (category) => /(?:Compra|Venta|Ingreso) divisas/i.test(transactionText(category));
 const conversion = (category) => /(?:Compra|Venta) divisas/i.test(category || '');
 const getName = (row) => safeText(row.expenseName || row.name);
 const getAmount = (row) => row.amount !== '' && row.amount !== null && row.amount !== undefined && Number.isFinite(Number(row.amount)) ? Number(row.amount) : null;
@@ -23,8 +23,8 @@ export const buildTransactionOverview = (docs = [], categories = []) => {
   const transactions = Array.isArray(docs) ? docs : [];
   return {
     count: transactions.length,
-    categoryCount: new Set(transactions.map((row) => safeText(row.category)).filter(Boolean)).size,
-    dueCount: transactions.filter((row) => Boolean(row.selectedExpirationDate || row.dueDate)).length,
+    categoryCount: new Set(transactions.map((row) => safeText(row?.category)).filter(Boolean)).size,
+    dueCount: transactions.filter((row) => Boolean(row?.selectedExpirationDate || row?.dueDate)).length,
   };
 };
 
