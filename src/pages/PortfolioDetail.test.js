@@ -55,6 +55,8 @@ jest.mock('../services/portfolioService', () => ({
 	deletePortfolioSnapshot: jest.fn(() => Promise.resolve()),
 	savePortfolioReconciliation: jest.fn(() => Promise.resolve()),
 	registerReconciliationTransaction: jest.fn(() => Promise.resolve()),
+	isCompletedPortfolioMonth: jest.fn((month) => month < '2026-11'),
+	reopenPortfolioReconciliation: jest.fn(() => Promise.resolve()),
 }));
 
 // Create React App enables Jest resetMocks, so implementations configured
@@ -89,6 +91,8 @@ beforeEach(() => {
 	service.deletePortfolioSnapshot.mockResolvedValue(undefined);
 	service.savePortfolioReconciliation.mockResolvedValue(undefined);
 	service.registerReconciliationTransaction.mockResolvedValue(undefined);
+	service.isCompletedPortfolioMonth.mockImplementation((month) => month < '2026-11');
+	service.reopenPortfolioReconciliation.mockResolvedValue({ alreadyReopened: false, removedTransaction: true });
 });
 
 test('mobile edit action opens modal instead of an inline form and persists the new classification', async () => {
@@ -281,4 +285,52 @@ test('a negative recorded annual rate is not shown as a green gain', async () =>
   const mobileHistory = container.querySelector('[class*="md:hidden"]');
   expect(mobileHistory).not.toBeNull();
   expect(mobileHistory.querySelectorAll('.tabular-nums.break-words').length).toBeGreaterThanOrEqual(3);
+});
+
+test('registered in-progress November can be reopened with confirmation; October is not modified', async () => {
+  const service = require('../services/portfolioService');
+  const november = {
+    id: 'position-1_2026-11', positionId: 'position-1', month: '2026-11',
+    amount: 6.12, verificationCount: 5, status: 'registered', transactionId: 'return-1',
+  };
+  service.subscribePortfolioSnapshots.mockImplementationOnce((uid, onData) => {
+    onData([{ id: 'nov-earning-1', positionId: 'position-1', capturedAt: new Date('2026-11-10T12:00:00Z'), changeType: 'earning', confirmedEarning: 6.12, observedEarning: 6.12, balance: 1006.12 }]);
+    return () => {};
+  });
+  service.subscribePortfolioReconciliations.mockImplementationOnce((uid, onData) => {
+    onData([november, { id: 'position-1_2026-10', positionId: 'position-1', month: '2026-10', transactionId: 'october-1' }]);
+    return () => {};
+  });
+
+  render(<PortfolioDetail />);
+  expect(await screen.findByText('Cierre registrado ✓')).toBeInTheDocument();
+  expect(screen.getByText(/Mes en curso: podés seguir verificando/)).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Registrar en Transacciones' })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reabrir mes' }));
+  let dialog = screen.getByRole('dialog', { name: 'Reabrir cierre mensual' });
+  expect(within(dialog).getByText(/Las verificaciones originales/)).toBeInTheDocument();
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+  expect(service.reopenPortfolioReconciliation).not.toHaveBeenCalled();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reabrir mes' }));
+  dialog = screen.getByRole('dialog', { name: 'Reabrir cierre mensual' });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Reabrir y deshacer registro' }));
+  await waitFor(() => expect(service.reopenPortfolioReconciliation).toHaveBeenCalledWith('user-1', november));
+  expect(service.savePortfolioReconciliation).not.toHaveBeenCalled();
+  expect(service.deletePortfolioSnapshot).not.toHaveBeenCalled();
+});
+
+test('new in-progress November cannot be closed or registered prematurely', async () => {
+  const service = require('../services/portfolioService');
+  service.subscribePortfolioSnapshots.mockImplementationOnce((uid, onData) => {
+    onData([{ id: 'nov-earning-1', positionId: 'position-1', capturedAt: new Date('2026-11-10T12:00:00Z'), changeType: 'earning', confirmedEarning: 6.12, observedEarning: 6.12, balance: 1006.12 }]);
+    return () => {};
+  });
+  render(<PortfolioDetail />);
+  const close = await screen.findByRole('button', { name: 'Cerrar mes' });
+  expect(close).toBeDisabled();
+  fireEvent.click(close);
+  expect(service.savePortfolioReconciliation).not.toHaveBeenCalled();
+  expect(screen.getByText(/Mes en curso: podés seguir verificando/)).toBeInTheDocument();
 });
