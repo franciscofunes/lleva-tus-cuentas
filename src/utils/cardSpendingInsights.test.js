@@ -18,6 +18,34 @@ test('canonical reviewed linked statements aggregate across banks by month, but 
  expect(ars.low.month).toBe('2026-09');
  expect(ars.suggestedLimit).toBe(193.5);
 });
+test('historical spending never substitutes the total payable for missing verified purchases',()=>{
+ const legacy=[{expenseId:'legacy',approvedByUser:true,period:'2026-10',
+   totals:{ARS:'3728550.67',USD:'0.00'},taxesArs:'550000.00'}];
+ const actual=[{expenseId:'verified',approvedByUser:true,period:'2026-10',
+   purchases:{ARS:'650000.00',USD:'0.00'},totals:{ARS:'950000.00',USD:'0.00'},
+   institution:'Banco QA',cardBrand:'Visa',closingDate:'2026-10-24'}];
+ const linksForBoth=[{expenseId:'legacy',cardId:'a'},{expenseId:'verified',cardId:'b'}];
+ const history=statementMonthlyHistory([...legacy,...actual],linksForBoth,cards);
+ expect(history.find(row=>row.month==='2026-10'&&row.currency==='ARS')).toMatchObject({
+   total:650000,statementCount:1,entries:[{
+     purchases:650000,statementTotal:950000,institution:'Banco QA',
+   }],
+ });
+ expect(statementMonthlyHistory(legacy,linksForBoth,cards)).toEqual([]);
+});
+test('same PDF hash linked to separate expenses cannot inflate historical record twice',()=>{
+ const sha='f'.repeat(64);
+ const samePdf=[
+   {expenseId:'one',fileSha256:sha,approvedByUser:true,period:'2026-10',
+     purchases:{ARS:'100000.00'}},
+   {expenseId:'two',fileSha256:sha,approvedByUser:true,period:'2026-10',
+     purchases:{ARS:'100000.00'}},
+ ];
+ const history=statementMonthlyHistory(samePdf,[
+   {expenseId:'one',cardId:'a'},{expenseId:'two',cardId:'b'},
+ ],cards);
+ expect(history).toMatchObject([{month:'2026-10',currency:'ARS',total:100000,statementCount:1}]);
+});
 test('missing history does not pretend month with no PDF means zero spending',()=>{
  expect(statementMonthExtremes([],'ARS').high).toBeNull();
  expect(statementMonthlyHistory([{...statements[0],approvedByUser:false}],links,cards)).toEqual([]);
