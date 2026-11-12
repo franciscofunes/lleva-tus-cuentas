@@ -131,7 +131,8 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
       {onRevealValues && <button type='button' className={action} onClick={onRevealValues}>Mostrar importes y continuar</button>}
     </div> : <>
       {mode==='photo' ? <div className='space-y-3'>
-        <LocalScreenshotOcr onRecognized={photoRecognized} disabled={busy} privacyHidden={privacyHidden} compact/>
+        <LocalScreenshotOcr onRecognized={photoRecognized} disabled={busy} privacyHidden={privacyHidden} compact
+          onCleared={()=>{setDetectedText('');setPhoto(initialPhoto);setReview(null);setConfirmedOCR(false);setError('');}}/>
         {detectedText && <>
           <p role='status' className='rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100'>Lectura automática sin verificar. Los campos vacíos no fueron reconocidos: compará fecha, importes y tarjeta con la captura original.</p>
           <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
