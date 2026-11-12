@@ -184,6 +184,9 @@ test('OCR import is discoverable in Mis bancos before opening a bank or card', a
   expect(screen.queryByText('Supermercado de prueba')).not.toBeInTheDocument();
   fireEvent.click(action);
   const dialog = screen.getByRole('dialog', { name: 'Importar consumos desde capturas o Markdown' });
+  expect(dialog).toHaveClass('h-auto');
+  expect(dialog).toHaveClass('max-h-[calc(100svh-1rem)]');
+  expect(dialog).not.toHaveClass('h-[100dvh]');
   expect(within(dialog).getByText(/Mostrá los importes de Bancos/)).toBeInTheDocument();
   fireEvent.click(within(dialog).getByRole('button', { name: 'Mostrar importes y continuar' }));
   expect(within(dialog).getByLabelText('Elegir captura para lectura local')).toBeInTheDocument();
