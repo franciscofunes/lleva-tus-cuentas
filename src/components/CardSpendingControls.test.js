@@ -32,6 +32,7 @@ test('exact remaining is visually critical orange, historical comparison stays c
 test('changing a draft does not save it and previews exact exceeded amount in rose',async()=>{
   const onSave=jest.fn().mockResolvedValue(undefined);
   view({onSave});
+  fireEvent.click(screen.getByText('Editar tope y avisos · ARS'));
   fireEvent.change(screen.getByLabelText('Tope mensual ARS'),{target:{value:'1250000'}});
   const card=screen.getByLabelText('Margen antes del tope en ARS');
   expect(card).toHaveClass('border-rose-600/60');
@@ -70,6 +71,7 @@ test('hiding and revealing amounts preserves unsaved draft limits without writin
   const onSave=jest.fn();
   const common={budgets,history,spent,statuses:[],onSave,onAskLita:jest.fn(),onImportMarkdown:jest.fn()};
   const {rerender}=render(<CardSpendingControls {...common} canShowValues/>);
+  fireEvent.click(screen.getByText('Editar tope y avisos · ARS'));
   fireEvent.change(screen.getByLabelText('Tope mensual ARS'),{target:{value:'1250000'}});
   expect(screen.getByLabelText('Tope mensual ARS')).toHaveValue(1250000);
   rerender(<CardSpendingControls {...common} canShowValues={false}/>);
@@ -81,8 +83,18 @@ test('hiding and revealing amounts preserves unsaved draft limits without writin
 test('imports and Lita buttons invoke existing authorized flows',()=>{
   const onAskLita=jest.fn(),onImportMarkdown=jest.fn();
   view({onAskLita,onImportMarkdown});
-  fireEvent.click(screen.getByRole('button',{name:/Importar consumos desde capturas/}));
+  fireEvent.click(screen.getByRole('button',{name:/Importar captura/}));
+  fireEvent.click(screen.getByText('Ayuda y opciones de avisos'));
   fireEvent.click(screen.getByRole('button',{name:/Pedirle a Lita/}));
   expect(onAskLita).toHaveBeenCalledTimes(1);
   expect(onImportMarkdown).toHaveBeenCalledTimes(1);
+});
+
+test('current registered spending and remaining amount lead the ARS panel',()=>{
+  view();
+  const card=screen.getByText('Tarjetas en ARS').closest('section');
+  expect(card).toHaveTextContent('Gastado en este ciclo');
+  expect(card).toHaveTextContent('75.066,07');
+  expect(within(card).getByText('Editar tope y avisos · ARS').closest('details')).not.toHaveAttribute('open');
+  expect(within(card).getByText('Comparar con resúmenes anteriores · ARS').closest('details')).not.toHaveAttribute('open');
 });
