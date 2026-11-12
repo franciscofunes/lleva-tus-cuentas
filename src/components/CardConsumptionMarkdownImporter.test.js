@@ -33,12 +33,12 @@ test('ChatGPT Markdown is read-only until bank/card review and explicit final co
  expect(onSave).not.toHaveBeenCalled();
  expect(screen.getByText(/475000/)).toBeInTheDocument();
  expect(screen.getAllByText(/Farmacia/).length).toBeGreaterThan(0);
- expect(screen.getByRole('button',{name:/Confirmar/})).toBeDisabled();
+ expect(screen.getByRole('button',{name:/Guardar/})).toBeDisabled();
  fireEvent.change(screen.getByLabelText('Banco registro 1'),{target:{value:'ciudad'}});
  fireEvent.change(screen.getByLabelText('Tarjeta registro 1'),{target:{value:'visa'}});
  fireEvent.change(screen.getByLabelText('Banco registro 2'),{target:{value:'galicia'}});
  fireEvent.change(screen.getByLabelText('Tarjeta registro 2'),{target:{value:'master'}});
- fireEvent.click(screen.getByRole('button',{name:'Confirmar 2 registro(s)'}));
+ fireEvent.click(screen.getByRole('button',{name:'Guardar 2 registro(s)'}));
  await waitFor(()=>expect(onSave).toHaveBeenCalledTimes(1));
  const saved=onSave.mock.calls[0][0];
  expect(saved).toHaveLength(2);
@@ -61,9 +61,9 @@ test('blocks purchases that match an already registered bank/card/date/amount/me
  fireEvent.change(screen.getByLabelText('Banco registro 2'),{target:{value:'galicia'}});
  fireEvent.change(screen.getByLabelText('Tarjeta registro 2'),{target:{value:'master'}});
  expect(screen.getByText(/compra coincide con un consumo existente/)).toBeInTheDocument();
- expect(screen.getByRole('button',{name:/Confirmar/})).toBeDisabled();
+ expect(screen.getByRole('button',{name:/Guardar/})).toBeDisabled();
  fireEvent.click(screen.getByLabelText('Importar registro 2'));
- expect(screen.getByRole('button',{name:'Confirmar 1 registro(s)'})).not.toBeDisabled();
+ expect(screen.getByRole('button',{name:'Guardar 1 registro(s)'})).not.toBeDisabled();
  expect(onSave).not.toHaveBeenCalled();
 });
 
@@ -82,14 +82,16 @@ test('reviewed local OCR snapshot uses the existing safe card import path',async
  expect(onSave).not.toHaveBeenCalled();
  fireEvent.change(screen.getByLabelText('Banco para la captura'),{target:{value:'ciudad'}});
  fireEvent.change(screen.getByLabelText('Tarjeta para la captura'),{target:{value:'visa'}});
- fireEvent.click(screen.getByRole('button',{name:'Revisar datos detectados'}));
- expect(screen.getByRole('button',{name:'Confirmar 1 registro(s)'})).not.toBeDisabled();
- fireEvent.click(screen.getByRole('button',{name:'Confirmar 1 registro(s)'}));
+ fireEvent.click(screen.getByRole('button',{name:'Ver resumen para confirmar'}));
+ expect(screen.getByRole('button',{name:'Guardar 1 registro(s)'})).toBeDisabled();
+ fireEvent.click(screen.getByLabelText(/Revisé importes, fecha, banco y tarjeta/));
+ expect(screen.getByRole('button',{name:'Guardar 1 registro(s)'})).not.toBeDisabled();
+ fireEvent.click(screen.getByRole('button',{name:'Guardar 1 registro(s)'}));
  await waitFor(()=>expect(onSave).toHaveBeenCalledWith([expect.objectContaining({
   type:'snapshot',bankId:'ciudad',cardId:'visa',
   snapshot:expect.objectContaining({currentConsumptionARS:475000,currentConsumptionUSD:20,asOf:'2026-10-18'})
  })]));
- await waitFor(()=>expect(screen.getByRole('button',{name:'Confirmar 1 registro(s)'})).not.toBeDisabled());
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar 1 registro(s)'})).not.toBeDisabled());
 });
 
 test('privacy mode does not expose or save recognized amounts',()=>{
@@ -98,5 +100,22 @@ test('privacy mode does not expose or save recognized amounts',()=>{
  expect(screen.getByText(/Mostrá los importes de Bancos/)).toBeInTheDocument();
  expect(screen.queryByLabelText('Elegir captura para lectura local')).not.toBeInTheDocument();
  expect(screen.queryByRole('button',{name:/Confirmar.*registro/})).not.toBeInTheDocument();
+ expect(onSave).not.toHaveBeenCalled();
+});
+
+test('photo import never enables save before explicit OCR verification', async()=>{
+ OCR.mockImplementation(()=>({load:jest.fn().mockResolvedValue(undefined),
+  read:jest.fn().mockResolvedValue({text:'Consumos ARS 500,00\\nFecha de consulta: 18/10/2026',lines:[]}),
+  dispose:jest.fn().mockResolvedValue(undefined)}));
+ const onSave=jest.fn();
+ render(<CardConsumptionMarkdownImporter banks={banks} cards={cards} charges={[]} onSave={onSave} onClose={jest.fn()}/>);
+ fireEvent.change(screen.getByLabelText('Elegir captura para lectura local'),{target:{files:[new File(['x'],'banco.png',{type:'image/png'})]}});
+ fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
+ await waitFor(()=>expect(screen.getByLabelText('Consumos ARS detectados')).toHaveValue('500,00'));
+ expect(screen.getByText(/Lectura automática sin verificar/)).toBeInTheDocument();
+ fireEvent.change(screen.getByLabelText('Banco para la captura'),{target:{value:'ciudad'}});
+ fireEvent.change(screen.getByLabelText('Tarjeta para la captura'),{target:{value:'visa'}});
+ fireEvent.click(screen.getByRole('button',{name:'Ver resumen para confirmar'}));
+ expect(screen.getByRole('button',{name:'Guardar 1 registro(s)'})).toBeDisabled();
  expect(onSave).not.toHaveBeenCalled();
 });
