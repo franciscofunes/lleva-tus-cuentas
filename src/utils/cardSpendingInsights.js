@@ -10,28 +10,41 @@ const finiteMoney = value => {
   return Number.isFinite(n) && n>=0 && n<1e12?n:null;
 };
 export function statementMonthlyHistory(statements=[],links=[],cards=[]) {
-  const ownerCardIds=new Set(cards.map(c=>c.id));
-  const byExpense=new Map();
-  const linksByExpense=new Map(links.filter(l=>ownerCardIds.has(l.cardId)).map(l=>[l.expenseId,l]));
+  const ownedCards=new Map(cards.map(c=>[c.id,c]));
+  const linksByExpense=new Map(links.filter(l=>ownedCards.has(l.cardId)&&l.expenseId)
+    .map(l=>[l.expenseId,l]));
+  const seenPdf=new Set();
+  const groups=new Map();
   statements.forEach(s=>{
     const link=linksByExpense.get(s.expenseId);
-    if(!link || byExpense.has(s.expenseId) || !s.approvedByUser) return;
+    if(!link||!s.approvedByUser)return;
     const month=monthOf(s);
     if(!month)return;
-    byExpense.set(s.expenseId,{...s,month});
-  });
-  const groups=new Map();
-  byExpense.forEach(s=>{
+    // A PDF can accidentally be linked via multiple expense records. Count the
+    // same reviewed PDF only once, even if its expense/link ID is different.
+    const sha=String(s.fileSha256||s.id||'');
+    const pdfKey=/^[a-f0-9]{64}$/i.test(sha)?'pdf:'+sha.toLowerCase():'expense:'+s.expenseId;
+    if(seenPdf.has(pdfKey))return;
+    seenPdf.add(pdfKey);
     for(const currency of ['ARS','USD']){
+      // The amount payable is NOT spending: it can include old balances, fees,
+      // taxes, FX adjustments and credits. Never use totals as a fallback.
+      // Legacy PDFs without a verified purchase subtotal are not comparable.
       const purchase=finiteMoney(s.purchases?.[currency]);
-      const total=finiteMoney(s.totals?.[currency]);
-      const amount=purchase===null?total:purchase;
-      if(amount===null)continue;
-      const key=s.month+'-'+currency;
-      const group=groups.get(key)||{month:s.month,currency,total:0,statementCount:0,estimatedFromTotal:false};
-      group.total=Math.round((group.total+amount)*100)/100;
+      if(purchase===null)continue;
+      const key=month+'-'+currency;
+      const group=groups.get(key)||{month,currency,total:0,statementCount:0,entries:[]};
+      group.total=Math.round((group.total+purchase)*100)/100;
       group.statementCount++;
-      if(purchase===null)group.estimatedFromTotal=true;
+      const card=ownedCards.get(link.cardId);
+      group.entries.push({
+        expenseId:s.expenseId,
+        institution:String(s.institution||'Banco no identificado'),
+        card:String(card?.nickname||s.cardBrand||'Tarjeta'),
+        closingDate:validDate(s.closingDate)?s.closingDate:null,
+        purchases:purchase,
+        statementTotal:finiteMoney(s.totals?.[currency]),
+      });
       groups.set(key,group);
     }
   });

@@ -104,8 +104,8 @@ function HistoricalReference({peak,currency,visible}) {
         <FiInfo aria-hidden='true' /> Comparación con tu récord histórico
       </p>
       <p className='text-xs leading-relaxed'>
-        Este ciclo representa {visible ? peak.percentage + '%' : '••••'} del mayor consumo
-        registrado ({peak.peakMonth}: {visible ? fmt(peak.peak,currency) : '••••'}).
+        Este ciclo representa {visible ? peak.percentage + '%' : '••••'} del mayor subtotal de compras
+        identificado en PDFs revisados ({peak.peakMonth}: {visible ? fmt(peak.peak,currency) : '••••'}).
       </p>
       <div className='h-2 overflow-hidden rounded-full bg-cyan-200/80 dark:bg-slate-700'
         role='progressbar' aria-label={'Porcentaje del récord histórico en ' + currency}
@@ -114,8 +114,8 @@ function HistoricalReference({peak,currency,visible}) {
           style={{width: Math.min(100,peak.ratio*100)+'%'}} />
       </div>
       <p className='text-xs text-cyan-800 dark:text-cyan-200'>
-        Es una referencia basada en PDFs vinculados de todos los bancos, no un límite aconsejado.
-        Los ciclos y meses pueden no coincidir o estar incompletos.
+        Solo se usan subtotales de compras de PDFs vinculados y revisados, sin saldos anteriores ni impuestos.
+        Los períodos pueden estar incompletos o no coincidir con el mes de compra.
       </p>
     </div>
   );
@@ -259,8 +259,35 @@ export default function CardSpendingControls({
                 <FiTrendingDown className='text-cyan-600 dark:text-cyan-400' aria-hidden='true'/>
                 Mínimo: <strong>{historyStats.low.month} · {canShowValues?fmt(historyStats.low.total,currency):'••••'}</strong>
               </p>
+              <p className='text-xs leading-relaxed text-slate-600 dark:text-slate-300'>
+                El máximo suma los subtotales de compras de los resúmenes vinculados a ese período,
+                no los importes a pagar. Puede incluir varios bancos y ciclos de cierre diferentes.
+              </p>
+              <details className='rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
+                <summary className='cursor-pointer font-semibold text-violet-700 dark:text-violet-200'>
+                  Ver origen del máximo · {historyStats.high.statementCount} resumen(es)
+                </summary>
+                <div className='mt-3 space-y-3'>
+                  {(historyStats.high.entries||[]).length ? historyStats.high.entries.map((entry,index)=>(
+                    <div className='border-b border-slate-200 pb-3 last:border-0 last:pb-0 dark:border-slate-700'
+                      key={entry.expenseId||index}>
+                      <p className='font-bold text-slate-800 dark:text-slate-100'>
+                        {entry.institution} · {entry.card}
+                      </p>
+                      {entry.closingDate&&<p>Cierre: {entry.closingDate}</p>}
+                      <p>Compras incluidas: <strong>{canShowValues?fmt(entry.purchases,currency):'••••'}</strong></p>
+                      {entry.statementTotal!==null&&entry.statementTotal!==undefined&&
+                        <p>Total a pagar del PDF (no sumado): {canShowValues?fmt(entry.statementTotal,currency):'••••'}</p>}
+                    </div>
+                  )) : <p>El desglose no está disponible para estos registros.</p>}
+                  <p className='text-slate-600 dark:text-slate-300'>
+                    Si un importe no coincide con el PDF original, revisá el resumen vinculado en Bancos;
+                    este cálculo no modifica tus registros.
+                  </p>
+                </div>
+              </details>
               <div className='rounded-xl bg-slate-50 p-3 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300'>
-                <p className='font-bold'>Referencia sugerida</p>
+                <p className='font-bold'>Referencia orientativa (no es un tope recomendado)</p>
                 <p className='mt-1'>90% del promedio de hasta seis meses con PDF:
                   {' '}<strong>{canShowValues?fmt(historyStats.suggestedLimit,currency):'••••'}</strong>
                 </p>
@@ -271,7 +298,7 @@ export default function CardSpendingControls({
                 </button>
               </div>
             </div>:<p className='text-slate-600 dark:text-slate-300'>
-              Todavía no hay resúmenes PDF vinculados para comparar meses.
+              No hay subtotales de compras verificados en los PDFs vinculados. El total a pagar de un resumen no se usa como gasto histórico.
             </p>}
           </div>
             </div>
@@ -281,7 +308,7 @@ export default function CardSpendingControls({
     </div>
     <p className='text-xs text-slate-600 dark:text-slate-300'>
       Los meses sin PDF son datos faltantes, no meses de gasto cero. Las referencias históricas
-      son orientativas y pueden incluir ciclos incompletos.
+      son orientativas, corresponden al período de cada resumen y pueden incluir ciclos incompletos.
     </p>
     <details className='rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
       <summary className='flex min-h-[44px] cursor-pointer items-center text-sm font-bold text-violet-700 dark:text-violet-200'>Ayuda y opciones de avisos</summary>
