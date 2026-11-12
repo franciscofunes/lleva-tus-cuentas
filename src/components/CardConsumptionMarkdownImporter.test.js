@@ -122,7 +122,7 @@ test('photo import never enables save before explicit OCR verification', async()
 
 test('selecting a second image hides the first OCR values until it is read',async()=>{
  OCR.mockImplementation(()=>({load:jest.fn().mockResolvedValue(undefined),
-  read:jest.fn().mockResolvedValue({text:'Consumos ARS 500,00\\nFecha de consulta: 18/10/2026',lines:[]}),
+  read:jest.fn().mockResolvedValue({text:'Consumos ARS 500,00\nFecha de consulta: 18/10/2026',lines:[]}),
   dispose:jest.fn().mockResolvedValue(undefined)}));
  render(<CardConsumptionMarkdownImporter banks={banks} cards={cards} charges={[]} onSave={jest.fn()} onClose={jest.fn()}/>);
  const picker=screen.getByLabelText('Elegir captura para lectura local');
