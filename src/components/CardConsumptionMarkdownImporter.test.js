@@ -119,3 +119,17 @@ test('photo import never enables save before explicit OCR verification', async()
  expect(screen.getByRole('button',{name:'Guardar 1 registro(s)'})).toBeDisabled();
  expect(onSave).not.toHaveBeenCalled();
 });
+
+test('selecting a second image hides the first OCR values until it is read',async()=>{
+ OCR.mockImplementation(()=>({load:jest.fn().mockResolvedValue(undefined),
+  read:jest.fn().mockResolvedValue({text:'Consumos ARS 500,00\\nFecha de consulta: 18/10/2026',lines:[]}),
+  dispose:jest.fn().mockResolvedValue(undefined)}));
+ render(<CardConsumptionMarkdownImporter banks={banks} cards={cards} charges={[]} onSave={jest.fn()} onClose={jest.fn()}/>);
+ const picker=screen.getByLabelText('Elegir captura para lectura local');
+ fireEvent.change(picker,{target:{files:[new File(['a'],'first.png',{type:'image/png'})]}});
+ fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
+ await waitFor(()=>expect(screen.getByLabelText('Consumos ARS detectados')).toHaveValue('500,00'));
+ fireEvent.change(picker,{target:{files:[new File(['b'],'second.png',{type:'image/png'})]}});
+ expect(screen.queryByLabelText('Consumos ARS detectados')).not.toBeInTheDocument();
+ expect(screen.queryByLabelText('Banco para la captura')).not.toBeInTheDocument();
+});
