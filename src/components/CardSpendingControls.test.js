@@ -29,6 +29,18 @@ test('exact remaining is visually critical orange, historical comparison stays c
   expect(within(record).getByText(/1.785.390,07/)).toBeInTheDocument();
   expect(screen.getByLabelText('Margen antes del tope en USD')).toHaveClass('border-emerald-500/40');
 });
+test('peak includes a breakdown of verified purchases, not total payable balances',()=>{
+ const checked=[{month:'2026-10',currency:'ARS',total:650000,statementCount:1,
+   entries:[{expenseId:'verified',institution:'Banco QA',card:'Visa',
+     closingDate:'2026-10-24',purchases:650000,statementTotal:950000}]}];
+ view({history:checked});
+ const ars=screen.getByText('Tarjetas en ARS').closest('section');
+ fireEvent.click(within(ars).getByText('Comparar con resúmenes anteriores · ARS'));
+ fireEvent.click(within(ars).getByText('Ver origen del máximo · 1 resumen(es)'));
+ expect(within(ars).getByText('Compras incluidas:',{exact:false})).toHaveTextContent('650.000,00');
+ expect(within(ars).getByText('Total a pagar del PDF (no sumado):',{exact:false}))
+   .toHaveTextContent('950.000,00');
+});
 test('changing a draft does not save it and previews exact exceeded amount in rose',async()=>{
   const onSave=jest.fn().mockResolvedValue(undefined);
   view({onSave});
