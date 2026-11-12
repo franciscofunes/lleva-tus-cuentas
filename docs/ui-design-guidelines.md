@@ -77,6 +77,15 @@ Mobile contract: use breakable amounts and tabular digits; ARS and USD separate;
 
 All future push/email/SMS copy must avoid disclosing exact amounts on shared device lock screens by default.
 
+### Topes y consumos — jerarquía y revisión móvil (noviembre 2026)
+
+- **Primera lectura:** consumo registrado en cada moneda → margen frente al tope → acciones opcionales. Configurar el tope/avisos y comparar resúmenes históricos son paneles secundarios cerrados por defecto cuando ya existe un presupuesto. La falta de presupuesto abre su editor; no inventa margen.
+- **Entrada principal:** «Importar captura» aparece antes de la cuadrícula de ARS/USD. Las opciones avanzadas de notificaciones y ayuda de Lita no compiten con el valor actual.
+- **Modal de importación:** solo este importador usa `mobileFullScreen`; en teléfonos ocupa el viewport, conserva cierre, foco y desplazamiento interno. Controles de 16 px y acciones finales accesibles cerca del pulgar; el resto de `GenericModal` conserva su tamaño habitual.
+- **OCR no verificado:** muestra claramente los campos reconocidos y vacíos; al leer una captura nueva se descartan banco/tarjeta e importes anteriores. Para guardar una captura hace falta confirmar expresamente los importes y la asociación. Cambiar banco, tarjeta o selección invalida esa confirmación.
+- **Monedas mixtas:** si la misma línea de OCR parece contener ARS y USD, el extractor deja ambos montos vacíos para revisión en lugar de asignar el primero a las dos monedas. Los resúmenes PDF no se suman al consumo corriente ni se crean gastos de Transacciones por importar capturas.
+- **QA:** validar a 360/390 px con teclado abierto y viewport reducido, dark/light, fotos de una y varias tarjetas, fechas/importe OCR ausentes, moneda doble, duplicados, privacidad, errores y reintento. Verificar interacciones reales en preview antes de fusionar.
+
 ### Budget privacy is a structural state
 
 When Bancos privacy is hidden, `CardSpendingControls` replaces the ARS/USD budget content with neutral, non-financial placeholders and one shared reveal action. It must not mount saved/draft limit inputs, spending totals, history amounts, risk categories, visual progress widths, or `aria-valuenow` percentages; visually masked text alone would leave values in the DOM and accessibility tree. Revealing the data restores the existing unsaved local drafts without persistence. This uses the parent page's privacy toggle and does not change ARS/USD calculations, budget records, or notification settings.
