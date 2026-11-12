@@ -266,7 +266,7 @@ export default function CardSpendingControls({
                 </p>
                 <p className='mt-1'>No se guarda automáticamente ni representa capacidad de pago.</p>
                 <button type='button' className={smallBtn+' mt-3'}
-                  onClick={()=>patch(currency,{limit:String(historyStats.suggestedLimit)})}>
+                  onClick={()=>{patch(currency,{limit:String(historyStats.suggestedLimit)});setSettingsOpen(prev=>({...prev,[currency]:true}));}}>
                   Usar referencia
                 </button>
               </div>
