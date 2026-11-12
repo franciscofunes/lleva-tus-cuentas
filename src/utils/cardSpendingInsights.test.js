@@ -1,4 +1,4 @@
-import {statementMonthlyHistory,statementMonthExtremes,cardMonthManualSpending,cardCycleDates,budgetStatus,historicalPeakStatus} from './cardSpendingInsights';
+import {statementMonthlyHistory,cardStatementExpenseHistory,statementMonthExtremes,cardMonthManualSpending,cardCycleDates,budgetStatus,historicalPeakStatus} from './cardSpendingInsights';
 const cards=[{id:'a',bankId:'city',closingDay:25,dueDay:10},{id:'b',bankId:'santander',closingDay:28,dueDay:12}];
 const statements=[
  {expenseId:'e1',approvedByUser:true,closingDate:'2026-08-25',period:'2026-08',purchases:{ARS:'100.00',USD:'10.00'},totals:{ARS:'145.00',USD:'10.00'}},
@@ -45,6 +45,49 @@ test('same PDF hash linked to separate expenses cannot inflate historical record
    {expenseId:'one',cardId:'a'},{expenseId:'two',cardId:'b'},
  ],cards);
  expect(history).toMatchObject([{month:'2026-10',currency:'ARS',total:100000,statementCount:1}]);
+});
+test('regression: two October summary expenses match the chart, never four PDFs grouped by billing period',()=>{
+ const expenses=[
+  {id:'one-oct',category:'Resumen tarjeta 💳',selectedDate:'2026-10-09',
+   expenseName:'Banco QA Uno Visa',amount:730000.25,transactionCurrency:'ARS'},
+  {id:'two-oct',category:'Resumen tarjeta 💳',selectedDate:'2026-10-13',
+   expenseName:'Banco QA Dos Visa',amount:125000.5},
+  {id:'one-nov',category:'Resumen tarjeta 💳',selectedDate:'2026-11-09',
+   expenseName:'Banco QA Uno Visa',amount:600000.1},
+  {id:'two-nov',category:'Resumen tarjeta 💳',selectedDate:'2026-11-13',
+   expenseName:'Banco QA Dos Visa',amount:350000.2},
+ ];
+ // Four imported PDFs could share their billing period but represent
+ // separate transactions in October and November.
+ const pdfs=expenses.map((row,index)=>({
+   id:String(index).padStart(64,'a'),expenseId:row.id,approvedByUser:true,
+   period:'2026-10',closingDate:'2026-10-04',
+   purchases:{ARS:String(row.amount)},totals:{ARS:String(row.amount)},
+ }));
+ const links=expenses.map(x=>({expenseId:x.id,cardId:'a'}));
+ const history=cardStatementExpenseHistory(expenses,pdfs,links);
+ const october=history.find(x=>x.month==='2026-10'&&x.currency==='ARS');
+ expect(october).toMatchObject({total:855000.75,statementCount:2,source:'transactions'});
+ expect(october.entries).toHaveLength(2);
+ expect(october.entries.every(x=>x.pdfPeriod==='2026-10')).toBe(true);
+ expect(history.find(x=>x.month==='2026-11'&&x.currency==='ARS').total).toBe(950000.3);
+ expect(statementMonthlyHistory(pdfs,links,cards).find(x=>x.month==='2026-10').total)
+   .toBe(1805001.05);
+});
+test('history ignores income, other expenses, duplicates, malformed amounts and invalid dates',()=>{
+ const base={id:'ok',category:'Resumen tarjeta 💳',selectedDate:'2026-10-09',amount:300,
+   expenseName:'Visa'};
+ const result=cardStatementExpenseHistory([
+   base, {...base}, {...base,id:'badDate',selectedDate:'2026-13-10'},
+   {...base,id:'income',category:'Venta divisas',amount:10000},
+   {...base,id:'object',amount:Object.create(null)},
+   {...base,id:'negative',amount:-30},
+   {...base,id:'usd',transactionCurrency:'USD',amount:25},
+ ]);
+ expect(result).toMatchObject([
+   {month:'2026-10',currency:'ARS',total:300,statementCount:1},
+   {month:'2026-10',currency:'USD',total:25,statementCount:1},
+ ]);
 });
 test('missing history does not pretend month with no PDF means zero spending',()=>{
  expect(statementMonthExtremes([],'ARS').high).toBeNull();

@@ -29,17 +29,20 @@ test('exact remaining is visually critical orange, historical comparison stays c
   expect(within(record).getByText(/1.785.390,07/)).toBeInTheDocument();
   expect(screen.getByLabelText('Margen antes del tope en USD')).toHaveClass('border-emerald-500/40');
 });
-test('peak includes a breakdown of verified purchases, not total payable balances',()=>{
- const checked=[{month:'2026-10',currency:'ARS',total:650000,statementCount:1,
-   entries:[{expenseId:'verified',institution:'Banco QA',card:'Visa',
-     closingDate:'2026-10-24',purchases:650000,statementTotal:950000}]}];
+test('peak is traceable to dated Transactions and its PDF is only reconciliation metadata',()=>{
+ const checked=[{month:'2026-10',currency:'ARS',total:650000,statementCount:1,source:'transactions',
+   entries:[{expenseId:'verified',institution:'Banco QA Visa',
+     transactionDate:'2026-10-13',amount:650000,linkedPdf:true,
+     pdfPeriod:'2026-09',pdfClosingDate:'2026-09-24',
+     pdfPurchases:600000,pdfTotal:950000}]}];
  view({history:checked});
  const ars=screen.getByText('Tarjetas en ARS').closest('section');
  fireEvent.click(within(ars).getByText('Comparar con resúmenes anteriores · ARS'));
- fireEvent.click(within(ars).getByText('Ver origen del máximo · 1 resumen(es)'));
- expect(within(ars).getByText('Compras incluidas:',{exact:false})).toHaveTextContent('650.000,00');
- expect(within(ars).getByText('Total a pagar del PDF (no sumado):',{exact:false}))
-   .toHaveTextContent('950.000,00');
+ fireEvent.click(within(ars).getByText('Ver movimientos del máximo · 1 transacción(es)'));
+ expect(within(ars).getByText('Resumen registrado:',{exact:false})).toHaveTextContent('650.000,00');
+ expect(within(ars).getByText('Período del PDF:',{exact:false})).toHaveTextContent('2026-09');
+ expect(within(ars).getByText('Compras del PDF:',{exact:false})).toHaveTextContent('600.000,00');
+ expect(within(ars).getByText('Total del PDF:',{exact:false})).toHaveTextContent('950.000,00');
 });
 test('changing a draft does not save it and previews exact exceeded amount in rose',async()=>{
   const onSave=jest.fn().mockResolvedValue(undefined);

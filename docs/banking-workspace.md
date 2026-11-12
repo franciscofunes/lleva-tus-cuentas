@@ -105,12 +105,24 @@ toast and optional native browser notification (with user-granted permission)
 work while LTC is open. Background push notifications with app closed require
 a separate push service and are not claimed here.
 
-The history graph/high-low panel uses imported, approved and **linked** PDF
-summaries. Deduplicate by expenseId; use `purchases` per native currency,
-falling back to `totals` only with an explicit "estimated" flag. A month
-without a valid PDF is *missing*, never a zero-spending month. A numerical
-reference of 90% of average of up to six statement months is only an initial
-suggestion, never an automatically applied or guaranteed maximum.
+The history high/low panel now reads the SAME `Resumen tarjeta` expense
+transactions used by the Transactions spending-by-category bar chart.
+Only owner-scoped expenses with valid `selectedDate` and positive amounts
+participate, grouped by the transaction date's year/month (not a PDF billing
+`period`). A second Firestore expense is not created, and linked PDF purchases
+are never summed on top of the transaction. The owner-scoped expenses query is
+bounded to the `Resumen tarjeta` category prefix for efficiency.
+
+A PDF with `period: 2026-10` can be attached to a transaction dated in
+November: the **transaction** is counted in November's history, as in the
+chart. Even four PDFs labeled October cannot inflate October if only two
+card-summary expenses were dated in October. The historical detail discloses
+each source expense's date/amount and optional linked PDF reconciliation
+metadata. Statement expense amounts may include taxes and fees, as in the
+Transactions chart; PDF purchase subtotals are not an equivalent metric.
+Months without card-summary expense records are *missing*, not verified zero.
+The 90%-of-up-to-six-month average is only an optional reference, never
+automatically applied or a claim of affordability.
 
 Press **Consultar a Lita sobre mis topes** to open the existing
 `section=banks` assistant. The client passes a sanitized `monthlyCardSpending`
@@ -169,13 +181,15 @@ cycle, plus strictly **later-dated** manual purchases not already in that
 snapshot. It never sums a bank snapshot with all preceding manual charges,
 nor adds historic summary PDFs to current spending. Cards with no screenshot
 fall back to manually recorded purchases in their open cycle. Both figures
-can be incomplete; historical PDF months and bank card cycles are not
-perfectly aligned.
+can be incomplete; historical monthly Transactions records and current
+open card cycles are different scopes and must not be called directly equivalent.
 
 The separate **historical maximum** signal compares the partial,
 cross-bank per-currency current cycle to the highest eligible monthly
-aggregate from linked reviewed statement PDFs, with warnings at 80%, 95%
-and 100% of that reference. Historical peaks are not affordability targets.
+aggregate of dated `Resumen tarjeta` transactions, with warnings at 80%,
+95% and 100% of that reference. The comparison is explicitly labeled approximate
+because it contrasts an open-cycle estimate with monthly recorded statement
+expenses. Historical peaks are not affordability targets.
 The user can pick a more conservative personal budget after consulting
 Lita's existing LLM providers. Warnings are deterministic and require
 an open LTC session; no LLM call is triggered on every card purchase.

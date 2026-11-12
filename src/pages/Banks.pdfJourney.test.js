@@ -36,6 +36,7 @@ jest.mock('../services/bankingService',()=>({
   subscribeBanks:jest.fn(),subscribeBankAccounts:jest.fn(),
   subscribeBankCards:jest.fn(),subscribeBankCharges:jest.fn(),
   subscribeBankStatementLinks:jest.fn(),subscribeImportedStatements:jest.fn(),
+  subscribeCardStatementExpenses:jest.fn(),
   createBankBundle:jest.fn(),renameUserBank:jest.fn(),
   saveBankAccount:jest.fn(),saveBankCard:jest.fn(),saveManualCardCharge:jest.fn(),
   deleteManualCardCharge:jest.fn(),saveStatementBankLink:jest.fn(),
@@ -75,13 +76,13 @@ beforeEach(()=>{
   mockDb={
     banks:[{id:'qa-bank',code:'qa-bank',name:'LTC QA Banco',active:true}],
     cards:[{id:'qa-card',bankId:'qa-bank',nickname:'LTC QA Visa',brand:'Visa',lastFour:'4321',closingDay:2,dueDay:15}],
-    accounts:[],charges:[],links:[],statements:[],items:[],
+    accounts:[],charges:[],links:[],statements:[],statementExpenses:[],items:[],
   };
   mockListeners={};
   for(const [method,field] of Object.entries({
     subscribeBanks:'banks',subscribeBankAccounts:'accounts',subscribeBankCards:'cards',
     subscribeBankCharges:'charges',subscribeBankStatementLinks:'links',
-    subscribeImportedStatements:'statements',
+    subscribeImportedStatements:'statements',subscribeCardStatementExpenses:'statementExpenses',
   })) bind(method,field);
   analyzeStatementPdf.mockResolvedValue(originalDraft);
   verifyStatementDraft.mockReturnValue(true);

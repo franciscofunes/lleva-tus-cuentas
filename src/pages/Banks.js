@@ -30,14 +30,14 @@ import { getCategoriesDataAction, storeDataAction } from '../actionCreators/data
 import { getImportedStatement, saveReviewedStatement, verifyStatementDraft } from '../services/cardStatementService';
 import {
   subscribeBanks, subscribeBankAccounts, subscribeBankCards, subscribeBankCharges,
-  subscribeBankStatementLinks, subscribeImportedStatements,
+  subscribeBankStatementLinks, subscribeImportedStatements, subscribeCardStatementExpenses,
   createBankBundle, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge,
   deleteManualCardCharge, importReviewedCardConsumptionMarkdown, saveStatementBankLink, reassignStatementBankLink, unlinkStatementBank,
 } from '../services/bankingService';
 import { sumBankBalances, statementForCard } from '../utils/bankingModel';
 import { buildBanksLitaContext } from '../utils/banksLitaContext';
 import { subscribeBankBudgets, saveBankBudget } from '../services/bankBudgetService';
-import { statementMonthlyHistory, cardMonthManualSpending, cardCycleDates, budgetStatus } from '../utils/cardSpendingInsights';
+import { cardStatementExpenseHistory, cardMonthManualSpending, cardCycleDates, budgetStatus } from '../utils/cardSpendingInsights';
 
 const initialAccount = { bankId: '', name: 'Caja de ahorro', type: 'caja_ahorro', currency: 'ARS', balance: '0', alias: '', cbu: '' };
 const initialCard = { bankId: '', nickname: '', brand: 'Visa', lastFour: '', closingDay: '25', dueDay: '10' };
@@ -181,6 +181,7 @@ function BanksWorkspace({ user }) {
   const [cards, setCards] = useState([]);
   const [charges, setCharges] = useState([]);
   const [statements, setStatements] = useState([]);
+  const [statementExpenses, setStatementExpenses] = useState([]);
   const [links, setLinks] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [budgetError, setBudgetError] = useState(false);
@@ -229,7 +230,7 @@ function BanksWorkspace({ user }) {
 
   useEffect(() => {
     setBanks([]); setAccounts([]); setCards([]); setCharges([]);
-    setStatements([]); setLinks([]); setBudgets([]); setBudgetError(false); setPending(true); setError('');
+    setStatements([]); setStatementExpenses([]); setLinks([]); setBudgets([]); setBudgetError(false); setPending(true); setError('');
     if (!uid) return undefined;
     let active = true;
     const received = new Set();
@@ -238,7 +239,7 @@ function BanksWorkspace({ user }) {
       if (!active) return;
       save(items);
       received.add(index);
-      if (received.size === 6) setPending(false);
+      if (received.size === 7) setPending(false);
     }, report);
     const clean = [
       connect(0, subscribeBanks, setBanks),
@@ -247,6 +248,7 @@ function BanksWorkspace({ user }) {
       connect(3, subscribeBankCharges, setCharges),
       connect(4, subscribeImportedStatements, setStatements),
       connect(5, subscribeBankStatementLinks, setLinks),
+      connect(6, subscribeCardStatementExpenses, setStatementExpenses),
     ];
     const budgetStop=subscribeBankBudgets(uid,(items)=>{if(active){setBudgets(items);setBudgetError(false);}},()=>{if(active)setBudgetError(true);});
     const unsubscribeCategories = dispatch(getCategoriesDataAction(uid));
@@ -254,7 +256,7 @@ function BanksWorkspace({ user }) {
   }, [dispatch, uid]);
 
   const totals = useMemo(() => sumBankBalances(accounts), [accounts]);
-  const history=useMemo(()=>statementMonthlyHistory(statements,links,cards),[statements,links,cards]);
+  const history=useMemo(()=>cardStatementExpenseHistory(statementExpenses,statements,links),[statementExpenses,statements,links]);
   const manualSpend=useMemo(()=>cardMonthManualSpending(charges,statements,links,cards),[charges,statements,links,cards]);
   const budgetStatuses=useMemo(()=>['ARS','USD'].map(currency=>budgetStatus(manualSpend,
     budgets.find(item=>item.currency===currency),currency,manualSpend.month)).filter(Boolean),[manualSpend,budgets]);

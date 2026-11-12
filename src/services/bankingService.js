@@ -18,6 +18,20 @@ export const subscribeBankCards = (uid, onData, onError) => observable(uid, 'ban
 export const subscribeBankCharges = (uid, onData, onError) => observable(uid, 'bankCardCharges', onData, onError);
 export const subscribeBankStatementLinks = (uid, onData, onError) => observable(uid, 'bankStatementLinks', onData, onError);
 export const subscribeImportedStatements = (uid, onData, onError) => observable(uid, 'cardStatements', onData, onError);
+/**
+ * Expense-side statement history, same source of truth as Transactions charts.
+ * Only matching card-statement categories are streamed, not all user expenses.
+ * PDF metadata is never added to these financial totals.
+ */
+export const subscribeCardStatementExpenses = (uid, onData, onError) =>
+  collection(uid, 'expenses')
+    .where('category', '>=', 'Resumen tarjeta')
+    .where('category', '<', 'Resumen tarjetb')
+    .onSnapshot(
+      (snapshot) => onData(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))),
+      (error) => onError?.(error)
+    );
+
 
 // Atomic first-time bank onboarding: account/card docs reference the new bank.
 // Firestore rules use existsAfter for owner-scoped child writes in the same batch.
