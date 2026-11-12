@@ -105,7 +105,7 @@ test('privacy mode does not expose or save recognized amounts',()=>{
 
 test('photo import never enables save before explicit OCR verification', async()=>{
  OCR.mockImplementation(()=>({load:jest.fn().mockResolvedValue(undefined),
-  read:jest.fn().mockResolvedValue({text:'Consumos ARS 500,00\\nFecha de consulta: 18/10/2026',lines:[]}),
+  read:jest.fn().mockResolvedValue({text:'Consumos ARS 500,00\nFecha de consulta: 18/10/2026',lines:[]}),
   dispose:jest.fn().mockResolvedValue(undefined)}));
  const onSave=jest.fn();
  render(<CardConsumptionMarkdownImporter banks={banks} cards={cards} charges={[]} onSave={onSave} onClose={jest.fn()}/>);
