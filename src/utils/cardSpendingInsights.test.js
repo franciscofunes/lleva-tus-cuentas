@@ -20,7 +20,7 @@ test('canonical reviewed linked statements aggregate across banks by month, but 
 });
 test('historical spending never substitutes the total payable for missing verified purchases',()=>{
  const legacy=[{expenseId:'legacy',approvedByUser:true,period:'2026-10',
-   totals:{ARS:'3728550.67',USD:'0.00'},taxesArs:'550000.00'}];
+   totals:{ARS:'9999999.99',USD:'0.00'},taxesArs:'550000.00'}];
  const actual=[{expenseId:'verified',approvedByUser:true,period:'2026-10',
    purchases:{ARS:'650000.00',USD:'0.00'},totals:{ARS:'950000.00',USD:'0.00'},
    institution:'Banco QA',cardBrand:'Visa',closingDate:'2026-10-24'}];
