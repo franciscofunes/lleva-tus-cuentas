@@ -7,7 +7,7 @@ import {
   duplicateChargeFingerprint,suggestCardMatch
 } from '../utils/cardConsumptionMarkdown';
 
-const formInput='mt-1 min-h-[44px] w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50';
+const formInput='mt-1 min-h-[44px] w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-50';
 const action='inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-violet-500/60 px-3 py-2 text-sm font-bold text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200 disabled:opacity-50';
 export const screenshotPrompt=`Tengo capturas de consumos de tarjetas de distintos bancos para LTC$. Leé SOLO datos visibles, nunca inventes operaciones, importes ni fechas. No incluyas CBU/CVV/claves/PAN completo. Generá SOLO Markdown, sin tablas ni explicaciones, con estos registros:
 
@@ -48,20 +48,22 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
   const [enabled,setEnabled]=useState({});
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
+  const [confirmedOCR,setConfirmedOCR]=useState(false);
 
   const updatePhoto=(key,value)=>{
     setPhoto(old=>({...old,[key]:value,...(key==='bankId'?{cardId:''}:{})}));
-    setReview(null);setError('');
+    setReview(null);setError('');setConfirmedOCR(false);
   };
 
   const photoRecognized=({text})=>{
     setDetectedText(text);
     const hints=extractBankOcrHints(text);
     const purchase=extractBankChargeHint(text);
-    setPhoto(current=>({...current,asOf:hints.asOf,ars:hints.currentConsumptionARS,usd:hints.currentConsumptionUSD,
+    // Never inherit the previous image's bank or card.
+    setPhoto({...initialPhoto,asOf:hints.asOf,ars:hints.currentConsumptionARS,usd:hints.currentConsumptionUSD,
       merchant:purchase?.merchant||'',purchaseDate:purchase?.purchaseDate||'',amount:purchase?.amount||'',
-      currency:purchase?.currency||'ARS'}));
-    setReview(null);setError('');
+      currency:purchase?.currency||'ARS'});
+    setReview(null);setError('');setConfirmedOCR(false);
   };
 
   const previewPhoto=()=>{
@@ -70,7 +72,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
     if(!detectedText.trim()||!bank||!card){setError('Leé una captura y elegí el banco y la tarjeta correctos.');return;}
     const raw=cardPhotoToMarkdown({...photo,bank:bank.name,card:card.nickname});
     const parsed=parseCardConsumptionMarkdown(raw);
-    setReview(parsed);setError('');setEnabled({});
+    setReview(parsed);setError('');setEnabled({});setConfirmedOCR(false);
     setAssignments(parsed.valid?{0:{bankId:photo.bankId,cardId:photo.cardId}}:{});
   };
 
@@ -78,7 +80,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
     const parsed=parseCardConsumptionMarkdown(markdown);
     setReview(parsed);setError('');
     // Suggestions are never persisted or selected automatically.
-    setAssignments({});setEnabled({});
+    setAssignments({});setEnabled({});setConfirmedOCR(false);
   };
   const assigned=(index)=>assignments[index]||{bankId:'',cardId:''};
   const existing=new Set(charges.map(row=>duplicateChargeFingerprint({...row,reference:''})));
@@ -93,12 +95,9 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
     if(duplicate(entry,assoc))return 'Registro '+(index+1)+': posible consumo ya registrado. Se bloquea la importación duplicada.';
     return null;
   }).filter(Boolean)||[];
-  const selected=review?.records?.filter((entry,index)=>enabled[index]!==false).map((entry)=>{
-    const i=review.records.indexOf(entry);
-    return {...entry,...assigned(i)};
-  })||[];
+  const selected=review?.records?.map((entry,index)=>enabled[index]!==false?{...entry,...assigned(index)}:null).filter(Boolean)||[];
   const save=async()=>{
-    if(busy||privacyHidden||!review?.valid||!selected.length||issues.length)return;
+    if(busy||privacyHidden||!review?.valid||!selected.length||issues.length||(mode==='photo'&&!confirmedOCR))return;
     setBusy(true);setError('');
     try {
       const result=await onSave(selected);
@@ -113,9 +112,9 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
   return <section aria-label='Importar capturas de consumos' className='space-y-4 pb-4 text-slate-900 dark:text-slate-50'>
     <header className='pr-12'>
       <p className='text-xs font-extrabold uppercase tracking-wider text-violet-700 dark:text-violet-200'>Bancos · importación asistida</p>
-      <h2 className='mt-1 text-xl font-extrabold'>Consumos desde capturas</h2>
+      <h2 className='mt-1 text-xl font-extrabold'>Registrar consumos desde capturas</h2>
       <p className='mt-2 text-sm text-slate-600 dark:text-slate-300'>
-        Elegí una captura o pegá Markdown. Siempre vas a revisar los datos antes de guardarlos.
+        Elegí una captura, corregí los datos reconocidos y confirmá qué guardar.
       </p>
     </header>
     <div className='grid grid-cols-2 gap-2' aria-label='Método de importación'>
@@ -124,7 +123,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
           className={'min-h-[44px] rounded-xl border px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 '+(mode===value
             ? 'border-violet-500 bg-violet-100 text-violet-800 dark:border-violet-500 dark:bg-slate-800 dark:text-violet-200'
             : 'border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200')}
-          onClick={()=>{setMode(value);setReview(null);setError('');}}>{label}</button>
+          onClick={()=>{setMode(value);setReview(null);setError('');setConfirmedOCR(false);}}>{label}</button>
       ))}
     </div>
     {privacyHidden ? <div className='space-y-2 rounded-xl border border-amber-400/50 bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/20 dark:text-amber-200'>
@@ -132,9 +131,10 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
       {onRevealValues && <button type='button' className={action} onClick={onRevealValues}>Mostrar importes y continuar</button>}
     </div> : <>
       {mode==='photo' ? <div className='space-y-3'>
-        <LocalScreenshotOcr onRecognized={photoRecognized} disabled={busy} privacyHidden={privacyHidden}/>
+        <LocalScreenshotOcr onRecognized={photoRecognized} disabled={busy} privacyHidden={privacyHidden} compact
+          onCleared={()=>{setDetectedText('');setPhoto(initialPhoto);setReview(null);setConfirmedOCR(false);setError('');}}/>
         {detectedText && <>
-          <p className='text-xs font-semibold text-amber-700 dark:text-amber-300'>Revisá importes, fechas y tarjeta. Corregí cualquier dato mal leído.</p>
+          <p role='status' className='rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100'>Lectura automática sin verificar. Los campos vacíos no fueron reconocidos: compará fecha, importes y tarjeta con la captura original.</p>
           <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
             <label className='text-sm font-semibold'>Banco de destino
               <select aria-label='Banco para la captura' className={formInput} value={photo.bankId} onChange={e=>updatePhoto('bankId',e.target.value)}>
@@ -189,8 +189,8 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
             <summary className='min-h-[44px] cursor-pointer py-3 font-semibold'>Ver texto reconocido para comparar</summary>
             <pre className='max-h-40 overflow-y-auto whitespace-pre-wrap break-words text-slate-700 dark:text-slate-200'>{detectedText}</pre>
           </details>
-          <button type='button' className={action} onClick={previewPhoto} disabled={busy||!photo.bankId||!photo.cardId}>
-            <FiCheckCircle aria-hidden='true'/> Revisar datos detectados
+          <button type='button' className={action+' w-full justify-center sm:w-auto'} onClick={previewPhoto} disabled={busy}>
+            <FiCheckCircle aria-hidden='true'/> Ver resumen para confirmar
           </button>
           <p className='text-xs text-slate-600 dark:text-slate-300'>Una captura genera un registro. Totales y compras se guardan por separado.</p>
         </>}
@@ -201,7 +201,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
         </div>
         <label className='block text-sm font-semibold'>Pegar Markdown
           <textarea aria-label='Markdown de consumos de tarjetas' rows={10} value={markdown} maxLength={16000}
-            className={formInput+' resize-y font-mono text-xs'} placeholder={exampleCardConsumptionMarkdown}
+            className={formInput+' resize-y !font-mono'} placeholder={exampleCardConsumptionMarkdown}
             onChange={e=>{setMarkdown(e.target.value);setReview(null);setError('');}}/>
         </label>
         <button type='button' className={action} onClick={preview} disabled={!markdown.trim()||busy}>
@@ -224,7 +224,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
           <label className='flex items-center gap-2 font-bold'>
             <input type='checkbox' aria-label={'Importar registro '+(index+1)}
               checked={enabled[index]!==false} disabled={busy}
-              onChange={e=>setEnabled(values=>({...values,[index]:e.target.checked}))}/>
+              onChange={e=>{setConfirmedOCR(false);setEnabled(values=>({...values,[index]:e.target.checked}));}}/>
             Registro {index+1} · {entry.type==='snapshot'?'Total del home banking':'Compra individual'}
           </label>
           <p className='text-xs text-slate-600 dark:text-slate-300'>Texto de la captura: {entry.bankHint||'Banco sin identificar'} · {entry.cardHint||'Tarjeta sin identificar'}</p>
@@ -234,7 +234,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
           <div className='grid gap-2 sm:grid-cols-2'>
             <label className='text-xs font-bold'>Banco de destino
               <select aria-label={'Banco registro '+(index+1)} className={formInput} value={assoc.bankId} disabled={busy}
-                onChange={e=>setAssignments(values=>({...values,[index]:{bankId:e.target.value,cardId:''}}))}>
+                onChange={e=>{setConfirmedOCR(false);setAssignments(values=>({...values,[index]:{bankId:e.target.value,cardId:''}}));}}>
                 <option value=''>Seleccioná un banco</option>
                 {banks.map(b=><option key={b.code||b.id} value={b.code||b.id}>{b.name}</option>)}
               </select>
@@ -242,7 +242,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
             <label className='text-xs font-bold'>Tarjeta de destino
               <select aria-label={'Tarjeta registro '+(index+1)} className={formInput}
                 value={assoc.cardId} disabled={!assoc.bankId||busy}
-                onChange={e=>setAssignments(values=>({...values,[index]:{...assoc,cardId:e.target.value}}))}>
+                onChange={e=>{setConfirmedOCR(false);setAssignments(values=>({...values,[index]:{...assoc,cardId:e.target.value}}));}}>
                 <option value=''>Seleccioná una tarjeta</option>
                 {candidates.map(c=><option key={c.id} value={c.id}>{c.nickname}{c.lastFour?' · •••• '+c.lastFour:''}</option>)}
               </select>
@@ -250,7 +250,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
           </div>
           {hint&&!assoc.cardId&&<button type='button' className={action} onClick={()=>{
             const hit=cards.find(c=>c.id===hint);
-            setAssignments(values=>({...values,[index]:{bankId:hit.bankId,cardId:hit.id}}));
+            setConfirmedOCR(false);setAssignments(values=>({...values,[index]:{bankId:hit.bankId,cardId:hit.id}}));
           }}>Usar sugerencia de tarjeta</button>}
           {card&&entry.type==='snapshot'&&<p className='text-xs text-slate-600 dark:text-slate-300'>
             Se actualizará la foto de consumo de {card.nickname}. No se creará un gasto adicional ni se sumará el saldo de la tarjeta al total.
@@ -262,12 +262,13 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
         </article>;
       })}
       {issues.length>0&&<p role='alert' className='rounded-xl border border-amber-400 p-3 text-xs text-amber-800 dark:text-amber-200'>{issues[0]}</p>}
-      <div className='flex flex-wrap gap-2'>
-        <button type='button' className='inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-purple-600 px-4 font-bold text-white disabled:opacity-50'
-          disabled={busy||!review.valid||!selected.length||issues.length>0} onClick={save}>
-          <FiCheckCircle aria-hidden='true'/> {busy?'Guardando…':'Confirmar '+selected.length+' registro(s)'}
+      {mode==='photo'&&review.valid&&<label className='flex min-h-[44px] items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm font-semibold dark:border-slate-700'><input type='checkbox' className='mt-1 h-5 w-5 shrink-0 accent-violet-600' checked={confirmedOCR} onChange={event=>setConfirmedOCR(event.target.checked)}/>Revisé importes, fecha, banco y tarjeta contra la captura original.</label>}
+       <div className='sticky bottom-0 z-10 -mx-4 grid grid-cols-2 gap-2 border-t border-slate-200 bg-white px-4 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900 sm:-mx-6 sm:px-6'>
+        <button type='button' className={action+' w-full justify-center'} disabled={busy} onClick={()=>onClose()}>Cancelar</button>
+        <button type='button' className='inline-flex min-h-[44px] min-w-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-2 py-2 text-sm font-bold text-white focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50'
+          disabled={busy||!review.valid||!selected.length||issues.length>0||(mode==='photo'&&!confirmedOCR)} onClick={save}>
+          <FiCheckCircle aria-hidden='true'/> {busy?'Guardando…':'Guardar '+selected.length+' registro(s)'}
         </button>
-        <button type='button' className={action} disabled={busy} onClick={()=>onClose()}>Cancelar</button>
       </div>
       <p className='text-xs text-slate-600 dark:text-slate-300'>Las compras individuales se guardan como consumos de tarjeta, no como gastos de Transacciones. Los totales capturados reemplazan referencias anteriores de la misma tarjeta; las compras ya incluidas en esa foto no se suman de nuevo.</p>
     </div>}

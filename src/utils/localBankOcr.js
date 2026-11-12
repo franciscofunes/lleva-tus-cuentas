@@ -4,15 +4,19 @@ const CLEAN = (value) => String(value || '').replace(/\s+/g, ' ').trim();
 const CONSUMPTION = /\b(?:consumos?|compras?|gastos?)\b/i;
 
 function amountForCurrency(lines, currency) {
-  const marker = currency === 'ARS'
-    ? /\bARS\b|\bpesos?\b/i
-    : /\bUSD\b|\bd[oó]lares?\b|U\$S|US\$/i;
+  const markerSource = currency === 'ARS'
+    ? '(?:\\bARS\\b|\\bpesos?\\b)'
+    : '(?:\\bUSD\\b|\\bd[oó]lares?\\b|U\\$S|US\\$)';
+  const marker = new RegExp(markerSource, 'i');
+  const opposite = currency === 'ARS' ? /\bUSD\b|\bd[oó]lares?\b|U\$S|US\$/i : /\bARS\b|\bpesos?\b/i;
   const candidates = [];
   lines.forEach((line, index) => {
     if (!CONSUMPTION.test(line) || !marker.test(line)) return;
+    // Combined ARS/USD text can attach the first amount to both currencies: require manual correction.
+    if (opposite.test(line)) return;
     // Do not guess an amount from a different row or a multi-currency total.
     const next = lines[index + 1] || '';
-    const inLine = line.match(/(?:ARS|USD|pesos?|d[oó]lares?|U\$S|US\$)\s*[:$]?\s*(-?\d[\d., ]*\d|\d)/i);
+    const inLine = line.match(new RegExp(markerSource + '\\s*[:$]?\\s*(-?\\d[\\d., ]*\\d|\\d)(?=\\s|$)', 'i'));
     const after = !inLine && /^\s*\$?\s*[\d., ]+\s*$/.test(next) ? next.trim() : '';
     const value = CLEAN(inLine?.[1] || after).replace(/\s/g, '');
     if (/^\d[\d.,]*$/.test(value)) candidates.push(value);

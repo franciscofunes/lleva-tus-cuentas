@@ -19,7 +19,7 @@ function ocrFailureMessage(error, stage) {
 }
 
 /** Explicitly opt-in, image-only OCR. No image or recognized text is sent to Lita or Firestore. */
-export default function LocalScreenshotOcr({ onRecognized, privacyHidden = false, disabled = false,
+export default function LocalScreenshotOcr({ onRecognized, onCleared = () => {}, privacyHidden = false, disabled = false,
   allowCamera = false, autoRead = false, compact = false, receiptMode = false }) {
   const [file, setFile] = useState(null);
   const [engine, setEngine] = useState(() => mobileBrowser() ? 'compatible' : 'advanced');
@@ -79,6 +79,7 @@ export default function LocalScreenshotOcr({ onRecognized, privacyHidden = false
 
   const chooseFile = (event) => {
     const chosen = event.target.files?.[0] || null;
+    onCleared(); // Invalidate the preceding OCR review as soon as a new image is selected.
     setError('');
     setStatus('idle');
     setProgress(0);
@@ -139,6 +140,7 @@ export default function LocalScreenshotOcr({ onRecognized, privacyHidden = false
         return;
       }
       const captured = new File([blob], 'ticket-capturado.jpg', {type: 'image/jpeg'});
+      onCleared();
       setFile(captured);
       setError('');
       setStatus('idle');

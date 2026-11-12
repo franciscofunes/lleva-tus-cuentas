@@ -71,3 +71,12 @@ test('nested category dialog handles Escape without closing the underlying trans
   expect(screen.getByRole('dialog', { name: 'Editar transacción' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Gestionar categorías' })).toHaveFocus();
 });
+
+test('only an explicitly requested screenshot modal uses the whole phone viewport',()=>{
+  render(<GenericModal show dialogLabel='Importador móvil' mobileFullScreen
+    component={<div><label>Importe<input /></label><button type='button'>Confirmar</button></div>}
+    closeModal={jest.fn()} />);
+  const dialog=screen.getByRole('dialog',{name:'Importador móvil'});
+  expect(dialog).toHaveClass('h-[100dvh]','max-h-[100dvh]','rounded-none','sm:rounded-2xl');
+  expect(screen.getByRole('button',{name:'Cerrar'})).toBeInTheDocument();
+});

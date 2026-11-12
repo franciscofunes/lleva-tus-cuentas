@@ -27,3 +27,14 @@ test('a single dated purchase may be suggested, but payments and multiple purcha
   expect(extractBankChargeHint('17/10/2026 Pago recibido ARS 10.500,25')).toBeNull();
   expect(extractBankChargeHint('17/10/2026 Farmacia ARS 100,00\n18/10/2026 Kiosco ARS 300,00')).toBeNull();
 });
+
+test('mixed-currency OCR text requires manual review rather than duplicating an amount',()=>{
+  const hints=extractBankOcrHints('Consumos ARS 125.000,50 USD 20.25\nSaldo disponible ARS 900.000,00');
+  expect(hints.currentConsumptionARS).toBe('');
+  expect(hints.currentConsumptionUSD).toBe('');
+});
+test('an unlabeled USD balance cannot be treated as a card consumption',()=>{
+  const hints=extractBankOcrHints('Consumos ARS 500,00\nSaldo USD 12,00');
+  expect(hints.currentConsumptionARS).toBe('500,00');
+  expect(hints.currentConsumptionUSD).toBe('');
+});

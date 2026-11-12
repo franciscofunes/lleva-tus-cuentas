@@ -735,6 +735,7 @@ function BanksWorkspace({ user }) {
           <GenericModal
             show={showConsumptionImporter}
             dialogLabel='Importar consumos desde capturas o Markdown'
+            mobileFullScreen
             component={CardConsumptionMarkdownImporter}
             banks={banks}
             cards={cards}

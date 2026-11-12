@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useRef } from 'react';
 import { IoMdClose } from 'react-icons/io';
 
-const GenericModal = ({ show, component: Component, closeModal, dialogLabel, ...props }) => {
+const GenericModal = ({ show, component: Component, closeModal, dialogLabel, mobileFullScreen = false, ...props }) => {
 	const content = React.isValidElement(Component) ? Component : <Component {...props} />;
 	const dialogRef = useRef(null);
 	const closeButtonRef = useRef(null);
@@ -63,7 +63,7 @@ const GenericModal = ({ show, component: Component, closeModal, dialogLabel, ...
 		<AnimatePresence>
 			{show && (
 				<motion.div
-					className='fixed inset-0 z-[90] overflow-hidden overscroll-contain p-2 sm:p-6'
+					className={'fixed inset-0 z-[90] overflow-hidden overscroll-contain '+(mobileFullScreen?'p-0 sm:p-6':'p-2 sm:p-6')}
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
@@ -84,7 +84,7 @@ const GenericModal = ({ show, component: Component, closeModal, dialogLabel, ...
 							tabIndex={-1}
 							aria-modal='true'
 							aria-label={dialogLabel}
-							className='relative flex h-auto w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-purple-500/70 bg-white text-slate-900 shadow-2xl max-h-[calc(100svh-1rem)] dark:bg-slate-900 dark:text-white sm:max-h-[calc(100dvh-3rem)]'
+							className={'relative flex w-full max-w-2xl flex-col overflow-hidden border border-violet-500/70 bg-white text-slate-900 shadow-2xl dark:bg-slate-900 dark:text-white sm:max-h-[calc(100dvh-3rem)] '+(mobileFullScreen?'h-[100dvh] max-h-[100dvh] rounded-none sm:h-auto sm:rounded-2xl':'h-auto max-h-[calc(100svh-1rem)] rounded-2xl')}
 							initial={{ opacity: 0, y: 24, scale: 0.98 }}
 							animate={{ opacity: 1, y: 0, scale: 1 }}
 							exit={{ opacity: 0, y: 24, scale: 0.98 }}

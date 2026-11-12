@@ -10,7 +10,7 @@ const fmt = (n, currency) => new Intl.NumberFormat('es-AR', {
   style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2,
 }).format(n);
 const input = 'mt-1 min-h-[44px] w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-50';
-const smallBtn = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-purple-500/50 px-3 py-2 text-sm font-bold text-purple-700 dark:text-purple-300 focus-visible:ring-2 focus-visible:ring-purple-500';
+const smallBtn = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-violet-300 px-3 py-2 text-sm font-bold text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-violet-700 dark:text-violet-200';
 
 const riskStyles = {
   ok: {
@@ -88,8 +88,8 @@ function BudgetMargin({ progress, currency, visible, disabled, unsaved }) {
       </div>
       <p className='text-xs leading-relaxed'>
         {disabled
-          ? 'Las notificaciones de este presupuesto están desactivadas; el indicador visual sigue disponible.'
-          : 'Los colores son orientativos (verde 0–69%, ámbar 70–89%, naranja 90–99%, rojo 100%+). El porcentaje de aviso que guardaste se configura por separado.'}
+          ? 'Tenés los avisos desactivados. El margen sigue mostrándose.'
+          : 'El color indica qué tan cerca estás del tope; el aviso se configura por separado.'}
       </p>
     </div>
   );
@@ -128,6 +128,7 @@ export default function CardSpendingControls({
   const [draft,setDraft]=useState({});
   const [saving,setSaving]=useState('');
   const [error,setError]=useState('');
+  const [settingsOpen,setSettingsOpen]=useState({});
   useEffect(()=>{
     const d={};
     budgets.forEach(b=>{
@@ -148,12 +149,16 @@ export default function CardSpendingControls({
     finally{setSaving('');}
   };
   return <div className='space-y-4' aria-label='Alertas y análisis mensual de tarjetas'>
-    <div className='rounded-xl border border-purple-300/40 bg-purple-50/50 p-4 text-sm dark:bg-purple-900/10'>
-      <p className='font-bold'>Controlá tus consumos antes del cierre</p>
-      <p className='mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300'>
-        Sumamos las capturas del consumo actual de cada tarjeta más las compras posteriores.
-        Sin duplicar movimientos ni sumar resúmenes PDF históricos al ciclo actual.
-      </p>
+    <div className='flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between'>
+      <div className='min-w-0'>
+        <p className='font-extrabold text-slate-900 dark:text-white'>¿Cuánto gasté y cuánto me queda?</p>
+        <p className='mt-1 text-sm text-slate-600 dark:text-slate-300'>
+          Mostramos lo registrado en tus tarjetas. Puede faltar información hasta que revises las capturas.
+        </p>
+      </div>
+      <button className={smallBtn+' w-full shrink-0 sm:w-auto'} type='button' onClick={onImportMarkdown}>
+        <FiFileText aria-hidden='true'/> Importar captura
+      </button>
     </div>
     <div className='grid gap-4 xl:grid-cols-2'>
       {!canShowValues && <div role='status'
@@ -188,17 +193,25 @@ export default function CardSpendingControls({
         return <section key={currency}
           className='min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900/40'>
           <div className='space-y-2'>
-            <h3 className='text-base font-extrabold text-slate-950 dark:text-white'>Control de tarjetas · {currency}</h3>
-            <p className='text-xs font-semibold text-slate-600 dark:text-slate-300'>Consumos registrados del ciclo actual</p>
+            <h3 className='text-base font-extrabold text-slate-950 dark:text-white'>Tarjetas en {currency}</h3>
+            <p className='text-xs font-semibold text-slate-600 dark:text-slate-300'>Gastado en este ciclo (registrado)</p>
             <p className='break-words text-2xl font-extrabold tabular-nums text-slate-950 dark:text-white'>
               {canShowValues?fmt(spent[currency]||0,currency):'••••'}
             </p>
             <p className='text-xs leading-relaxed text-slate-600 dark:text-slate-300'>
-              {spent.snapshotCardCount||0} total(es) por moneda de capturas y compras manuales posteriores.
-              Registro parcial: no es deuda ni saldo bancario verificado.
+              Datos parciales de capturas y compras posteriores. No es la deuda confirmada por tu banco.
             </p>
           </div>
 
+          <BudgetMargin currency={currency} progress={progress} visible={canShowValues}
+            unsaved={unsaved} disabled={data.enabled===false} />
+          <details className='rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60'
+            open={settingsOpen[currency] ?? !saved}
+            onToggle={event=>{const open=event.currentTarget.open;setSettingsOpen(prev=>({...prev,[currency]:open}));}}>
+            <summary className='flex min-h-[44px] cursor-pointer items-center text-sm font-bold text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200'>
+              {saved?'Editar tope y avisos':'Configurar tope y avisos'} · {currency}
+            </summary>
+            <div className='mt-3 space-y-3'>
           <label className='block text-sm font-semibold text-slate-900 dark:text-slate-100'>
             Tu tope mensual ({currency})
             <input className={input} type='number' min='0.01' step='0.01'
@@ -206,9 +219,6 @@ export default function CardSpendingControls({
               value={data.limit} onChange={e=>patch(currency,{limit:e.target.value})}
               placeholder='Ej.: 250000'/>
           </label>
-          <BudgetMargin currency={currency} progress={progress} visible={canShowValues}
-            unsaved={unsaved} disabled={data.enabled===false} />
-
           <label className='block text-sm font-semibold text-slate-900 dark:text-slate-100'>
             Notificarme al llegar al
             <select className={input} aria-label={'Aviso previo '+currency}
@@ -228,7 +238,13 @@ export default function CardSpendingControls({
             className='min-h-[44px] w-full rounded-xl bg-purple-600 px-3 text-sm font-bold text-white focus-visible:ring-4 focus-visible:ring-purple-400/40 disabled:opacity-50'>
             {saving===currency?'Guardando…':'Guardar tope '+currency}
           </button>
-
+            </div>
+          </details>
+          <details className='rounded-xl border-t border-slate-200 pt-3 dark:border-slate-700'>
+            <summary className='flex min-h-[44px] cursor-pointer items-center text-sm font-bold text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200'>
+              Comparar con resúmenes anteriores · {currency}
+            </summary>
+            <div className='mt-3 space-y-3'>
           <HistoricalReference peak={peak} currency={currency} visible={canShowValues}/>
           <div className='space-y-2 border-t border-slate-200 pt-4 text-xs dark:border-slate-700'>
             <p className='flex items-center gap-2 text-sm font-extrabold'>
@@ -250,7 +266,7 @@ export default function CardSpendingControls({
                 </p>
                 <p className='mt-1'>No se guarda automáticamente ni representa capacidad de pago.</p>
                 <button type='button' className={smallBtn+' mt-3'}
-                  onClick={()=>patch(currency,{limit:String(historyStats.suggestedLimit)})}>
+                  onClick={()=>{patch(currency,{limit:String(historyStats.suggestedLimit)});setSettingsOpen(prev=>({...prev,[currency]:true}));}}>
                   Usar referencia
                 </button>
               </div>
@@ -258,6 +274,8 @@ export default function CardSpendingControls({
               Todavía no hay resúmenes PDF vinculados para comparar meses.
             </p>}
           </div>
+            </div>
+          </details>
         </section>;
       })}
     </div>
@@ -265,10 +283,9 @@ export default function CardSpendingControls({
       Los meses sin PDF son datos faltantes, no meses de gasto cero. Las referencias históricas
       son orientativas y pueden incluir ciclos incompletos.
     </p>
-    <div className='flex flex-wrap gap-2'>
-      <button className={smallBtn} type='button' onClick={onImportMarkdown}>
-        <FiFileText aria-hidden='true'/> Importar consumos desde capturas
-      </button>
+    <details className='rounded-xl border border-slate-200 p-3 dark:border-slate-700'>
+      <summary className='flex min-h-[44px] cursor-pointer items-center text-sm font-bold text-violet-700 dark:text-violet-200'>Ayuda y opciones de avisos</summary>
+      <div className='mt-3 flex flex-wrap gap-2'>
       <button className={smallBtn} type='button' onClick={onAskLita}>
         <FiZap aria-hidden='true'/> Pedirle a Lita que me ayude a definir el tope
       </button>
@@ -284,7 +301,8 @@ export default function CardSpendingControls({
       }}>
         <FiBell aria-hidden='true'/> Activar avisos del navegador
       </button>
-    </div>
+      </div>
+    </details>
     {error&&<p role='status' className='text-sm text-rose-700 dark:text-rose-300'>{error}</p>}
     <p className='text-xs text-slate-600 dark:text-slate-300'>
       Los avisos actuales funcionan mientras LTC$ esté abierto. Los push con la app cerrada
