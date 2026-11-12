@@ -274,6 +274,7 @@ export default function CardSpendingControls({
               Todavía no hay resúmenes PDF vinculados para comparar meses.
             </p>}
           </div>
+            </div>
           </details>
         </section>;
       })}
