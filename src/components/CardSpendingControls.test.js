@@ -105,5 +105,5 @@ test('applying a historical reference automatically reveals the unsaved budget e
  fireEvent.click(within(ars).getByText('Comparar con resúmenes anteriores · ARS'));
  fireEvent.click(within(ars).getByRole('button',{name:'Usar referencia'}));
  expect(within(ars).getByText('Editar tope y avisos · ARS').closest('details')).toHaveAttribute('open');
- expect(within(ars).getByLabelText('Tope mensual ARS')).toHaveValue(expect.any(Number));
+ expect(Number(within(ars).getByLabelText('Tope mensual ARS').value)).toBeGreaterThan(0);
 });
