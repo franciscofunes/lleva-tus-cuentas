@@ -27,7 +27,7 @@ Explain the current user's **recorded transactions** with a clear distinction fr
 | Unsaved edit | Vista previa · sin guardar | La alerta real sigue usando el último tope guardado |
 | Historical comparison | Comparación con tu récord histórico | Referencia informativa, no un tope aconsejado |
 | Reference action | Usar referencia | Solo completa el campo; el usuario debe guardar |
-| Missing PDF months | Todavía no hay resúmenes para comparar meses | Un período sin PDF no equivale a cero |
+| Missing statement-expense months | Todavía no hay movimientos «Resumen tarjeta» para comparar meses | Un mes sin transacciones no representa gasto cero confirmado |
 
 Never conflate visual 70/90/100% thresholds with the separately configurable notification threshold. Mark outside-site email/SMS/closed-app push as **not yet available**. Use Argentine Spanish throughout the consumer UI.
 

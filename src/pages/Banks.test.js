@@ -39,6 +39,7 @@ jest.mock('../services/bankingService', () => ({
   subscribeBankCharges: jest.fn(),
   subscribeBankStatementLinks: jest.fn(),
   subscribeImportedStatements: jest.fn(),
+  subscribeCardStatementExpenses: jest.fn(),
   createBankBundle: jest.fn(),
   renameUserBank: jest.fn(),
   saveBankAccount: jest.fn(),
@@ -58,6 +59,7 @@ const snapshots = {
   subscribeBankCharges: [],
   subscribeBankStatementLinks: [],
   subscribeImportedStatements: [],
+  subscribeCardStatementExpenses: [],
 };
 
 function arrange(data = {}) {
@@ -99,6 +101,30 @@ test('Bancos reuses the financial header, grouped metrics and collapsible manage
   expect(screen.getByText('Saldos registrados · USD')).toBeInTheDocument();
 });
 
+test('monthly card history agrees with two Transactions despite four PDFs for one billing period',async()=>{
+  const expenseRows=[
+    {id:'oct-a',category:'Resumen tarjeta 💳',selectedDate:'2026-10-09',amount:730000.25,expenseName:'Banco QA Uno Visa'},
+    {id:'oct-b',category:'Resumen tarjeta 💳',selectedDate:'2026-10-13',amount:125000.5,expenseName:'Banco QA Dos Visa'},
+    {id:'nov-a',category:'Resumen tarjeta 💳',selectedDate:'2026-11-09',amount:80000.1,expenseName:'Banco QA Uno Visa'},
+    {id:'nov-b',category:'Resumen tarjeta 💳',selectedDate:'2026-11-13',amount:60000.2,expenseName:'Banco QA Dos Visa'},
+  ];
+  arrange({
+    subscribeCardStatementExpenses:expenseRows,
+    subscribeBankCards:[{id:'a',bankId:'qa',nickname:'Visa QA',closingDay:25,dueDay:10}],
+    subscribeImportedStatements:expenseRows.map(e=>({id:e.id,expenseId:e.id,
+      approvedByUser:true,period:'2026-10',purchases:{ARS:String(e.amount)}})),
+    subscribeBankStatementLinks:expenseRows.map(e=>({expenseId:e.id,cardId:'a'})),
+  });
+  mount();
+  fireEvent.click(screen.getByRole('button',{name:'Mostrar importes de Bancos'}));
+  const ars=screen.getByText('Tarjetas en ARS').closest('section');
+  fireEvent.click(within(ars).getByText('Comparar con resúmenes anteriores · ARS'));
+  expect(within(ars).getAllByText(/855.000,75/).length).toBeGreaterThan(0);
+  expect(within(ars).queryByText(/995.001,05/)).not.toBeInTheDocument();
+  fireEvent.click(within(ars).getByText('Ver movimientos del máximo · 2 transacción(es)'));
+  expect(within(ars).getByText('Banco QA Uno Visa')).toBeInTheDocument();
+  expect(within(ars).getByText('Banco QA Dos Visa')).toBeInTheDocument();
+});
 test('Bancos exposes the multi-card payment planner with privacy-first disclosure', async () => {
   mount();
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Planificar pago de tarjetas' })).toBeInTheDocument());

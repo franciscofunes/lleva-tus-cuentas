@@ -1,11 +1,15 @@
 import { validDate } from './bankingModel';
+import { getTransactionCurrency } from './customCategories';
+import { finiteTransactionNumber, transactionText } from './transactionScalar';
 
 // Historical spending is sourced ONLY from unique, explicitly linked, reviewed PDF
 // statements. Manual charges and statement expenses are never added to these totals.
 const monthOf = (s) => /^20\d{2}-(0[1-9]|1[0-2])$/.test(s?.period || '') ? s.period
   : validDate(s?.closingDate) ? s.closingDate.slice(0,7) : null;
 const finiteMoney = value => {
-  if (value === '' || value === null || value === undefined) return null;
+  if (value === null || value === undefined ||
+      (typeof value !== 'string' && typeof value !== 'number') ||
+      (typeof value === 'string' && !value.trim())) return null;
   const n=Number(value);
   return Number.isFinite(n) && n>=0 && n<1e12?n:null;
 };
@@ -50,6 +54,59 @@ export function statementMonthlyHistory(statements=[],links=[],cards=[]) {
   });
   return [...groups.values()].sort((a,b)=>a.month.localeCompare(b.month)||a.currency.localeCompare(b.currency));
 }
+/**
+ * Historical CARD STATEMENT EXPENSES, using exactly the same dated, signed-off
+ * transaction records that feed the Transactions > Gastos bar chart.
+ *
+ * PDF 'period' describes a billing cycle (often one month BEFORE the payment
+ * due date), and is never an additional expense. Group the actual transaction
+ * by selectedDate, like the Dashboard's monthly filter.
+ *
+ * The expense amount can include taxes/adjustments; show PDF purchases only as
+ * an optional reconciliation hint, NEVER sum it with the expense amount.
+ */
+export function cardStatementExpenseHistory(expenses=[],statements=[],links=[]) {
+  const byExpensePdf=new Map();
+  const linkedIds=new Set(links.map(link=>link.expenseId).filter(Boolean));
+  statements.forEach(pdf=>{
+    if(pdf?.expenseId&&pdf.approvedByUser&&linkedIds.has(pdf.expenseId))
+      byExpensePdf.set(pdf.expenseId,pdf);
+  });
+  const groups=new Map();
+  const seenExpenseIds=new Set();
+  (Array.isArray(expenses)?expenses:[]).forEach(expense=>{
+    const category=transactionText(expense?.category);
+    if(!category.startsWith('Resumen tarjeta'))return;
+    const date=expense?.selectedDate;
+    if(!validDate(date))return;
+    const currency=getTransactionCurrency(expense);
+    const amount=finiteTransactionNumber(expense?.amount);
+    if(amount===null||amount<=0||amount>=1e12)return;
+    const id=transactionText(expense?.id);
+    if(id&&seenExpenseIds.has(id))return;
+    if(id)seenExpenseIds.add(id);
+    const month=date.slice(0,7);
+    const key=month+'-'+currency;
+    const group=groups.get(key)||{month,currency,total:0,statementCount:0,entries:[],source:'transactions'};
+    const pdf=byExpensePdf.get(id);
+    group.total=Math.round((group.total+amount)*100)/100;
+    group.statementCount++;
+    group.entries.push({
+      expenseId:id,
+      institution:transactionText(expense.expenseName)||'Resumen tarjeta',
+      transactionDate:date,
+      amount,
+      pdfPeriod:pdf?.period||null,
+      pdfClosingDate:validDate(pdf?.closingDate)?pdf.closingDate:null,
+      pdfPurchases:finiteMoney(pdf?.purchases?.[currency]),
+      pdfTotal:finiteMoney(pdf?.totals?.[currency]),
+      linkedPdf:Boolean(pdf),
+    });
+    groups.set(key,group);
+  });
+  return [...groups.values()].sort((a,b)=>a.month.localeCompare(b.month)||a.currency.localeCompare(b.currency));
+}
+
 export function statementMonthExtremes(history=[],currency='ARS'){
   const months=history.filter(row=>row.currency===currency&&row.statementCount>0&&row.total>=0)
     .sort((a,b)=>a.month.localeCompare(b.month));

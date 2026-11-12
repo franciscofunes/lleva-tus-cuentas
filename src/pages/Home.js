@@ -172,7 +172,7 @@ function Home() {
               </p>
               <div className='mt-8 space-y-3 text-sm text-slate-700 dark:text-slate-200'>
                 <p className='flex items-start gap-3'><FiCheck className='mt-1 shrink-0 text-purple-700 dark:text-purple-300' aria-hidden='true'/> Alertas de gastos de tarjetas dentro de LTC$.</p>
-                <p className='flex items-start gap-3'><FiCheck className='mt-1 shrink-0 text-purple-700 dark:text-purple-300' aria-hidden='true'/> Historial de PDFs vinculados de todos tus bancos.</p>
+                <p className='flex items-start gap-3'><FiCheck className='mt-1 shrink-0 text-purple-700 dark:text-purple-300' aria-hidden='true'/> Historial de resúmenes registrados en Transacciones, con PDFs vinculados para consultar.</p>
                 <p className='flex items-start gap-3'><FiCheck className='mt-1 shrink-0 text-purple-700 dark:text-purple-300' aria-hidden='true'/> Capturas del home banking convertidas en Markdown y revisadas antes de guardar.</p>
               </div>
               <Link to={user ? '/bancos' : '/registrarse'}

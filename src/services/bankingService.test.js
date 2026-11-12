@@ -1,6 +1,6 @@
 import {
   createBankBundle, addUserBank, renameUserBank, saveBankAccount, saveBankCard, saveManualCardCharge, saveStatementBankLink,
-  getStatementLink, subscribeBankStatementLinks, reassignStatementBankLink, unlinkStatementBank,
+  getStatementLink, subscribeBankStatementLinks, subscribeCardStatementExpenses, reassignStatementBankLink, unlinkStatementBank,
 } from './bankingService';
 import { auth, firestore } from '../shared/config/firebase/firebase.config';
 
@@ -28,7 +28,16 @@ beforeEach(() => {
   const refs = {
     banks: { doc: jest.fn(() => bankRef) },
     bankCards: { doc: jest.fn(() => cardRef), add: jest.fn(async () => ({ id:'card1' })) },
-    expenses: { doc: jest.fn(() => expenseRef) },
+    expenses: { doc: jest.fn(() => expenseRef), where: jest.fn().mockImplementation(() => ({
+      where: jest.fn().mockImplementation(() => ({
+        onSnapshot: jest.fn((callback) => {
+          callback({docs:[{id:'test-expense',data:()=>({
+            category:'Resumen tarjeta 💳',selectedDate:'2026-10-13',amount:334455.66,
+          })}]});
+          return jest.fn();
+        }),
+      })),
+    })) },
     bankStatementLinks: { doc: jest.fn(() => mockLink), onSnapshot: jest.fn(() => jest.fn()) },
     bankAccounts: mockAccount, bankCardCharges: mockCharge,
   };
@@ -80,6 +89,20 @@ test('link writes only when the owner bank, card and expense summary actually ex
   mockExpense = { exists:true,data:()=>({category:'Venta divisas'}) };
   await expect(saveStatementBankLink('alice','expense1','santander','card1')).rejects.toThrow(/no válidos/);
   expect(mockLink.set).not.toHaveBeenCalled();
+});
+
+test('statement expense history subscribes only to the owner card-summary category prefix',()=>{
+ const callback=jest.fn();
+ const stop=subscribeCardStatementExpenses('alice',callback,jest.fn());
+ const query=mockUser.collection('expenses');
+ expect(query.where).toHaveBeenCalledWith('category','>=','Resumen tarjeta');
+ const suffix=query.where.mock.results[0].value.where;
+ expect(suffix).toHaveBeenCalledWith('category','<','Resumen tarjetb');
+ expect(callback).toHaveBeenCalledWith([expect.objectContaining({
+   id:'test-expense',amount:334455.66,selectedDate:'2026-10-13',
+ })]);
+ expect(typeof stop).toBe('function');
+ expect(()=>subscribeCardStatementExpenses('bob',callback,jest.fn())).toThrow(/Iniciá sesión/);
 });
 
 test('cross-user bank data cannot be read or written', async () => {

@@ -69,8 +69,8 @@ export function buildBanksLitaContext({ banks = [], accounts = [], cards = [],
       })),
     statementCount: statements.length,
     monthlyCardSpending: {
-      scope: 'historical-card-statement-purchases',
-      warning: 'Use only linked reviewed PDFs as the historical source. Months without a PDF are missing, not zero. Do not add manual charges, card statement expense totals, or different currencies.',
+      scope: 'historical-card-statement-expenses-by-transaction-date',
+      warning: 'Use recorded Resumen tarjeta expenses in Transactions, grouped by selectedDate like the bar chart. Linked PDF subtotals are for verification only, never additional spending. Missing transaction months are unknown rather than zero.',
       byCurrency: ['ARS','USD'].map(currency=>{
         const e=statementMonthExtremes(history,currency);
         const config=budgets.find(b=>b.currency===currency);
@@ -79,7 +79,7 @@ export function buildBanksLitaContext({ banks = [], accounts = [], cards = [],
           currency,
           months:e.months.slice(-18).map(row=>({
             month:row.month,amount:row.total,statementCount:row.statementCount,
-            estimatedFromTotal:row.estimatedFromTotal,
+            source:row.source||'transactions',
           })),
           highest:e.high?{month:e.high.month,amount:e.high.total}:null,
           lowest:e.low?{month:e.low.month,amount:e.low.total}:null,
@@ -96,7 +96,7 @@ export function buildBanksLitaContext({ banks = [], accounts = [], cards = [],
           }:null,
         };
       }),
-      llmGuidance: 'Historical months aggregate reviewed PDFs from all linked banks, separated by currency. The current cycle combines bank screenshot consumption totals and manual purchases dated strictly after each snapshot: do not add those purchases twice. Explain maximum and minimum, distance from historical peak, incomplete cycles and missing PDF months. Suggest a user-confirmed ceiling below a personally unsafe peak, never auto-write Firestore. Interpret totals as partial, not verified bank debt or capacity to pay.',
+      llmGuidance: 'Historical months aggregate the original Resumen tarjeta expense transactions by selectedDate (the same dates and amounts used in the Transactions category chart), separated by currency. Do not add linked PDFs or individual purchases on top. PDF periods and transaction dates can differ. The current open card cycle is separately estimated from screenshots plus manual purchases dated strictly after each snapshot; it is NOT the same reporting period as historical monthly statement expenses. Never auto-write Firestore or interpret reference limits as affordability.',
     },
     unlinkedStatementCount: statements.filter((statement) =>
       !links.some((link) => link.expenseId === statement.expenseId)).length,

@@ -99,7 +99,7 @@ Direction: Preserve LTC brand purple, slate neutrals, Montserrat display heading
 Narrative and composition:
 1. Large plain-language proposition, one main branded CTA, understated secondary anchor, one clearly labeled illustrative financial preview.
 2. Three *numbered editorial rows* for transactions, banks/cards and portfolio, with descriptions aligned across two columns.
-3. A larger distinct section on credit-card spending limits, balance remaining, all-bank PDF history and reviewed screenshot imports.
+3. A larger distinct section on credit-card spending limits, balance remaining, all-bank card-statement expense history (grouped by transaction date, like Transactions charts; linked PDFs are reconciliation only) and reviewed screenshot imports.
 4. Simple definition rows for statements/PDFs, due dates, worldwide map and charts/export.
 5. Lita is a quieter complementary section with practical questions and explicit financial-advice disclaimer.
 6. Auth-aware concluding CTA and existing footer.
