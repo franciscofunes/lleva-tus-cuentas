@@ -207,7 +207,7 @@ export default function CardSpendingControls({
             unsaved={unsaved} disabled={data.enabled===false} />
           <details className='rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60'
             open={settingsOpen[currency] ?? !saved}
-            onToggle={event=>setSettingsOpen(prev=>({...prev,[currency]:event.currentTarget.open}))}>
+            onToggle={event=>{const open=event.currentTarget.open;setSettingsOpen(prev=>({...prev,[currency]:open}));}}>
             <summary className='flex min-h-[44px] cursor-pointer items-center text-sm font-bold text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:text-violet-200'>
               {saved?'Editar tope y avisos':'Configurar tope y avisos'} · {currency}
             </summary>
