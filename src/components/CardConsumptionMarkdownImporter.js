@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FiClipboard, FiCheckCircle, FiAlertTriangle, FiUploadCloud } from 'react-icons/fi';
 import LocalScreenshotOcr from './LocalScreenshotOcr';
 import { cardPhotoToMarkdown, extractBankChargeHint, extractBankOcrHints } from '../utils/localBankOcr';
@@ -49,6 +49,17 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [confirmedOCR,setConfirmedOCR]=useState(false);
+  const reviewRef=useRef(null);
+  const viewingPhotoReview=mode==='photo'&&review?.valid===true;
+
+  // On mobile the former review was appended below the long OCR form and
+  // appeared to do nothing. Treat it as a separate, focused confirmation step.
+  useEffect(()=>{
+    if(!review?.valid||privacyHidden)return;
+    const panel=reviewRef.current;
+    panel?.scrollIntoView?.({block:'start',behavior:'auto'});
+    panel?.focus?.({preventScroll:true});
+  },[review,privacyHidden]);
 
   const updatePhoto=(key,value)=>{
     setPhoto(old=>({...old,[key]:value,...(key==='bankId'?{cardId:''}:{})}));
@@ -72,8 +83,17 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
     if(!detectedText.trim()||!bank||!card){setError('Leé una captura y elegí el banco y la tarjeta correctos.');return;}
     const raw=cardPhotoToMarkdown({...photo,bank:bank.name,card:card.nickname});
     const parsed=parseCardConsumptionMarkdown(raw);
+    if(!parsed.valid){
+      // Keep editable fields on screen and show the precise blocking reason
+      // next to the action that produced it, rather than far below the fold.
+      setReview(null);
+      setAssignments({});
+      setError(parsed.errors.join(' '));
+      setConfirmedOCR(false);
+      return;
+    }
     setReview(parsed);setError('');setEnabled({});setConfirmedOCR(false);
-    setAssignments(parsed.valid?{0:{bankId:photo.bankId,cardId:photo.cardId}}:{});
+    setAssignments({0:{bankId:photo.bankId,cardId:photo.cardId}});
   };
 
   const preview=()=>{
@@ -130,7 +150,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
       <p role='status'>Mostrá los importes de Bancos para revisar una captura y confirmar sus datos.</p>
       {onRevealValues && <button type='button' className={action} onClick={onRevealValues}>Mostrar importes y continuar</button>}
     </div> : <>
-      {mode==='photo' ? <div className='space-y-3'>
+      {mode==='photo' ? <div className={viewingPhotoReview?'hidden':'space-y-3'}>
         <LocalScreenshotOcr onRecognized={photoRecognized} disabled={busy} privacyHidden={privacyHidden} compact
           onCleared={()=>{setDetectedText('');setPhoto(initialPhoto);setReview(null);setConfirmedOCR(false);setError('');}}/>
         {detectedText && <>
@@ -192,6 +212,9 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
           <button type='button' className={action+' w-full justify-center sm:w-auto'} onClick={previewPhoto} disabled={busy}>
             <FiCheckCircle aria-hidden='true'/> Ver resumen para confirmar
           </button>
+          {error&&<p role='alert' className='rounded-xl border border-rose-400/60 bg-rose-50 p-3 text-sm font-semibold text-rose-800 dark:bg-rose-950/25 dark:text-rose-200'>
+            No pudimos preparar la confirmación: {error}
+          </p>}
           <p className='text-xs text-slate-600 dark:text-slate-300'>Una captura genera un registro. Totales y compras se guardan por separado.</p>
         </>}
       </div> : <div className='space-y-3'>
@@ -209,7 +232,19 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
         </button>
       </div>}
     </>}
-    {review&&!privacyHidden&&<div className='space-y-3' aria-label='Vista previa de consumos'>
+    {review&&!privacyHidden&&<div ref={reviewRef} tabIndex={-1}
+      className='space-y-3 scroll-mt-20 outline-none' aria-label='Vista previa de consumos'>
+      {viewingPhotoReview&&<div className='flex flex-wrap items-start justify-between gap-3'>
+        <div>
+          <p className='text-xs font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300'>Paso 2 de 2</p>
+          <h3 className='mt-1 text-lg font-extrabold'>Confirmar consumos de la captura</h3>
+          <p className='mt-1 text-sm text-slate-600 dark:text-slate-300'>Revisá la fecha y los importes, marcá la verificación y guardá los cambios.</p>
+        </div>
+        <button type='button' className={action} disabled={busy}
+          onClick={()=>{setReview(null);setConfirmedOCR(false);setError('');}}>
+          Volver y corregir
+        </button>
+      </div>}
       {review.errors.length>0&&<div role='alert' className='rounded-xl border border-rose-400/60 p-3 text-sm text-rose-700 dark:text-rose-300'>
         <p className='font-bold'>Corregí los datos antes de continuar</p>
         {review.errors.map((message,index)=><p key={index} className='mt-1'>{message}</p>)}
@@ -264,6 +299,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
       {issues.length>0&&<p role='alert' className='rounded-xl border border-amber-400 p-3 text-xs text-amber-800 dark:text-amber-200'>{issues[0]}</p>}
       {mode==='photo'&&review.valid&&<label className='flex min-h-[44px] items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm font-semibold dark:border-slate-700'><input type='checkbox' className='mt-1 h-5 w-5 shrink-0 accent-violet-600' checked={confirmedOCR} onChange={event=>setConfirmedOCR(event.target.checked)}/>Revisé importes, fecha, banco y tarjeta contra la captura original.</label>}
        <div className='sticky bottom-0 z-10 -mx-4 grid grid-cols-2 gap-2 border-t border-slate-200 bg-white px-4 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900 sm:-mx-6 sm:px-6'>
+         {error&&<p role='alert' className='col-span-2 rounded-lg border border-rose-400/60 bg-rose-50 p-3 text-xs font-semibold text-rose-800 dark:bg-rose-950/30 dark:text-rose-200'>{error}</p>}
         <button type='button' className={action+' w-full justify-center'} disabled={busy} onClick={()=>onClose()}>Cancelar</button>
         <button type='button' className='inline-flex min-h-[44px] min-w-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-2 py-2 text-sm font-bold text-white focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50'
           disabled={busy||!review.valid||!selected.length||issues.length>0||(mode==='photo'&&!confirmedOCR)} onClick={save}>
@@ -272,6 +308,6 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
       </div>
       <p className='text-xs text-slate-600 dark:text-slate-300'>Las compras individuales se guardan como consumos de tarjeta, no como gastos de Transacciones. Los totales capturados reemplazan referencias anteriores de la misma tarjeta; las compras ya incluidas en esa foto no se suman de nuevo.</p>
     </div>}
-    {error&&<p role='status' className='rounded-lg border border-slate-300 p-3 text-sm text-slate-700 dark:text-slate-300'>{error}</p>}
+    {error&&mode==='markdown'&&<p role='alert' className='rounded-lg border border-rose-400/60 p-3 text-sm text-rose-700 dark:text-rose-300'>{error}</p>}
   </section>;
 }

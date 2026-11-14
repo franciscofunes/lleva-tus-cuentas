@@ -94,6 +94,64 @@ test('reviewed local OCR snapshot uses the existing safe card import path',async
  await waitFor(()=>expect(screen.getByRole('button',{name:'Guardar 1 registro(s)'})).not.toBeDisabled());
 });
 
+test('mobile OCR review is visible in its own step, preserves corrections and saves once',async()=>{
+ OCR.mockImplementation(()=>({load:jest.fn().mockResolvedValue(undefined),
+   read:jest.fn().mockResolvedValue({text:'Consumos ARS 854321.67\nConsumos USD 54.32\nFecha de consulta: 14/11/2026',lines:[]}),
+   dispose:jest.fn().mockResolvedValue(undefined)}));
+ const onSave=jest.fn().mockResolvedValue({snapshots:1,charges:0,duplicates:0});
+ const onClose=jest.fn();
+ render(<CardConsumptionMarkdownImporter banks={banks} cards={cards} charges={[]} onSave={onSave} onClose={onClose}/>);
+ fireEvent.change(screen.getByLabelText('Elegir captura para lectura local'),{
+   target:{files:[new File(['image'],'mobile-ocr.png',{type:'image/png'})]},
+ });
+ fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
+ await waitFor(()=>expect(screen.getByLabelText('Consumos ARS detectados')).toHaveValue('854321.67'));
+ fireEvent.change(screen.getByLabelText('Banco para la captura'),{target:{value:'ciudad'}});
+ fireEvent.change(screen.getByLabelText('Tarjeta para la captura'),{target:{value:'visa'}});
+ fireEvent.click(screen.getByRole('button',{name:'Ver resumen para confirmar'}));
+ const review=screen.getByLabelText('Vista previa de consumos');
+ expect(within(review).getByRole('heading',{name:'Confirmar consumos de la captura'})).toBeVisible();
+ expect(review).toHaveFocus();
+ expect(screen.getByLabelText('Banco para la captura').closest('.hidden')).not.toBeNull();
+ expect(within(review).getByText(/854321.67/)).toBeInTheDocument();
+ expect(screen.getByRole('button',{name:'Guardar 1 registro(s)'})).toBeDisabled();
+ fireEvent.click(within(review).getByRole('button',{name:'Volver y corregir'}));
+ expect(screen.getByLabelText('Banco para la captura').closest('.hidden')).toBeNull();
+ expect(screen.getByLabelText('Banco para la captura')).toHaveValue('ciudad');
+ expect(screen.getByLabelText('Tarjeta para la captura')).toHaveValue('visa');
+ expect(screen.getByLabelText('Consumos USD detectados')).toHaveValue('54.32');
+ fireEvent.click(screen.getByRole('button',{name:'Ver resumen para confirmar'}));
+ fireEvent.click(screen.getByLabelText(/Revisé importes, fecha, banco y tarjeta/));
+ fireEvent.click(screen.getByRole('button',{name:'Guardar 1 registro(s)'}));
+ await waitFor(()=>expect(onSave).toHaveBeenCalledTimes(1));
+ expect(onSave).toHaveBeenCalledWith([expect.objectContaining({
+   type:'snapshot',bankId:'ciudad',cardId:'visa',
+   snapshot:expect.objectContaining({asOf:'2026-11-14',currentConsumptionARS:854321.67,currentConsumptionUSD:54.32}),
+ })]);
+ await waitFor(()=>expect(onClose).toHaveBeenCalledWith(expect.stringMatching(/Importación confirmada/)));
+});
+test('invalid manually corrected OCR value explains the failure next to preview action',async()=>{
+ OCR.mockImplementation(()=>({load:jest.fn().mockResolvedValue(undefined),
+   read:jest.fn().mockResolvedValue({text:'Consumos ARS 854321.67\nFecha de consulta: 14/11/2026',lines:[]}),
+   dispose:jest.fn().mockResolvedValue(undefined)}));
+ render(<CardConsumptionMarkdownImporter banks={banks} cards={cards} charges={[]} onSave={jest.fn()} onClose={jest.fn()}/>);
+ fireEvent.change(screen.getByLabelText('Elegir captura para lectura local'),{
+   target:{files:[new File(['image'],'mobile-invalid.png',{type:'image/png'})]},
+ });
+ fireEvent.click(screen.getByRole('button',{name:'Leer captura en este dispositivo'}));
+ await waitFor(()=>expect(screen.getByLabelText('Consumos ARS detectados')).toHaveValue('854321.67'));
+ fireEvent.change(screen.getByLabelText('Banco para la captura'),{target:{value:'ciudad'}});
+ fireEvent.change(screen.getByLabelText('Tarjeta para la captura'),{target:{value:'visa'}});
+ fireEvent.change(screen.getByLabelText('Consumos ARS detectados'),{target:{value:'854321.678'}});
+ fireEvent.click(screen.getByRole('button',{name:'Ver resumen para confirmar'}));
+ expect(screen.queryByRole('heading',{name:'Confirmar consumos de la captura'})).not.toBeInTheDocument();
+ expect(screen.getByRole('alert')).toHaveTextContent('No pudimos preparar la confirmación');
+ expect(screen.getByRole('alert')).toHaveTextContent(/importe|inválido/i);
+ expect(screen.getByLabelText('Consumos ARS detectados')).toBeVisible();
+ fireEvent.change(screen.getByLabelText('Consumos ARS detectados'),{target:{value:'854321.67'}});
+ fireEvent.click(screen.getByRole('button',{name:'Ver resumen para confirmar'}));
+ expect(screen.getByRole('heading',{name:'Confirmar consumos de la captura'})).toBeVisible();
+});
 test('privacy mode does not expose or save recognized amounts',()=>{
  const onSave=jest.fn();
  render(<CardConsumptionMarkdownImporter banks={banks} cards={cards} charges={[]} onSave={onSave} onClose={jest.fn()} privacyHidden/>);
