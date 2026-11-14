@@ -96,7 +96,7 @@ test('reviewed local OCR snapshot uses the existing safe card import path',async
 
 test('mobile OCR review is visible in its own step, preserves corrections and saves once',async()=>{
  OCR.mockImplementation(()=>({load:jest.fn().mockResolvedValue(undefined),
-   read:jest.fn().mockResolvedValue({text:'Consumos ARS 854321.67\\nConsumos USD 54.32\\nFecha de consulta: 14/11/2026',lines:[]}),
+   read:jest.fn().mockResolvedValue({text:'Consumos ARS 854321.67\nConsumos USD 54.32\nFecha de consulta: 14/11/2026',lines:[]}),
    dispose:jest.fn().mockResolvedValue(undefined)}));
  const onSave=jest.fn().mockResolvedValue({snapshots:1,charges:0,duplicates:0});
  const onClose=jest.fn();
@@ -132,7 +132,7 @@ test('mobile OCR review is visible in its own step, preserves corrections and sa
 });
 test('invalid manually corrected OCR value explains the failure next to preview action',async()=>{
  OCR.mockImplementation(()=>({load:jest.fn().mockResolvedValue(undefined),
-   read:jest.fn().mockResolvedValue({text:'Consumos ARS 854321.67\\nFecha de consulta: 14/11/2026',lines:[]}),
+   read:jest.fn().mockResolvedValue({text:'Consumos ARS 854321.67\nFecha de consulta: 14/11/2026',lines:[]}),
    dispose:jest.fn().mockResolvedValue(undefined)}));
  render(<CardConsumptionMarkdownImporter banks={banks} cards={cards} charges={[]} onSave={jest.fn()} onClose={jest.fn()}/>);
  fireEvent.change(screen.getByLabelText('Elegir captura para lectura local'),{
