@@ -215,3 +215,20 @@ The progress percentage is rounded **only for display**; transitions compare unr
 Historical all-bank high/low is displayed as a **separate cyan information surface**, with explicit disclaimer that PDF months and card cycles may not align and months without PDFs are not zero. The mathematical 90%-of-average proposal is secondary and never applied automatically. Respect the user privacy toggle and both independent currencies. Test at mobile widths and in both theme modes.
 
 External email, SMS and true closed-app push have **not been enabled** by this UI redesign. The architecture, vendor comparison, privacy policy and phased backend work are documented in [external-notifications.md](external-notifications.md).
+
+
+## Android OCR confirmation — two visible steps (November 2026)
+
+The **Bancos → Importar consumos desde capturas** flow separates data entry
+and final approval on mobile. After reading a local OCR image and checking bank,
+card, date, and ARS/USD totals, **Ver resumen para confirmar** hides the long
+OCR form and immediately focuses the independent **Paso 2 de 2** review panel.
+Users can select **Volver y corregir** without losing OCR data or prior edits.
+
+A malformed amount/date is displayed as an inline blocking explanation beside
+the preview action, not as an offscreen message. Final **Guardar** remains
+disabled until the owner explicitly ticks **Revisé importes, fecha, banco y tarjeta**;
+saving still invokes the existing atomic and owner-scoped
+`importReviewedCardConsumptionMarkdown` path. The image and OCR text do not
+leave the device; the import does not create a Transactions expense or silently
+reclassify a total-of-card snapshot as individual purchases.
