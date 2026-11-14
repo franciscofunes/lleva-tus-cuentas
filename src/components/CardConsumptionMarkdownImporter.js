@@ -299,6 +299,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
       {issues.length>0&&<p role='alert' className='rounded-xl border border-amber-400 p-3 text-xs text-amber-800 dark:text-amber-200'>{issues[0]}</p>}
       {mode==='photo'&&review.valid&&<label className='flex min-h-[44px] items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm font-semibold dark:border-slate-700'><input type='checkbox' className='mt-1 h-5 w-5 shrink-0 accent-violet-600' checked={confirmedOCR} onChange={event=>setConfirmedOCR(event.target.checked)}/>Revisé importes, fecha, banco y tarjeta contra la captura original.</label>}
        <div className='sticky bottom-0 z-10 -mx-4 grid grid-cols-2 gap-2 border-t border-slate-200 bg-white px-4 py-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] dark:border-slate-700 dark:bg-slate-900 sm:-mx-6 sm:px-6'>
+         {error&&<p role='alert' className='col-span-2 rounded-lg border border-rose-400/60 bg-rose-50 p-3 text-xs font-semibold text-rose-800 dark:bg-rose-950/30 dark:text-rose-200'>{error}</p>}
         <button type='button' className={action+' w-full justify-center'} disabled={busy} onClick={()=>onClose()}>Cancelar</button>
         <button type='button' className='inline-flex min-h-[44px] min-w-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-2 py-2 text-sm font-bold text-white focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50'
           disabled={busy||!review.valid||!selected.length||issues.length>0||(mode==='photo'&&!confirmedOCR)} onClick={save}>
@@ -307,6 +308,6 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
       </div>
       <p className='text-xs text-slate-600 dark:text-slate-300'>Las compras individuales se guardan como consumos de tarjeta, no como gastos de Transacciones. Los totales capturados reemplazan referencias anteriores de la misma tarjeta; las compras ya incluidas en esa foto no se suman de nuevo.</p>
     </div>}
-    {error&&(mode!=='photo'||viewingPhotoReview)&&<p role='alert' className='rounded-lg border border-rose-400/60 p-3 text-sm text-rose-700 dark:text-rose-300'>{error}</p>}
+    {error&&mode==='markdown'&&<p role='alert' className='rounded-lg border border-rose-400/60 p-3 text-sm text-rose-700 dark:text-rose-300'>{error}</p>}
   </section>;
 }
