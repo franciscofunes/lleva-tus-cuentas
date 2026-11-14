@@ -233,7 +233,7 @@ export default function CardConsumptionMarkdownImporter({banks=[],cards=[],charg
       </div>}
     </>}
     {review&&!privacyHidden&&<div ref={reviewRef} tabIndex={-1}
-      className='space-y-3 scroll-mt-4 outline-none' aria-label='Vista previa de consumos'>
+      className='space-y-3 scroll-mt-20 outline-none' aria-label='Vista previa de consumos'>
       {viewingPhotoReview&&<div className='flex flex-wrap items-start justify-between gap-3'>
         <div>
           <p className='text-xs font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300'>Paso 2 de 2</p>
