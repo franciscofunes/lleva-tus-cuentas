@@ -112,11 +112,11 @@ test('mobile OCR review is visible in its own step, preserves corrections and sa
  const review=screen.getByLabelText('Vista previa de consumos');
  expect(within(review).getByRole('heading',{name:'Confirmar consumos de la captura'})).toBeVisible();
  expect(review).toHaveFocus();
- expect(screen.getByLabelText('Banco para la captura')).not.toBeVisible();
+ expect(screen.getByLabelText('Banco para la captura').closest('.hidden')).not.toBeNull();
  expect(within(review).getByText(/854321.67/)).toBeInTheDocument();
  expect(screen.getByRole('button',{name:'Guardar 1 registro(s)'})).toBeDisabled();
  fireEvent.click(within(review).getByRole('button',{name:'Volver y corregir'}));
- expect(screen.getByLabelText('Banco para la captura')).toBeVisible();
+ expect(screen.getByLabelText('Banco para la captura').closest('.hidden')).toBeNull();
  expect(screen.getByLabelText('Banco para la captura')).toHaveValue('ciudad');
  expect(screen.getByLabelText('Tarjeta para la captura')).toHaveValue('visa');
  expect(screen.getByLabelText('Consumos USD detectados')).toHaveValue('54.32');
