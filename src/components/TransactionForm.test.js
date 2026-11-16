@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { storeDataAction } from '../actionCreators/databaseActions';
 import TransactionForm, { CREATE_CATEGORY_OPTION } from './TransactionForm';
 
 jest.mock('react-redux', () => ({
@@ -37,11 +38,12 @@ const initialCategories = [
     extraFieldIds: ['reference', 'paymentMethod'], origin: 'custom', isCustom: true },
 ];
 
-function TransactionHarness({ initialCategory = 'Transporte 🚌', initialReceiptCurrency = null, onCategoryFlags = {} }) {
+function TransactionHarness({ initialCategory = 'Transporte 🚌', initialReceiptCurrency = null, initialComment = 'Viaje', onCategoryFlags = {} }) {
   const [category, setCategory] = useState(initialCategory);
   const [customDetails, setCustomDetails] = useState({});
   const [expiration, setExpiration] = useState('');
   const [name, setName] = useState('Taxi de regreso');
+  const [comment, setComment] = useState(initialComment);
   const [openManager, setOpenManager] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
   const noop = () => {};
@@ -51,7 +53,7 @@ function TransactionHarness({ initialCategory = 'Transporte 🚌', initialReceip
         initialReceiptCurrency={initialReceiptCurrency}
         name={name} setName={setName}
         amount='2500' setAmount={noop}
-        comment='Viaje' setComment={noop}
+        comment={comment} setComment={setComment}
         category={category} setCategory={setCategory}
         customDetails={customDetails} setCustomDetails={setCustomDetails}
         selectedDate='2026-10-10' setSelectedDate={noop}
@@ -240,4 +242,29 @@ test('Hogar enables a separate optional expiration picker with a five-day notifi
 test('a regular transaction continues without a due-date picker', () => {
   render(<TransactionHarness initialCategory='Transporte 🚌' />);
   expect(screen.queryByLabelText('Fecha de vencimiento (opcional)')).not.toBeInTheDocument();
+});
+
+
+test('transaction description accepts long multiline Unicode, leading symbols and markup-like text without truncation', async () => {
+  storeDataAction.mockClear();
+  render(<TransactionHarness />);
+  const description = screen.getByRole('textbox', { name: 'Descripción' });
+  const note = '# Ñandú / café 💳 — cuenta (ARS/USD) & descuentos <detalle>\n'
+    + 'Producto: $12.345,67; #factura@dominio.com\n'
+    + 'Reintegro & comisión: ' + 'áéíóú 😃 !? / [x] '.repeat(90);
+  expect(note.length).toBeGreaterThan(1000);
+  expect(description).not.toHaveAttribute('maxLength');
+  fireEvent.change(description, { target: { value: note } });
+  expect(description).toHaveValue(note);
+  fireEvent.click(screen.getByRole('button', { name: 'Añadir' }));
+  await waitFor(() => expect(storeDataAction).toHaveBeenCalledWith(expect.objectContaining({ comment: note })));
+  expect(screen.queryByText('Ingrese una descripción de transacción válida')).not.toBeInTheDocument();
+});
+
+test('transaction description still rejects blank and whitespace-only text', async () => {
+  storeDataAction.mockClear();
+  render(<TransactionHarness initialComment=' \n \t ' />);
+  fireEvent.click(screen.getByRole('button', { name: 'Añadir' }));
+  expect(await screen.findByText('Ingrese una descripción de transacción válida')).toBeInTheDocument();
+  expect(storeDataAction).not.toHaveBeenCalled();
 });
