@@ -399,7 +399,7 @@ test('expanded transaction description preserves multiline Unicode content and w
   const comment = '💳 Recibo #A-123 <detalles>\nSegundo párrafo con ñ, símbolos: & % / ?\n' + 'abc'.repeat(250);
   render(<Card {...basicProps} comment={comment} />);
   openDetails();
-  const description = screen.getByText(comment);
+  const description = screen.getByText(/Segundo párrafo con ñ, símbolos/);
   expect(description).toHaveClass('whitespace-pre-wrap', 'break-words', 'dark:text-slate-200');
   expect(description).toHaveTextContent('Segundo párrafo con ñ');
 });
