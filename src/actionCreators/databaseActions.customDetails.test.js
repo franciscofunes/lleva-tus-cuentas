@@ -98,3 +98,10 @@ test('editing Hogar with a due date retains that exact date and marks reminder a
   expect(saved.notificationEnabled).toBe(true);
   expect(removeReminder).not.toHaveBeenCalled();
 });
+
+
+test('editing a transaction persists a long Unicode multiline description unchanged', async () => {
+  const comment = '⚡ # Factura <detalle> & referencia: 123\nLínea 2 áéíóú\n' + 'texto !@#$%^&* '.repeat(150);
+  await updateDataAction({ ...base, comment }, 'expense-1')(jest.fn());
+  expect(update).toHaveBeenCalledWith(expect.objectContaining({ comment }));
+});
