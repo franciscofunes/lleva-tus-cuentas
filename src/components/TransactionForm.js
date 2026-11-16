@@ -192,7 +192,7 @@ const TransactionForm = ({
       const items = fields.receiptDetails?.items || [];
       const description = (items.length
         ? `Compra: ${items.map((item) => item.description).join(', ')}`
-        : `Compra en ${fields.merchant || 'comercio'}`).slice(0, 70);
+        : `Compra en ${fields.merchant || 'comercio'}`);
       setComment(description);
       setValue('comment', description, {shouldValidate: true});
     }
@@ -225,7 +225,7 @@ const TransactionForm = ({
     setSelectedDate(statement.dueDate);
     setSelectedCloseDate(statement.closingDate);
     setSelectedExpirationDate(statement.dueDate);
-    setComment(("Resumen " + statement.period + " - USD " + statement.totals.USD).slice(0, 70));
+    setComment("Resumen " + statement.period + " - USD " + statement.totals.USD);
   };
 
   const onSubmit = async () => {
@@ -903,20 +903,26 @@ const TransactionForm = ({
           Descripción
         </label>
         <textarea
-          className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
+          className="w-full min-h-[110px] resize-y border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
           value={comment}
-          type="text"
+          rows={4}
           id="comment"
+          aria-describedby="comment-hint"
           {...register("comment", {
             required: true,
-            pattern: /^[A-Za-z0-9].{2,70}$/,
+            // No arbitrary character/length restrictions. React escapes output; Firestore
+            // stores Unicode strings, including newlines, without changing the content.
+            validate: (value) => Boolean(value?.trim()),
             onChange: (e) => {
               setComment(e.target.value);
             },
           })}
-          placeholder="e.g. Información adicional"
+          placeholder="Ej.: Detalle, referencias, varios párrafos…"
           autoComplete="on"
         />
+        <p id="comment-hint" className="text-xs text-gray-600 dark:text-gray-300">
+          Admite textos extensos, saltos de línea, acentos, emojis y caracteres especiales.
+        </p>
         {errors.comment && (
           <p className="text-red-500 text-sm">
             Ingrese una descripción de transacción válida
