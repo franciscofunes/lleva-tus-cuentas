@@ -263,7 +263,12 @@ test('transaction description accepts long multiline Unicode, leading symbols an
 
 test('transaction description still rejects blank and whitespace-only text', async () => {
   storeDataAction.mockClear();
-  render(<TransactionHarness initialComment=' \n \t ' />);
+  render(<TransactionHarness />);
+  // Simulate the real edit path: RHF's internal value is updated by onChange,
+  // not by passing a new initial controlled prop to the test harness.
+  const description = screen.getByRole('textbox', { name: 'Descripción' });
+  fireEvent.change(description, { target: { value: ' \n \t ' } });
+  expect(description).toHaveValue(' \n \t ');
   fireEvent.click(screen.getByRole('button', { name: 'Añadir' }));
   expect(await screen.findByText('Ingrese una descripción de transacción válida')).toBeInTheDocument();
   expect(storeDataAction).not.toHaveBeenCalled();
