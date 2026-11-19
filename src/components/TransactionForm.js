@@ -354,7 +354,6 @@ const TransactionForm = ({
     } catch (error) {
       // In particular, NEVER close the form after a failed detail save.
       const message = error?.message || "No se pudo guardar el resumen.";
-      setMarkdownMessage(message);
       setSubmitError(message);
       toast.error(message);
     } finally {
@@ -454,6 +453,7 @@ const TransactionForm = ({
                 return;
               }
               setCategory(e.target.value);
+              setSubmitError("");
               setTransactionCurrency(getCategoryCurrency(e.target.value, categories));
               const nextCategory = categories?.find((entry) => entry.name === e.target.value);
               setCustomDetails(receiptCategorySuggestions(nextCategory, receiptDetails, name, selectedDate));
@@ -578,6 +578,7 @@ const TransactionForm = ({
                   validate: isValidTransactionDate,
                   onChange: (e) => {
                     setSelectedExpirationDate(e.target.value);
+                    setSubmitError("");
                   },
                 })}
               />
@@ -601,6 +602,7 @@ const TransactionForm = ({
                   validate: (date) => !date || isValidTransactionDate(date),
                   onChange: (e) => {
                     setSelectedCloseDate(e.target.value);
+                    setSubmitError("");
                   },
                 })}
               />
@@ -631,6 +633,7 @@ const TransactionForm = ({
                   validate: (value) => parseTransactionNumber(value, 8) !== null,
                   onChange: (e) => {
                     setCurrencyQuantity(e.target.value);
+                    setSubmitError("");
                   },
                 })}
                 placeholder="e.g. 1000"
@@ -658,6 +661,7 @@ const TransactionForm = ({
                   validate: (value) => parseTransactionNumber(value, 10) !== null,
                   onChange: (e) => {
                     setCurrencyExchangeRate(e.target.value);
+                    setSubmitError("");
                   },
                 })}
                 placeholder="e.g. 330"
@@ -690,6 +694,7 @@ const TransactionForm = ({
                   validate: (value) => parseTransactionNumber(value, 8) !== null,
                   onChange: (e) => {
                     setCurrencyQuantity(e.target.value);
+                    setSubmitError("");
                     // Recompute only after manual edits; a Markdown import may contain the exact ARS amount.
                     const quantity = parseTransactionNumber(e.target.value, 8);
                     const rate = parseTransactionNumber(currencyExchangeRate, 10);
@@ -723,6 +728,7 @@ const TransactionForm = ({
                   validate: (value) => parseTransactionNumber(value, 10) !== null,
                   onChange: (e) => {
                     setCurrencyExchangeRate(e.target.value);
+                    setSubmitError("");
                     const quantity = parseTransactionNumber(currencyQuantity, 8);
                     const rate = parseTransactionNumber(e.target.value, 10);
                     setAmount(quantity !== null && rate !== null ? Math.round(quantity * rate * 100) / 100 : "");
@@ -758,6 +764,7 @@ const TransactionForm = ({
                   validate: (value) => parseTransactionNumber(value, 8) !== null,
                   onChange: (e) => {
                     setCurrencyQuantity(e.target.value);
+                    setSubmitError("");
                   },
                 })}
                 placeholder="e.g. 1000"
@@ -901,6 +908,7 @@ const TransactionForm = ({
             validate: isValidTransactionDate,
             onChange: (e) => {
               setSelectedDate(e.target.value);
+              setSubmitError("");
             },
           })}
         />
