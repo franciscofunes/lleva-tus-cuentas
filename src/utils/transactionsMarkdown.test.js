@@ -68,7 +68,7 @@ describe('Guided LITA Markdown works for every transaction class', () => {
     expect(item.errors).toContain('Monto inválido');
     expect(item.errors).toContain('Fecha inválida');
     const statement = parse('- name: Visa\n  category: Resumen tarjeta\n  date: 2026-10-10\n  amount: 1000');
-    expect(statement.errors).toContain('Cierre inválido');
+    expect(statement.errors).not.toContain('Cierre inválido');
     expect(statement.errors).toContain('Vencimiento inválido');
   });
 
@@ -78,4 +78,23 @@ describe('Guided LITA Markdown works for every transaction class', () => {
     expect(rows.every(({ errors }) => errors.length === 0)).toBe(true);
     expect(rows[0].importKey).not.toBe(rows[1].importKey);
   });
+});
+
+test('Lita Markdown imports Argentinian decimal amounts and exchange rates without rejecting a valid draft',()=>{
+ const [expense] = parseTransactionsMarkdown('- name: Café Ñandú 🧾\\n  category: Alimentación\\n  date: 2026-11-19\\n  amount: 1.234,56\\n  description: Compra con factura');
+ expect(expense.errors).toEqual([]);
+ expect(expense.amount).toBe(1234.56);
+ const [sale] = parseTransactionsMarkdown('- name: Venta ARS\\n  category: Venta divisas\\n  date: 2026-11-19\\n  currencyQuantity: 12,5\\n  currencyExchangeRate: 1.400,20\\n  amount: 17.502,50');
+ expect(sale.errors).toEqual([]);
+ expect(sale.currencyQuantity).toBe(12.5);
+ expect(sale.currencyExchangeRate).toBe(1400.2);
+ expect(sale.amount).toBe(17502.5);
+});
+test('optional closing date stays absent for statements; malformed provided close date is still rejected',()=>{
+ const base='- name: Tarjeta\\n  category: Resumen tarjeta 💳\\n  date: 2026-11-19\\n  amount: 1.234,56\\n  vencimiento: 2026-11-29';
+ const [valid] = parseTransactionsMarkdown(base);
+ expect(valid.errors).toEqual([]);
+ expect(valid.selectedCloseDate).toBe('');
+ const [invalid] = parseTransactionsMarkdown(base+'\\n  cierre: 2026-11-31');
+ expect(invalid.errors).toContain('Cierre inválido');
 });
