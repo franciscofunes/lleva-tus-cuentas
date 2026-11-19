@@ -90,7 +90,7 @@ export const parseTransactionsMarkdown = (markdown) => {
     if (row.amount !== undefined && row.amount !== '' && !positiveNumber(item.amount)) errors.push('Monto inválido');
     if (isCardStatement(category)) {
       if (!isValidDate(item.selectedExpirationDate)) errors.push('Vencimiento inválido');
-      if (!isValidDate(item.selectedCloseDate)) errors.push('Cierre inválido');
+      // El cierre es opcional; si se informa, se valida más abajo.
     }
     if (item.selectedExpirationDate && !isValidDate(item.selectedExpirationDate)) errors.push('Vencimiento inválido');
     if (item.selectedCloseDate && !isValidDate(item.selectedCloseDate)) errors.push('Cierre inválido');
