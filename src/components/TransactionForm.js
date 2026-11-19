@@ -184,7 +184,7 @@ const TransactionForm = ({
       setComment(item.comment || "");
       setCurrencyQuantity(item.currencyQuantity || "");
       setCurrencyExchangeRate(item.currencyExchangeRate !== "" ? item.currencyExchangeRate : "");
-      if (item.amount !== "") setAmount(item.amount);
+      setAmount(item.amount ?? ""); // A missing amount must not inherit the previous transaction.
       setIsCreditCardCategory(nextCategory.includes("Resumen tarjeta"));
       setIsBuyCurrenciesCategory(nextCategory.includes("Compra divisas"));
       setIsCurrencyIncomeCategory(nextCategory.includes(INGRESO_DIVISAS_CATEGORY));
@@ -451,6 +451,14 @@ const TransactionForm = ({
                 setValue("category", category || "");
                 onManageCategories?.();
                 return;
+              }
+              const nextIsFx = /(?:Compra|Venta|Ingreso) divisas/i.test(e.target.value);
+              if (category !== e.target.value && (isFxCategory || nextIsFx)) {
+                // A category change must not carry a previously derived ARS
+                // amount or USD quantity into a different financial operation.
+                setCurrencyQuantity("");
+                setCurrencyExchangeRate("");
+                setAmount("");
               }
               setCategory(e.target.value);
               setSubmitError("");
