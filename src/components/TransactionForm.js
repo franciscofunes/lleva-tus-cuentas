@@ -23,6 +23,7 @@ import { INGRESO_DIVISAS_CATEGORY } from "../shared/constants/category.const";
 import { categoriesForNewTransactions, categoryLabel, getCategoryCurrency, categoryDescription } from "../utils/customCategories";
 import { getCategoryExtraFields, sanitizeTransactionCustomDetails } from "../utils/categoryExtraFields";
 import { parseTransactionsMarkdown } from "../utils/transactionsMarkdown";
+import { isValidTransactionDate, parseTransactionNumber, validTransactionName } from "../utils/transactionFormValidation";
 import {
   getNotificationSettings,
   resolveTransactionDueDate,
@@ -84,6 +85,8 @@ const TransactionForm = ({
   const user = useSelector((state) => state.auth.user);
   const isDataFetching = useSelector((state) => state.database.isDataFetching);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
   const [showMarkdown, setShowMarkdown] = useState(false);
   const [showReceiptScanner, setShowReceiptScanner] = useState(Boolean(startWithReceiptScanner));
   const [receiptCurrency, setReceiptCurrency] = useState(initialReceiptCurrency);
@@ -117,17 +120,44 @@ const TransactionForm = ({
     (notificationSettings.enabled || isCreditCardCategory);
 
 
+  const quantityValue = parseTransactionNumber(currencyQuantity, 8);
+  const exchangeRateValue = parseTransactionNumber(currencyExchangeRate, 10);
+  const computedFxAmount = quantityValue !== null && exchangeRateValue !== null
+    ? Math.round(quantityValue * exchangeRateValue * 100) / 100 : null;
+  const derivedFxAmount = isBuyCurrenciesCategory || isSellCurrenciesCategory;
+  const shownAmount = derivedFxAmount ? (computedFxAmount ?? "") : amount;
+
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm();
+  } = useForm({ mode: "onSubmit", reValidateMode: "onChange", shouldFocusError: true });
 
-  // Keep react-hook-form in sync when the parent selects a newly created category.
+  // Parent state changes without DOM change events during edit, Markdown/OCR and
+  // category creation. Keep validation values identical to the rendered values.
   useEffect(() => {
-    setValue("category", category || "");
-  }, [category, setValue]);
+    const values = {
+      name, category, amount: shownAmount, comment, selectedDate,
+      selectedCloseDate, selectedExpirationDate, currencyQuantity, currencyExchangeRate,
+    };
+    Object.entries(values).forEach(([field, value]) => {
+      setValue(field, value ?? "", { shouldValidate: hasAttemptedSave });
+    });
+  }, [name, category, shownAmount, comment, selectedDate, selectedCloseDate,
+      selectedExpirationDate, currencyQuantity, currencyExchangeRate, setValue, hasAttemptedSave]);
+
+  const invalidLabels = {
+    name: "nombre", category: "categoría", amount: "monto",
+    selectedDate: "fecha", selectedCloseDate: "cierre",
+    selectedExpirationDate: "vencimiento", currencyQuantity: "cantidad de divisas",
+    currencyExchangeRate: "cotización",
+  };
+  const onInvalid = (invalid) => {
+    setHasAttemptedSave(true);
+    const missing = Object.keys(invalid).map((key) => invalidLabels[key] || key);
+    setSubmitError("Revisá " + (missing.length ? missing.join(", ") : "los datos del formulario") + " para poder guardar.");
+  };
 
   const applyMarkdown = () => {
     if (!markdown.trim() || isParsingMarkdown) return;
@@ -230,9 +260,26 @@ const TransactionForm = ({
 
   const onSubmit = async () => {
     if (isSubmitting) return;
+    setHasAttemptedSave(true);
+    setSubmitError("");
     setIsSubmitting(true);
     setMarkdownMessage("");
     try {
+      // Validate the actual parent-controlled values at the persistence boundary.
+      if (!validTransactionName(name)) throw new Error("Ingresá un nombre de hasta 200 caracteres.");
+      if (!category || category === CREATE_CATEGORY_OPTION) throw new Error("Elegí una categoría.");
+      if (!isValidTransactionDate(selectedDate)) throw new Error("Ingresá una fecha de transacción válida.");
+      if (isCreditCardCategory && (!isValidTransactionDate(selectedCloseDate) || !isValidTransactionDate(selectedExpirationDate)))
+        throw new Error("Completá fechas válidas de cierre y vencimiento de la tarjeta.");
+      if (hasSeparateDueDate && selectedExpirationDate && !isValidTransactionDate(selectedExpirationDate))
+        throw new Error("La fecha de vencimiento opcional no es válida.");
+      const amountValue = parseTransactionNumber(shownAmount, 2);
+      if (!isCurrencyIncomeCategory && amountValue === null)
+        throw new Error("Ingresá un monto positivo válido, con hasta dos decimales.");
+      if (isFxCategory && quantityValue === null)
+        throw new Error("Ingresá una cantidad de divisas válida.");
+      if (derivedFxAmount && exchangeRateValue === null)
+        throw new Error("Ingresá una cotización válida.");
       if (receiptCurrency && effectiveCurrency !== receiptCurrency) {
         throw new Error(`El ticket indica ${receiptCurrency}, pero la categoría seleccionada guarda en ${effectiveCurrency}. Corregí la categoría antes de continuar.`);
       }
@@ -255,11 +302,14 @@ const TransactionForm = ({
         receiptDetails: sanitizeReceiptDetails(receiptDetails),
         clearReceiptDetails: edit && !sanitizeReceiptDetails(receiptDetails),
         clearCustomDetails: edit && hasSavedCustomDetails && !Object.keys(safeDetails).length,
-        name, amount, comment, category, selectedDate,
+        name: name.trim(), amount: isCurrencyIncomeCategory ? amount : amountValue,
+        comment: typeof comment === "string" ? comment : "", category, selectedDate,
         location: transactionLocation,
         transactionCurrency: effectiveCurrency,
         selectedExpirationDate, selectedCloseDate,
-        currencyQuantity, currencyExchangeRate, dueDate,
+        currencyQuantity: isFxCategory ? quantityValue : currencyQuantity,
+        currencyExchangeRate: derivedFxAmount ? exchangeRateValue : currencyExchangeRate,
+        dueDate,
         notificationEnabled, notificationLeadDays: notificationSettings.leadDays,
       };
       if (!edit && !savedId) {
@@ -303,6 +353,7 @@ const TransactionForm = ({
       // In particular, NEVER close the form after a failed detail save.
       const message = error?.message || "No se pudo guardar el resumen.";
       setMarkdownMessage(message);
+      setSubmitError(message);
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -313,7 +364,8 @@ const TransactionForm = ({
     <>
       <form
         className="mb-0 mt-0 flex flex-col gap-y-1.5 space-y-0.5 sm:gap-y-2 sm:space-y-1"
-        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+        onSubmit={handleSubmit(onSubmit, onInvalid)}
       >
         <h1 className="font-Nunito font-semibold text-lg sm:text-xl dark:text-purple-500 underline">
           {edit ? "Editar transacción" : "Crear transacción"}
@@ -354,17 +406,20 @@ const TransactionForm = ({
           id="name"
           {...register("name", {
             required: true,
-            pattern: /^[A-Za-z0-9].{2,30}$/,
+            validate: validTransactionName,
             onChange: (e) => {
               setName(e.target.value);
+              setSubmitError("");
             },
           })}
           placeholder="Nombre de transacción"
+          aria-describedby="name-hint"
           autoComplete="on"
         />
+        <p id="name-hint" className="text-xs text-slate-500 dark:text-slate-300">Admite acentos, símbolos y emojis · hasta 200 caracteres.</p>
         {errors.name && (
-          <p className="text-red-500 text-sm">
-            Ingrese un nombre de transacción válido
+          <p role="alert" className="text-red-500 text-sm">
+            El nombre no puede quedar vacío ni superar 200 caracteres.
           </p>
         )}
 
@@ -900,7 +955,7 @@ const TransactionForm = ({
           htmlFor="comment"
           className="block text-sm font-medium text-gray-700 dark:text-white"
         >
-          Descripción
+          Descripción (opcional)
         </label>
         <textarea
           className="w-full min-h-[110px] resize-y border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
@@ -909,26 +964,29 @@ const TransactionForm = ({
           id="comment"
           aria-describedby="comment-hint"
           {...register("comment", {
-            required: true,
-            // No arbitrary character/length restrictions. React escapes output; Firestore
+            // Optional free-form notes. React escapes output; Firestore
             // stores Unicode strings, including newlines, without changing the content.
-            validate: (value) => Boolean(value?.trim()),
+            validate: (value) => value == null || typeof value === "string",
             onChange: (e) => {
               setComment(e.target.value);
+              setSubmitError("");
             },
           })}
           placeholder="Ej.: Detalle, referencias, varios párrafos…"
           autoComplete="on"
         />
         <p id="comment-hint" className="text-xs text-gray-600 dark:text-gray-300">
-          Admite textos extensos, saltos de línea, acentos, emojis y caracteres especiales.
+          Podés dejarla vacía. Admite textos extensos, saltos de línea, acentos y emojis.
         </p>
         {errors.comment && (
           <p className="text-red-500 text-sm">
-            Ingrese una descripción de transacción válida
+            La descripción debe ser texto válido.
           </p>
         )}
 
+        {submitError && <div role="alert" className="rounded-xl border border-rose-400/60 bg-rose-50 p-3 text-sm font-semibold text-rose-800 dark:bg-rose-950/25 dark:text-rose-200">
+          No se pudo guardar: {submitError}
+        </div>}
         <button
           type="submit"
           disabled={isSubmitting}
