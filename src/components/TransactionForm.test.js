@@ -291,7 +291,7 @@ test('pre-filled edit and Markdown-style controlled values do not require typing
   const {updateDataAction}=require('../actionCreators/databaseActions');
   updateDataAction.mockClear();
   render(<TransactionHarness edit initialName='🧾 Café Ñandú #123'
-    initialAmount='1.234,56' initialDate='2026-11-19' initialComment='Notas multilinea\nCon emoji 💳' />);
+    initialAmount='1.234,56' initialDate='2026-11-19' initialComment={'Notas multilinea\nCon emoji 💳'} />);
   fireEvent.click(screen.getByRole('button',{name:'Guardar'}));
   await waitFor(()=>expect(updateDataAction).toHaveBeenCalledWith(
     expect.objectContaining({
