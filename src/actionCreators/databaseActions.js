@@ -160,15 +160,18 @@ export const updateDataAction = (data, docId) => {
 					: data?.selectedExpirationDate
 						? { selectedExpirationDate: data.selectedExpirationDate }
 						: {}),
-				...(data?.selectedCloseDate && {
-					selectedCloseDate: data?.selectedCloseDate,
-				}),
-				...(data?.currencyQuantity && {
-					currencyQuantity: data?.currencyQuantity,
-				}),
-				...(data?.currencyExchangeRate && {
-					currencyExchangeRate: data?.currencyExchangeRate,
-				}),
+				// Persist cleared optional dates and obsolete FX fields on edits.
+				...(data?.selectedCloseDate === ''
+					? { selectedCloseDate: firebase.firestore.FieldValue.delete() }
+					: data?.selectedCloseDate ? { selectedCloseDate: data.selectedCloseDate } : {}),
+				...(data?.currencyQuantity === ''
+					? { currencyQuantity: firebase.firestore.FieldValue.delete() }
+					: data?.currencyQuantity !== undefined && data?.currencyQuantity !== null
+						? { currencyQuantity: data.currencyQuantity } : {}),
+				...(data?.currencyExchangeRate === ''
+					? { currencyExchangeRate: firebase.firestore.FieldValue.delete() }
+					: data?.currencyExchangeRate !== undefined && data?.currencyExchangeRate !== null
+						? { currencyExchangeRate: data.currencyExchangeRate } : {}),
 				dueDate: data.dueDate || null,
 				notificationEnabled: Boolean(data.notificationEnabled),
 				notificationLeadDays: Number(data.notificationLeadDays || 5),
