@@ -573,7 +573,7 @@ const TransactionForm = ({
                 type="date"
                 id="selectedExpirationDate"
                 {...register("selectedExpirationDate", {
-                  required: true,
+                  validate: isValidTransactionDate,
                   onChange: (e) => {
                     setSelectedExpirationDate(e.target.value);
                   },
@@ -596,7 +596,7 @@ const TransactionForm = ({
                 type="date"
                 id="selectedCloseDate"
                 {...register("selectedCloseDate", {
-                  required: true,
+                  validate: isValidTransactionDate,
                   onChange: (e) => {
                     setSelectedCloseDate(e.target.value);
                   },
@@ -620,12 +620,13 @@ const TransactionForm = ({
               Cantidad
               <input
                 className="w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={currencyQuantity}
                 id="currencyQuantity"
                 {...register("currencyQuantity", {
                   required: true,
-                  pattern: /^\d+(\.\d{1,2})?$/,
+                  validate: (value) => parseTransactionNumber(value, 8) !== null,
                   onChange: (e) => {
                     setCurrencyQuantity(e.target.value);
                   },
@@ -647,11 +648,12 @@ const TransactionForm = ({
               <input
                 className="w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
                 value={currencyExchangeRate}
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="currencyExchangeRate"
                 {...register("currencyExchangeRate", {
                   required: true,
-                  pattern: /^\d+(\.\d{1,20})?$/,
+                  validate: (value) => parseTransactionNumber(value, 10) !== null,
                   onChange: (e) => {
                     setCurrencyExchangeRate(e.target.value);
                   },
@@ -676,20 +678,21 @@ const TransactionForm = ({
               Cantidad a vender
               <input
                 className="w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
-                type="number"
+                type="text"
+                inputMode="decimal"
                 step="any"
                 value={currencyQuantity}
                 id="currencyQuantity"
                 {...register("currencyQuantity", {
                   required: true,
-                  pattern: /^\d+(\.\d{1,8})?$/,
+                  validate: (value) => parseTransactionNumber(value, 8) !== null,
                   onChange: (e) => {
                     setCurrencyQuantity(e.target.value);
                     // Recompute only after manual edits; a Markdown import may contain the exact ARS amount.
-                    const quantity = Number(e.target.value);
-                    const rate = Number(currencyExchangeRate);
-                    setAmount(e.target.value !== "" && currencyExchangeRate !== "" && Number.isFinite(quantity) && Number.isFinite(rate)
-                      ? Number((quantity * rate).toFixed(2)) : "");
+                    const quantity = parseTransactionNumber(e.target.value, 8);
+                    const rate = parseTransactionNumber(currencyExchangeRate, 10);
+                    setAmount(quantity !== null && rate !== null ? Math.round(quantity * rate * 100) / 100 : "");
+                    setSubmitError("");
                   },
                 })}
                 placeholder="e.g. 500"
@@ -709,18 +712,19 @@ const TransactionForm = ({
               <input
                 className="w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
                 value={currencyExchangeRate}
-                type="number"
+                type="text"
+                inputMode="decimal"
                 step="any"
                 id="currencyExchangeRate"
                 {...register("currencyExchangeRate", {
                   required: true,
-                  pattern: /^\d+(\.\d{1,20})?$/,
+                  validate: (value) => parseTransactionNumber(value, 10) !== null,
                   onChange: (e) => {
                     setCurrencyExchangeRate(e.target.value);
-                    const quantity = Number(currencyQuantity);
-                    const rate = Number(e.target.value);
-                    setAmount(e.target.value !== "" && currencyQuantity !== "" && Number.isFinite(quantity) && Number.isFinite(rate)
-                      ? Number((quantity * rate).toFixed(2)) : "");
+                    const quantity = parseTransactionNumber(currencyQuantity, 8);
+                    const rate = parseTransactionNumber(e.target.value, 10);
+                    setAmount(quantity !== null && rate !== null ? Math.round(quantity * rate * 100) / 100 : "");
+                    setSubmitError("");
                   },
                 })}
                 placeholder="e.g. 350"
@@ -743,12 +747,13 @@ const TransactionForm = ({
               Monto divisa
               <input
                 className="w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={currencyQuantity}
                 id="currencyQuantity"
                 {...register("currencyQuantity", {
                   required: true,
-                  pattern: /^\d+(\.\d{1,30})?$/,
+                  validate: (value) => parseTransactionNumber(value, 8) !== null,
                   onChange: (e) => {
                     setCurrencyQuantity(e.target.value);
                   },
@@ -800,23 +805,17 @@ const TransactionForm = ({
               </svg>
               <input
                 className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
-                value={
-                  category.includes("Compra divisas")
-                    ? currencyQuantity * currencyExchangeRate
-                    : amount
-                }
-                type="number"
+                value={shownAmount ?? ""}
+                readOnly={isBuyCurrenciesCategory}
+                type="text"
+                inputMode="decimal"
                 id="amount"
                 {...register("amount", {
                   required: true,
-                  pattern: /^\d+(\.\d{1,30})?$/,
-                  onChange: category.includes("Compra divisas")
-                    ? (e) => {
-                        setAmount(currencyQuantity * currencyExchangeRate);
-                      }
-                    : (e) => {
-                        setAmount(e.target.value);
-                      },
+                  validate: (value) => parseTransactionNumber(value, 2) !== null,
+                  onChange: (e) => {
+                    if (!isBuyCurrenciesCategory) { setAmount(e.target.value); setSubmitError(""); }
+                  },
                 })}
                 placeholder="e.g. 5000"
               />
@@ -862,21 +861,16 @@ const TransactionForm = ({
               </svg>
               <input
                 className="w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
-                value={amount ?? ""}
-                type="number"
+                value={shownAmount ?? ""}
+                type="text"
+                inputMode="decimal"
                 id="amount"
                 step="0.01"
                 readOnly
                 {...register("amount", {
                   required: true,
-                  pattern: /^\d+(\.\d{1,30})?$/,
-                  onChange: category.includes("Venta divisas")
-                    ? (e) => {
-                        setAmount(currencyQuantity * currencyExchangeRate);
-                      }
-                    : (e) => {
-                        setAmount(e.target.value);
-                      },
+                  validate: (value) => parseTransactionNumber(value, 2) !== null,
+                  onChange: () => {},
                 })}
                 placeholder="e.g. 5000"
               />
@@ -902,7 +896,7 @@ const TransactionForm = ({
           type="date"
           id="selectedDate"
           {...register("selectedDate", {
-            required: true,
+            validate: isValidTransactionDate,
             onChange: (e) => {
               setSelectedDate(e.target.value);
             },
