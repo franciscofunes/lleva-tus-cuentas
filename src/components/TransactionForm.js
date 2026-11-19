@@ -132,7 +132,7 @@ const TransactionForm = ({
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm({ mode: "onSubmit", reValidateMode: "onChange", shouldFocusError: true });
+  } = useForm({ mode: "onSubmit", reValidateMode: "onChange", shouldFocusError: true, shouldUnregister: true });
 
   // Parent state changes without DOM change events during edit, Markdown/OCR and
   // category creation. Keep validation values identical to the rendered values.
