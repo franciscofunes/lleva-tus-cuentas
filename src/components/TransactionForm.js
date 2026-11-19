@@ -269,8 +269,10 @@ const TransactionForm = ({
       if (!validTransactionName(name)) throw new Error("Ingresá un nombre de hasta 200 caracteres.");
       if (!category || category === CREATE_CATEGORY_OPTION) throw new Error("Elegí una categoría.");
       if (!isValidTransactionDate(selectedDate)) throw new Error("Ingresá una fecha de transacción válida.");
-      if (isCreditCardCategory && (!isValidTransactionDate(selectedCloseDate) || !isValidTransactionDate(selectedExpirationDate)))
-        throw new Error("Completá fechas válidas de cierre y vencimiento de la tarjeta.");
+      if (isCreditCardCategory && !isValidTransactionDate(selectedExpirationDate))
+        throw new Error("Completá una fecha de vencimiento válida para la tarjeta.");
+      if (isCreditCardCategory && selectedCloseDate && !isValidTransactionDate(selectedCloseDate))
+        throw new Error("La fecha de cierre de la tarjeta no es válida.");
       if (hasSeparateDueDate && selectedExpirationDate && !isValidTransactionDate(selectedExpirationDate))
         throw new Error("La fecha de vencimiento opcional no es válida.");
       const amountValue = parseTransactionNumber(shownAmount, 2);
@@ -589,14 +591,14 @@ const TransactionForm = ({
               htmlFor="selectedCloseDate"
               className="relative text-sm font-medium text-gray-600 dark:text-zinc-300 block mt-2"
             >
-              Fecha de Cierre
+              Fecha de cierre (opcional)
               <input
                 className="w-full border border-gray-300 mt-2 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-600 focus:ring-1 dark:bg-slate-800 dark:border-purple-600 dark:text-white"
                 value={selectedCloseDate}
                 type="date"
                 id="selectedCloseDate"
                 {...register("selectedCloseDate", {
-                  validate: isValidTransactionDate,
+                  validate: (date) => !date || isValidTransactionDate(date),
                   onChange: (e) => {
                     setSelectedCloseDate(e.target.value);
                   },
@@ -604,7 +606,7 @@ const TransactionForm = ({
               />
               {errors.selectedCloseDate && (
                 <p className="text-red-500 text-sm">
-                  Ingrese una fecha de cierre válida
+                  Ingresá una fecha de cierre válida, o dejala vacía
                 </p>
               )}
             </label>
