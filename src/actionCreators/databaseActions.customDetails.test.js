@@ -105,3 +105,23 @@ test('editing a transaction persists a long Unicode multiline description unchan
   await updateDataAction({ ...base, comment }, 'expense-1')(jest.fn());
   expect(update).toHaveBeenCalledWith(expect.objectContaining({ comment }));
 });
+
+test('editing removes a cleared closing date and obsolete FX values rather than silently retaining them',async()=>{
+ await updateDataAction({
+   ...base, category:'Transporte 🚌', selectedCloseDate:'',
+   currencyQuantity:'', currencyExchangeRate:'',
+ },'expense-1')(jest.fn());
+ const saved = update.mock.calls[0][0];
+ for (const field of ['selectedCloseDate','currencyQuantity','currencyExchangeRate']) {
+   expect(saved[field]).toBeDefined();
+   expect(typeof saved[field].isEqual).toBe('function');
+ }
+});
+test('editing a card summary keeps the provided closing date when present',async()=>{
+ await updateDataAction({...base,category:'Resumen tarjeta 💳',
+   selectedCloseDate:'2026-10-31',selectedExpirationDate:'2026-11-10',
+ },'expense-1')(jest.fn());
+ const saved=update.mock.calls[0][0];
+ expect(saved.selectedCloseDate).toBe('2026-10-31');
+ expect(saved.selectedExpirationDate).toBe('2026-11-10');
+});
