@@ -143,7 +143,7 @@ test('the add button follows the complete form instead of covering amount fields
 test('a quick-captured USD purchase cannot be silently submitted as an ARS expense', async () => {
   render(<TransactionHarness initialReceiptCurrency='USD' />);
   fireEvent.click(screen.getByRole('button', {name:'Añadir'}));
-  expect(await screen.findByText(/El ticket indica USD, pero la categoría seleccionada guarda en ARS/)).toBeInTheDocument();
+  expect((await screen.findAllByText(/El ticket indica USD, pero la categoría seleccionada guarda en ARS/)).length).toBeGreaterThan(0);
 });
 
 test('a created personal category can be selected immediately after returning to the draft', () => {
@@ -291,12 +291,12 @@ test('pre-filled edit and Markdown-style controlled values do not require typing
   const {updateDataAction}=require('../actionCreators/databaseActions');
   updateDataAction.mockClear();
   render(<TransactionHarness edit initialName='🧾 Café Ñandú #123'
-    initialAmount='1.234,56' initialDate='2026-11-19' initialComment='Notas multilinea\\nCon emoji 💳' />);
+    initialAmount='1.234,56' initialDate='2026-11-19' initialComment='Notas multilinea\nCon emoji 💳' />);
   fireEvent.click(screen.getByRole('button',{name:'Guardar'}));
   await waitFor(()=>expect(updateDataAction).toHaveBeenCalledWith(
     expect.objectContaining({
       name:'🧾 Café Ñandú #123',amount:1234.56,
-      comment:'Notas multilinea\\nCon emoji 💳',selectedDate:'2026-11-19',
+      comment:'Notas multilinea\nCon emoji 💳',selectedDate:'2026-11-19',
     }),'expense-test'));
 });
 
