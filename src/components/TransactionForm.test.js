@@ -326,13 +326,18 @@ test('FX sale derives the ARS amount and accepts decimal quantities and exchange
     expect.objectContaining({currencyQuantity:12.5,currencyExchangeRate:1400.2,amount:17502.5})));
 });
 
-test('changing from FX sale to regular expense unregisters obsolete mandatory FX fields',async()=>{
+test('switching from FX to ordinary spending clears derived amounts and obsolete required fields',async()=>{
   storeDataAction.mockClear();
-  render(<TransactionHarness initialCategory='Venta divisas' initialQuantity='' initialRate='' />);
+  render(<TransactionHarness initialCategory='Venta divisas' initialQuantity='12,5' initialRate='1.400,20' />);
   fireEvent.change(screen.getByRole('combobox',{name:'Categoría'}),{target:{value:'Transporte 🚌'}});
+  expect(screen.getByLabelText('Monto (ARS)')).toHaveValue('');
+  fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
+  expect(await screen.findByText(/No se pudo guardar: Revisá/)).toHaveTextContent('monto');
+  expect(storeDataAction).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText('Monto (ARS)'),{target:{value:'2500'}});
   fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
   await waitFor(()=>expect(storeDataAction).toHaveBeenCalledWith(
-    expect.objectContaining({category:'Transporte 🚌',amount:2500})));
+    expect.objectContaining({category:'Transporte 🚌',amount:2500,currencyQuantity:'',currencyExchangeRate:''})));
 });
 
 test('card statement needs a due date but not an invented closing date',async()=>{
