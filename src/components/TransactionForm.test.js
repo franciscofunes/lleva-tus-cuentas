@@ -44,10 +44,10 @@ const initialCategories = [
 
 function TransactionHarness({ initialCategory = 'Transporte 🚌', initialReceiptCurrency = null,
   initialName = 'Taxi de regreso', initialAmount = '2500', initialDate = '2026-10-10',
-  initialComment = 'Viaje', initialQuantity = '', initialRate = '', onCategoryFlags = {}, edit = false }) {
+  initialComment = 'Viaje', initialQuantity = '', initialRate = '', initialExpiration = '', onCategoryFlags = {}, edit = false }) {
   const [category, setCategory] = useState(initialCategory);
   const [customDetails, setCustomDetails] = useState({});
-  const [expiration, setExpiration] = useState('');
+  const [expiration, setExpiration] = useState(initialExpiration);
   const [name, setName] = useState(initialName);
   const [amount, setAmount] = useState(initialAmount);
   const [selectedDate, setSelectedDate] = useState(initialDate);
@@ -333,4 +333,20 @@ test('changing from FX sale to regular expense unregisters obsolete mandatory FX
   fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
   await waitFor(()=>expect(storeDataAction).toHaveBeenCalledWith(
     expect.objectContaining({category:'Transporte 🚌',amount:2500})));
+});
+
+test('card statement needs a due date but not an invented closing date',async()=>{
+  storeDataAction.mockClear();
+  render(<TransactionHarness initialCategory='Resumen tarjeta 💳' initialExpiration='2026-12-10' />);
+  expect(screen.getByLabelText('Fecha de cierre (opcional)')).toHaveValue('');
+  fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
+  await waitFor(()=>expect(storeDataAction).toHaveBeenCalledWith(
+    expect.objectContaining({category:'Resumen tarjeta 💳', selectedExpirationDate:'2026-12-10'})));
+});
+test('card statement shows a clear error when the payment due date is missing',async()=>{
+  storeDataAction.mockClear();
+  render(<TransactionHarness initialCategory='Resumen tarjeta 💳' initialExpiration='' />);
+  fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
+  expect(await screen.findByText(/No se pudo guardar: Revisá/)).toHaveTextContent('vencimiento');
+  expect(storeDataAction).not.toHaveBeenCalled();
 });
