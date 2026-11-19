@@ -1,3 +1,5 @@
+import { parseTransactionNumber } from './transactionFormValidation';
+
 const FIELD_ALIASES = {
   name: 'name', expenseName: 'name', nombre: 'name',
   category: 'category', categoria: 'category',
@@ -22,7 +24,7 @@ const isValidDate = (date) => {
   const parsed = new Date(date + 'T12:00:00Z');
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
 };
-const positiveNumber = (value) => Number.isFinite(Number(value)) && Number(value) > 0;
+const positiveNumber = (value) => typeof value === 'number' && Number.isFinite(value) && value > 0;
 
 export const transactionImportKey = (item) => {
   // Preserve existing divisas fingerprints to prevent importing past statements twice.
@@ -56,11 +58,11 @@ export const parseTransactionsMarkdown = (markdown) => {
     const category = row.category || 'Ingreso divisas';
     const divisas = isCurrencyCategory(category);
     const exchange = isExchange(category);
-    const quantity = row.currencyQuantity === undefined || row.currencyQuantity === '' ? '' : Number(row.currencyQuantity);
-    const rate = row.currencyExchangeRate === undefined || row.currencyExchangeRate === '' ? '' : Number(row.currencyExchangeRate);
+    const quantity = row.currencyQuantity === undefined || row.currencyQuantity === '' ? '' : parseTransactionNumber(row.currencyQuantity, 8);
+    const rate = row.currencyExchangeRate === undefined || row.currencyExchangeRate === '' ? '' : parseTransactionNumber(row.currencyExchangeRate, 10);
     const derivedAmount = exchange && positiveNumber(quantity) && positiveNumber(rate)
       ? Math.round(Number(quantity) * Number(rate) * 100) / 100 : '';
-    const amount = row.amount === undefined || row.amount === '' ? derivedAmount : Number(row.amount);
+    const amount = row.amount === undefined || row.amount === '' ? derivedAmount : parseTransactionNumber(row.amount, 2);
 
     const item = {
       name: row.name || (divisas ? `Rendimiento ${row.institution || ''}`.trim() : ''),
