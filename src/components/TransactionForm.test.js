@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { storeDataAction } from '../actionCreators/databaseActions';
 import TransactionForm, { CREATE_CATEGORY_OPTION } from './TransactionForm';
 
 jest.mock('react-redux', () => ({
@@ -33,15 +34,32 @@ const initialCategories = [
     dateBehavior: 'separate-due-date', origin: 'custom', isCustom: true },
   { id: 'rent', name: 'Alquiler mensual', isExpense: true, active: true,
     extraFieldIds: ['reference'], dateBehavior: 'due-date', origin: 'custom', isCustom: true },
+  { id: 'buy', name: 'Compra divisas', isExpense: true, active: true },
+  { id: 'sell', name: 'Venta divisas', isExpense: false, active: true },
+  { id: 'fxincome', name: 'Ingreso divisas', isExpense: false, active: true },
+  { id: 'credit', name: 'Resumen tarjeta 💳', isExpense: true, active: true },
   { id: 'freelance', name: 'Freelance', isExpense: false, active: true,
     extraFieldIds: ['reference', 'paymentMethod'], origin: 'custom', isCustom: true },
 ];
 
-function TransactionHarness({ initialCategory = 'Transporte 🚌', initialReceiptCurrency = null, onCategoryFlags = {} }) {
+function TransactionHarness({ initialCategory = 'Transporte 🚌', initialReceiptCurrency = null,
+  initialName = 'Taxi de regreso', initialAmount = '2500', initialDate = '2026-10-10',
+  initialComment = 'Viaje', initialQuantity = '', initialRate = '', initialExpiration = '', onCategoryFlags = {}, edit = false }) {
   const [category, setCategory] = useState(initialCategory);
   const [customDetails, setCustomDetails] = useState({});
-  const [expiration, setExpiration] = useState('');
-  const [name, setName] = useState('Taxi de regreso');
+  const [expiration, setExpiration] = useState(initialExpiration);
+  const [name, setName] = useState(initialName);
+  const [amount, setAmount] = useState(initialAmount);
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [quantity, setQuantity] = useState(initialQuantity);
+  const [rate, setRate] = useState(initialRate);
+  const [flags, setFlags] = useState({
+    credit: initialCategory.includes('Resumen tarjeta'),
+    buy: initialCategory.includes('Compra divisas'),
+    income: initialCategory.includes('Ingreso divisas'),
+    sell: initialCategory.includes('Venta divisas'),
+  });
+  const [comment, setComment] = useState(initialComment);
   const [openManager, setOpenManager] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
   const noop = () => {};
@@ -50,24 +68,24 @@ function TransactionHarness({ initialCategory = 'Transporte 🚌', initialReceip
       <TransactionForm
         initialReceiptCurrency={initialReceiptCurrency}
         name={name} setName={setName}
-        amount='2500' setAmount={noop}
-        comment='Viaje' setComment={noop}
+        amount={amount} setAmount={setAmount}
+        comment={comment} setComment={setComment}
         category={category} setCategory={setCategory}
         customDetails={customDetails} setCustomDetails={setCustomDetails}
-        selectedDate='2026-10-10' setSelectedDate={noop}
+        selectedDate={selectedDate} setSelectedDate={setSelectedDate}
         selectedExpirationDate={expiration} setSelectedExpirationDate={setExpiration}
         selectedCloseDate='' setSelectedCloseDate={noop}
-        currencyQuantity='' setCurrencyQuantity={noop}
-        currencyExchangeRate='' setCurrencyExchangeRate={noop}
-        isCreditCardCategory={false}
-        isBuyCurrenciesCategory={false}
-        isCurrencyIncomeCategory={false}
-        isSellCurrenciesCategory={false}
-        setIsCreditCardCategory={onCategoryFlags.credit || noop}
-        setIsBuyCurrenciesCategory={onCategoryFlags.buy || noop}
-        setIsCurrencyIncomeCategory={onCategoryFlags.income || noop}
-        setIsSellCurrenciesCategory={onCategoryFlags.sell || noop}
-        setIsOpen={noop} setEdit={noop}
+        currencyQuantity={quantity} setCurrencyQuantity={setQuantity}
+        currencyExchangeRate={rate} setCurrencyExchangeRate={setRate}
+        isCreditCardCategory={flags.credit}
+        isBuyCurrenciesCategory={flags.buy}
+        isCurrencyIncomeCategory={flags.income}
+        isSellCurrenciesCategory={flags.sell}
+        setIsCreditCardCategory={(v) => {setFlags(old => ({...old,credit:v}));onCategoryFlags.credit?.(v);}}
+        setIsBuyCurrenciesCategory={(v) => {setFlags(old => ({...old,buy:v}));onCategoryFlags.buy?.(v);}}
+        setIsCurrencyIncomeCategory={(v) => {setFlags(old => ({...old,income:v}));onCategoryFlags.income?.(v);}}
+        setIsSellCurrenciesCategory={(v) => {setFlags(old => ({...old,sell:v}));onCategoryFlags.sell?.(v);}}
+        setIsOpen={noop} setEdit={noop} edit={edit} expenseId={edit ? 'expense-test' : undefined}
         categories={categories}
         onManageCategories={() => setOpenManager(true)}
       />
@@ -125,7 +143,7 @@ test('the add button follows the complete form instead of covering amount fields
 test('a quick-captured USD purchase cannot be silently submitted as an ARS expense', async () => {
   render(<TransactionHarness initialReceiptCurrency='USD' />);
   fireEvent.click(screen.getByRole('button', {name:'Añadir'}));
-  expect(await screen.findByText(/El ticket indica USD, pero la categoría seleccionada guarda en ARS/)).toBeInTheDocument();
+  expect((await screen.findAllByText(/El ticket indica USD, pero la categoría seleccionada guarda en ARS/)).length).toBeGreaterThan(0);
 });
 
 test('a created personal category can be selected immediately after returning to the draft', () => {
@@ -240,4 +258,100 @@ test('Hogar enables a separate optional expiration picker with a five-day notifi
 test('a regular transaction continues without a due-date picker', () => {
   render(<TransactionHarness initialCategory='Transporte 🚌' />);
   expect(screen.queryByLabelText('Fecha de vencimiento (opcional)')).not.toBeInTheDocument();
+});
+
+
+test('transaction description accepts long multiline Unicode, leading symbols and markup-like text without truncation', async () => {
+  storeDataAction.mockClear();
+  render(<TransactionHarness />);
+  const description = screen.getByRole('textbox', { name: 'Descripción (opcional)' });
+  const note = '# Ñandú / café 💳 — cuenta (ARS/USD) & descuentos <detalle>\n'
+    + 'Producto: $12.345,67; #factura@dominio.com\n'
+    + 'Reintegro & comisión: ' + 'áéíóú 😃 !? / [x] '.repeat(90);
+  expect(note.length).toBeGreaterThan(1000);
+  expect(description).not.toHaveAttribute('maxLength');
+  fireEvent.change(description, { target: { value: note } });
+  expect(description).toHaveValue(note);
+  fireEvent.click(screen.getByRole('button', { name: 'Añadir' }));
+  await waitFor(() => expect(storeDataAction).toHaveBeenCalledWith(expect.objectContaining({ comment: note })));
+  expect(screen.queryByText('Ingrese una descripción de transacción válida')).not.toBeInTheDocument();
+});
+
+test('optional description does not block saving a financial transaction', async () => {
+  storeDataAction.mockClear();
+  render(<TransactionHarness initialComment='' />);
+  const description = screen.getByRole('textbox', { name: 'Descripción (opcional)' });
+  expect(description).toHaveValue('');
+  fireEvent.click(screen.getByRole('button', { name: 'Añadir' }));
+  await waitFor(() => expect(storeDataAction).toHaveBeenCalledWith(expect.objectContaining({comment:''})));
+  expect(screen.queryByText(/La descripción debe/)).not.toBeInTheDocument();
+});
+
+test('pre-filled edit and Markdown-style controlled values do not require typing each field', async()=>{
+  const {updateDataAction}=require('../actionCreators/databaseActions');
+  updateDataAction.mockClear();
+  render(<TransactionHarness edit initialName='🧾 Café Ñandú #123'
+    initialAmount='1.234,56' initialDate='2026-11-19' initialComment={'Notas multilinea\nCon emoji 💳'} />);
+  fireEvent.click(screen.getByRole('button',{name:'Guardar'}));
+  await waitFor(()=>expect(updateDataAction).toHaveBeenCalledWith(
+    expect.objectContaining({
+      name:'🧾 Café Ñandú #123',amount:1234.56,
+      comment:'Notas multilinea\nCon emoji 💳',selectedDate:'2026-11-19',
+    }),'expense-test'));
+});
+
+test('shows actionable field summary rather than silently refusing invalid submissions',async()=>{
+  storeDataAction.mockClear();
+  render(<TransactionHarness initialName=' ' initialAmount='0' initialDate='' initialComment='' />);
+  fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
+  expect(await screen.findByText(/No se pudo guardar: Revisá/)).toHaveTextContent(/nombre|monto|fecha/);
+  expect(storeDataAction).not.toHaveBeenCalled();
+});
+
+test('ARS decimals typed with comma and thousands separators are persisted as numeric amounts',async()=>{
+  storeDataAction.mockClear();
+  render(<TransactionHarness initialAmount='' />);
+  fireEvent.change(screen.getByLabelText('Monto (ARS)'),{target:{value:'1.234,56'}});
+  fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
+  await waitFor(()=>expect(storeDataAction).toHaveBeenCalledWith(
+    expect.objectContaining({amount:1234.56})));
+});
+
+test('FX sale derives the ARS amount and accepts decimal quantities and exchange rates',async()=>{
+  storeDataAction.mockClear();
+  render(<TransactionHarness initialCategory='Venta divisas' initialQuantity='12,50' initialRate='1.400,20' />);
+  expect(screen.getByLabelText('Monto')).toHaveValue('17502.5');
+  fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
+  await waitFor(()=>expect(storeDataAction).toHaveBeenCalledWith(
+    expect.objectContaining({currencyQuantity:12.5,currencyExchangeRate:1400.2,amount:17502.5})));
+});
+
+test('switching from FX to ordinary spending clears derived amounts and obsolete required fields',async()=>{
+  storeDataAction.mockClear();
+  render(<TransactionHarness initialCategory='Venta divisas' initialQuantity='12,5' initialRate='1.400,20' />);
+  fireEvent.change(screen.getByRole('combobox',{name:'Categoría'}),{target:{value:'Transporte 🚌'}});
+  expect(screen.getByLabelText('Monto (ARS)')).toHaveValue('');
+  fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
+  expect(await screen.findByText(/No se pudo guardar: Revisá/)).toHaveTextContent('monto');
+  expect(storeDataAction).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText('Monto (ARS)'),{target:{value:'2500'}});
+  fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
+  await waitFor(()=>expect(storeDataAction).toHaveBeenCalledWith(
+    expect.objectContaining({category:'Transporte 🚌',amount:2500,currencyQuantity:'',currencyExchangeRate:''})));
+});
+
+test('card statement needs a due date but not an invented closing date',async()=>{
+  storeDataAction.mockClear();
+  render(<TransactionHarness initialCategory='Resumen tarjeta 💳' initialExpiration='2026-12-10' />);
+  expect(screen.getByLabelText('Fecha de cierre (opcional)')).toHaveValue('');
+  fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
+  await waitFor(()=>expect(storeDataAction).toHaveBeenCalledWith(
+    expect.objectContaining({category:'Resumen tarjeta 💳', selectedExpirationDate:'2026-12-10'})));
+});
+test('card statement shows a clear error when the payment due date is missing',async()=>{
+  storeDataAction.mockClear();
+  render(<TransactionHarness initialCategory='Resumen tarjeta 💳' initialExpiration='' />);
+  fireEvent.click(screen.getByRole('button',{name:'Añadir'}));
+  expect(await screen.findByText(/No se pudo guardar: Revisá/)).toHaveTextContent('vencimiento');
+  expect(storeDataAction).not.toHaveBeenCalled();
 });

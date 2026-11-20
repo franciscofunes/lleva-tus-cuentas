@@ -218,7 +218,7 @@ function Card({
           <section id={detailsId} aria-label={'Detalles de ' + safeName}
             className='mt-3 min-w-0 space-y-2 border-t border-slate-200 pt-3 text-sm text-slate-700 dark:border-slate-700 dark:text-slate-200'>
             {safeComment && (
-              <p className='min-w-0 break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
+              <p className='min-w-0 whitespace-pre-wrap break-words text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200'>
                 <span className='font-semibold text-violet-700 dark:text-violet-200'>Descripción: </span>{safeComment}
               </p>
             )}

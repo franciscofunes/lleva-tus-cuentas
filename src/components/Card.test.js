@@ -393,3 +393,13 @@ describe('compact transaction details (issue #225)', () => {
     expect(screen.getByRole('button', { name: 'Eliminar Movimiento importado' })).toBeInTheDocument();
   });
 });
+
+
+test('expanded transaction description preserves multiline Unicode content and wraps long text', () => {
+  const comment = '💳 Recibo #A-123 <detalles>\nSegundo párrafo con ñ, símbolos: & % / ?\n' + 'abc'.repeat(250);
+  render(<Card {...basicProps} comment={comment} />);
+  openDetails();
+  const description = screen.getByText(/Segundo párrafo con ñ, símbolos/);
+  expect(description).toHaveClass('whitespace-pre-wrap', 'break-words', 'dark:text-slate-200');
+  expect(description).toHaveTextContent('Segundo párrafo con ñ');
+});
