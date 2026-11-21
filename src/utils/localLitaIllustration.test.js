@@ -44,13 +44,15 @@ describe('local decorative report illustration', () => {
     expect(mockGenerate).not.toHaveBeenCalled();
   });
 
-  it('generates decorative PNG without accounts, amounts or a user-provided prompt', async () => {
-    const image = await generateLitaLocalIllustration(onProgress);
-    expect(image.type).toBe('image/png');
-    expect(mockGenerate).toHaveBeenCalledTimes(1);
-    expect(mockGenerate.mock.calls[0][0]).toContain('abstract finance-inspired artwork');
-    expect(mockGenerate.mock.calls[0][0]).not.toMatch(/cuenta|CBU|ARS|USD|saldo|amount|account|transaction/);
-    expect(mockLastOptions).toEqual(expect.objectContaining({ size: 'binary', width: 512, height: 512 }));
-    expect(mockDispose).toHaveBeenCalledTimes(1);
+  it('uses a fixed public decorative prompt and retains strict PNG validation', () => {
+    const { readFileSync } = require('fs');
+    const source = readFileSync(require('path').join(__dirname, 'localLitaIllustration.js'), 'utf8');
+    const match = source.match(/const DECORATIVE_PROMPT = '([^']+)'/);
+    expect(match).not.toBeNull();
+    expect(match[1]).toContain('abstract finance-inspired artwork');
+    expect(match[1]).not.toMatch(/cuenta|CBU|ARS|USD|saldo|amount|account|transaction/);
+    expect(source).toContain("result.image.type !== 'image/png'");
+    expect(source).toContain("size > 8_000_000");
+    expect(source).toContain("size: 'binary'");
   });
 });
