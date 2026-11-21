@@ -41,6 +41,7 @@
   "scripts": {
     "prepare:browser-ai": "node scripts/build-browser-ocr.cjs",
     "prebuild": "npm run prepare:browser-ai",
+    "prestart": "npm run prepare:browser-ai",
     "pretest": "npm run prepare:browser-ai",
     "start": "react-scripts start",
     "build": "CI='' react-scripts build",
