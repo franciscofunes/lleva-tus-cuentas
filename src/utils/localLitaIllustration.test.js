@@ -40,7 +40,7 @@ describe('local decorative report illustration', () => {
 
   it('rejects low-memory devices before loading the model', async () => {
     Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value: 4 });
-    await expect(generateLitaLocalIllustration(onProgress)).rejects.toThrow('poca memoria');
+    await expect(generateLitaLocalIllustration(onProgress)).rejects.toThrow('menos de 8 GB');
     expect(mockGenerate).not.toHaveBeenCalled();
   });
 
