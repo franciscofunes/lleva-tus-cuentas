@@ -95,6 +95,17 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
     }));
     const observed = monthly.filter((row) => row.hasExpenseData);
     const expense = weightedMonthly(observed.map((row) => row.expense));
+    // Income history is independent: USD salary can be recorded even when
+    // there are fewer than three USD expense months. A recorded income is
+    // not automatically savings, and unknown expense months are never zero.
+    const observedIncome = monthly.filter((row) => row.incomeRecords > 0);
+    const independentIncome = weightedMonthly(observedIncome.map((row) => row.income));
+    const incomeObserved = {
+      observedIncomeMonths: observedIncome.length,
+      missingIncomeMonths: monthly.filter((row) => row.incomeRecords === 0).map((row) => row.month),
+      totalLastSixMonths: cents(observedIncome.reduce((sum, row) => sum + row.income, 0)),
+      baseMonthly: independentIncome?.baseMonthly ?? null,
+    };
     // Savings must compare income and expense from the SAME three months.
     const matchedMonths = observed.slice(-3);
     const hasMatchingIncome = matchedMonths.length === 3 &&
@@ -125,7 +136,8 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
       missingExpenseMonths: monthly.filter((row) => !row.hasExpenseData).map((row) => row.month),
       monthly,
       expense,
-      income: income ? { baseMonthly: income.baseMonthly, observedIncomeMonths: monthly.filter((row) => row.incomeRecords > 0).length } : null,
+      income: income ? { baseMonthly: income.baseMonthly, observedIncomeMonths: observedIncome.length } : null,
+      incomeObserved,
       possibleMonthlySavings: expense && income ? cents(income.baseMonthly - expense.baseMonthly) : null,
       topCategories,
     }];
@@ -147,6 +159,8 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
       'Se excluyen compra/venta/ingreso de divisas, transferencias y movimientos de inversión; las categorías sin clasificación no se inventan.',
       'Los pagos de resúmenes de tarjetas cuentan solamente cuando están registrados como salida en Transacciones; no se suman compras PDF, consumos manuales ni saldos bancarios.',
       'ARS y USD son independientes; no se aplica cotización implícita ni se presuponen obligaciones futuras.',
+      'La brecha de caja en ARS no demuestra déficit patrimonial si existen ingresos o activos en USD. Una venta de divisas es cambio de composición, no ingreso nuevo.',
+      'El resumen de ingresos en USD puede mostrarse sin historial de gastos suficiente, pero NO permite concluir cuánto se ahorró en USD.',
     ],
   };
 }
