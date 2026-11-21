@@ -1,7 +1,8 @@
 import { generateLitaLocalIllustration } from './localLitaIllustration';
 
 const mockGenerate = jest.fn(async () => ({
-  image: new Blob(['valid decorative result'], { type: 'image/png' }),
+  // Simulate a cross-realm Blob returned by WebGPU / postMessage.
+  image: { type: 'image/png', size: 23, slice: jest.fn() },
 }));
 const mockDispose = jest.fn();
 const onProgress = jest.fn();
