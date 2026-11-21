@@ -66,3 +66,18 @@ test('does not treat missing months as zero or turn legacy ARS into USD', () => 
   expect(data.currencies.USD.expense).toBeNull();
   expect(data.currencies.ARS.missingExpenseMonths).toHaveLength(3);
 });
+
+test('does not infer savings from disjoint salary months or treat investments as consumption', () => {
+  const data = buildLitaSpendingForecast([
+    row('2026-08-01', 'Alimentos', 100),
+    row('2026-09-01', 'Alimentos', 100),
+    row('2026-10-01', 'Alimentos', 100),
+    row('2026-05-10', 'Sueldo', 900),
+    row('2026-06-10', 'Sueldo', 900),
+    row('2026-07-10', 'Sueldo', 900),
+    row('2026-10-12', 'Aporte inversión', 15000),
+  ], categories, today);
+  expect(data.currencies.ARS.expense.baseMonthly).toBe(100);
+  expect(data.currencies.ARS.possibleMonthlySavings).toBeNull();
+  expect(data.quality.ignoredMovements).toBe(1);
+});
