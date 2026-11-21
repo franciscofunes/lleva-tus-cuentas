@@ -8,7 +8,7 @@ This is a **read-only and on-demand** feature of the LTC Transactions page, not 
 - The six **finished calendar months** preceding today are queried (`selectedDate` sorted descending), limited to 1,201 rows. If more than 1,200 matching records exist, reject the forecast instead of extrapolating partial data.
 - The calculator receives the full personal/shared category definitions including archived labels, so old transactions remain classified. A missing category is counted as unclassified and excluded, never treated as income or zero.
 - `transactionCurrency` is the immutable native currency; legacy transactions without that field are **ARS**. No ARS/USD conversion is inferred.
-- Count only expense-category transactions with positive valid amounts, separately for each month/currency. Incomes are tracked separately only to support a *possible monthly saving* estimate. Treat `Compra/Venta/Ingreso divisas` and transfers between accounts as movements, not income/consumption.
+- Count only expense-category transactions with positive valid amounts, separately for each month/currency. Incomes are tracked separately only to support a *possible monthly saving* estimate. Treat `Compra/Venta/Ingreso divisas`, transfers between accounts and investment deposits/withdrawals as movements, not income/consumption.
 - Recorded credit-card statement payments are included once through the Transactions expense record; **never add** imported PDF purchases, bank consumption snapshots, manual bank charges or bank account balances.
 - Month without any expense record is **unknown, not zero**. At least 3 observed months are required for each currency. Current incomplete month is always excluded.
 
