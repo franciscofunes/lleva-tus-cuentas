@@ -83,3 +83,43 @@ test('does not infer savings from disjoint salary months or treat investments as
   expect(data.currencies.ARS.possibleMonthlySavings).toBeNull();
   expect(data.quality.ignoredMovements).toBe(1);
 });
+
+
+test('USD income can be observed independently with no three USD expense months', () => {
+  const data = buildLitaSpendingForecast([
+    row('2026-08-04', 'Sueldo', 5000, 'USD'),
+    row('2026-09-04', 'Sueldo', 5500, 'USD'),
+    row('2026-10-04', 'Sueldo', 5500, 'USD'),
+    row('2026-08-03', 'Alimentos', 100000),
+    row('2026-09-03', 'Alimentos', 150000),
+    row('2026-10-03', 'Alimentos', 200000),
+    row('2026-08-09', 'Venta divisas', 3000000),
+    row('2026-09-09', 'Compra divisas', 3000000),
+  ], categories, today);
+  expect(data.currencies.ARS.expense.baseMonthly).toBe(166666.67);
+  expect(data.currencies.USD.status).toBe('insufficient-data');
+  expect(data.currencies.USD.expense).toBeNull();
+  expect(data.currencies.USD.income).toBeNull();
+  expect(data.currencies.USD.possibleMonthlySavings).toBeNull();
+  expect(data.currencies.USD.incomeObserved).toEqual({
+    observedIncomeMonths: 3,
+    missingIncomeMonths: ['2026-05', '2026-06', '2026-07'],
+    totalLastSixMonths: 16000,
+    baseMonthly: 5416.67,
+  });
+  expect(data.currencies.ARS.incomeObserved.observedIncomeMonths).toBe(0);
+  expect(data.quality.ignoredMovements).toBe(2);
+});
+
+test('one observed USD salary month reports history but never invents a monthly salary', () => {
+  const data = buildLitaSpendingForecast([
+    row('2026-10-05', 'Sueldo', 7000, 'USD'),
+    row('2026-08-08', 'Alimentos', 100),
+    row('2026-09-08', 'Alimentos', 100),
+    row('2026-10-08', 'Alimentos', 100),
+  ], categories, today);
+  expect(data.currencies.USD.incomeObserved.totalLastSixMonths).toBe(7000);
+  expect(data.currencies.USD.incomeObserved.observedIncomeMonths).toBe(1);
+  expect(data.currencies.USD.incomeObserved.baseMonthly).toBeNull();
+  expect(data.currencies.USD.possibleMonthlySavings).toBeNull();
+});
