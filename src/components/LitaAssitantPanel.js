@@ -9,6 +9,7 @@ import {
 	LITA_CHAT_VERCEL_URL,
 } from '../shared/constants/urls.const';
 import { queryLitaHistoricalTransactions } from '../services/litaHistoricalAnalysis';
+import { queryLitaSpendingForecast } from '../services/litaSpendingForecastService';
 import {
 	deleteLitaChat,
 	saveLitaChat,
@@ -278,6 +279,24 @@ const LitaAssistantPanel = ({
 				return;
 			}
 
+			if (event.data?.type === 'lita:forecast:request') {
+				const { requestId } = event.data.payload || {};
+				if (typeof requestId !== 'string' || !/^[a-zA-Z0-9_-]{1,70}$/.test(requestId)) return;
+				const response = { type: 'lita:forecast:result', payload: { requestId, success: false } };
+				if (!user?.uid || section !== 'transactions' || privacyHidden) {
+					response.payload.reason = 'Abrí LITA desde Transacciones, con los importes visibles, para proyectar gastos.';
+				} else {
+					try {
+						const result = await queryLitaSpendingForecast(user.uid, context?.historicalCategories || context?.categories || []);
+						response.payload = { requestId, success: true, result };
+					} catch (error) {
+						response.payload.reason = error?.message || 'No se pudo calcular la proyección.';
+					}
+				}
+				postToLita(response);
+				return;
+			}
+
 			if (event.data?.type === 'lita:history:refresh') {
 				setHistoryRefresh((value) => value + 1);
 				return;
@@ -357,6 +376,7 @@ const LitaAssistantPanel = ({
 		user?.uid,
 		section,
 		context?.categories,
+		context?.historicalCategories,
 		privacyHidden,
 	]);
 

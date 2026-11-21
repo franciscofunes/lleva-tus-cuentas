@@ -442,6 +442,10 @@ function Dashboard() {
       spendingByCategory: summarizeSpendingByCategory(filteredDocs, categories || []),
       categories: (Array.isArray(categories) ? categories : []).filter((entry) => entry && entry.active !== false)
         .map(({ name, isExpense, currency }) => ({ name, isExpense: Boolean(isExpense), currency: currency === 'USD' ? 'USD' : 'ARS' })),
+      // Forecasts include archived categories to classify older movements.
+      // The visible category selector still receives only active categories.
+      historicalCategories: (Array.isArray(categories) ? categories : []).filter((entry) => entry?.name)
+        .map(({ name, isExpense }) => ({ name, isExpense: Boolean(isExpense) })),
       summary: {
         incomeArs: Number(income || 0),
         expensesArs: Number(expense || 0),

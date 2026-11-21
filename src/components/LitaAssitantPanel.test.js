@@ -14,6 +14,9 @@ jest.mock('../services/litaChatService', () => ({
 jest.mock('../services/litaHistoricalAnalysis', () => ({
 	queryLitaHistoricalTransactions: jest.fn(),
 }));
+jest.mock('../services/litaSpendingForecastService', () => ({
+	queryLitaSpendingForecast: jest.fn(),
+}));
 jest.mock('../shared/constants/urls.const', () => ({
 	LITA_CHAT_LOCALHOST: 'http://localhost:3005',
 	LITA_CHAT_VERCEL_URL: 'https://holalita.vercel.app/',
@@ -248,6 +251,54 @@ describe('LITA iframe integration', () => {
 			payload:expect.objectContaining({requestId:'history789',success:false}),
 		}),origin);
 	});
+	test('forecast reads six-month aggregates only for the authenticated matching iframe', async () => {
+		const { queryLitaSpendingForecast } = require('../services/litaSpendingForecastService');
+		const aggregated = { scope:'spending-forecast', currencies:{ ARS:{status:'ok'} } };
+		queryLitaSpendingForecast.mockResolvedValueOnce(aggregated);
+		const historicalCategories = [{ name:'Alimentos', isExpense:true }];
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='transactions'
+			context={{categories:[],historicalCategories}} />);
+		const iframe = screen.getByTitle('Lita Assistant');
+		const post = jest.spyOn(iframe.contentWindow, 'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message', {
+				origin, source:iframe.contentWindow,
+				data:{type:'lita:forecast:request',payload:{requestId:'forecast123'}},
+			}));
+		});
+		expect(queryLitaSpendingForecast).toHaveBeenCalledWith('test-user', historicalCategories);
+		expect(post).toHaveBeenCalledWith({type:'lita:forecast:result',
+			payload:{requestId:'forecast123',success:true,result:aggregated}},origin);
+		queryLitaSpendingForecast.mockClear();
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message', {
+				origin:'https://untrusted.invalid', source:iframe.contentWindow,
+				data:{type:'lita:forecast:request',payload:{requestId:'wrong-origin'}},
+			}));
+		});
+		expect(queryLitaSpendingForecast).not.toHaveBeenCalled();
+	});
+
+	test('privacy mode blocks forecast reads before querying Firestore', async () => {
+		const { queryLitaSpendingForecast } = require('../services/litaSpendingForecastService');
+		queryLitaSpendingForecast.mockClear();
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='transactions'
+			privacyHidden context={{historicalCategories:[{name:'Privado',isExpense:true}]}} />);
+		const iframe = screen.getByTitle('Lita Assistant');
+		const post = jest.spyOn(iframe.contentWindow, 'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message', {
+				origin, source:iframe.contentWindow,
+				data:{type:'lita:forecast:request',payload:{requestId:'forecast-hidden'}},
+			}));
+		});
+		expect(queryLitaSpendingForecast).not.toHaveBeenCalled();
+		expect(post).toHaveBeenCalledWith(expect.objectContaining({
+			type:'lita:forecast:result',
+			payload:expect.objectContaining({requestId:'forecast-hidden',success:false}),
+		}),origin);
+	});
+
 	test('sends a save result only after Firestore confirms the write', async () => {
 		const { saveLitaChat } = require('../services/litaChatService');
 		saveLitaChat.mockResolvedValueOnce(undefined);

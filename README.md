@@ -24,6 +24,7 @@ LTC is a responsive **React 18** single-page application hosted on **Vercel**. U
 | Portfolio | Manage ARS/USD positions, valuation snapshots and reconciliation records | `Portfolio`, `PortfolioDetail`, `portfolioService` |
 | Card statements | Analyze supported **digital Visa PDFs**, review purchases and totals, attach details to one card-payment transaction | Lita PDF API + `cardStatementService` |
 | Lita | Ask questions about portfolio/transactions using bounded context and per-user chat history | Cross-origin iframe, `postMessage`, Firestore chat threads |
+| Lita spending forecasts | Ask for 1/3/6-month nominal scenarios using the last 6 complete months in Firestore, separated by ARS/USD, without counting card purchases twice | `litaSpendingForecastService`, `litaSpendingForecast` and trusted Lita iframe |
 | Exchange quotes | Show indicative public USD exchange quotes without sending financial balances | `usdQuotesService` |
 
 The UI is intentionally Spanish-language; **engineering documentation is in English**. Features may require the corresponding live Firestore rules to have been applied before writes succeed.
@@ -128,6 +129,7 @@ The web API key is **not** an authorization boundary: enforce ownership in Fires
 - [LTC financial UI contract — Transactions is the reference for Banks, Portfolio and Lita](docs/financial-ui-contract.md)
 - [Authenticated 18-view UX consistency matrix — Transactions, Banks, Portfolio and Lita](docs/financial-ui-visual-qa.md)
 - [Lita UX #229: unified chat, privacy and history acknowledgment](docs/lita-ux-229.md)
+- [Lita spending forecasts: six-month methodology, limitations, and release checks](docs/lita-spending-forecast.md)
 
 - [Portfolio UX #228, phase 1 — shared financial interface and safe per-position details](docs/portfolio-issue-228-phase1.md)
 - [Portfolio UX #228, phase 2 — shared detail screen and explicit bank identifier reveal](docs/portfolio-issue-228-phase2.md)
