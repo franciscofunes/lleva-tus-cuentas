@@ -297,6 +297,19 @@ const LitaAssistantPanel = ({
 				return;
 			}
 
+			if (event.data?.type === 'lita:illustration:capability:request') {
+				const { requestId } = event.data.payload || {};
+				if (typeof requestId !== 'string' || !/^[a-zA-Z0-9_-]{1,70}$/.test(requestId)) return;
+				let result = { supported: false, reason: 'La ilustración requiere una sesión activa y los importes visibles en Transacciones o Bancos.' };
+				if (user?.uid && !privacyHidden && ['transactions', 'banks'].includes(section)) {
+					const { checkLitaLocalIllustrationCapability } = await import('../utils/localLitaIllustration');
+					result = await checkLitaLocalIllustrationCapability();
+				}
+				postToLita({ type: 'lita:illustration:capability:result',
+					payload: { requestId, ...result } });
+				return;
+			}
+
 			if (event.data?.type === 'lita:illustration:request') {
 				const { requestId } = event.data.payload || {};
 				if (typeof requestId !== 'string' || !/^[a-zA-Z0-9_-]{1,70}$/.test(requestId)) return;
@@ -314,7 +327,14 @@ const LitaAssistantPanel = ({
 						// or inferred text is included in the fixed generation prompt.
 						reply.payload = { requestId, success: true, image };
 					} catch (error) {
-						reply.payload.reason = error?.message || 'No se pudo generar la ilustración local.';
+						const { describeLitaLocalIllustrationError } = await import('../utils/localLitaIllustration');
+						// Preflight messages are already safe to display; SDK errors need a
+						// curated explanation rather than leaking internals to the iframe.
+						const detail = typeof error?.message === 'string' && (
+							/error.*WebGPU|Este navegador|El navegador|La GPU|Ya hay una ilustración/i.test(error.message)
+						);
+						reply.payload.reason = detail ? error.message :
+							describeLitaLocalIllustrationError(error);
 					}
 				}
 				postToLita(reply);

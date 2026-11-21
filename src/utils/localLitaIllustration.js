@@ -4,14 +4,66 @@
 const DECORATIVE_PROMPT = 'Minimal premium editorial abstract finance-inspired artwork. Flowing translucent violet and blue ribbons, smooth geometric shapes, soft lighting, rich midnight navy background, elegant composition, no letters, no numbers, no logos, no money symbols, no text.';
 let generating = false;
 
-export async function generateLitaLocalIllustration(onProgress = () => {}) {
-  if (generating) throw new Error('Ya hay una ilustración local en proceso.');
-  if (typeof navigator === 'undefined' || !navigator.gpu) {
-    throw new Error('El navegador no tiene WebGPU compatible para este modelo.');
+/**
+ * Cheap, download-free browser preflight. navigator.deviceMemory is approximate
+ * and often capped by Chrome; it cannot guarantee that the GPU has free VRAM.
+ * This guard avoids kicking off a 3.4 GB model download on small devices.
+ */
+export async function checkLitaLocalIllustrationCapability() {
+  if (typeof navigator === 'undefined' || !navigator.gpu ||
+    typeof navigator.gpu.requestAdapter !== 'function') {
+    return {
+      supported: false,
+      reason: 'Este navegador no ofrece WebGPU. Bonsai Image 4B necesita Chrome o Edge con WebGPU y una GPU compatible; no tiene modo alternativo en CPU.',
+    };
   }
   if (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory < 8) {
-    throw new Error('Este dispositivo tiene poca memoria para un modelo de aproximadamente 3,4 GB.');
+    return {
+      supported: false,
+      reason: 'Este navegador informa menos de 8 GB de memoria. Bloqueamos la descarga del modelo de 3,4 GB para evitar que el teléfono se quede sin memoria. Probalo desde una computadora con GPU compatible.',
+    };
   }
+  try {
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+      return {
+        supported: false,
+        reason: 'WebGPU está presente, pero el navegador no encontró una GPU compatible. Revisá chrome://gpu o probá Chrome/Edge actualizado en una computadora.',
+      };
+    }
+    return { supported: true, reason: '' };
+  } catch {
+    return {
+      supported: false,
+      reason: 'El navegador rechazó el acceso a la GPU. Probá Chrome/Edge actualizado y revisá la disponibilidad de WebGPU.',
+    };
+  }
+}
+
+// Safe, user-actionable messages. Never expose raw model URLs, prompts or
+// technical internal errors from SDKs through the iframe.
+export function describeLitaLocalIllustrationError(error) {
+  const message = String(error?.message || error || '').slice(0, 500);
+  if (/quota|storage|no space|disk full|cache|indexeddb/i.test(message)) {
+    return 'No hay espacio suficiente para guardar los ~3,4 GB del modelo en el navegador. Liberá espacio y probá nuevamente desde una computadora.';
+  }
+  if (/out.of.memory|oom|memory|allocation|buffer|device lost|gpu device/i.test(message)) {
+    return 'La GPU o memoria del dispositivo no alcanzó para ejecutar Bonsai Image 4B. Probá un equipo con más memoria gráfica.';
+  }
+  if (/fetch|network|download|connection|http 4|http 5/i.test(message)) {
+    return 'Falló la descarga de los archivos del modelo desde Hugging Face. Verificá tu conexión y el espacio disponible; la descarga inicial es de ~3,4 GB.';
+  }
+  if (/webgpu|adapter|gpu.*unavailable|not supported/i.test(message)) {
+    return 'La GPU o el navegador no soportan WebGPU para Bonsai Image 4B. Probá Chrome o Edge en una computadora compatible.';
+  }
+  return 'Falló la carga o generación local de Bonsai Image 4B. El reporte PNG funciona igual; probá el demo oficial de runonweb para verificar si este dispositivo soporta el modelo.';
+}
+
+export async function generateLitaLocalIllustration(onProgress = () => {}) {
+  if (generating) throw new Error('Ya hay una ilustración local en proceso.');
+  const capability = await checkLitaLocalIllustrationCapability();
+  if (!capability.supported) throw new Error(capability.reason);
+
   generating = true;
   let generator = null;
   try {
@@ -26,6 +78,9 @@ export async function generateLitaLocalIllustration(onProgress = () => {}) {
         if (Number.isFinite(progress)) onProgress(Math.min(100, Math.max(0, Math.round(progress))));
       },
     });
+    // The SDK also lazy-loads inside generate(), but explicitly loading first
+    // makes the documented load -> generate -> dispose sequence observable.
+    await generator.load();
     const result = await generator.generate(DECORATIVE_PROMPT);
     // Canvas/worker Blobs may cross JS realms, so do not rely on instanceof Blob.
     // Validate the generated local image as a small PNG Blob-like value.
