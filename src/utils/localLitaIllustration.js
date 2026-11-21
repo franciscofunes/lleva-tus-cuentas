@@ -32,7 +32,9 @@ export async function generateLitaLocalIllustration(onProgress = () => {}) {
     if (!result?.image || result.image.type !== 'image/png' ||
       typeof result.image.size !== 'number' || result.image.size <= 0 ||
       result.image.size > 8_000_000 || typeof result.image.slice !== 'function') {
-      throw new Error('No se pudo producir una ilustración PNG válida.');
+      throw new Error('No se pudo producir una ilustración PNG válida. ' +
+        '[type=' + String(result?.image?.type) + ', size=' + String(result?.image?.size) +
+        ', slice=' + typeof result?.image?.slice + ']');
     }
     return result.image;
   } finally {
