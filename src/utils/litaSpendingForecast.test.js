@@ -42,6 +42,8 @@ test('forecasts only fully finished months by currency without adding currency s
   expect(data.currencies.USD.expense.baseMonthly).toBe(33.33);
   expect(data.currencies.USD.expense.scenarios.find(x => x.months === 6).base).toBe(199.98);
   expect(data.currencies.ARS.topCategories.find(x => x.category === 'Servicios').totalLastSixMonths).toBe(300);
+  expect(data.currencies.ARS.topCategories[0]).toMatchObject({category:'Servicios',projectedMonthly:150});
+  expect(data.currencies.ARS.topCategories.find(x => x.category === 'Alimentos').projectedMonthly).toBe(83.33);
   expect(data.quality).toMatchObject({ ignoredMovements: 2, unclassifiedCount: 1, invalidAmounts: 1 });
 });
 
