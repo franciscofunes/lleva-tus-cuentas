@@ -19,7 +19,7 @@ For each currency independently:
 2. Base monthly amount = weighted mean of those three monthly expense totals with weights **1, 2, 3**, rounded to cents.
 3. Low/high = minimum/maximum of all available observed monthly expense totals, not percentiles and not a statistical confidence interval.
 4. Future 1, 3 and 6-month scenarios = monthly low/base/high multiplied by horizon. **Nominal amounts only**: no assumed inflation, interest rates, changes in income or seasonality.
-5. If at least 3 observed income months also exist, possible monthly saving = estimated income base minus expense base. Negative values are possible and should be described as a shortfall.
+5. If the same last 3 observed expense months also each have recorded income, possible monthly saving = estimated income base minus expense base. Negative values are possible and should be described as a shortfall.
 6. Categories are included as historical expenditure totals for the six-month window; they are not forecasts of specific future bills or installments.
 
 The fields in `spendingForecast` passed to Lita are aggregate-only. The iframe has no Firestore credentials. Sensitive transaction descriptions, receipt numbers and bank identities are never included in this new forecast response.
