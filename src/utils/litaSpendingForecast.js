@@ -127,7 +127,7 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
     caveats: [
       'Meses sin gastos registrados son desconocidos, nunca gasto cero; menos de 3 meses registrados impide estimar.',
       'El período actual incompleto se excluye. No se modelan inflación, estacionalidad ni cambios futuros de precios.',
-      'Se excluyen compra/venta/ingreso de divisas y transferencias; las categorías sin clasificación no se inventan.',
+      'Se excluyen compra/venta/ingreso de divisas, transferencias y movimientos de inversión; las categorías sin clasificación no se inventan.',
       'Los pagos de resúmenes de tarjetas cuentan solamente cuando están registrados como salida en Transacciones; no se suman compras PDF, consumos manuales ni saldos bancarios.',
       'ARS y USD son independientes; no se aplica cotización implícita ni se presuponen obligaciones futuras.',
     ],
