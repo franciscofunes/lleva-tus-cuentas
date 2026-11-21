@@ -27,8 +27,11 @@ export async function generateLitaLocalIllustration(onProgress = () => {}) {
       },
     });
     const result = await generator.generate(DECORATIVE_PROMPT);
-    if (!(result?.image instanceof Blob) || result.image.type !== 'image/png' ||
-      result.image.size > 8_000_000) {
+    // Canvas/worker Blobs may cross JS realms, so do not rely on instanceof Blob.
+    // Validate the generated local image as a small PNG Blob-like value.
+    if (!result?.image || result.image.type !== 'image/png' ||
+      typeof result.image.size !== 'number' || result.image.size <= 0 ||
+      result.image.size > 8_000_000 || typeof result.image.slice !== 'function') {
       throw new Error('No se pudo producir una ilustración PNG válida.');
     }
     return result.image;
