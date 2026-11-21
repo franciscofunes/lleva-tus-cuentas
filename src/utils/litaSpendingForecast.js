@@ -54,6 +54,7 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
     }])),
   ]));
   const categorySpend = { ARS: new Map(), USD: new Map() };
+  const categoryMonthly = { ARS: new Map(), USD: new Map() };
   let unclassifiedCount = 0;
   let ignoredMovements = 0;
   let invalidAmounts = 0;
@@ -77,6 +78,9 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
       row.expense += value;
       row.expenseRecords++;
       categorySpend[currency].set(category.name, (categorySpend[currency].get(category.name) || 0) + value);
+      const byMonth = categoryMonthly[currency].get(category.name) || new Map();
+      byMonth.set(month, (byMonth.get(month) || 0) + value);
+      categoryMonthly[currency].set(category.name, byMonth);
     } else {
       row.income += value;
       row.incomeRecords++;
@@ -98,9 +102,22 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
     const income = hasMatchingIncome
       ? weightedMonthly(matchedMonths.map((row) => row.income))
       : null;
+    const recentExpenseMonths = observed.slice(-3).map((row) => row.month);
     const topCategories = [...categorySpend[currency].entries()]
-      .sort((a, b) => b[1] - a[1]).slice(0, 5)
-      .map(([category, amount]) => ({ category, totalLastSixMonths: cents(amount) }));
+      .map(([category, amount]) => {
+        const lastThree = recentExpenseMonths.map((month) =>
+          categoryMonthly[currency].get(category)?.get(month) || 0);
+        return {
+          category,
+          totalLastSixMonths: cents(amount),
+          // Categories absent from a documented expense month count as zero
+          // within that observed month, not as a missing month.
+          projectedMonthly: expense ? weightedMonthly(lastThree)?.baseMonthly ?? null : null,
+        };
+      })
+      .sort((a, b) => (b.projectedMonthly ?? b.totalLastSixMonths) -
+        (a.projectedMonthly ?? a.totalLastSixMonths))
+      .slice(0, 5);
     return [currency, {
       currency,
       status: expense ? (observed.length === 6 ? 'ok' : 'partial-history') : 'insufficient-data',
