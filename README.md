@@ -25,6 +25,7 @@ LTC is a responsive **React 18** single-page application hosted on **Vercel**. U
 | Card statements | Analyze supported **digital Visa PDFs**, review purchases and totals, attach details to one card-payment transaction | Lita PDF API + `cardStatementService` |
 | Lita | Ask questions about portfolio/transactions using bounded context and per-user chat history | Cross-origin iframe, `postMessage`, Firestore chat threads |
 | Lita spending forecasts | Ask for 1/3/6-month nominal scenarios using the last 6 complete months in Firestore, separated by ARS/USD, without counting card purchases twice | `litaSpendingForecastService`, `litaSpendingForecast` and trusted Lita iframe |
+| Visual reports and browser artwork | Lita locally exports deterministic PNG charts from existing aggregates; LTC optionally generates abstract decorations with runonweb WebGPU on explicit request | `LitaAssitantPanel`, `localLitaIllustration`, [report guide](docs/lita-visual-reports.md) |
 | Exchange quotes | Show indicative public USD exchange quotes without sending financial balances | `usdQuotesService` |
 
 The UI is intentionally Spanish-language; **engineering documentation is in English**. Features may require the corresponding live Firestore rules to have been applied before writes succeed.

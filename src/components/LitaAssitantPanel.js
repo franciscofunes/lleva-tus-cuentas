@@ -297,6 +297,30 @@ const LitaAssistantPanel = ({
 				return;
 			}
 
+			if (event.data?.type === 'lita:illustration:request') {
+				const { requestId } = event.data.payload || {};
+				if (typeof requestId !== 'string' || !/^[a-zA-Z0-9_-]{1,70}$/.test(requestId)) return;
+				const reply = { type: 'lita:illustration:result',
+					payload: { requestId, success: false } };
+				if (!user?.uid || privacyHidden || !['transactions', 'banks'].includes(section)) {
+					reply.payload.reason = 'Modo privacidad activo o sesión no disponible.';
+				} else {
+					try {
+						const { generateLitaLocalIllustration } = await import('../utils/localLitaIllustration');
+						const image = await generateLitaLocalIllustration((progress) => {
+							postToLita({ type: 'lita:illustration:progress', payload: { requestId, progress } });
+						});
+						// postMessage transfers only a generated decorative Blob. No personal data
+						// or inferred text is included in the fixed generation prompt.
+						reply.payload = { requestId, success: true, image };
+					} catch (error) {
+						reply.payload.reason = error?.message || 'No se pudo generar la ilustración local.';
+					}
+				}
+				postToLita(reply);
+				return;
+			}
+
 			if (event.data?.type === 'lita:history:refresh') {
 				setHistoryRefresh((value) => value + 1);
 				return;

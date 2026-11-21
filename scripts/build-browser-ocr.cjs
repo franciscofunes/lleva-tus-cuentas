@@ -51,6 +51,24 @@ async function main() {
       },
     }],
   });
+  // Browser-only optional image generation (Bonsai Image 4B, WebGPU).
+  // Separate entry avoids shipping the model runtime in normal LTC or OCR bundles.
+  // Model weights are downloaded only after the user explicitly opts in.
+  await esbuild.build({
+    entryPoints: [require.resolve('runonweb/image')],
+    outdir,
+    entryNames: 'image',
+    chunkNames: 'image-chunk-[hash]',
+    bundle: true,
+    splitting: true,
+    format: 'esm',
+    platform: 'browser',
+    target: 'es2022',
+    logLevel: 'warning',
+    legalComments: 'none',
+    banner: {js: '/* eslint-disable */'},
+    minify: true,
+  });
   // ONNX Runtime references its Web Worker through `new URL(..., import.meta.url)`.
   // Keep the worker sibling alongside the generated chunks for CRA's asset loader.
   const workerSource = fs.readFileSync(path.join(ortDist, 'ort.bundle.min.mjs'), 'utf8')
