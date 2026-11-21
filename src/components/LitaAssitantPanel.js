@@ -287,7 +287,7 @@ const LitaAssistantPanel = ({
 					response.payload.reason = 'Abrí LITA desde Transacciones, con los importes visibles, para proyectar gastos.';
 				} else {
 					try {
-						const result = await queryLitaSpendingForecast(user.uid, context?.categories || []);
+						const result = await queryLitaSpendingForecast(user.uid, context?.historicalCategories || context?.categories || []);
 						response.payload = { requestId, success: true, result };
 					} catch (error) {
 						response.payload.reason = error?.message || 'No se pudo calcular la proyección.';
@@ -376,6 +376,7 @@ const LitaAssistantPanel = ({
 		user?.uid,
 		section,
 		context?.categories,
+		context?.historicalCategories,
 		privacyHidden,
 	]);
 
