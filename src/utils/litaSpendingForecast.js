@@ -12,7 +12,7 @@ const day = (date) => [
 ].join('-');
 const keyOf = (date) => day(date).slice(0, 7);
 const isInternalMovement = (name) =>
-  /(?:compra|venta|ingreso)\s+(?:de\s+)?divisas|transferenc|traspaso|entre\s+cuentas/i.test(name);
+  /(?:compra|venta|ingreso)\s+(?:de\s+)?divisas|transferenc|traspaso|entre\s+cuentas|inversi[oó]n|aportes?|rescates?|retiros?|extracci[oó]n/i.test(name);
 
 const weightedMonthly = (values) => {
   if (values.length < 3) return null;
@@ -91,7 +91,13 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
     }));
     const observed = monthly.filter((row) => row.hasExpenseData);
     const expense = weightedMonthly(observed.map((row) => row.expense));
-    const income = weightedMonthly(monthly.filter((row) => row.incomeRecords > 0).map((row) => row.income));
+    // Savings must compare income and expense from the SAME three months.
+    const matchedMonths = observed.slice(-3);
+    const hasMatchingIncome = matchedMonths.length === 3 &&
+      matchedMonths.every((row) => row.incomeRecords > 0);
+    const income = hasMatchingIncome
+      ? weightedMonthly(matchedMonths.map((row) => row.income))
+      : null;
     const topCategories = [...categorySpend[currency].entries()]
       .sort((a, b) => b[1] - a[1]).slice(0, 5)
       .map(([category, amount]) => ({ category, totalLastSixMonths: cents(amount) }));
