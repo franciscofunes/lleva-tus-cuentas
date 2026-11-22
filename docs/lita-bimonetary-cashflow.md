@@ -25,3 +25,14 @@ El bridge sólo transmite estos agregados bajo las validaciones actuales de ifra
 `src/utils/litaSpendingForecast.test.js` prueba sueldos USD con menos de tres meses de gastos USD y exclusión de compraventas de divisas. `src/utils/litaPortfolioBalances.test.js` prueba valores válidos, sumas sin tipo de cambio, posiciones inválidas y distinción patrimonio/ingreso.
 
 La aplicación Lita debe desplegarse después del host LTC para consumir los nuevos campos. Los clientes anteriores siguen siendo compatibles.
+
+
+## Auditoría de entradas USD «Ingreso divisas» (noviembre de 2026)
+
+La categoría reservada `Ingreso divisas` almacena la cantidad real de USD en `currencyQuantity` y puede guardar `amount` ARS vacío. Este campo antes se descartaba durante el cálculo de ingresos porque los movimientos de divisas se excluyen del ahorro económico; era posible que Lita dijera «no hay ingresos USD» a pesar de existir entradas registradas.
+
+Ahora los movimientos se leen y se agrupan en `currencies.USD.registeredCurrencyInflows` (cantidad USD, número de movimientos y meses observados). **Se muestran como entradas de dólares registradas, no como salario ni ganancia**: podrían ser transferencias propias. Nunca se suman al ingreso de sueldo USD, al ahorro mensual ni a los movimientos de `Compra divisas`/`Venta divisas`.
+
+En paralelo `quality.usdIncomeCurrencyReview` identifica, sin revaluar, ingresos de categorías configuradas en USD que siguen guardados como ARS o sin `transactionCurrency:'USD'`. El host pasa metadatos de moneda de categorías históricas, incluso archivadas. Para corregir casos concretos hay que verificar el movimiento original en Transacciones; ningún documento Firestore se modifica automáticamente. Los importes de divisas sin `currencyQuantity` válida se cuentan en `quality.invalidUsdCurrencyQuantity`. El contexto preserva sumas agregadas; el iframe no recibe transacciones completas.
+
+Las pruebas de regresión garantizan que entradas con `amount` vacío se vean, que conversiones y transferencias no se vuelvan ingresos y que las monedas legacy no se conviertan por inferencia.
