@@ -299,7 +299,7 @@ const LitaAssistantPanel = ({
 			}
 
 			if (event.data?.type === 'lita:fx:request') {
-				const { requestId } = event.data.payload || {};
+				const { requestId, refresh } = event.data.payload || {};
 				if (typeof requestId !== 'string' || !/^[a-zA-Z0-9_-]{1,70}$/.test(requestId)) return;
 				const response = { type: 'lita:fx:result', payload: {
 					requestId, success: false, quotes: [],
@@ -310,7 +310,7 @@ const LitaAssistantPanel = ({
 					try {
 						// Same public API and ten-minute cache as LTC's USD converter.
 						// No balances, transaction records or user identifiers reach DolarAPI.
-						const quotes = await fetchUsdQuotes();
+						const quotes = await fetchUsdQuotes(refresh === true);
 						const now = Date.now();
 						const accepted = quotes.filter((q) =>
 							['bolsa', 'contadoconliqui', 'oficial', 'blue', 'cripto'].includes(q?.key) &&
