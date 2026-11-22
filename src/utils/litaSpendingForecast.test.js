@@ -123,3 +123,58 @@ test('one observed USD salary month reports history but never invents a monthly 
   expect(data.currencies.USD.incomeObserved.baseMonthly).toBeNull();
   expect(data.currencies.USD.possibleMonthlySavings).toBeNull();
 });
+
+test('Ingreso divisas is visible as recorded USD inflow even with empty ARS amount', () => {
+  const data = buildLitaSpendingForecast([
+    { selectedDate: '2026-08-09', category: 'Ingreso divisas', amount: '', currencyQuantity: 4000, transactionCurrency: 'ARS' },
+    { selectedDate: '2026-09-09', category: 'Ingreso divisas', currencyQuantity: 5500, transactionCurrency: 'ARS' },
+    { selectedDate: '2026-10-09', category: 'Ingreso divisas', amount: null, currencyQuantity: '5.500', transactionCurrency: 'ARS' },
+    row('2026-08-04', 'Alimentos', 500),
+    row('2026-09-04', 'Alimentos', 500),
+    row('2026-10-04', 'Alimentos', 500),
+  ], categories, today);
+  expect(data.currencies.USD.registeredCurrencyInflows).toMatchObject({
+    source: 'ingreso-divisas', classification: 'unverified-income',
+    observedMonths: 3, totalLastSixMonths: 9505.5, records: 3,
+  });
+  expect(data.currencies.USD.incomeObserved.observedIncomeMonths).toBe(0);
+  expect(data.currencies.USD.possibleMonthlySavings).toBeNull();
+  expect(data.currencies.ARS.incomeObserved.observedIncomeMonths).toBe(0);
+  expect(data.quality.invalidAmounts).toBe(0);
+  expect(data.quality.ignoredMovements).toBe(3);
+});
+
+test('FX purchases and sales are not economic income or USD incoming deposits', () => {
+  const data = buildLitaSpendingForecast([
+    { selectedDate: '2026-08-10', category: 'Compra divisas', amount: 200000, currencyQuantity: 1000 },
+    { selectedDate: '2026-09-10', category: 'Venta divisas', amount: 250000, currencyQuantity: 1200 },
+    { selectedDate: '2026-10-10', category: 'Ingreso divisas', amount: '', currencyQuantity: '' },
+  ], categories, today);
+  expect(data.currencies.USD.registeredCurrencyInflows.records).toBe(0);
+  expect(data.quality.invalidUsdCurrencyQuantity).toBe(1);
+  expect(data.quality.ignoredMovements).toBe(3);
+  expect(data.currencies.USD.incomeObserved.observedIncomeMonths).toBe(0);
+  expect(data.currencies.ARS.incomeObserved.observedIncomeMonths).toBe(0);
+});
+
+test('separate actual USD salary from incoming transfer and from legacy ARS snapshot', () => {
+  const categoryMetadata = [...categories, { name: 'Honorarios exterior', isExpense: false, currency: 'USD' }];
+  const data = buildLitaSpendingForecast([
+    row('2026-08-04', 'Honorarios exterior', 5500, 'USD'),
+    row('2026-09-04', 'Honorarios exterior', 5500, 'USD'),
+    row('2026-10-04', 'Honorarios exterior', 5500, 'USD'),
+    row('2026-08-05', 'Honorarios exterior', 45000), // Explicitly ARS: no inference
+    { selectedDate: '2026-09-06', category: 'Honorarios exterior', amount: 68000 }, // Legacy ARS
+    { selectedDate: '2026-10-07', category: 'Ingreso divisas', currencyQuantity: 5500 },
+  ], categoryMetadata, today);
+  expect(data.currencies.USD.incomeObserved).toMatchObject({
+    observedIncomeMonths: 3, totalLastSixMonths: 16500, baseMonthly: 5500,
+  });
+  expect(data.currencies.USD.registeredCurrencyInflows.totalLastSixMonths).toBe(5500);
+  expect(data.quality.usdIncomeCurrencyReview).toMatchObject({
+    records: 2, categories: ['honorarios exterior'],
+  });
+  expect(data.currencies.ARS.incomeObserved.observedIncomeMonths).toBe(2);
+  expect(data.currencies.ARS.incomeObserved.totalLastSixMonths).toBe(113000);
+  expect(data.currencies.USD.possibleMonthlySavings).toBeNull();
+});
