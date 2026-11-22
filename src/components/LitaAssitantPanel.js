@@ -10,6 +10,7 @@ import {
 } from '../shared/constants/urls.const';
 import { queryLitaHistoricalTransactions } from '../services/litaHistoricalAnalysis';
 import { queryLitaSpendingForecast } from '../services/litaSpendingForecastService';
+import { fetchUsdQuotes } from '../services/usdQuotesService';
 import {
 	deleteLitaChat,
 	saveLitaChat,
@@ -291,6 +292,45 @@ const LitaAssistantPanel = ({
 						response.payload = { requestId, success: true, result };
 					} catch (error) {
 						response.payload.reason = error?.message || 'No se pudo calcular la proyección.';
+					}
+				}
+				postToLita(response);
+				return;
+			}
+
+			if (event.data?.type === 'lita:fx:request') {
+				const { requestId, refresh } = event.data.payload || {};
+				if (typeof requestId !== 'string' || !/^[a-zA-Z0-9_-]{1,70}$/.test(requestId)) return;
+				const response = { type: 'lita:fx:result', payload: {
+					requestId, success: false, quotes: [],
+				} };
+				if (!user?.uid || section !== 'transactions' || privacyHidden) {
+					response.payload.reason = 'Consultá cotizaciones desde Transacciones con sesión activa y los importes visibles.';
+				} else {
+					try {
+						// Same public API and ten-minute cache as LTC's USD converter.
+						// No balances, transaction records or user identifiers reach DolarAPI.
+						const quotes = await fetchUsdQuotes(refresh === true);
+						const now = Date.now();
+						const accepted = quotes.filter((q) =>
+							['bolsa', 'contadoconliqui', 'oficial', 'blue', 'cripto'].includes(q?.key) &&
+							Number.isFinite(q.compra) && q.compra > 0 && q.compra <= 1e7 &&
+							Number.isFinite(q.venta) && q.venta > 0 && q.venta <= 1e7 &&
+							Number.isFinite(Date.parse(q.updatedAt)) &&
+							Date.parse(q.updatedAt) <= now + 24 * 3600000 &&
+							(now - Date.parse(q.updatedAt)) <= 96 * 3600000
+						).map((q) => ({
+							key: q.key,
+							compra: q.compra,
+							venta: q.venta,
+							updatedAt: q.updatedAt,
+						}));
+						response.payload.success = accepted.length > 0;
+						response.payload.quotes = accepted;
+						response.payload.source = 'DolarAPI';
+						if (!accepted.length) response.payload.reason = 'No hay cotizaciones recientes válidas disponibles.';
+					} catch {
+						response.payload.reason = 'No se pudo consultar DolarAPI. Lita sigue mostrando ARS y USD por separado.';
 					}
 				}
 				postToLita(response);

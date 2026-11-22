@@ -4,6 +4,7 @@ const API = 'https://dolarapi.com/v1/dolares';
 const TTL = 10 * 60 * 1000;
 const KNOWN_MARKETS = {
   bolsa: 'MEP',
+  contadoconliqui: 'CCL',
   oficial: 'Oficial',
   blue: 'Blue (informal)',
   cripto: 'Cripto',
@@ -32,7 +33,7 @@ export const parseUsdQuotes = (raw) => {
     })
     .filter(Boolean)
     .sort((a, b) => {
-      const order = ['bolsa', 'oficial', 'blue', 'cripto'];
+      const order = ['bolsa', 'contadoconliqui', 'oficial', 'blue', 'cripto'];
       return order.indexOf(a.key) - order.indexOf(b.key);
     });
 };

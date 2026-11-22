@@ -11,10 +11,11 @@ describe('DolarAPI quote validation and caching', () => {
       sample('blue', 1490, 1520),
       sample('oficial', 1400, 1460),
       sample('bolsa', 1475, 1490),
+      sample('contadoconliqui', 1700, 1750),
       sample('unknown'),
       sample('cripto', 'not-available', 1600),
     ]);
-    expect(quotes.map((x) => x.key)).toEqual(['bolsa', 'oficial', 'blue']);
+    expect(quotes.map((x) => x.key)).toEqual(['bolsa', 'contadoconliqui', 'oficial', 'blue']);
     expect(quotes[0].compra).toBe(1475);
     expect(quotes[0].venta).toBe(1490);
     expect(quotes[0].updatedAt).toBeTruthy();
