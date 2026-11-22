@@ -320,8 +320,9 @@ const LitaAssistantPanel = ({
 				} else {
 					try {
 						const { generateLitaLocalIllustration } = await import('../utils/localLitaIllustration');
-						const image = await generateLitaLocalIllustration((progress) => {
-							postToLita({ type: 'lita:illustration:progress', payload: { requestId, progress } });
+						const image = await generateLitaLocalIllustration((progress, stage) => {
+							postToLita({ type: 'lita:illustration:progress',
+								payload: { requestId, progress, stage } });
 						});
 						// postMessage transfers only a generated decorative Blob. No personal data
 						// or inferred text is included in the fixed generation prompt.

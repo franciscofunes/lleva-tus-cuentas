@@ -5,13 +5,14 @@ const mockGenerate = jest.fn(async () => ({
   image: { type: 'image/png', size: 23, slice: jest.fn() },
 }));
 const mockDispose = jest.fn();
+const mockLoad = jest.fn(async () => {});
 const onProgress = jest.fn();
 let mockLastOptions;
 jest.mock('../generated/browser-ai/image', () => ({
   isImageGenerationSupported: jest.fn(async () => true),
   ImageGenerator: jest.fn().mockImplementation((options) => {
     mockLastOptions = options;
-    return { generate: mockGenerate, dispose: mockDispose };
+    return { load: mockLoad, generate: mockGenerate, dispose: mockDispose };
   }),
 }), { virtual: true });
 
@@ -21,6 +22,7 @@ describe('local decorative report illustration', () => {
   beforeEach(() => {
     mockGenerate.mockClear();
     mockDispose.mockClear();
+    mockLoad.mockClear();
     onProgress.mockClear();
     Object.defineProperty(navigator, 'gpu', { configurable: true, value: { requestAdapter: jest.fn(async () => ({ limits: {} })) } });
     Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value: 16 });
@@ -81,6 +83,23 @@ describe('local decorative report illustration', () => {
       .toContain('descarga');
     expect(describeLitaLocalIllustrationError(new Error('GPU device lost')))
       .toContain('GPU');
+  });
+
+  it('explains the model failure phase when WebGPU preflight passed', () => {
+    const { describeLitaLocalIllustrationError } = require('./localLitaIllustration');
+    expect(describeLitaLocalIllustrationError({ message: 'Unknown error', litaStage: 'runtime' }))
+      .toMatch(/preparación del motor local/);
+    expect(describeLitaLocalIllustrationError({ message: 'Unknown error', litaStage: 'weights' }))
+      .toMatch(/carga del modelo Bonsai/);
+    expect(describeLitaLocalIllustrationError({ message: 'Unknown error', litaStage: 'generating' }))
+      .toMatch(/El modelo se cargó/);
+  });
+
+  it('preserves the stage without exposing SDK internals to the iframe', () => {
+    const fs = require('fs');
+    const panel = fs.readFileSync(require('path').join(__dirname, '../components/LitaAssitantPanel.js'), 'utf8');
+    expect(panel).toContain('payload: { requestId, progress, stage }');
+    expect(panel).toContain('describeLitaLocalIllustrationError(error)');
   });
 
   it('uses a fixed public decorative prompt and retains strict PNG validation', () => {
