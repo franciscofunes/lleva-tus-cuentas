@@ -17,6 +17,9 @@ jest.mock('../services/litaHistoricalAnalysis', () => ({
 jest.mock('../services/litaSpendingForecastService', () => ({
 	queryLitaSpendingForecast: jest.fn(),
 }));
+jest.mock('../services/usdQuotesService', () => ({
+	fetchUsdQuotes: jest.fn(),
+}));
 jest.mock('../shared/constants/urls.const', () => ({
 	LITA_CHAT_LOCALHOST: 'http://localhost:3005',
 	LITA_CHAT_VERCEL_URL: 'https://holalita.vercel.app/',
@@ -277,6 +280,68 @@ describe('LITA iframe integration', () => {
 			}));
 		});
 		expect(queryLitaSpendingForecast).not.toHaveBeenCalled();
+	});
+
+	test('quotes bridge sends only validated market rates to the trusted iframe', async () => {
+		const { fetchUsdQuotes } = require('../services/usdQuotesService');
+		const timestamp = new Date(Date.now() - 30 * 60000).toISOString();
+		fetchUsdQuotes.mockReset();
+		fetchUsdQuotes.mockResolvedValueOnce([
+			{ key: 'bolsa', compra: 1450, venta: 1500, updatedAt: timestamp },
+			{ key: 'oficial', compra: 1350, venta: 1420, updatedAt: timestamp },
+			{ key: 'intruder', compra: 999999, venta: 999999, updatedAt: timestamp },
+			{ key: 'blue', compra: 1300, venta: 1400,
+				updatedAt: new Date(Date.now() - 4 * 86400000).toISOString() },
+		]);
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='transactions'
+			context={{ balance: 987654, accountId: 'PRIVATE-ACCOUNT' }} />);
+		const iframe = screen.getByTitle('Lita Assistant');
+		const post = jest.spyOn(iframe.contentWindow, 'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message', {
+				origin, source: iframe.contentWindow,
+				data: { type: 'lita:fx:request', payload: { requestId: 'fx-valid-001' } },
+			}));
+		});
+		expect(fetchUsdQuotes).toHaveBeenCalledTimes(1);
+		expect(post).toHaveBeenCalledWith({
+			type: 'lita:fx:result',
+			payload: {
+				requestId: 'fx-valid-001', success: true, source: 'DolarAPI',
+				quotes: [
+					{ key: 'bolsa', compra: 1450, venta: 1500, updatedAt: timestamp },
+					{ key: 'oficial', compra: 1350, venta: 1420, updatedAt: timestamp },
+				],
+			},
+		}, origin);
+		expect(JSON.stringify(post.mock.calls)).not.toContain('PRIVATE-ACCOUNT');
+		expect(JSON.stringify(post.mock.calls)).not.toContain('987654');
+		fetchUsdQuotes.mockReset();
+	});
+
+	test('quotes bridge respects privacy and rejects foreign iframe origin before fetch', async () => {
+		const { fetchUsdQuotes } = require('../services/usdQuotesService');
+		fetchUsdQuotes.mockReset();
+		render(<LitaAssistantPanel isOpen setIsOpen={jest.fn()} section='transactions'
+			privacyHidden context={{ balance: 2000 }} />);
+		const iframe = screen.getByTitle('Lita Assistant');
+		const post = jest.spyOn(iframe.contentWindow, 'postMessage');
+		await act(async () => {
+			window.dispatchEvent(new MessageEvent('message', {
+				origin, source: iframe.contentWindow,
+				data: { type: 'lita:fx:request', payload: { requestId: 'fx-hidden' } },
+			}));
+			window.dispatchEvent(new MessageEvent('message', {
+				origin: 'https://untrusted.invalid', source: iframe.contentWindow,
+				data: { type: 'lita:fx:request', payload: { requestId: 'fx-foreign' } },
+			}));
+		});
+		expect(fetchUsdQuotes).not.toHaveBeenCalled();
+		expect(post).toHaveBeenCalledWith(expect.objectContaining({
+			type: 'lita:fx:result',
+			payload: expect.objectContaining({ requestId: 'fx-hidden', success: false, quotes: [] }),
+		}), origin);
+		expect(JSON.stringify(post.mock.calls)).not.toContain('fx-foreign');
 	});
 
 	test('privacy mode blocks forecast reads before querying Firestore', async () => {
