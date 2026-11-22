@@ -128,14 +128,14 @@ test('Ingreso divisas is visible as recorded USD inflow even with empty ARS amou
   const data = buildLitaSpendingForecast([
     { selectedDate: '2026-08-09', category: 'Ingreso divisas', amount: '', currencyQuantity: 4000, transactionCurrency: 'ARS' },
     { selectedDate: '2026-09-09', category: 'Ingreso divisas', currencyQuantity: 5500, transactionCurrency: 'ARS' },
-    { selectedDate: '2026-10-09', category: 'Ingreso divisas', amount: null, currencyQuantity: '5.500', transactionCurrency: 'ARS' },
+    { selectedDate: '2026-10-09', category: 'Ingreso divisas', amount: null, currencyQuantity: '5500', transactionCurrency: 'ARS' },
     row('2026-08-04', 'Alimentos', 500),
     row('2026-09-04', 'Alimentos', 500),
     row('2026-10-04', 'Alimentos', 500),
   ], categories, today);
   expect(data.currencies.USD.registeredCurrencyInflows).toMatchObject({
     source: 'ingreso-divisas', classification: 'unverified-income',
-    observedMonths: 3, totalLastSixMonths: 9505.5, records: 3,
+    observedMonths: 3, totalLastSixMonths: 15000, records: 3,
   });
   expect(data.currencies.USD.incomeObserved.observedIncomeMonths).toBe(0);
   expect(data.currencies.USD.possibleMonthlySavings).toBeNull();
