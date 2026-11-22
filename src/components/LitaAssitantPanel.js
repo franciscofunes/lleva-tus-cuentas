@@ -313,12 +313,12 @@ const LitaAssistantPanel = ({
 						const quotes = await fetchUsdQuotes();
 						const now = Date.now();
 						const accepted = quotes.filter((q) =>
-							['bolsa', 'oficial', 'blue', 'cripto'].includes(q?.key) &&
+							['bolsa', 'contadoconliqui', 'oficial', 'blue', 'cripto'].includes(q?.key) &&
 							Number.isFinite(q.compra) && q.compra > 0 && q.compra <= 1e7 &&
 							Number.isFinite(q.venta) && q.venta > 0 && q.venta <= 1e7 &&
 							Number.isFinite(Date.parse(q.updatedAt)) &&
 							Date.parse(q.updatedAt) <= now + 24 * 3600000 &&
-							(now - Date.parse(q.updatedAt)) <= 36 * 3600000
+							(now - Date.parse(q.updatedAt)) <= 96 * 3600000
 						).map((q) => ({
 							key: q.key,
 							compra: q.compra,
