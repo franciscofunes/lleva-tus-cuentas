@@ -445,7 +445,8 @@ function Dashboard() {
       // Forecasts include archived categories to classify older movements.
       // The visible category selector still receives only active categories.
       historicalCategories: (Array.isArray(categories) ? categories : []).filter((entry) => entry?.name)
-        .map(({ name, isExpense }) => ({ name, isExpense: Boolean(isExpense) })),
+        .map(({ name, isExpense, currency }) => ({ name, isExpense: Boolean(isExpense),
+          currency: currency === 'USD' ? 'USD' : 'ARS' })),
       summary: {
         incomeArs: Number(income || 0),
         expensesArs: Number(expense || 0),
