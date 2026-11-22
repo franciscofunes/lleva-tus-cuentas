@@ -55,6 +55,15 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
   ]));
   const categorySpend = { ARS: new Map(), USD: new Map() };
   const categoryMonthly = { ARS: new Map(), USD: new Map() };
+  // "Ingreso divisas" is stored with an explicit USD currencyQuantity and may
+  // have an empty ARS amount. It is a USD inflow, but NOT proof of new income:
+  // the sender could be another account owned by this same person.
+  const usdCurrencyEntries = new Map(monthKeys.map((month) => [month, {
+    month, usd: 0, records: 0,
+  }]));
+  const usdIncomeCurrencyReview = { records: 0, categories: new Set() };
+  const unclassifiedCategoryNames = new Set();
+  let invalidUsdCurrencyQuantity = 0;
   let unclassifiedCount = 0;
   let ignoredMovements = 0;
   let invalidAmounts = 0;
@@ -63,14 +72,38 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
     const selectedDate = String(item?.selectedDate || '');
     const month = selectedDate.slice(0, 7);
     if (!monthKeys.includes(month) || !/^20\d{2}-\d{2}-\d{2}$/.test(selectedDate)) continue;
-    const value = moneyValue(item?.amount);
-    if (value === null) { invalidAmounts++; continue; }
     const name = normalizeCategoryName(item?.category || '');
     const category = categoriesByName.get(name);
+
+    // This dedicated transaction type captures physical USD quantity, not
+    // ordinary ARS income. Record it separately even when amount is blank.
+    if (/^ingreso\s+(?:de\s+)?divisas\b/.test(name)) {
+      const usd = moneyValue(item?.currencyQuantity);
+      ignoredMovements++;
+      if (usd === null) { invalidUsdCurrencyQuantity++; continue; }
+      const entry = usdCurrencyEntries.get(month);
+      entry.usd += usd;
+      entry.records++;
+      continue;
+    }
+
+    // Count internal exchanges, investments and transfers neither as spending
+    // nor income, because they can move balances without creating new money.
     if (isInternalMovement(name)) { ignoredMovements++; continue; }
+    const value = moneyValue(item?.amount);
+    if (value === null) { invalidAmounts++; continue; }
     if (!category || typeof category.isExpense !== 'boolean') {
       unclassifiedCount++;
+      if (name) unclassifiedCategoryNames.add(name.slice(0, 50));
       continue;
+    }
+
+    // Old transactions lacking a USD snapshot are ARS under LTC's storage
+    // contract. Never silently infer USD from today's category currency.
+    if (!category.isExpense && category.currency === 'USD' &&
+      item?.transactionCurrency !== 'USD') {
+      usdIncomeCurrencyReview.records++;
+      usdIncomeCurrencyReview.categories.add(name.slice(0, 50));
     }
     const currency = getTransactionCurrency(item);
     const row = byCurrency[currency].get(month);
@@ -143,6 +176,19 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
     }];
   }));
 
+  const currencyEntryMonths = Array.from(usdCurrencyEntries.values())
+    .filter((entry) => entry.records > 0);
+  currencies.USD.registeredCurrencyInflows = {
+    source: 'ingreso-divisas',
+    classification: 'unverified-income',
+    observedMonths: currencyEntryMonths.length,
+    totalLastSixMonths: cents(currencyEntryMonths.reduce((sum, entry) => sum + entry.usd, 0)),
+    records: currencyEntryMonths.reduce((sum, entry) => sum + entry.records, 0),
+    monthly: currencyEntryMonths.map((entry) => ({
+      month: entry.month, amountUsd: cents(entry.usd), records: entry.records,
+    })),
+  };
+
   return {
     scope: 'spending-forecast',
     asOf: day(today),
@@ -151,7 +197,15 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
     monthsRequested: 6,
     recordCount: rows.length,
     currencies,
-    quality: { unclassifiedCount, ignoredMovements, invalidAmounts },
+    quality: {
+      unclassifiedCount, ignoredMovements, invalidAmounts,
+      invalidUsdCurrencyQuantity,
+      unclassifiedCategoryNames: [...unclassifiedCategoryNames].slice(0, 5),
+      usdIncomeCurrencyReview: {
+        records: usdIncomeCurrencyReview.records,
+        categories: [...usdIncomeCurrencyReview.categories].slice(0, 5),
+      },
+    },
     methodology: 'Media ponderada de los últimos tres meses con gastos registrados (pesos 1, 2, 3). Rangos bajo/alto: mínimo y máximo mensual observado. Proyección nominal constante para 1, 3 y 6 meses. No es un intervalo estadístico de confianza.',
     caveats: [
       'Meses sin gastos registrados son desconocidos, nunca gasto cero; menos de 3 meses registrados impide estimar.',
@@ -161,6 +215,8 @@ export function buildLitaSpendingForecast(rows = [], categories = [], today = ne
       'ARS y USD son independientes; no se aplica cotización implícita ni se presuponen obligaciones futuras.',
       'La brecha de caja en ARS no demuestra déficit patrimonial si existen ingresos o activos en USD. Una venta de divisas es cambio de composición, no ingreso nuevo.',
       'El resumen de ingresos en USD puede mostrarse sin historial de gastos suficiente, pero NO permite concluir cuánto se ahorró en USD.',
+      'Ingreso divisas registra una cantidad USD recibida: es una entrada de fondos, no necesariamente sueldo o ingreso económico. Se presenta por separado para evitar doble contabilización.',
+      'Una categoría de ingreso hoy configurada en USD no convierte automáticamente en USD una transacción vieja guardada sin transactionCurrency USD.',
     ],
   };
 }
