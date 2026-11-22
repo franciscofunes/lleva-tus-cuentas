@@ -1,6 +1,6 @@
 # Cotizaciones DolarAPI para Lita (LTC host)
 
-LTC **ya** consulta `https://dolarapi.com/v1/dolares` desde `src/services/usdQuotesService.js`, con caché en memoria de 10 minutos, precios `compra` / `venta` y lista permitida: `bolsa` (MEP), `oficial`, `blue` y `cripto`.
+LTC **ya** consulta `https://dolarapi.com/v1/dolares` desde `src/services/usdQuotesService.js`, con caché en memoria de 10 minutos, precios `compra` / `venta` y lista permitida: `bolsa` (MEP), `contadoconliqui` (CCL), `oficial`, `blue` y `cripto`.
 
 ## Protocolo mínimo
 
@@ -18,3 +18,5 @@ La respuesta `lita:fx:result` lleva solamente `{ requestId, success, source: 'Do
 - No hay escrituras en Firestore, ni nueva API, ni nuevas variables de entorno. Las conversiones no generan un ingreso o gasto registrado.
 
 **Despliegue:** fusionar y desplegar LTC primero, luego el PR compañero en `franciscofunes/lita-assitant`, verificando el SHA exacto de `main` de ambos dominios de Vercel.
+
+En fin de semana o feriado algunos mercados conservan el último cierre: **mostrar la fecha y la advertencia de actualización pendiente**, sin presentarlo como precio operativo de hoy. Los precios que superan 96 horas se rechazan y no generan equivalencias.
